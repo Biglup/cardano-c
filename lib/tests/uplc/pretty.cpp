@@ -633,7 +633,12 @@ TEST(cardano_uplc_pretty_print_term, rendersBuiltinNames)
     { CARDANO_UPLC_BUILTIN_VERIFY_ED25519_SIGNATURE, "(builtin verifyEd25519Signature)" },
     { CARDANO_UPLC_BUILTIN_BLS12_381_G1_ADD, "(builtin bls12_381_G1_add)" },
     { CARDANO_UPLC_BUILTIN_EXP_MOD_INTEGER, "(builtin expModInteger)" },
-    { CARDANO_UPLC_BUILTIN_SCALE_VALUE, "(builtin scaleValue)" }
+    { CARDANO_UPLC_BUILTIN_SCALE_VALUE, "(builtin scaleValue)" },
+    { CARDANO_UPLC_BUILTIN_MULTI_INDEX_ARRAY, "(builtin multiIndexArray)" },
+    { CARDANO_UPLC_BUILTIN_POLICIES, "(builtin policies)" },
+    { CARDANO_UPLC_BUILTIN_ASSET_COUNT, "(builtin assetCount)" },
+    { CARDANO_UPLC_BUILTIN_KEEP_POLICIES, "(builtin keepPolicies)" },
+    { CARDANO_UPLC_BUILTIN_DROP_POLICIES, "(builtin dropPolicies)" }
   };
 
   for (const auto& test_case: cases)

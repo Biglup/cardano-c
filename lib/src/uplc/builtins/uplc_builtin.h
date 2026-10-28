@@ -48,7 +48,9 @@ extern "C" {
  * Tags 0..87 cover the V1-V3 builtins. Tags 88..100 cover the post-V3 ("V4")
  * builtins: the array operations, the BLS12-381 multi-scalar multiplications, and
  * the value/coin operations. The V4 builtins became available at the van Rossem
- * hard fork.
+ * hard fork. Tags 101..105 cover the batch 7 builtins, available in every
+ * language from protocol version 12 (Dijkstra): multiIndexArray, policies,
+ * assetCount, keepPolicies and dropPolicies.
  */
 typedef enum
 {
@@ -193,16 +195,23 @@ typedef enum
   CARDANO_UPLC_BUILTIN_VALUE_CONTAINS                = 97,
   CARDANO_UPLC_BUILTIN_VALUE_DATA                    = 98,
   CARDANO_UPLC_BUILTIN_UN_VALUE_DATA                 = 99,
-  CARDANO_UPLC_BUILTIN_SCALE_VALUE                   = 100
+  CARDANO_UPLC_BUILTIN_SCALE_VALUE                   = 100,
+
+  /* Batch 7 builtins, tags 101..105. */
+  CARDANO_UPLC_BUILTIN_MULTI_INDEX_ARRAY = 101,
+  CARDANO_UPLC_BUILTIN_POLICIES          = 102,
+  CARDANO_UPLC_BUILTIN_ASSET_COUNT       = 103,
+  CARDANO_UPLC_BUILTIN_KEEP_POLICIES     = 104,
+  CARDANO_UPLC_BUILTIN_DROP_POLICIES     = 105
 } cardano_uplc_builtin_t;
 
 /**
  * \brief Number of distinct builtin tags, equal to the largest valid tag plus one.
  *
- * The largest tag is 100 (scaleValue), so the count is 101. Valid tags are
+ * The largest tag is 105 (dropPolicies), so the count is 106. Valid tags are
  * 0 .. CARDANO_UPLC_BUILTIN_COUNT - 1.
  */
-#define CARDANO_UPLC_BUILTIN_COUNT 101
+#define CARDANO_UPLC_BUILTIN_COUNT 106
 
 /**
  * \brief Returns the number of term arguments a builtin must be applied to before

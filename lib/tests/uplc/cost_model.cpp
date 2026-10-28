@@ -2416,13 +2416,12 @@ default_model(cardano_uplc_cost_model_version_t version, const int64_t* defaults
 
 // Each language's list is ordered as the upstream ParamName enumeration and grows
 // by appending batches; the first and last parameter of every batch must land in
-// the field the parameter name designates, and batch 7 is not read.
+// the field the parameter name designates.
 TEST(cardano_uplc_cost_model_from_params, v1_batch_boundaries)
 {
   const cardano_uplc_cost_model_version_t v = CARDANO_UPLC_COST_MODEL_VERSION_V1;
   const size_t                            n = CARDANO_UPLC_COST_MODEL_PARAM_COUNT_V1;
   cardano_uplc_cost_model_t               model;
-  cardano_uplc_cost_model_t               base;
 
   ASSERT_EQ(model_with_param(v, V1_DEFAULT_PARAMS, n, 0U, MARKER, &model), CARDANO_SUCCESS);
   EXPECT_EQ(model.builtins.entries[CARDANO_UPLC_BUILTIN_ADD_INTEGER].cpu.two.params.linear.intercept, MARKER);
@@ -2433,11 +2432,10 @@ TEST(cardano_uplc_cost_model_from_params, v1_batch_boundaries)
   ASSERT_EQ(model_with_param(v, V1_DEFAULT_PARAMS, n, 331U, MARKER, &model), CARDANO_SUCCESS);
   EXPECT_EQ(model.builtins.entries[CARDANO_UPLC_BUILTIN_SCALE_VALUE].mem.two.params.linear.slope, MARKER);
 
-  ASSERT_EQ(default_model(v, V1_DEFAULT_PARAMS, n, &base), CARDANO_SUCCESS);
   ASSERT_EQ(model_with_param(v, V1_DEFAULT_PARAMS, n, PARAM_COUNT_V1_WITHOUT_BATCH_7, MARKER, &model), CARDANO_SUCCESS);
-  EXPECT_EQ(std::memcmp(&model, &base, sizeof(base)), 0);
+  EXPECT_EQ(model.builtins.entries[CARDANO_UPLC_BUILTIN_MULTI_INDEX_ARRAY].cpu.two.params.quadratic_in_y.coeff_0, MARKER);
   ASSERT_EQ(model_with_param(v, V1_DEFAULT_PARAMS, n, n - 1U, MARKER, &model), CARDANO_SUCCESS);
-  EXPECT_EQ(std::memcmp(&model, &base, sizeof(base)), 0);
+  EXPECT_EQ(model.builtins.entries[CARDANO_UPLC_BUILTIN_DROP_POLICIES].mem.two.params.linear.slope, MARKER);
 }
 
 TEST(cardano_uplc_cost_model_from_params, v2_batch_boundaries)
@@ -2445,7 +2443,6 @@ TEST(cardano_uplc_cost_model_from_params, v2_batch_boundaries)
   const cardano_uplc_cost_model_version_t v = CARDANO_UPLC_COST_MODEL_VERSION_V2;
   const size_t                            n = CARDANO_UPLC_COST_MODEL_PARAM_COUNT_V2;
   cardano_uplc_cost_model_t               model;
-  cardano_uplc_cost_model_t               base;
 
   ASSERT_EQ(model_with_param(v, V2_DEFAULT_PARAMS, n, 0U, MARKER, &model), CARDANO_SUCCESS);
   EXPECT_EQ(model.builtins.entries[CARDANO_UPLC_BUILTIN_ADD_INTEGER].cpu.two.params.linear.intercept, MARKER);
@@ -2464,11 +2461,10 @@ TEST(cardano_uplc_cost_model_from_params, v2_batch_boundaries)
   ASSERT_EQ(model_with_param(v, V2_DEFAULT_PARAMS, n, 331U, MARKER, &model), CARDANO_SUCCESS);
   EXPECT_EQ(model.builtins.entries[CARDANO_UPLC_BUILTIN_SCALE_VALUE].mem.two.params.linear.slope, MARKER);
 
-  ASSERT_EQ(default_model(v, V2_DEFAULT_PARAMS, n, &base), CARDANO_SUCCESS);
   ASSERT_EQ(model_with_param(v, V2_DEFAULT_PARAMS, n, PARAM_COUNT_V2_WITHOUT_BATCH_7, MARKER, &model), CARDANO_SUCCESS);
-  EXPECT_EQ(std::memcmp(&model, &base, sizeof(base)), 0);
+  EXPECT_EQ(model.builtins.entries[CARDANO_UPLC_BUILTIN_MULTI_INDEX_ARRAY].cpu.two.params.quadratic_in_y.coeff_0, MARKER);
   ASSERT_EQ(model_with_param(v, V2_DEFAULT_PARAMS, n, n - 1U, MARKER, &model), CARDANO_SUCCESS);
-  EXPECT_EQ(std::memcmp(&model, &base, sizeof(base)), 0);
+  EXPECT_EQ(model.builtins.entries[CARDANO_UPLC_BUILTIN_DROP_POLICIES].mem.two.params.linear.slope, MARKER);
 }
 
 TEST(cardano_uplc_cost_model_from_params, v3_and_v4_batch_boundaries)
@@ -2479,7 +2475,6 @@ TEST(cardano_uplc_cost_model_from_params, v3_and_v4_batch_boundaries)
   for (const cardano_uplc_cost_model_version_t v: versions)
   {
     cardano_uplc_cost_model_t model;
-    cardano_uplc_cost_model_t base;
 
     ASSERT_EQ(model_with_param(v, V3_DEFAULT_PARAMS, n, 0U, MARKER, &model), CARDANO_SUCCESS);
     EXPECT_EQ(model.builtins.entries[CARDANO_UPLC_BUILTIN_ADD_INTEGER].cpu.two.params.linear.intercept, MARKER);
@@ -2494,25 +2489,24 @@ TEST(cardano_uplc_cost_model_from_params, v3_and_v4_batch_boundaries)
     ASSERT_EQ(model_with_param(v, V3_DEFAULT_PARAMS, n, 349U, MARKER, &model), CARDANO_SUCCESS);
     EXPECT_EQ(model.builtins.entries[CARDANO_UPLC_BUILTIN_SCALE_VALUE].mem.two.params.linear.slope, MARKER);
 
-    ASSERT_EQ(default_model(v, V3_DEFAULT_PARAMS, n, &base), CARDANO_SUCCESS);
     ASSERT_EQ(model_with_param(v, V3_DEFAULT_PARAMS, n, PARAM_COUNT_V3_WITHOUT_BATCH_7, MARKER, &model), CARDANO_SUCCESS);
-    EXPECT_EQ(std::memcmp(&model, &base, sizeof(base)), 0);
+    EXPECT_EQ(model.builtins.entries[CARDANO_UPLC_BUILTIN_MULTI_INDEX_ARRAY].cpu.two.params.quadratic_in_y.coeff_0, MARKER);
     ASSERT_EQ(model_with_param(v, V3_DEFAULT_PARAMS, n, n - 1U, MARKER, &model), CARDANO_SUCCESS);
-    EXPECT_EQ(std::memcmp(&model, &base, sizeof(base)), 0);
+    EXPECT_EQ(model.builtins.entries[CARDANO_UPLC_BUILTIN_DROP_POLICIES].mem.two.params.linear.slope, MARKER);
   }
 }
 
-// Asserts that each parameter before the batch-7 run is read into a field of its
-// own: replacing it changes the model, and no two parameters change the same byte.
+// Asserts that each parameter is read into a field of its own: replacing it
+// changes the model, and no two parameters change the same byte.
 static void
-expect_each_parameter_sets_its_own_field(cardano_uplc_cost_model_version_t version, const int64_t* defaults, size_t read_count, size_t count)
+expect_each_parameter_sets_its_own_field(cardano_uplc_cost_model_version_t version, const int64_t* defaults, size_t count)
 {
   cardano_uplc_cost_model_t base;
   ASSERT_EQ(default_model(version, defaults, count, &base), CARDANO_SUCCESS);
 
   std::vector<bool> claimed(sizeof(base), false);
 
-  for (size_t i = 0U; i < read_count; ++i)
+  for (size_t i = 0U; i < count; ++i)
   {
     cardano_uplc_cost_model_t model;
     ASSERT_EQ(model_with_param(version, defaults, count, i, MARKER, &model), CARDANO_SUCCESS);
@@ -2537,10 +2531,10 @@ expect_each_parameter_sets_its_own_field(cardano_uplc_cost_model_version_t versi
 
 TEST(cardano_uplc_cost_model_from_params, every_parameter_sets_its_own_field)
 {
-  expect_each_parameter_sets_its_own_field(CARDANO_UPLC_COST_MODEL_VERSION_V1, V1_DEFAULT_PARAMS, PARAM_COUNT_V1_WITHOUT_BATCH_7, CARDANO_UPLC_COST_MODEL_PARAM_COUNT_V1);
-  expect_each_parameter_sets_its_own_field(CARDANO_UPLC_COST_MODEL_VERSION_V2, V2_DEFAULT_PARAMS, PARAM_COUNT_V2_WITHOUT_BATCH_7, CARDANO_UPLC_COST_MODEL_PARAM_COUNT_V2);
-  expect_each_parameter_sets_its_own_field(CARDANO_UPLC_COST_MODEL_VERSION_V3, V3_DEFAULT_PARAMS, PARAM_COUNT_V3_WITHOUT_BATCH_7, CARDANO_UPLC_COST_MODEL_PARAM_COUNT_V3);
-  expect_each_parameter_sets_its_own_field(CARDANO_UPLC_COST_MODEL_VERSION_V4, V3_DEFAULT_PARAMS, PARAM_COUNT_V3_WITHOUT_BATCH_7, CARDANO_UPLC_COST_MODEL_PARAM_COUNT_V4);
+  expect_each_parameter_sets_its_own_field(CARDANO_UPLC_COST_MODEL_VERSION_V1, V1_DEFAULT_PARAMS, CARDANO_UPLC_COST_MODEL_PARAM_COUNT_V1);
+  expect_each_parameter_sets_its_own_field(CARDANO_UPLC_COST_MODEL_VERSION_V2, V2_DEFAULT_PARAMS, CARDANO_UPLC_COST_MODEL_PARAM_COUNT_V2);
+  expect_each_parameter_sets_its_own_field(CARDANO_UPLC_COST_MODEL_VERSION_V3, V3_DEFAULT_PARAMS, CARDANO_UPLC_COST_MODEL_PARAM_COUNT_V3);
+  expect_each_parameter_sets_its_own_field(CARDANO_UPLC_COST_MODEL_VERSION_V4, V3_DEFAULT_PARAMS, CARDANO_UPLC_COST_MODEL_PARAM_COUNT_V4);
 }
 
 TEST(cardano_uplc_cost_model_from_params, default_params_yield_the_default_machine_costs)
@@ -2571,8 +2565,9 @@ TEST(cardano_uplc_cost_model_from_params, default_params_yield_the_default_machi
 
 // A node that predates batch 7 publishes 332 parameters for V1 and V2 and 350 for
 // V3; the Dijkstra genesis V4 list stops after the 251 parameters of the original
-// V3 list.
-TEST(cardano_uplc_cost_model_from_params, lists_without_batch_7_match_the_full_lists)
+// V3 list. Such a list matches the full list everywhere but the batch-7 builtins,
+// whose missing coefficients saturate.
+TEST(cardano_uplc_cost_model_from_params, lists_without_batch_7_saturate_the_batch_7_builtins)
 {
   const struct
   {
@@ -2595,7 +2590,19 @@ TEST(cardano_uplc_cost_model_from_params, lists_without_batch_7_match_the_full_l
     ASSERT_EQ(cardano_uplc_cost_model_from_params(c.version, c.params, c.short_count, CARDANO_UPLC_SEMANTICS_G, &shorter), CARDANO_SUCCESS);
     ASSERT_EQ(cardano_uplc_cost_model_from_params(c.version, c.params, c.count, CARDANO_UPLC_SEMANTICS_G, &full), CARDANO_SUCCESS);
 
-    EXPECT_EQ(std::memcmp(&shorter, &full, sizeof(full)), 0) << "version " << c.version;
+    const cardano_uplc_builtin_cost_t* entries = shorter.builtins.entries;
+
+    EXPECT_EQ(std::memcmp(&shorter.machine, &full.machine, sizeof(full.machine)), 0) << "version " << c.version;
+    EXPECT_EQ(std::memcmp(entries, full.builtins.entries, sizeof(entries[0]) * CARDANO_UPLC_BUILTIN_MULTI_INDEX_ARRAY), 0) << "version " << c.version;
+
+    EXPECT_EQ(entries[CARDANO_UPLC_BUILTIN_MULTI_INDEX_ARRAY].cpu.two.params.quadratic_in_y.coeff_0, INT64_MAX);
+    EXPECT_EQ(entries[CARDANO_UPLC_BUILTIN_MULTI_INDEX_ARRAY].mem.two.params.linear.slope, INT64_MAX);
+    EXPECT_EQ(entries[CARDANO_UPLC_BUILTIN_ASSET_COUNT].cpu.one.params.constant, INT64_MAX);
+    EXPECT_EQ(entries[CARDANO_UPLC_BUILTIN_POLICIES].mem.one.params.linear.slope, INT64_MAX);
+    EXPECT_EQ(entries[CARDANO_UPLC_BUILTIN_KEEP_POLICIES].cpu.two.params.linear.intercept, INT64_MAX);
+    EXPECT_EQ(entries[CARDANO_UPLC_BUILTIN_DROP_POLICIES].mem.two.params.linear.slope, INT64_MAX);
+    EXPECT_EQ(cardano_uplc_one_arg_cost_eval(&entries[CARDANO_UPLC_BUILTIN_ASSET_COUNT].cpu.one, 1), INT64_MAX);
+    EXPECT_EQ(cardano_uplc_two_arg_cost_eval(&entries[CARDANO_UPLC_BUILTIN_DROP_POLICIES].cpu.two, 1, 1), INT64_MAX);
   }
 }
 

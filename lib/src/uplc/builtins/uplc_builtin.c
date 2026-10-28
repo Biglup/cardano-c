@@ -34,15 +34,17 @@
  * multi-scalar-multiplication, and multi-asset value builtins: dropList 88,
  * lengthOfArray 89, listToArray 90, indexArray 91, bls12_381_G1_multiScalarMul
  * 92, bls12_381_G2_multiScalarMul 93, insertCoin 94, lookupCoin 95, unionValue
- * 96, valueContains 97, valueData 98, unValueData 99, scaleValue 100. The total
- * number of builtins is 101 (tags 0..100).
+ * 96, valueContains 97, valueData 98, unValueData 99, scaleValue 100. Tags
+ * 101..105 cover the batch 7 builtins: multiIndexArray 101, policies 102,
+ * assetCount 103, keepPolicies 104, dropPolicies 105. The total number of
+ * builtins is 106 (tags 0..105).
  *
  * The tables below record, for each builtin, its tag (the enumerator order), its
  * arity (the number of value arguments it saturates on), its force count (the
  * number of type arguments it takes before its value arguments), and the first
- * language version in which it is available. The builtins on tags 88..100 are
- * labelled CARDANO_UPLC_LANG_VERSION_V4, the module-local label for the batch of
- * builtins introduced after PlutusV3.
+ * language version in which it is available. The builtins on tags 88..105 are
+ * labelled CARDANO_UPLC_LANG_VERSION_V4, the module-local label for the batches
+ * of builtins introduced after PlutusV3.
  */
 
 /**
@@ -152,7 +154,12 @@ static const uint8_t BUILTIN_ARITY[CARDANO_UPLC_BUILTIN_COUNT] = {
   [CARDANO_UPLC_BUILTIN_VALUE_CONTAINS]                     = 2U,
   [CARDANO_UPLC_BUILTIN_VALUE_DATA]                         = 1U,
   [CARDANO_UPLC_BUILTIN_UN_VALUE_DATA]                      = 1U,
-  [CARDANO_UPLC_BUILTIN_SCALE_VALUE]                        = 2U
+  [CARDANO_UPLC_BUILTIN_SCALE_VALUE]                        = 2U,
+  [CARDANO_UPLC_BUILTIN_MULTI_INDEX_ARRAY]                  = 2U,
+  [CARDANO_UPLC_BUILTIN_POLICIES]                           = 1U,
+  [CARDANO_UPLC_BUILTIN_ASSET_COUNT]                        = 1U,
+  [CARDANO_UPLC_BUILTIN_KEEP_POLICIES]                      = 2U,
+  [CARDANO_UPLC_BUILTIN_DROP_POLICIES]                      = 2U
 };
 
 /**
@@ -160,8 +167,8 @@ static const uint8_t BUILTIN_ARITY[CARDANO_UPLC_BUILTIN_COUNT] = {
  *
  * The number of type arguments (forces) each builtin takes before its value
  * arguments. The V4 builtins that are polymorphic in their element type take one
- * force (dropList, lengthOfArray, listToArray, indexArray); the value/coin and
- * multi-scalar-mul builtins are monomorphic and take none.
+ * force (dropList, lengthOfArray, listToArray, indexArray, multiIndexArray); the
+ * value/coin and multi-scalar-mul builtins are monomorphic and take none.
  */
 // cppcheck-suppress misra-c2012-8.9; Reason: file-scope constant data grouped with the module
 static const uint8_t BUILTIN_FORCE_COUNT[CARDANO_UPLC_BUILTIN_COUNT] = {
@@ -265,7 +272,12 @@ static const uint8_t BUILTIN_FORCE_COUNT[CARDANO_UPLC_BUILTIN_COUNT] = {
   [CARDANO_UPLC_BUILTIN_VALUE_CONTAINS]                     = 0U,
   [CARDANO_UPLC_BUILTIN_VALUE_DATA]                         = 0U,
   [CARDANO_UPLC_BUILTIN_UN_VALUE_DATA]                      = 0U,
-  [CARDANO_UPLC_BUILTIN_SCALE_VALUE]                        = 0U
+  [CARDANO_UPLC_BUILTIN_SCALE_VALUE]                        = 0U,
+  [CARDANO_UPLC_BUILTIN_MULTI_INDEX_ARRAY]                  = 1U,
+  [CARDANO_UPLC_BUILTIN_POLICIES]                           = 0U,
+  [CARDANO_UPLC_BUILTIN_ASSET_COUNT]                        = 0U,
+  [CARDANO_UPLC_BUILTIN_KEEP_POLICIES]                      = 0U,
+  [CARDANO_UPLC_BUILTIN_DROP_POLICIES]                      = 0U
 };
 
 /**
@@ -377,7 +389,12 @@ static const uint8_t BUILTIN_FIRST_VERSION[CARDANO_UPLC_BUILTIN_COUNT] = {
   [CARDANO_UPLC_BUILTIN_VALUE_CONTAINS]                     = (uint8_t)CARDANO_UPLC_LANG_VERSION_V4,
   [CARDANO_UPLC_BUILTIN_VALUE_DATA]                         = (uint8_t)CARDANO_UPLC_LANG_VERSION_V4,
   [CARDANO_UPLC_BUILTIN_UN_VALUE_DATA]                      = (uint8_t)CARDANO_UPLC_LANG_VERSION_V4,
-  [CARDANO_UPLC_BUILTIN_SCALE_VALUE]                        = (uint8_t)CARDANO_UPLC_LANG_VERSION_V4
+  [CARDANO_UPLC_BUILTIN_SCALE_VALUE]                        = (uint8_t)CARDANO_UPLC_LANG_VERSION_V4,
+  [CARDANO_UPLC_BUILTIN_MULTI_INDEX_ARRAY]                  = (uint8_t)CARDANO_UPLC_LANG_VERSION_V4,
+  [CARDANO_UPLC_BUILTIN_POLICIES]                           = (uint8_t)CARDANO_UPLC_LANG_VERSION_V4,
+  [CARDANO_UPLC_BUILTIN_ASSET_COUNT]                        = (uint8_t)CARDANO_UPLC_LANG_VERSION_V4,
+  [CARDANO_UPLC_BUILTIN_KEEP_POLICIES]                      = (uint8_t)CARDANO_UPLC_LANG_VERSION_V4,
+  [CARDANO_UPLC_BUILTIN_DROP_POLICIES]                      = (uint8_t)CARDANO_UPLC_LANG_VERSION_V4
 };
 
 /**

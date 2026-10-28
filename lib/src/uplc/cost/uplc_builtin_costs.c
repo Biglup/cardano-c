@@ -728,8 +728,9 @@ fill_all_unavail(cardano_uplc_builtin_costs_t* c)
  *
  * Covers serialise_data, the secp256k1 verifiers, the additional hashes, the
  * BLS12-381 family, the integer/byte-string conversions, the bitwise family,
- * exp_mod_integer and the batch-6 builtins. Version 11 unified the builtin set
- * across the three languages, so V1 and V2 carry these entries too.
+ * exp_mod_integer, the batch-6 builtins and the batch-7 builtins. Version 11
+ * unified the builtin set across the three languages, so V1 and V2 carry these
+ * entries too; the batch-7 coefficients are the same in every version.
  *
  * \param[in,out] c The builtin costs to fill.
  */
@@ -795,6 +796,12 @@ fill_shared_extension(cardano_uplc_builtin_costs_t* c)
   c->entries[CARDANO_UPLC_BUILTIN_VALUE_DATA]     = entry_one(one_linear(1000, 38159), one_linear(2, 22));
   c->entries[CARDANO_UPLC_BUILTIN_UN_VALUE_DATA]  = entry_one(one_quadratic(1000, 128595, 1), one_linear(14, 18));
   c->entries[CARDANO_UPLC_BUILTIN_SCALE_VALUE]    = entry_two(two_linear(CARDANO_UPLC_TWO_ARG_LINEAR_IN_Y, 1000, 383231), two_linear(CARDANO_UPLC_TWO_ARG_LINEAR_IN_Y, 14, 29));
+
+  c->entries[CARDANO_UPLC_BUILTIN_MULTI_INDEX_ARRAY] = entry_two(two_quadratic_in_y(326163, 12304, 2), two_linear(CARDANO_UPLC_TWO_ARG_LINEAR_IN_Y, 4, 3));
+  c->entries[CARDANO_UPLC_BUILTIN_POLICIES]          = entry_one(one_linear(930912, 13220), one_linear(4, 3));
+  c->entries[CARDANO_UPLC_BUILTIN_ASSET_COUNT]       = entry_one(one_const(129043), one_const(10));
+  c->entries[CARDANO_UPLC_BUILTIN_KEEP_POLICIES]     = entry_two(two_linear(CARDANO_UPLC_TWO_ARG_MULTIPLIED_SIZES, 335279, 57077), two_linear(CARDANO_UPLC_TWO_ARG_MULTIPLIED_SIZES, 32, 32));
+  c->entries[CARDANO_UPLC_BUILTIN_DROP_POLICIES]     = entry_two(two_linear(CARDANO_UPLC_TWO_ARG_MULTIPLIED_SIZES, 345402, 57932), two_linear(CARDANO_UPLC_TWO_ARG_MULTIPLIED_SIZES, 32, 36));
 }
 
 /**
@@ -1086,6 +1093,51 @@ value_arg_max_depth(const cardano_uplc_value_t* value)
   }
 
   return value_max_depth(value->as.constant);
+}
+
+/**
+ * \brief Returns the policy count of a value argument, or 0 otherwise.
+ *
+ * The policy count is the size of the outer map. Used by \c policies.
+ *
+ * \param[in] value The value to inspect, or NULL.
+ *
+ * \return The number of policies, or 0 when \p value is not a value constant.
+ */
+static int64_t
+value_arg_policy_count(const cardano_uplc_value_t* value)
+{
+  if ((value == NULL) || (value->kind != CARDANO_UPLC_VALUE_CONSTANT))
+  {
+    return 0;
+  }
+
+  if ((value->as.constant == NULL) || (value->as.constant->kind != CARDANO_UPLC_TYPE_VALUE))
+  {
+    return 0;
+  }
+
+  return (int64_t)value->as.constant->as.list.count;
+}
+
+/**
+ * \brief Returns the outer-depth size of a value argument, or 1 otherwise.
+ *
+ * The size is log2(outer) + 1 for a value with policies and 1 for the empty
+ * value, so that a model multiplying the two argument sizes still charges for
+ * the policy list. Used by \c keepPolicies and \c dropPolicies, which locate
+ * each listed policy in the outer map and never descend an inner one.
+ *
+ * \param[in] value The value to inspect, or NULL.
+ *
+ * \return The outer-depth size.
+ */
+static int64_t
+value_arg_outer_depth(const cardano_uplc_value_t* value)
+{
+  const int64_t outer = value_arg_policy_count(value);
+
+  return (outer > 0) ? (floor_log2((size_t)outer) + 1) : 1;
 }
 
 /**
@@ -1458,6 +1510,37 @@ cardano_uplc_builtin_cost(
     if (arg_count > 1U)
     {
       s[1] = value_arg_token_count((args != NULL) ? args[1] : NULL);
+    }
+  }
+  else if (func == CARDANO_UPLC_BUILTIN_MULTI_INDEX_ARRAY)
+  {
+    if (arg_count > 0U)
+    {
+      s[0] = value_list_len((args != NULL) ? args[0] : NULL);
+    }
+
+    if (arg_count > 1U)
+    {
+      s[1] = value_list_len((args != NULL) ? args[1] : NULL);
+    }
+  }
+  else if (func == CARDANO_UPLC_BUILTIN_POLICIES)
+  {
+    if (arg_count > 0U)
+    {
+      s[0] = value_arg_policy_count((args != NULL) ? args[0] : NULL);
+    }
+  }
+  else if ((func == CARDANO_UPLC_BUILTIN_KEEP_POLICIES) || (func == CARDANO_UPLC_BUILTIN_DROP_POLICIES))
+  {
+    if (arg_count > 0U)
+    {
+      s[0] = value_list_len((args != NULL) ? args[0] : NULL);
+    }
+
+    if (arg_count > 1U)
+    {
+      s[1] = value_arg_outer_depth((args != NULL) ? args[1] : NULL);
     }
   }
   else
