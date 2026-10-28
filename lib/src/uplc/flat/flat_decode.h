@@ -69,7 +69,8 @@ extern "C" {
  *         any argument is NULL, \ref CARDANO_ERROR_DECODING for a malformed
  *         type list, an unknown tag, a truncated value, invalid UTF-8 in a string,
  *         malformed CBOR for a \c data value, a non-canonical value constant, a
- *         BLS12-381 value, or type/value nesting past the depth bound, \ref CARDANO_ERROR_MEMORY_ALLOCATION_FAILED if the arena or an
+ *         BLS12-381 value, or type/value nesting past the depth bound,
+ *         \ref CARDANO_ERROR_MEMORY_ALLOCATION_FAILED if the arena or an
  *         interior object cannot be allocated, or \ref CARDANO_ERROR_ILLEGAL_STATE
  *         if the arena is past its byte ceiling.
  */

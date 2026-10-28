@@ -1158,11 +1158,11 @@ read_level(cardano_transaction_t* tx, const uint64_t* sub_tx_index, tx_level_t* 
  * redeemer's own transaction level: sorted inputs (spend), sorted mint policies
  * (mint), withdrawals in ledger account order (reward), certificates (cert),
  * voters in ledger voter order (vote), proposals (propose) or guards (guard).
- * The guard index is the position in the guard set
- * in transaction order, counting key-hash guards too. The script hash is the
- * script credential the item is authorized by; the spend purpose also resolves
- * the datum from the witness datums of the level. The index ordering mirrors the
- * ledger's per-purpose ordering, which is the consensus-critical mapping.
+ * The guard index is the position in the guard set in transaction order,
+ * counting key-hash guards too. The script hash is the script credential the
+ * item is authorized by; the spend purpose also resolves the datum from the
+ * witness datums of the level. The index ordering mirrors the ledger's
+ * per-purpose ordering, which is the consensus-critical mapping.
  *
  * \return \ref CARDANO_SUCCESS on success, \ref CARDANO_ERROR_INDEX_OUT_OF_BOUNDS
  *         if the index is out of range, \ref CARDANO_ERROR_INVALID_ARGUMENT for a

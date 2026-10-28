@@ -79,8 +79,8 @@ typedef struct cardano_uplc_program_t
  *         \p arena or \p program is NULL, or if \p script_bytes is NULL while
  *         \p size is non-zero, \ref CARDANO_ERROR_DECODING for malformed CBOR, an
  *         outer item that is not a bytestring, trailing bytes after the outer
- *         bytestring, or a flat program that fails to decode,
- *         \ref CARDANO_ERROR_NOT_IMPLEMENTED for a BLS constant value, or
+ *         bytestring, or a flat program that fails to decode, including one that
+ *         carries a BLS12-381 constant value, or
  *         \ref CARDANO_ERROR_MEMORY_ALLOCATION_FAILED if the arena or an interior
  *         object cannot be allocated.
  */
