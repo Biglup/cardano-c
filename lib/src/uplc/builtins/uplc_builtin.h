@@ -244,20 +244,6 @@ cardano_error_t
 cardano_uplc_builtin_force_count(cardano_uplc_builtin_t builtin, size_t* force_count);
 
 /**
- * \brief Returns the Plutus language version a builtin first became available in.
- *
- * \param[in] builtin The builtin tag to query.
- * \param[out] version On success, set to the first version the builtin is available
- *             in; left untouched on failure.
- *
- * \return \ref CARDANO_SUCCESS on success, \ref CARDANO_ERROR_POINTER_IS_NULL if
- *         \p version is NULL, or \ref CARDANO_ERROR_INVALID_ARGUMENT if \p builtin
- *         is not a valid tag in 0 .. CARDANO_UPLC_BUILTIN_COUNT - 1.
- */
-cardano_error_t
-cardano_uplc_builtin_first_version(cardano_uplc_builtin_t builtin, cardano_uplc_lang_version_t* version);
-
-/**
  * \brief Returns whether a builtin is available in a language at a protocol version.
  *
  * Encodes the ledger's \c builtinsIntroducedIn schedule: each builtin becomes
