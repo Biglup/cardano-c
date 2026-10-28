@@ -67,13 +67,29 @@ the same <case>.budget.expected as the .uplc case.
 
 ## Evaluation configuration
 
-The reference evaluates every case at the newest protocol version (12) with builtin
-semantics variant G and the newest cost model. The runner uses the closest
-configuration the evaluator offers (language V4, protocol version 12, semantics
-variant G, V3 cost model). Cases that depend on the missing behaviour are listed
-in ../conformance_expected_failures.txt, each tagged with a gap category; a .flat
-case is listed under its own .flat path. The runner fails when a listed case passes
-or an unlisted case fails.
+The reference (plutus-conformance/src/PlutusConformance/CekEvaluator.hs) evaluates
+every case with the newest builtin semantics variant (G), the newest cost model
+(E) and the case-on-builtin support of the newest protocol version (12), with an
+unlimited budget whose spend is compared exactly. The runner uses the same
+configuration (language V4, protocol version 12, semantics variant G, V4 cost
+model) and every case must pass: there is no expected-failure list.
+
+The run also pins the corpus size (1037 .uplc and 934 .flat cases), so a missing
+input fails it.
+
+A second run pins mainnet behaviour: Plutus V3 at protocol version 10 and
+semantics variant C, with the cost model the library selects for V3 at protocol
+version 10 from the default V3 parameter list, over the cases whose expectations
+do not change under that configuration. A case is in that run when it parses, its
+program version and every builtin it names are available to V3 at protocol
+version 10, it holds no array or value constant, every case term scrutinises a
+constr term directly, it names no builtin costed differently under that
+configuration (the integer-division builtins and equalsByteString, whose cost
+model C costs differ, and appendString, equalsString and encodeUtf8, whose string
+costing differs), and, when it expects a failure, it names no builtin whose
+arguments variant G bounds. The rule reads only the program and its expected
+outcome. Every covered case costs the same under builtin cost models C and E, so
+the parameter list carrying cost model E values reproduces the mainnet budgets.
 
 ## Build exclusion (verified)
 

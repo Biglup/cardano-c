@@ -1,8 +1,0 @@
-# Corpus cases the evaluator is known not to match yet.
-#
-# Each line is "<case path relative to vectors> <gap category> [reason]", where
-# the path names the .uplc or the .flat input of a case. The
-# conformance test fails when a listed case passes (remove the stale entry) and
-# when an unlisted case fails. Categories: semantics-variant, builtin-bounds,
-# division-costing, cost-model, flat-decoding, version-gating, batch7-builtins,
-# case-on-data, text-parser, other.
