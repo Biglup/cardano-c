@@ -440,9 +440,11 @@ evaluate_sub_transaction(
   {
     result = cardano_tx_evaluator_evaluate(evaluator, carrier, utxos, &evaluated);
 
-    if ((result != CARDANO_SUCCESS) && (cardano_tx_evaluator_get_last_error(evaluator)[0] != '\0'))
+    const char* evaluator_error = cardano_tx_evaluator_get_last_error(evaluator);
+
+    if ((result != CARDANO_SUCCESS) && (evaluator_error[0] != '\0'))
     {
-      cardano_transaction_set_last_error(state->transaction, cardano_tx_evaluator_get_last_error(evaluator));
+      cardano_transaction_set_last_error(state->transaction, evaluator_error);
       *error_message = cardano_transaction_get_last_error(state->transaction);
     }
   }

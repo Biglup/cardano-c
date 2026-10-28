@@ -712,103 +712,101 @@ write_integer(const cardano_uplc_data_t* data, cardano_cbor_writer_t* writer)
     return cardano_cbor_writer_write_uint(writer, (uint64_t)data->as.integer.small);
   }
 
+  const cardano_bigint_t* value       = data->as.integer.big;
+  const bool              is_negative = cardano_bigint_signum(value) < 0;
+  const size_t            bit_length  = cardano_bigint_bit_length(value);
+  cardano_bigint_t*       magnitude   = NULL;
+  cardano_error_t         result      = CARDANO_SUCCESS;
+
+  if (bit_length <= 64U)
   {
-    const cardano_bigint_t* value       = data->as.integer.big;
-    const bool              is_negative = cardano_bigint_signum(value) < 0;
-    const size_t            bit_length  = cardano_bigint_bit_length(value);
-    cardano_bigint_t*       magnitude   = NULL;
-    cardano_error_t         result      = CARDANO_SUCCESS;
-
-    if (bit_length <= 64U)
-    {
-      const uint64_t absolute = cardano_bigint_to_unsigned_int(value);
-
-      if (is_negative)
-      {
-        return cardano_cbor_writer_write_negative_int(writer, absolute - 1U);
-      }
-
-      return cardano_cbor_writer_write_uint(writer, absolute);
-    }
-
-    result = cardano_bigint_clone(value, &magnitude);
-
-    if (result != CARDANO_SUCCESS)
-    {
-      return result;
-    }
+    const uint64_t absolute = cardano_bigint_to_unsigned_int(value);
 
     if (is_negative)
     {
-      cardano_bigint_negate(value, magnitude);
-      cardano_bigint_decrement(magnitude);
+      return cardano_cbor_writer_write_negative_int(writer, absolute - 1U);
     }
 
-    if (is_negative && (cardano_bigint_bit_length(magnitude) <= 64U))
+    return cardano_cbor_writer_write_uint(writer, absolute);
+  }
+
+  result = cardano_bigint_clone(value, &magnitude);
+
+  if (result != CARDANO_SUCCESS)
+  {
+    return result;
+  }
+
+  if (is_negative)
+  {
+    cardano_bigint_negate(value, magnitude);
+    cardano_bigint_decrement(magnitude);
+  }
+
+  if (is_negative && (cardano_bigint_bit_length(magnitude) <= 64U))
+  {
+    result = cardano_cbor_writer_write_negative_int(writer, cardano_bigint_to_unsigned_int(magnitude));
+    cardano_bigint_unref(&magnitude);
+
+    return result;
+  }
+
+  {
+    const size_t size  = cardano_bigint_get_bytes_size(magnitude);
+    byte_t*      bytes = (byte_t*)_cardano_malloc(size);
+
+    if (bytes == NULL)
     {
-      result = cardano_cbor_writer_write_negative_int(writer, cardano_bigint_to_unsigned_int(magnitude));
       cardano_bigint_unref(&magnitude);
 
-      return result;
+      return CARDANO_ERROR_MEMORY_ALLOCATION_FAILED;
     }
 
+    result = cardano_bigint_to_bytes(magnitude, CARDANO_BYTE_ORDER_BIG_ENDIAN, bytes, size);
+
+    cardano_bigint_unref(&magnitude);
+
+    if (result == CARDANO_SUCCESS)
     {
-      const size_t size  = cardano_bigint_get_bytes_size(magnitude);
-      byte_t*      bytes = (byte_t*)_cardano_malloc(size);
-
-      if (bytes == NULL)
-      {
-        cardano_bigint_unref(&magnitude);
-
-        return CARDANO_ERROR_MEMORY_ALLOCATION_FAILED;
-      }
-
-      result = cardano_bigint_to_bytes(magnitude, CARDANO_BYTE_ORDER_BIG_ENDIAN, bytes, size);
-
-      cardano_bigint_unref(&magnitude);
-
-      if (result == CARDANO_SUCCESS)
-      {
-        result = cardano_cbor_writer_write_tag(
-          writer,
-          is_negative ? CARDANO_CBOR_TAG_NEGATIVE_BIG_NUM : CARDANO_CBOR_TAG_UNSIGNED_BIG_NUM);
-      }
-
-      if (result == CARDANO_SUCCESS)
-      {
-        if (size <= CARDANO_UPLC_DATA_CBOR_CHUNK)
-        {
-          result = cardano_cbor_writer_write_bytestring(writer, bytes, size);
-        }
-        else
-        {
-          const size_t chunks = size / CARDANO_UPLC_DATA_CBOR_CHUNK;
-          const size_t rest   = size % CARDANO_UPLC_DATA_CBOR_CHUNK;
-          size_t       i      = 0U;
-
-          result = cardano_cbor_writer_write_encoded(writer, &CARDANO_UPLC_DATA_INDEFINITE_BYTE_STRING, sizeof(CARDANO_UPLC_DATA_INDEFINITE_BYTE_STRING));
-
-          for (i = 0U; (i < chunks) && (result == CARDANO_SUCCESS); ++i)
-          {
-            result = cardano_cbor_writer_write_bytestring(writer, &bytes[i * CARDANO_UPLC_DATA_CBOR_CHUNK], CARDANO_UPLC_DATA_CBOR_CHUNK);
-          }
-
-          if ((result == CARDANO_SUCCESS) && (rest > 0U))
-          {
-            result = cardano_cbor_writer_write_bytestring(writer, &bytes[chunks * CARDANO_UPLC_DATA_CBOR_CHUNK], rest);
-          }
-
-          if (result == CARDANO_SUCCESS)
-          {
-            result = cardano_cbor_writer_write_end_array(writer);
-          }
-        }
-      }
-
-      _cardano_free(bytes);
-
-      return result;
+      result = cardano_cbor_writer_write_tag(
+        writer,
+        is_negative ? CARDANO_CBOR_TAG_NEGATIVE_BIG_NUM : CARDANO_CBOR_TAG_UNSIGNED_BIG_NUM);
     }
+
+    if (result == CARDANO_SUCCESS)
+    {
+      if (size <= CARDANO_UPLC_DATA_CBOR_CHUNK)
+      {
+        result = cardano_cbor_writer_write_bytestring(writer, bytes, size);
+      }
+      else
+      {
+        const size_t chunks = size / CARDANO_UPLC_DATA_CBOR_CHUNK;
+        const size_t rest   = size % CARDANO_UPLC_DATA_CBOR_CHUNK;
+        size_t       i      = 0U;
+
+        result = cardano_cbor_writer_write_encoded(writer, &CARDANO_UPLC_DATA_INDEFINITE_BYTE_STRING, sizeof(CARDANO_UPLC_DATA_INDEFINITE_BYTE_STRING));
+
+        for (i = 0U; (i < chunks) && (result == CARDANO_SUCCESS); ++i)
+        {
+          result = cardano_cbor_writer_write_bytestring(writer, &bytes[i * CARDANO_UPLC_DATA_CBOR_CHUNK], CARDANO_UPLC_DATA_CBOR_CHUNK);
+        }
+
+        if ((result == CARDANO_SUCCESS) && (rest > 0U))
+        {
+          result = cardano_cbor_writer_write_bytestring(writer, &bytes[chunks * CARDANO_UPLC_DATA_CBOR_CHUNK], rest);
+        }
+
+        if (result == CARDANO_SUCCESS)
+        {
+          result = cardano_cbor_writer_write_end_array(writer);
+        }
+      }
+    }
+
+    _cardano_free(bytes);
+
+    return result;
   }
 }
 

@@ -1176,7 +1176,7 @@ read_level(cardano_transaction_t* tx, const uint64_t* sub_tx_index, tx_level_t* 
  */
 static cardano_error_t
 resolve_script_hash(
-  const tx_level_t*        level,
+  tx_level_t*              level,
   cardano_utxo_list_t*     resolved_inputs,
   cardano_redeemer_t*      redeemer,
   cardano_blake2b_hash_t** out_hash,
@@ -1773,7 +1773,7 @@ static cardano_error_t
 resolve_script(
   cardano_transaction_t* tx,
   const uint64_t*        sub_tx_index,
-  const tx_level_t*      level,
+  tx_level_t*            level,
   cardano_utxo_list_t*   resolved_inputs,
   cardano_redeemer_t*    redeemer,
   resolved_script_t*     script)
@@ -1827,7 +1827,7 @@ check_redeemer(
   native_context_t*      ctx,
   cardano_transaction_t* tx,
   const uint64_t*        sub_tx_index,
-  const tx_level_t*      level,
+  tx_level_t*            level,
   cardano_utxo_list_t*   resolved_inputs,
   cardano_redeemer_t*    redeemer,
   redeemer_outcome_t*    out_outcome)
@@ -1882,7 +1882,7 @@ eval_redeemer(
   native_context_t*      ctx,
   cardano_transaction_t* tx,
   const uint64_t*        sub_tx_index,
-  const tx_level_t*      level,
+  tx_level_t*            level,
   cardano_utxo_list_t*   resolved_inputs,
   cardano_redeemer_t*    redeemer,
   cardano_uplc_budget_t* remaining,
