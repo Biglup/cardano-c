@@ -2478,11 +2478,9 @@ TEST(cardano_uplc_flat_decode_program, acceptsConstrAndCaseFrom110)
   }
 }
 
-TEST(cardano_uplc_flat_decode_program, acceptsTrailingZeroByteAfterFiller)
+TEST(cardano_uplc_flat_decode_program, rejectsTrailingZeroByteAfterFiller)
 {
-  // Arrange: a valid, properly filled program followed by a trailing zero byte.
-  // The flat decoder consumes only one filler after the term and does not inspect
-  // the rest of the buffer, so a trailing byte left unread is not an error.
+  // Arrange
   BitWriter w;
   w.word(1U);
   w.word(0U);
@@ -2500,20 +2498,14 @@ TEST(cardano_uplc_flat_decode_program, acceptsTrailingZeroByteAfterFiller)
   cardano_error_t result = decode_program(bytes, arena, &program);
 
   // Assert
-  EXPECT_EQ(result, CARDANO_SUCCESS);
-  ASSERT_NE(program, nullptr);
-  EXPECT_EQ(program->term->kind, CARDANO_UPLC_TERM_ERROR);
+  EXPECT_EQ(result, CARDANO_ERROR_DECODING);
+  EXPECT_EQ(program, nullptr);
 
   cardano_uplc_arena_free(&arena);
 }
 
-TEST(cardano_uplc_flat_decode_program, acceptsArbitraryTrailingBytesAfterFiller)
+TEST(cardano_uplc_flat_decode_program, rejectsArbitraryTrailingBytesAfterFiller)
 {
-  // The reference flat decoders read the term and a single filler then return
-  // without checking that the buffer is fully consumed. Rejecting trailing bytes
-  // would make this decoder stricter than the ledger, a consensus hazard, so a
-  // valid program followed by arbitrary trailing bytes still decodes, and to the
-  // same program as the unpadded form.
   std::vector<uint8_t> clean = sample_flat_program();
 
   cardano_uplc_arena_t*         clean_arena   = make_arena();
@@ -2529,8 +2521,8 @@ TEST(cardano_uplc_flat_decode_program, acceptsArbitraryTrailingBytesAfterFiller)
 
   cardano_uplc_arena_t*         arena   = make_arena();
   const cardano_uplc_program_t* program = nullptr;
-  EXPECT_EQ(decode_program(trailing, arena, &program), CARDANO_SUCCESS);
-  expect_sample_program(program);
+  EXPECT_EQ(decode_program(trailing, arena, &program), CARDANO_ERROR_DECODING);
+  EXPECT_EQ(program, nullptr);
 
   cardano_uplc_arena_free(&arena);
   cardano_uplc_arena_free(&clean_arena);
@@ -2963,4 +2955,277 @@ TEST(cardano_uplc_program_from_script_bytes, propagatesLaterAllocationFailure)
   EXPECT_EQ(program, nullptr);
 
   cardano_uplc_arena_free(&arena);
+}
+
+/**
+ * \brief Flat-encodes (program major.minor.0 (builtin tag)).
+ */
+static std::vector<uint8_t>
+builtin_program(uint8_t tag, size_t minor = 0U)
+{
+  BitWriter w;
+  w.word(1U);
+  w.word(minor);
+  w.word(0U);
+  w.bits(7U, 4U);
+  w.bits(tag, 7U);
+  w.filler();
+
+  return w.bytes();
+}
+
+/**
+ * \brief Flat-encodes (program 1.0.0 (con T [])) where T nests \p depth list
+ *        types around integer, a type header of 2 * depth + 1 tags.
+ */
+static std::vector<uint8_t>
+nested_list_constant_program(size_t depth)
+{
+  BitWriter w;
+  w.word(1U);
+  w.word(0U);
+  w.word(0U);
+  w.bits(4U, 4U);
+
+  for (size_t i = 0U; i < depth; ++i)
+  {
+    w.bits(1U, 1U);
+    w.bits(7U, 4U);
+    w.bits(1U, 1U);
+    w.bits(5U, 4U);
+  }
+
+  w.bits(1U, 1U);
+  w.bits(0U, 4U);
+  w.bits(0U, 1U);
+  w.bits(0U, 1U);
+  w.filler();
+
+  return w.bytes();
+}
+
+/**
+ * \brief Flat-encodes (program 1.1.0 (constr 0 (error) ... (error))) with
+ *        \p fields fields.
+ */
+static std::vector<uint8_t>
+constr_program(size_t fields)
+{
+  BitWriter w;
+  w.word(1U);
+  w.word(1U);
+  w.word(0U);
+  w.bits(8U, 4U);
+  w.word(0U);
+
+  for (size_t i = 0U; i < fields; ++i)
+  {
+    w.bits(1U, 1U);
+    w.bits(6U, 4U);
+  }
+
+  w.bits(0U, 1U);
+  w.filler();
+
+  return w.bytes();
+}
+
+/**
+ * \brief Decodes \p bytes as a ledger script program for \p language at
+ *        \p protocol_major.
+ */
+static cardano_error_t
+decode_script_program(
+  const std::vector<uint8_t>&    bytes,
+  cardano_uplc_lang_version_t    language,
+  uint64_t                       protocol_major,
+  cardano_uplc_arena_t*          arena,
+  const cardano_uplc_program_t** program)
+{
+  cardano_uplc_flat_reader_t reader = { nullptr, 0U, 0U, 0U };
+  EXPECT_EQ(cardano_uplc_flat_reader_init(&reader, bytes.data(), bytes.size()), CARDANO_SUCCESS);
+  return cardano_uplc_flat_decode_script_program(arena, &reader, language, protocol_major, program);
+}
+
+/**
+ * \brief Deserialises \p bytes as an on-chain script for \p language at
+ *        \p protocol_major.
+ */
+static cardano_error_t
+decode_ledger_script(
+  const std::vector<uint8_t>&    bytes,
+  cardano_uplc_lang_version_t    language,
+  uint64_t                       protocol_major,
+  const cardano_uplc_program_t** program)
+{
+  cardano_uplc_arena_t* arena  = make_arena();
+  cardano_error_t       result = cardano_uplc_program_from_ledger_script(arena, bytes.data(), bytes.size(), language, protocol_major, program);
+
+  cardano_uplc_arena_free(&arena);
+
+  return result;
+}
+
+TEST(cardano_uplc_flat_decode_script_program, rejectsNullArguments)
+{
+  const std::vector<uint8_t>    bytes   = sample_flat_program();
+  cardano_uplc_arena_t*         arena   = make_arena();
+  cardano_uplc_flat_reader_t    reader  = { nullptr, 0U, 0U, 0U };
+  const cardano_uplc_program_t* program = nullptr;
+
+  ASSERT_EQ(cardano_uplc_flat_reader_init(&reader, bytes.data(), bytes.size()), CARDANO_SUCCESS);
+
+  EXPECT_EQ(cardano_uplc_flat_decode_script_program(nullptr, &reader, CARDANO_UPLC_LANG_VERSION_V3, 12U, &program), CARDANO_ERROR_POINTER_IS_NULL);
+  EXPECT_EQ(cardano_uplc_flat_decode_script_program(arena, nullptr, CARDANO_UPLC_LANG_VERSION_V3, 12U, &program), CARDANO_ERROR_POINTER_IS_NULL);
+  EXPECT_EQ(cardano_uplc_flat_decode_script_program(arena, &reader, CARDANO_UPLC_LANG_VERSION_V3, 12U, nullptr), CARDANO_ERROR_POINTER_IS_NULL);
+
+  cardano_uplc_arena_free(&arena);
+}
+
+TEST(cardano_uplc_flat_decode_script_program, rejectsABuiltinUnavailableAtTheProtocolVersion)
+{
+  struct Row
+  {
+      cardano_uplc_builtin_t      builtin;
+      cardano_uplc_lang_version_t language;
+      uint64_t                    protocol_major;
+      cardano_error_t             expected;
+  };
+
+  const Row rows[] = {
+    { CARDANO_UPLC_BUILTIN_ADD_INTEGER, CARDANO_UPLC_LANG_VERSION_V1, 5U, CARDANO_SUCCESS },
+    { CARDANO_UPLC_BUILTIN_SERIALISE_DATA, CARDANO_UPLC_LANG_VERSION_V1, 10U, CARDANO_ERROR_DECODING },
+    { CARDANO_UPLC_BUILTIN_SERIALISE_DATA, CARDANO_UPLC_LANG_VERSION_V1, 11U, CARDANO_SUCCESS },
+    { CARDANO_UPLC_BUILTIN_SERIALISE_DATA, CARDANO_UPLC_LANG_VERSION_V2, 7U, CARDANO_SUCCESS },
+    { CARDANO_UPLC_BUILTIN_INTEGER_TO_BYTE_STRING, CARDANO_UPLC_LANG_VERSION_V2, 9U, CARDANO_ERROR_DECODING },
+    { CARDANO_UPLC_BUILTIN_INTEGER_TO_BYTE_STRING, CARDANO_UPLC_LANG_VERSION_V2, 10U, CARDANO_SUCCESS },
+    { CARDANO_UPLC_BUILTIN_RIPEMD_160, CARDANO_UPLC_LANG_VERSION_V3, 9U, CARDANO_ERROR_DECODING },
+    { CARDANO_UPLC_BUILTIN_RIPEMD_160, CARDANO_UPLC_LANG_VERSION_V3, 10U, CARDANO_SUCCESS },
+    { CARDANO_UPLC_BUILTIN_EXP_MOD_INTEGER, CARDANO_UPLC_LANG_VERSION_V3, 10U, CARDANO_ERROR_DECODING },
+    { CARDANO_UPLC_BUILTIN_EXP_MOD_INTEGER, CARDANO_UPLC_LANG_VERSION_V3, 11U, CARDANO_SUCCESS },
+    { CARDANO_UPLC_BUILTIN_ADD_INTEGER, CARDANO_UPLC_LANG_VERSION_V4, 11U, CARDANO_ERROR_DECODING },
+    { CARDANO_UPLC_BUILTIN_SCALE_VALUE, CARDANO_UPLC_LANG_VERSION_V4, 12U, CARDANO_SUCCESS }
+  };
+
+  for (const Row& row: rows)
+  {
+    cardano_uplc_arena_t*         arena   = make_arena();
+    const cardano_uplc_program_t* program = nullptr;
+
+    EXPECT_EQ(decode_script_program(builtin_program((uint8_t)row.builtin), row.language, row.protocol_major, arena, &program), row.expected)
+      << "builtin " << row.builtin << " language " << row.language << " protocol " << row.protocol_major;
+
+    cardano_uplc_arena_free(&arena);
+  }
+}
+
+TEST(cardano_uplc_flat_decode_script_program, keepsTheConstrAndCaseVersionGate)
+{
+  cardano_uplc_arena_t*         arena   = make_arena();
+  const cardano_uplc_program_t* program = nullptr;
+  std::vector<uint8_t>          bytes   = constr_program(1U);
+
+  bytes[1] = 0x00U;
+
+  EXPECT_EQ(decode_script_program(bytes, CARDANO_UPLC_LANG_VERSION_V3, 12U, arena, &program), CARDANO_ERROR_DECODING);
+  EXPECT_EQ(decode_script_program(constr_program(1U), CARDANO_UPLC_LANG_VERSION_V3, 12U, arena, &program), CARDANO_SUCCESS);
+
+  cardano_uplc_arena_free(&arena);
+}
+
+TEST(cardano_uplc_flat_decode_script_program, limitsTheConstantTypeHeaderToThirtyTwoTags)
+{
+  cardano_uplc_arena_t*         arena   = make_arena();
+  const cardano_uplc_program_t* program = nullptr;
+
+  EXPECT_EQ(decode_script_program(nested_list_constant_program(15U), CARDANO_UPLC_LANG_VERSION_V1, 5U, arena, &program), CARDANO_SUCCESS);
+  EXPECT_EQ(decode_script_program(nested_list_constant_program(16U), CARDANO_UPLC_LANG_VERSION_V1, 5U, arena, &program), CARDANO_ERROR_DECODING);
+  EXPECT_EQ(decode_program(nested_list_constant_program(16U), arena, &program), CARDANO_SUCCESS);
+
+  cardano_uplc_arena_free(&arena);
+}
+
+TEST(cardano_uplc_flat_decode_script_program, limitsConstrToOneThousandTwentyFourFields)
+{
+  cardano_uplc_arena_t*         arena   = make_arena();
+  const cardano_uplc_program_t* program = nullptr;
+
+  EXPECT_EQ(decode_script_program(constr_program(1024U), CARDANO_UPLC_LANG_VERSION_V3, 9U, arena, &program), CARDANO_SUCCESS);
+  EXPECT_EQ(decode_script_program(constr_program(1025U), CARDANO_UPLC_LANG_VERSION_V3, 9U, arena, &program), CARDANO_ERROR_DECODING);
+  EXPECT_EQ(decode_program(constr_program(1025U), arena, &program), CARDANO_SUCCESS);
+
+  cardano_uplc_arena_free(&arena);
+}
+
+TEST(cardano_uplc_program_from_ledger_script, rejectsNullArguments)
+{
+  const std::vector<uint8_t>    script  = cbor_wrap(sample_flat_program());
+  cardano_uplc_arena_t*         arena   = make_arena();
+  const cardano_uplc_program_t* program = nullptr;
+
+  EXPECT_EQ(cardano_uplc_program_from_ledger_script(nullptr, script.data(), script.size(), CARDANO_UPLC_LANG_VERSION_V3, 12U, &program), CARDANO_ERROR_POINTER_IS_NULL);
+  EXPECT_EQ(cardano_uplc_program_from_ledger_script(arena, script.data(), script.size(), CARDANO_UPLC_LANG_VERSION_V3, 12U, nullptr), CARDANO_ERROR_POINTER_IS_NULL);
+  EXPECT_EQ(cardano_uplc_program_from_ledger_script(arena, nullptr, 1U, CARDANO_UPLC_LANG_VERSION_V3, 12U, &program), CARDANO_ERROR_POINTER_IS_NULL);
+
+  cardano_uplc_arena_free(&arena);
+}
+
+TEST(cardano_uplc_program_from_ledger_script, rejectsALanguageBeforeItIsEnabled)
+{
+  struct Row
+  {
+      cardano_uplc_lang_version_t language;
+      uint64_t                    introduced_in;
+  };
+
+  const Row rows[] = {
+    { CARDANO_UPLC_LANG_VERSION_V1, 5U },
+    { CARDANO_UPLC_LANG_VERSION_V2, 7U },
+    { CARDANO_UPLC_LANG_VERSION_V3, 9U },
+    { CARDANO_UPLC_LANG_VERSION_V4, 12U }
+  };
+
+  const std::vector<uint8_t> script = cbor_wrap(sample_flat_program());
+
+  for (const Row& row: rows)
+  {
+    const cardano_uplc_program_t* program = nullptr;
+
+    EXPECT_EQ(decode_ledger_script(script, row.language, row.introduced_in - 1U, &program), CARDANO_ERROR_DECODING) << row.language;
+    EXPECT_EQ(program, nullptr);
+    EXPECT_EQ(decode_ledger_script(script, row.language, row.introduced_in, &program), CARDANO_SUCCESS) << row.language;
+  }
+}
+
+TEST(cardano_uplc_program_from_ledger_script, ignoresTrailingBytesOnlyForV1AndV2)
+{
+  std::vector<uint8_t> script = cbor_wrap(sample_flat_program());
+
+  script.push_back(0xFFU);
+
+  const cardano_uplc_program_t* program = nullptr;
+
+  EXPECT_EQ(decode_ledger_script(script, CARDANO_UPLC_LANG_VERSION_V1, 12U, &program), CARDANO_SUCCESS);
+  EXPECT_EQ(decode_ledger_script(script, CARDANO_UPLC_LANG_VERSION_V2, 12U, &program), CARDANO_SUCCESS);
+  EXPECT_EQ(decode_ledger_script(script, CARDANO_UPLC_LANG_VERSION_V3, 12U, &program), CARDANO_ERROR_DECODING);
+  EXPECT_EQ(decode_ledger_script(script, CARDANO_UPLC_LANG_VERSION_V4, 12U, &program), CARDANO_ERROR_DECODING);
+}
+
+TEST(cardano_uplc_program_from_ledger_script, appliesTheScriptChecks)
+{
+  const std::vector<uint8_t>    script  = cbor_wrap(builtin_program((uint8_t)CARDANO_UPLC_BUILTIN_EXP_MOD_INTEGER));
+  const cardano_uplc_program_t* program = nullptr;
+
+  EXPECT_EQ(decode_ledger_script(script, CARDANO_UPLC_LANG_VERSION_V3, 10U, &program), CARDANO_ERROR_DECODING);
+  EXPECT_EQ(decode_ledger_script(script, CARDANO_UPLC_LANG_VERSION_V3, 11U, &program), CARDANO_SUCCESS);
+}
+
+TEST(cardano_uplc_program_from_ledger_script, rejectsMalformedScriptBytes)
+{
+  const std::vector<uint8_t>    empty;
+  const std::vector<uint8_t>    raw     = sample_flat_program();
+  const cardano_uplc_program_t* program = nullptr;
+
+  EXPECT_EQ(decode_ledger_script(empty, CARDANO_UPLC_LANG_VERSION_V3, 12U, &program), CARDANO_ERROR_DECODING);
+  EXPECT_EQ(decode_ledger_script(raw, CARDANO_UPLC_LANG_VERSION_V1, 12U, &program), CARDANO_ERROR_DECODING);
 }

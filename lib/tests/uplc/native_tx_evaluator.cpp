@@ -91,7 +91,7 @@ static const cardano_slot_config_t kSlotConfig = { 1596059091000U, 4492800U, 100
  * native evaluator decodes.
  */
 static cardano_plutus_v3_script_t*
-build_v3_script(bool succeeds)
+build_v3_script(bool succeeds, uint32_t version_minor = 0U)
 {
   cardano_uplc_arena_t* arena = nullptr;
   EXPECT_EQ(cardano_uplc_arena_new(4096U, &arena), CARDANO_SUCCESS);
@@ -114,7 +114,7 @@ build_v3_script(bool succeeds)
 
   cardano_uplc_program_t program;
   program.version_major = 1U;
-  program.version_minor = 0U;
+  program.version_minor = version_minor;
   program.version_patch = 0U;
   program.term          = lambda;
 
@@ -139,7 +139,7 @@ build_v3_script(bool succeeds)
  * receive [redeemer, context] (2 args).
  */
 static cardano_buffer_t*
-build_succeeds_program_cbor(size_t num_args)
+build_succeeds_program_cbor(size_t num_args, uint32_t version_minor)
 {
   cardano_uplc_arena_t* arena = nullptr;
   EXPECT_EQ(cardano_uplc_arena_new(4096U, &arena), CARDANO_SUCCESS);
@@ -159,7 +159,7 @@ build_succeeds_program_cbor(size_t num_args)
 
   cardano_uplc_program_t program;
   program.version_major = 1U;
-  program.version_minor = 0U;
+  program.version_minor = version_minor;
   program.version_patch = 0U;
   program.term          = body;
 
@@ -177,7 +177,7 @@ build_succeeds_program_cbor(size_t num_args)
 static cardano_plutus_v2_script_t*
 build_v2_script(size_t num_args)
 {
-  cardano_buffer_t*           cbor   = build_succeeds_program_cbor(num_args);
+  cardano_buffer_t*           cbor   = build_succeeds_program_cbor(num_args, 0U);
   cardano_plutus_v2_script_t* script = nullptr;
 
   EXPECT_EQ(cardano_plutus_v2_script_new_bytes(cardano_buffer_get_data(cbor), cardano_buffer_get_size(cbor), &script), CARDANO_SUCCESS);
@@ -188,12 +188,13 @@ build_v2_script(size_t num_args)
 }
 
 /**
- * \brief Builds a Plutus V1 always-succeeds script accepting \p num_args arguments.
+ * \brief Builds a Plutus V1 always-succeeds script accepting \p num_args arguments,
+ *        with program version 1.\p version_minor.0.
  */
 static cardano_plutus_v1_script_t*
-build_v1_script(size_t num_args)
+build_v1_script(size_t num_args, uint32_t version_minor = 0U)
 {
-  cardano_buffer_t*           cbor   = build_succeeds_program_cbor(num_args);
+  cardano_buffer_t*           cbor   = build_succeeds_program_cbor(num_args, version_minor);
   cardano_plutus_v1_script_t* script = nullptr;
 
   EXPECT_EQ(cardano_plutus_v1_script_new_bytes(cardano_buffer_get_data(cbor), cardano_buffer_get_size(cbor), &script), CARDANO_SUCCESS);
@@ -1200,22 +1201,92 @@ TEST(cardano_tx_evaluator_native, evaluatesAScriptThatRunsExpModInteger)
   cardano_plutus_v3_script_unref(&script);
 }
 
+/**
+ * \brief Evaluates the single-redeemer \p tx under \p protocol_major and expects
+ *        it to be rejected as a script that cannot be deserialised.
+ */
+static void
+expect_not_deserialisable(cardano_transaction_t* tx, cardano_utxo_list_t* utxos, uint64_t protocol_major)
+{
+  cardano_tx_evaluator_t* evaluator = nullptr;
+  EXPECT_EQ(cardano_tx_evaluator_new_native(&kSlotConfig, nullptr, protocol_major, &evaluator), CARDANO_SUCCESS);
+
+  cardano_redeemer_list_t* result = nullptr;
+  EXPECT_EQ(cardano_tx_evaluator_evaluate(evaluator, tx, utxos, &result), CARDANO_ERROR_DECODING);
+  EXPECT_EQ(result, nullptr);
+  EXPECT_STREQ(cardano_tx_evaluator_get_last_error(evaluator), "a redeemer's script cannot be deserialised at this protocol version");
+
+  cardano_tx_evaluator_unref(&evaluator);
+}
+
+/**
+ * \brief Evaluates the single-redeemer \p tx under \p protocol_major and expects
+ *        it to be rejected as a phase-2 script failure.
+ */
+static void
+expect_script_failure(cardano_transaction_t* tx, cardano_utxo_list_t* utxos, uint64_t protocol_major)
+{
+  cardano_tx_evaluator_t* evaluator = nullptr;
+  EXPECT_EQ(cardano_tx_evaluator_new_native(&kSlotConfig, nullptr, protocol_major, &evaluator), CARDANO_SUCCESS);
+
+  cardano_redeemer_list_t* result = nullptr;
+  EXPECT_EQ(cardano_tx_evaluator_evaluate(evaluator, tx, utxos, &result), CARDANO_ERROR_SCRIPT_EVALUATION_FAILURE);
+  EXPECT_EQ(result, nullptr);
+  EXPECT_STREQ(cardano_tx_evaluator_get_last_error(evaluator), "phase-2 validation failed for a redeemer");
+
+  cardano_tx_evaluator_unref(&evaluator);
+}
+
 TEST(cardano_tx_evaluator_native, rejectsExpModIntegerBeforeItsProtocolVersion)
 {
-  // The same script under protocol 10 must fail: expModInteger is not yet
-  // available, matching the ledger's builtinsIntroducedIn schedule.
   cardano_plutus_v3_script_t* script = build_expmod_v3_script();
   cardano_utxo_list_t*        utxos  = nullptr;
   cardano_transaction_t*      tx     = build_spend_tx(script, true, &utxos);
 
-  cardano_tx_evaluator_t* evaluator = nullptr;
-  EXPECT_EQ(cardano_tx_evaluator_new_native(&kSlotConfig, nullptr, 10U, &evaluator), CARDANO_SUCCESS);
+  expect_not_deserialisable(tx, utxos, 10U);
 
-  cardano_redeemer_list_t* result = nullptr;
-  EXPECT_EQ(cardano_tx_evaluator_evaluate(evaluator, tx, utxos, &result), CARDANO_ERROR_SCRIPT_EVALUATION_FAILURE);
+  cardano_transaction_unref(&tx);
+  cardano_utxo_list_unref(&utxos);
+  cardano_plutus_v3_script_unref(&script);
+}
 
-  cardano_redeemer_list_unref(&result);
-  cardano_tx_evaluator_unref(&evaluator);
+TEST(cardano_tx_evaluator_native, rejectsALanguageBeforeItsProtocolVersion)
+{
+  cardano_plutus_v3_script_t* script = build_v3_script(true);
+  cardano_utxo_list_t*        utxos  = nullptr;
+  cardano_transaction_t*      tx     = build_spend_tx(script, true, &utxos);
+
+  expect_not_deserialisable(tx, utxos, 8U);
+  expect_single_redeemer_ok(tx, utxos, 9U);
+
+  cardano_transaction_unref(&tx);
+  cardano_utxo_list_unref(&utxos);
+  cardano_plutus_v3_script_unref(&script);
+}
+
+TEST(cardano_tx_evaluator_native, gatesPlutusCoreOneOneZeroForV1ByProtocolVersion)
+{
+  cardano_plutus_v1_script_t* script = build_v1_script(3U, 1U);
+  cardano_utxo_list_t*        utxos  = nullptr;
+  cardano_transaction_t*      tx     = build_v1_spend_tx(script, &utxos);
+
+  expect_script_failure(tx, utxos, 10U);
+  expect_single_redeemer_ok(tx, utxos, 11U);
+
+  cardano_transaction_unref(&tx);
+  cardano_utxo_list_unref(&utxos);
+  cardano_plutus_v1_script_unref(&script);
+}
+
+TEST(cardano_tx_evaluator_native, gatesPlutusCoreOneTwoZeroForV3ByProtocolVersion)
+{
+  cardano_plutus_v3_script_t* script = build_v3_script(true, 2U);
+  cardano_utxo_list_t*        utxos  = nullptr;
+  cardano_transaction_t*      tx     = build_spend_tx(script, true, &utxos);
+
+  expect_script_failure(tx, utxos, 11U);
+  expect_single_redeemer_ok(tx, utxos, 12U);
+
   cardano_transaction_unref(&tx);
   cardano_utxo_list_unref(&utxos);
   cardano_plutus_v3_script_unref(&script);

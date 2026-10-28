@@ -24,7 +24,9 @@
 #include "flat_decode.h"
 
 #include "../ast/uplc_int.h"
+#include "../ast/uplc_lang_version.h"
 #include "../builtins/builtins.h"
+#include "../builtins/uplc_builtin.h"
 #include "../data/uplc_data.h"
 
 #include <cardano/cbor/cbor_reader.h>
@@ -154,6 +156,48 @@ enum
 {
   FLAT_TYPE_MAX_DEPTH = 128
 };
+
+/**
+ * \brief The largest constant type header a ledger script may carry, counted in
+ *        flat type tags (\c maxHeaderSize in
+ *        plutus-ledger-api/src/PlutusLedgerApi/Common/Versions.hs).
+ */
+// cppcheck-suppress misra-c2012-8.9; Reason: file-scope constant data grouped with the module
+static const size_t FLAT_SCRIPT_MAX_HEADER_SIZE = 32U;
+
+/**
+ * \brief The largest number of fields a \c constr term in a ledger script may
+ *        carry (\c maxConstrFields in
+ *        plutus-ledger-api/src/PlutusLedgerApi/Common/Versions.hs).
+ */
+// cppcheck-suppress misra-c2012-8.9; Reason: file-scope constant data grouped with the module
+static const size_t FLAT_SCRIPT_MAX_CONSTR_FIELDS = 1024U;
+
+/* STRUCTURES ****************************************************************/
+
+/**
+ * \brief The rules a program decode applies to every term it reads.
+ *
+ * \c allow_constr_case follows the program version. When \c ledger_checks is set
+ * the decode also applies the ledger's script checks for \c language at
+ * \c protocol_major: every builtin must be available, every constant type header
+ * must fit \ref FLAT_SCRIPT_MAX_HEADER_SIZE and every \c constr must have at most
+ * \ref FLAT_SCRIPT_MAX_CONSTR_FIELDS fields.
+ */
+typedef struct
+{
+    bool                        allow_constr_case;
+    bool                        ledger_checks;
+    cardano_uplc_lang_version_t language;
+    uint64_t                    protocol_major;
+} decode_rules_t;
+
+/**
+ * \brief The rules of a decode without the ledger script checks, in which
+ *        \c constr and \c case are accepted until a program version says otherwise.
+ */
+// cppcheck-suppress misra-c2012-8.9; Reason: file-scope constant data grouped with the module
+static const decode_rules_t UNRESTRICTED_RULES = { true, false, CARDANO_UPLC_LANG_VERSION_V1, 0U };
 
 /* STATIC FUNCTIONS **********************************************************/
 
@@ -517,6 +561,7 @@ parse_type(
  * \param[in] arena The arena every descriptor node is allocated from.
  * \param[in,out] reader The flat reader, advanced past the type list.
  * \param[out] type On success, the parsed type descriptor.
+ * \param[out] header_size On success, the number of tags in the type list.
  *
  * \return \ref CARDANO_SUCCESS on success, \ref CARDANO_ERROR_DECODING for a
  *         truncated stream, an empty list, an unconsumed trailing tag or an
@@ -526,7 +571,8 @@ static cardano_error_t
 read_type(
   cardano_uplc_arena_t*       arena,
   cardano_uplc_flat_reader_t* reader,
-  const cardano_uplc_type_t** type)
+  const cardano_uplc_type_t** type,
+  size_t*                     header_size)
 {
   uint8_t         tags[FLAT_TYPE_MAX_DEPTH];
   size_t          tag_count = 0U;
@@ -584,6 +630,8 @@ read_type(
   {
     return CARDANO_ERROR_DECODING;
   }
+
+  *header_size = tag_count;
 
   return CARDANO_SUCCESS;
 }
@@ -1136,12 +1184,54 @@ read_value(
   return result;
 }
 
+/**
+ * \brief Reads a constant: its const-type list, then a value of that type.
+ *
+ * Under the ledger script checks a type list longer than
+ * \ref FLAT_SCRIPT_MAX_HEADER_SIZE tags is rejected before the value is read, as
+ * the ledger's script decoder does
+ * (plutus-ledger-api/src/PlutusLedgerApi/Common/SerialisedScript.hs,
+ * \c checkConstant).
+ *
+ * \param[in] arena The arena every node and interior object is allocated from.
+ * \param[in,out] reader The flat reader, advanced past the constant.
+ * \param[in] rules The program-wide decoding rules.
+ * \param[out] constant On success, the decoded constant.
+ *
+ * \return \ref CARDANO_SUCCESS on success, \ref CARDANO_ERROR_DECODING for a
+ *         malformed type or value or an oversized type header under the ledger
+ *         script checks, or a propagated allocation error.
+ */
+static cardano_error_t
+read_constant(
+  cardano_uplc_arena_t*       arena,
+  cardano_uplc_flat_reader_t* reader,
+  const decode_rules_t*       rules,
+  cardano_uplc_constant_t**   constant)
+{
+  const cardano_uplc_type_t* type        = NULL;
+  size_t                     header_size = 0U;
+  cardano_error_t            result      = read_type(arena, reader, &type, &header_size);
+
+  if (result != CARDANO_SUCCESS)
+  {
+    return result;
+  }
+
+  if (rules->ledger_checks && (header_size > FLAT_SCRIPT_MAX_HEADER_SIZE))
+  {
+    return CARDANO_ERROR_DECODING;
+  }
+
+  return read_value(arena, reader, type, 0U, constant);
+}
+
 /* Forward declaration: term decoding recurses on every nested term. */
 static cardano_error_t
 read_term(
   cardano_uplc_arena_t*       arena,
   cardano_uplc_flat_reader_t* reader,
-  bool                        allow_constr_case,
+  const decode_rules_t*       rules,
   size_t                      depth,
   const cardano_uplc_term_t** term);
 
@@ -1156,7 +1246,7 @@ read_term(
  *
  * \param[in] arena The arena the element array and every element are allocated from.
  * \param[in,out] reader The flat reader, advanced past the list.
- * \param[in] allow_constr_case Whether \c constr and \c case terms are accepted.
+ * \param[in] rules The program-wide decoding rules.
  * \param[in] depth The current term nesting depth.
  * \param[out] items On success, the element array, or NULL when \p count is 0.
  * \param[out] count On success, the number of elements.
@@ -1169,7 +1259,7 @@ static cardano_error_t
 read_term_list(
   cardano_uplc_arena_t*       arena,
   cardano_uplc_flat_reader_t* reader,
-  const bool                  allow_constr_case,
+  const decode_rules_t*       rules,
   const size_t                depth,
   // cppcheck-suppress misra-c2012-18.5; Reason: pointer nesting required by the API shape
   const cardano_uplc_term_t*** items,
@@ -1193,7 +1283,7 @@ read_term_list(
     const cardano_uplc_term_t* element = NULL;
 
     // cppcheck-suppress misra-c2012-17.2; Reason: bounded-depth recursion limited by program/data nesting and the execution budget
-    result = read_term(arena, reader, allow_constr_case, depth + 1U, &element);
+    result = read_term(arena, reader, rules, depth + 1U, &element);
 
     if (result != CARDANO_SUCCESS)
     {
@@ -1242,18 +1332,25 @@ read_term_list(
 /**
  * \brief Reads a builtin term, validating the 7-bit builtin tag.
  *
+ * Under the ledger script checks a builtin that is not available in the script's
+ * language at the protocol version is rejected, as the ledger's script decoder
+ * does (plutus-ledger-api/src/PlutusLedgerApi/Common/SerialisedScript.hs,
+ * \c checkBuiltin).
+ *
  * \param[in] arena The arena the term is allocated from.
  * \param[in,out] reader The flat reader, advanced past the builtin tag.
+ * \param[in] rules The program-wide decoding rules.
  * \param[out] term On success, the builtin term.
  *
  * \return \ref CARDANO_SUCCESS on success, \ref CARDANO_ERROR_DECODING for an
- *         unknown builtin tag or a truncated stream, or a propagated allocation
- *         error.
+ *         unknown or unavailable builtin tag or a truncated stream, or a
+ *         propagated allocation error.
  */
 static cardano_error_t
 read_builtin(
   cardano_uplc_arena_t*       arena,
   cardano_uplc_flat_reader_t* reader,
+  const decode_rules_t*       rules,
   const cardano_uplc_term_t** term)
 {
   uint8_t              tag    = 0U;
@@ -1266,6 +1363,11 @@ read_builtin(
   }
 
   if (tag >= (uint8_t)CARDANO_UPLC_BUILTIN_COUNT)
+  {
+    return CARDANO_ERROR_DECODING;
+  }
+
+  if (rules->ledger_checks && !cardano_uplc_builtin_available((cardano_uplc_builtin_t)tag, rules->language, rules->protocol_major))
   {
     return CARDANO_ERROR_DECODING;
   }
@@ -1288,23 +1390,27 @@ read_builtin(
  * A constructor in a program older than 1.1.0 is rejected before its payload is
  * read, as the reference decoder does
  * (plutus-core/untyped-plutus-core/src/UntypedPlutusCore/Core/Instance/Flat.hs,
- * \c handleTerm 8).
+ * \c handleTerm 8). Under the ledger script checks a constructor with more than
+ * \ref FLAT_SCRIPT_MAX_CONSTR_FIELDS fields is rejected once its fields are read
+ * (plutus-ledger-api/src/PlutusLedgerApi/Common/SerialisedScript.hs,
+ * \c checkConstr).
  *
  * \param[in] arena The arena the term and its field array are allocated from.
  * \param[in,out] reader The flat reader, advanced past the constructor.
- * \param[in] allow_constr_case Whether \c constr and \c case terms are accepted.
+ * \param[in] rules The program-wide decoding rules.
  * \param[in] depth The current term nesting depth.
  * \param[out] term On success, the constructor term.
  *
  * \return \ref CARDANO_SUCCESS on success, \ref CARDANO_ERROR_DECODING when
- *         constructors are not allowed, for a truncated stream or nesting past the
- *         depth bound, or a propagated allocation error.
+ *         constructors are not allowed, for too many fields under the ledger script
+ *         checks, a truncated stream or nesting past the depth bound, or a
+ *         propagated allocation error.
  */
 static cardano_error_t
 read_constr(
   cardano_uplc_arena_t*       arena,
   cardano_uplc_flat_reader_t* reader,
-  const bool                  allow_constr_case,
+  const decode_rules_t*       rules,
   const size_t                depth,
   const cardano_uplc_term_t** term)
 {
@@ -1314,7 +1420,7 @@ read_constr(
   cardano_uplc_term_t*        built       = NULL;
   cardano_error_t             result      = CARDANO_SUCCESS;
 
-  if (!allow_constr_case)
+  if (!rules->allow_constr_case)
   {
     return CARDANO_ERROR_DECODING;
   }
@@ -1327,11 +1433,16 @@ read_constr(
   }
 
   // cppcheck-suppress misra-c2012-17.2; Reason: bounded-depth recursion limited by program/data nesting and the execution budget
-  result = read_term_list(arena, reader, allow_constr_case, depth, &fields, &field_count);
+  result = read_term_list(arena, reader, rules, depth, &fields, &field_count);
 
   if (result != CARDANO_SUCCESS)
   {
     return result;
+  }
+
+  if (rules->ledger_checks && (field_count > FLAT_SCRIPT_MAX_CONSTR_FIELDS))
+  {
+    return CARDANO_ERROR_DECODING;
   }
 
   result = cardano_uplc_term_new_constr(arena, (uint64_t)tag, fields, field_count, &built);
@@ -1356,7 +1467,7 @@ read_constr(
  *
  * \param[in] arena The arena the term and its branch array are allocated from.
  * \param[in,out] reader The flat reader, advanced past the case.
- * \param[in] allow_constr_case Whether \c constr and \c case terms are accepted.
+ * \param[in] rules The program-wide decoding rules.
  * \param[in] depth The current term nesting depth.
  * \param[out] term On success, the case term.
  *
@@ -1368,7 +1479,7 @@ static cardano_error_t
 read_case(
   cardano_uplc_arena_t*       arena,
   cardano_uplc_flat_reader_t* reader,
-  const bool                  allow_constr_case,
+  const decode_rules_t*       rules,
   const size_t                depth,
   const cardano_uplc_term_t** term)
 {
@@ -1378,13 +1489,13 @@ read_case(
   cardano_uplc_term_t*        built        = NULL;
   cardano_error_t             result       = CARDANO_SUCCESS;
 
-  if (!allow_constr_case)
+  if (!rules->allow_constr_case)
   {
     return CARDANO_ERROR_DECODING;
   }
 
   // cppcheck-suppress misra-c2012-17.2; Reason: bounded-depth recursion limited by program/data nesting and the execution budget
-  result = read_term(arena, reader, allow_constr_case, depth + 1U, &scrutinee);
+  result = read_term(arena, reader, rules, depth + 1U, &scrutinee);
 
   if (result != CARDANO_SUCCESS)
   {
@@ -1392,7 +1503,7 @@ read_case(
   }
 
   // cppcheck-suppress misra-c2012-17.2; Reason: bounded-depth recursion limited by program/data nesting and the execution budget
-  result = read_term_list(arena, reader, allow_constr_case, depth, &branches, &branch_count);
+  result = read_term_list(arena, reader, rules, depth, &branches, &branch_count);
 
   if (result != CARDANO_SUCCESS)
   {
@@ -1420,7 +1531,7 @@ read_case(
  *
  * \param[in] arena The arena every node is allocated from.
  * \param[in,out] reader The flat reader, advanced past the term.
- * \param[in] allow_constr_case Whether \c constr and \c case terms are accepted.
+ * \param[in] rules The program-wide decoding rules.
  * \param[in] depth The current term nesting depth.
  * \param[out] term On success, the decoded term.
  *
@@ -1432,7 +1543,7 @@ static cardano_error_t
 read_term(
   cardano_uplc_arena_t*       arena,
   cardano_uplc_flat_reader_t* reader,
-  const bool                  allow_constr_case,
+  const decode_rules_t*       rules,
   const size_t                depth,
   const cardano_uplc_term_t** term)
 {
@@ -1476,7 +1587,7 @@ read_term(
     cardano_uplc_term_t*       built = NULL;
 
     // cppcheck-suppress misra-c2012-17.2; Reason: bounded-depth recursion limited by program/data nesting and the execution budget
-    result = read_term(arena, reader, allow_constr_case, depth + 1U, &body);
+    result = read_term(arena, reader, rules, depth + 1U, &body);
 
     if (result == CARDANO_SUCCESS)
     {
@@ -1494,7 +1605,7 @@ read_term(
     cardano_uplc_term_t*       built = NULL;
 
     // cppcheck-suppress misra-c2012-17.2; Reason: bounded-depth recursion limited by program/data nesting and the execution budget
-    result = read_term(arena, reader, allow_constr_case, depth + 1U, &body);
+    result = read_term(arena, reader, rules, depth + 1U, &body);
 
     if (result == CARDANO_SUCCESS)
     {
@@ -1513,12 +1624,12 @@ read_term(
     cardano_uplc_term_t*       built    = NULL;
 
     // cppcheck-suppress misra-c2012-17.2; Reason: bounded-depth recursion limited by program/data nesting and the execution budget
-    result = read_term(arena, reader, allow_constr_case, depth + 1U, &function);
+    result = read_term(arena, reader, rules, depth + 1U, &function);
 
     if (result == CARDANO_SUCCESS)
     {
       // cppcheck-suppress misra-c2012-17.2; Reason: bounded-depth recursion limited by program/data nesting and the execution budget
-      result = read_term(arena, reader, allow_constr_case, depth + 1U, &argument);
+      result = read_term(arena, reader, rules, depth + 1U, &argument);
     }
 
     if (result == CARDANO_SUCCESS)
@@ -1536,7 +1647,7 @@ read_term(
     cardano_uplc_constant_t* constant = NULL;
     cardano_uplc_term_t*     built    = NULL;
 
-    result = cardano_uplc_flat_decode_constant(arena, reader, &constant);
+    result = read_constant(arena, reader, rules, &constant);
 
     if (result == CARDANO_SUCCESS)
     {
@@ -1554,7 +1665,7 @@ read_term(
     cardano_uplc_term_t*       built = NULL;
 
     // cppcheck-suppress misra-c2012-17.2; Reason: bounded-depth recursion limited by program/data nesting and the execution budget
-    result = read_term(arena, reader, allow_constr_case, depth + 1U, &body);
+    result = read_term(arena, reader, rules, depth + 1U, &body);
 
     if (result == CARDANO_SUCCESS)
     {
@@ -1579,17 +1690,17 @@ read_term(
   }
   else if (tag == FLAT_TERM_TAG_BUILTIN)
   {
-    result = read_builtin(arena, reader, term);
+    result = read_builtin(arena, reader, rules, term);
   }
   else if (tag == FLAT_TERM_TAG_CONSTR)
   {
     // cppcheck-suppress misra-c2012-17.2; Reason: bounded-depth recursion limited by program/data nesting and the execution budget
-    result = read_constr(arena, reader, allow_constr_case, depth, term);
+    result = read_constr(arena, reader, rules, depth, term);
   }
   else if (tag == FLAT_TERM_TAG_CASE)
   {
     // cppcheck-suppress misra-c2012-17.2; Reason: bounded-depth recursion limited by program/data nesting and the execution budget
-    result = read_case(arena, reader, allow_constr_case, depth, term);
+    result = read_case(arena, reader, rules, depth, term);
   }
   else
   {
@@ -1599,64 +1710,39 @@ read_term(
   return result;
 }
 
-/* DEFINITIONS ***************************************************************/
-
-cardano_error_t
-cardano_uplc_flat_decode_constant(
-  cardano_uplc_arena_t*       arena,
-  cardano_uplc_flat_reader_t* reader,
-  cardano_uplc_constant_t**   constant)
-{
-  const cardano_uplc_type_t* type   = NULL;
-  cardano_error_t            result = CARDANO_SUCCESS;
-
-  if ((arena == NULL) || (reader == NULL) || (constant == NULL))
-  {
-    return CARDANO_ERROR_POINTER_IS_NULL;
-  }
-
-  result = read_type(arena, reader, &type);
-
-  if (result != CARDANO_SUCCESS)
-  {
-    return result;
-  }
-
-  return read_value(arena, reader, type, 0U, constant);
-}
-
-cardano_error_t
-cardano_uplc_flat_decode_term(
-  cardano_uplc_arena_t*       arena,
-  cardano_uplc_flat_reader_t* reader,
-  const cardano_uplc_term_t** term)
-{
-  if ((arena == NULL) || (reader == NULL) || (term == NULL))
-  {
-    return CARDANO_ERROR_POINTER_IS_NULL;
-  }
-
-  return read_term(arena, reader, true, 0U, term);
-}
-
-cardano_error_t
-cardano_uplc_flat_decode_program(
+/**
+ * \brief Reads a full program: three version words, a term, then the filler.
+ *
+ * \c Constr and \c Case are accepted only from version 1.1.0, matching the
+ * reference decoder. The filler must end exactly at the end of the stream, since
+ * the reference decoder rejects any bytes left over after the program.
+ *
+ * \param[in] arena The arena every node and interior object is allocated from.
+ * \param[in,out] reader The flat reader, advanced past the program.
+ * \param[in] rules The ledger script checks to apply; its \c allow_constr_case
+ *            is replaced by the program version gate.
+ * \param[out] program On success, the decoded program.
+ *
+ * \return \ref CARDANO_SUCCESS on success, \ref CARDANO_ERROR_DECODING for a
+ *         malformed, truncated or over-long stream, a version word too large for
+ *         32 bits, a term \p rules rejects or a \c Constr or \c Case before
+ *         version 1.1.0, or \ref CARDANO_ERROR_MEMORY_ALLOCATION_FAILED if the
+ *         arena cannot serve a node.
+ */
+static cardano_error_t
+decode_program(
   cardano_uplc_arena_t*          arena,
   cardano_uplc_flat_reader_t*    reader,
+  const decode_rules_t*          rules,
   const cardano_uplc_program_t** program)
 {
-  size_t                     major             = 0U;
-  size_t                     minor             = 0U;
-  size_t                     patch             = 0U;
-  const cardano_uplc_term_t* term              = NULL;
-  cardano_uplc_program_t*    result            = NULL;
-  cardano_error_t            status            = CARDANO_SUCCESS;
-  bool                       allow_constr_case = false;
-
-  if ((arena == NULL) || (reader == NULL) || (program == NULL))
-  {
-    return CARDANO_ERROR_POINTER_IS_NULL;
-  }
+  size_t                     major         = 0U;
+  size_t                     minor         = 0U;
+  size_t                     patch         = 0U;
+  const cardano_uplc_term_t* term          = NULL;
+  cardano_uplc_program_t*    result        = NULL;
+  cardano_error_t            status        = CARDANO_SUCCESS;
+  decode_rules_t             program_rules = *rules;
 
   status = cardano_uplc_flat_reader_word(reader, &major);
 
@@ -1684,9 +1770,9 @@ cardano_uplc_flat_decode_program(
     return CARDANO_ERROR_DECODING;
   }
 
-  allow_constr_case = (major > FLAT_CONSTR_CASE_MIN_MAJOR) || ((major == FLAT_CONSTR_CASE_MIN_MAJOR) && (minor >= FLAT_CONSTR_CASE_MIN_MINOR));
+  program_rules.allow_constr_case = (major > FLAT_CONSTR_CASE_MIN_MAJOR) || ((major == FLAT_CONSTR_CASE_MIN_MAJOR) && (minor >= FLAT_CONSTR_CASE_MIN_MINOR));
 
-  status = read_term(arena, reader, allow_constr_case, 0U, &term);
+  status = read_term(arena, reader, &program_rules, 0U, &term);
 
   if (status != CARDANO_SUCCESS)
   {
@@ -1698,6 +1784,11 @@ cardano_uplc_flat_decode_program(
   if (status != CARDANO_SUCCESS)
   {
     return status;
+  }
+
+  if (reader->byte_pos != reader->size)
+  {
+    return CARDANO_ERROR_DECODING;
   }
 
   result = (cardano_uplc_program_t*)cardano_uplc_arena_alloc(arena, sizeof(cardano_uplc_program_t), 0U);
@@ -1715,4 +1806,71 @@ cardano_uplc_flat_decode_program(
   *program = result;
 
   return CARDANO_SUCCESS;
+}
+
+/* DEFINITIONS ***************************************************************/
+
+cardano_error_t
+cardano_uplc_flat_decode_constant(
+  cardano_uplc_arena_t*       arena,
+  cardano_uplc_flat_reader_t* reader,
+  cardano_uplc_constant_t**   constant)
+{
+  if ((arena == NULL) || (reader == NULL) || (constant == NULL))
+  {
+    return CARDANO_ERROR_POINTER_IS_NULL;
+  }
+
+  return read_constant(arena, reader, &UNRESTRICTED_RULES, constant);
+}
+
+cardano_error_t
+cardano_uplc_flat_decode_term(
+  cardano_uplc_arena_t*       arena,
+  cardano_uplc_flat_reader_t* reader,
+  const cardano_uplc_term_t** term)
+{
+  if ((arena == NULL) || (reader == NULL) || (term == NULL))
+  {
+    return CARDANO_ERROR_POINTER_IS_NULL;
+  }
+
+  return read_term(arena, reader, &UNRESTRICTED_RULES, 0U, term);
+}
+
+cardano_error_t
+cardano_uplc_flat_decode_program(
+  cardano_uplc_arena_t*          arena,
+  cardano_uplc_flat_reader_t*    reader,
+  const cardano_uplc_program_t** program)
+{
+  if ((arena == NULL) || (reader == NULL) || (program == NULL))
+  {
+    return CARDANO_ERROR_POINTER_IS_NULL;
+  }
+
+  return decode_program(arena, reader, &UNRESTRICTED_RULES, program);
+}
+
+cardano_error_t
+cardano_uplc_flat_decode_script_program(
+  cardano_uplc_arena_t*             arena,
+  cardano_uplc_flat_reader_t*       reader,
+  const cardano_uplc_lang_version_t language,
+  const uint64_t                    protocol_major,
+  const cardano_uplc_program_t**    program)
+{
+  decode_rules_t rules;
+
+  if ((arena == NULL) || (reader == NULL) || (program == NULL))
+  {
+    return CARDANO_ERROR_POINTER_IS_NULL;
+  }
+
+  rules.allow_constr_case = false;
+  rules.ledger_checks     = true;
+  rules.language          = language;
+  rules.protocol_major    = protocol_major;
+
+  return decode_program(arena, reader, &rules, program);
 }

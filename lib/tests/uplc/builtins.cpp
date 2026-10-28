@@ -871,7 +871,6 @@ static cardano_uplc_budget_t
 spent_under_semantics(
   const char*                       source,
   cardano_uplc_cost_model_version_t cost_version,
-  cardano_uplc_lang_version_t       language,
   cardano_uplc_builtin_semantics_t  semantics)
 {
   cardano_uplc_arena_t*         arena   = new_arena();
@@ -887,7 +886,7 @@ spent_under_semantics(
   const cardano_uplc_budget_t initial = { 100000000000LL, 100000000000LL };
   cardano_uplc_eval_result_t  result  = {};
   EXPECT_EQ(
-    cardano_uplc_int_evaluate_with_costs(arena, program, &model, semantics, language, 11U, initial, &result),
+    cardano_uplc_int_evaluate_with_costs(arena, program, &model, semantics, 11U, initial, &result),
     CARDANO_SUCCESS);
   EXPECT_EQ(result.status, CARDANO_UPLC_EVAL_SUCCESS);
 
@@ -902,9 +901,9 @@ TEST(cardano_uplc_evaluate, v3CostsStringsUnderTheVanRossemVariant)
 
   const cardano_uplc_budget_t spent = spent_by_evaluate(source, CARDANO_UPLC_MACHINE_VERSION_V3);
   const cardano_uplc_budget_t e     = spent_under_semantics(
-    source, CARDANO_UPLC_COST_MODEL_VERSION_V3, CARDANO_UPLC_LANG_VERSION_V3, CARDANO_UPLC_SEMANTICS_E);
+    source, CARDANO_UPLC_COST_MODEL_VERSION_V3, CARDANO_UPLC_SEMANTICS_E);
   const cardano_uplc_budget_t c = spent_under_semantics(
-    source, CARDANO_UPLC_COST_MODEL_VERSION_V3, CARDANO_UPLC_LANG_VERSION_V3, CARDANO_UPLC_SEMANTICS_C);
+    source, CARDANO_UPLC_COST_MODEL_VERSION_V3, CARDANO_UPLC_SEMANTICS_C);
 
   EXPECT_EQ(spent.cpu, e.cpu);
   EXPECT_EQ(spent.mem, e.mem);
@@ -917,9 +916,9 @@ TEST(cardano_uplc_evaluate, v1CostsStringsUnderTheVanRossemVariant)
 
   const cardano_uplc_budget_t spent = spent_by_evaluate(source, CARDANO_UPLC_MACHINE_VERSION_V1);
   const cardano_uplc_budget_t d     = spent_under_semantics(
-    source, CARDANO_UPLC_COST_MODEL_VERSION_V1, CARDANO_UPLC_LANG_VERSION_V1, CARDANO_UPLC_SEMANTICS_D);
+    source, CARDANO_UPLC_COST_MODEL_VERSION_V1, CARDANO_UPLC_SEMANTICS_D);
   const cardano_uplc_budget_t b = spent_under_semantics(
-    source, CARDANO_UPLC_COST_MODEL_VERSION_V1, CARDANO_UPLC_LANG_VERSION_V1, CARDANO_UPLC_SEMANTICS_B);
+    source, CARDANO_UPLC_COST_MODEL_VERSION_V1, CARDANO_UPLC_SEMANTICS_B);
 
   EXPECT_EQ(spent.cpu, d.cpu);
   EXPECT_EQ(spent.mem, d.mem);
@@ -944,12 +943,12 @@ TEST(cardano_uplc_builtin_body, consByteStringRangeCheckFollowsTheDijkstraVarian
   cardano_uplc_eval_result_t  result  = {};
 
   EXPECT_EQ(
-    cardano_uplc_int_evaluate_with_costs(arena, program, &model, CARDANO_UPLC_SEMANTICS_F, CARDANO_UPLC_LANG_VERSION_V2, 12U, initial, &result),
+    cardano_uplc_int_evaluate_with_costs(arena, program, &model, CARDANO_UPLC_SEMANTICS_F, 12U, initial, &result),
     CARDANO_SUCCESS);
   EXPECT_EQ(result.status, CARDANO_UPLC_EVAL_SUCCESS);
 
   EXPECT_EQ(
-    cardano_uplc_int_evaluate_with_costs(arena, program, &model, CARDANO_UPLC_SEMANTICS_G, CARDANO_UPLC_LANG_VERSION_V4, 12U, initial, &result),
+    cardano_uplc_int_evaluate_with_costs(arena, program, &model, CARDANO_UPLC_SEMANTICS_G, 12U, initial, &result),
     CARDANO_SUCCESS);
   EXPECT_EQ(result.status, CARDANO_UPLC_EVAL_ERROR_TERM);
 
@@ -1447,7 +1446,7 @@ status_under(const std::string& source, cardano_uplc_builtin_semantics_t semanti
   cardano_uplc_eval_result_t  result  = {};
 
   EXPECT_EQ(
-    cardano_uplc_int_evaluate_with_costs(arena, program, &model, semantics, CARDANO_UPLC_LANG_VERSION_V4, 12U, initial, &result),
+    cardano_uplc_int_evaluate_with_costs(arena, program, &model, semantics, 12U, initial, &result),
     CARDANO_SUCCESS);
 
   const cardano_uplc_eval_status_t status = result.status;

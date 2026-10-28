@@ -275,7 +275,7 @@ evaluate(
   const cardano_uplc_budget_t     initial = { BUDGET_CPU, BUDGET_MEM };
 
   return cardano_uplc_int_evaluate_with_costs(
-    arena, program, &model, CONFIGURATION.semantics, CONFIGURATION.language, CONFIGURATION.protocol_major, initial, result);
+    arena, program, &model, CONFIGURATION.semantics, CONFIGURATION.protocol_major, initial, result);
 }
 
 // The input format of a corpus case, named by its file extension.

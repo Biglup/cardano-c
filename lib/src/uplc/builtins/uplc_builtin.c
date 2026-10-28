@@ -380,6 +380,61 @@ static const uint8_t BUILTIN_FIRST_VERSION[CARDANO_UPLC_BUILTIN_COUNT] = {
   [CARDANO_UPLC_BUILTIN_SCALE_VALUE]                        = (uint8_t)CARDANO_UPLC_LANG_VERSION_V4
 };
 
+/**
+ * \brief The number of Plutus languages a builtin batch is introduced in, V1 through V4.
+ */
+enum
+{
+  BUILTIN_LANGUAGE_COUNT = 4
+};
+
+/**
+ * \brief The number of builtin release batches.
+ */
+enum
+{
+  BUILTIN_BATCH_COUNT = 8
+};
+
+/**
+ * \brief A release batch of builtins and the protocol major version that
+ *        introduces it in each Plutus language.
+ *
+ * The builtin tags are assigned in introduction order, so each batch is the
+ * contiguous tag range ending at \c last_tag and starting after the previous
+ * batch.
+ */
+typedef struct
+{
+    size_t   last_tag;
+    uint64_t introduced_in[BUILTIN_LANGUAGE_COUNT];
+} builtin_batch_t;
+
+/**
+ * \brief The ledger's \c builtinsIntroducedIn schedule
+ *        (plutus-ledger-api/src/PlutusLedgerApi/Common/Versions.hs), one row per
+ *        batch, with the introduction protocol for V1, V2, V3 and V4.
+ *
+ * The batches are: 1, the Alonzo builtins (tags 0..50); 2, serialiseData (51);
+ * 3, the secp256k1 signature checks (52..53); 4a, BLS12-381, keccak_256 and
+ * blake2b_224 (54..72); 4b, integerToByteString and byteStringToInteger
+ * (73..74); 5, the bitwise builtins and ripemd_160 (75..86); 6, expModInteger and
+ * the array, multi-scalar-multiplication and value builtins (87..100); and 7,
+ * multiIndexArray, policies, assetCount, keepPolicies and dropPolicies
+ * (101..105).
+ */
+// cppcheck-suppress misra-c2012-8.9; Reason: file-scope constant data grouped with the module
+static const builtin_batch_t BUILTIN_BATCHES[BUILTIN_BATCH_COUNT] = {
+  { 50U, { 5U, 7U, 9U, 12U } },
+  { 51U, { 11U, 7U, 9U, 12U } },
+  { 53U, { 11U, 8U, 9U, 12U } },
+  { 72U, { 11U, 11U, 9U, 12U } },
+  { 74U, { 11U, 10U, 9U, 12U } },
+  { 86U, { 11U, 11U, 10U, 12U } },
+  { 100U, { 11U, 11U, 11U, 12U } },
+  { 105U, { 12U, 12U, 12U, 12U } }
+};
+
 /* STATIC FUNCTIONS **********************************************************/
 
 /**
@@ -458,61 +513,17 @@ cardano_uplc_builtin_available(
   const cardano_uplc_lang_version_t language,
   const uint64_t                    protocol_major)
 {
-  // Introduction protocol-major per (batch, language), from PlutusLedgerApi's
-  // builtinsIntroducedIn. The introduction-ordered builtin enum partitions into
-  // the plutus release batches as contiguous tag ranges. Languages: V1, V2, V3.
-  static const uint64_t INTRO[7][3] = {
-    /* batch1  */ { 5U, 7U, 9U },
-    /* batch2  */ { 11U, 7U, 9U },
-    /* batch3  */ { 11U, 8U, 9U },
-    /* batch4a */ { 11U, 11U, 9U },
-    /* batch4b */ { 11U, 10U, 9U },
-    /* batch5  */ { 11U, 11U, 10U },
-    /* batch6  */ { 11U, 11U, 11U }
-  };
+  size_t batch = 0U;
 
-  if (!is_valid_builtin(builtin))
+  if (!is_valid_builtin(builtin) || ((int)language < 0) || ((size_t)language >= (size_t)BUILTIN_LANGUAGE_COUNT))
   {
     return false;
   }
 
-  // The experimental post-V3 language is not gated here.
-  if ((size_t)language > (size_t)CARDANO_UPLC_LANG_VERSION_V3)
+  while ((size_t)builtin > BUILTIN_BATCHES[batch].last_tag)
   {
-    return true;
+    ++batch;
   }
 
-  const size_t tag = (size_t)builtin;
-  size_t       batch;
-
-  if (tag <= 50U)
-  {
-    batch = 0U; // batch1: the original Alonzo builtins
-  }
-  else if (tag == 51U)
-  {
-    batch = 1U; // batch2: serialiseData
-  }
-  else if (tag <= 53U)
-  {
-    batch = 2U; // batch3: secp256k1 signature checks
-  }
-  else if (tag <= 72U)
-  {
-    batch = 3U; // batch4a: BLS, keccak_256, blake2b_224
-  }
-  else if (tag <= 74U)
-  {
-    batch = 4U; // batch4b: integerToByteString, byteStringToInteger
-  }
-  else if (tag <= 86U)
-  {
-    batch = 5U; // batch5: bitwise builtins and ripemd_160
-  }
-  else
-  {
-    batch = 6U; // batch6: expModInteger, array/value family, BLS multi-scalar-mul
-  }
-
-  return protocol_major >= INTRO[batch][(size_t)language];
+  return protocol_major >= BUILTIN_BATCHES[batch].introduced_in[(size_t)language];
 }

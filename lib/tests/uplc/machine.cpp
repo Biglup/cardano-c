@@ -23,6 +23,8 @@
 
 #include "../../src/uplc/ast/uplc_term.h"
 #include "../../src/uplc/builtins/uplc_builtin.h"
+#include "../../src/uplc/cost/uplc_builtin_costs.h"
+#include "../../src/uplc/cost/uplc_machine_costs.h"
 #include "../../src/uplc/machine/uplc_machine.h"
 #include <cardano/common/bigint.h>
 #include <cardano/error.h>
@@ -1597,6 +1599,72 @@ new_first_of_two_lambda(cardano_uplc_arena_t* arena)
   EXPECT_EQ(cardano_uplc_term_new_lambda(arena, inner, &outer), CARDANO_SUCCESS);
 
   return outer;
+}
+
+/**
+ * \brief Evaluates (case scrutinee (con integer 0) (con integer 1)) under the V3
+ *        default costs at \p protocol_major and returns the script outcome.
+ */
+static cardano_uplc_eval_status_t
+case_status_at(bool scrutinee_is_constr, uint64_t protocol_major)
+{
+  cardano_uplc_arena_t*      arena     = new_arena();
+  cardano_uplc_term_t*       constr    = nullptr;
+  const cardano_uplc_term_t* scrutinee = new_bool_term(arena, false);
+
+  if (scrutinee_is_constr)
+  {
+    EXPECT_EQ(cardano_uplc_term_new_constr(arena, 0U, nullptr, 0U, &constr), CARDANO_SUCCESS);
+    scrutinee = constr;
+  }
+
+  const cardano_uplc_term_t* branches[2];
+  branches[0] = new_int_term(arena, 0);
+  branches[1] = new_int_term(arena, 1);
+
+  cardano_uplc_term_t* case_term = nullptr;
+  EXPECT_EQ(cardano_uplc_term_new_case(arena, scrutinee, branches, 2U, &case_term), CARDANO_SUCCESS);
+
+  cardano_uplc_cost_model_t model;
+  model.machine  = cardano_uplc_machine_costs_default(CARDANO_UPLC_COST_MODEL_VERSION_V3);
+  model.builtins = cardano_uplc_builtin_costs_v3();
+
+  cardano_uplc_program_t*    program = new_program(arena, case_term);
+  cardano_uplc_budget_t      budget  = { 10000000000LL, 10000000000LL };
+  cardano_uplc_eval_result_t result  = {};
+
+  EXPECT_EQ(
+    cardano_uplc_int_evaluate_with_costs(arena, program, &model, CARDANO_UPLC_SEMANTICS_C, protocol_major, budget, &result),
+    CARDANO_SUCCESS);
+
+  cardano_uplc_arena_free(&arena);
+
+  return result.status;
+}
+
+TEST(cardano_uplc_int_evaluate_with_costs, casesOnConstantsOnlyFromProtocolEleven)
+{
+  struct Row
+  {
+      bool                       scrutinee_is_constr;
+      uint64_t                   protocol_major;
+      cardano_uplc_eval_status_t expected;
+  };
+
+  const Row rows[] = {
+    { false, 9U, CARDANO_UPLC_EVAL_ERROR_TERM },
+    { false, 10U, CARDANO_UPLC_EVAL_ERROR_TERM },
+    { false, 11U, CARDANO_UPLC_EVAL_SUCCESS },
+    { false, 12U, CARDANO_UPLC_EVAL_SUCCESS },
+    { true, 9U, CARDANO_UPLC_EVAL_SUCCESS },
+    { true, 10U, CARDANO_UPLC_EVAL_SUCCESS }
+  };
+
+  for (const Row& row: rows)
+  {
+    EXPECT_EQ(case_status_at(row.scrutinee_is_constr, row.protocol_major), row.expected)
+      << "constr " << row.scrutinee_is_constr << " protocol " << row.protocol_major;
+  }
 }
 
 // Vector term/constant-case/bool/bool-01: (case (con bool False) (con integer 0) (con integer 1))
