@@ -8,50 +8,64 @@ here is compiled, covered, or MISRA-checked (see "Build exclusion" below).
 
 The cases originate from the official Plutus conformance suite:
 
-  IntersectMBO/plutus, plutus-conformance test data
+  IntersectMBO/plutus, plutus-conformance/test-cases/uplc/evaluation
   https://github.com/IntersectMBO/plutus
 
+  Commit: 08c571515 (2026-10-27)
+
 Each case carries an expected result and an exact CPU/mem budget, and the corpus
-spans the full V1 through V4 builtin surface. The case count and file format match
-the upstream plutus-conformance layout.
+spans the full V1 through V4 builtin surface. The tree is copied verbatim from the
+commit above.
 
 ## Case count and layout
 
-Total cases: 991 (each case = one .uplc input + one .uplc.expected + one
-.uplc.budget.expected). Total files: 2973 case files (991 x 3) plus upstream
-README.md files and this PROVENANCE.md.
+Total cases: 1037. Each case is one .uplc input with a .uplc.expected and a
+.budget.expected file; 934 cases also carry a .flat input with a .flat.expected
+file. Upstream README.md files, the builtin/semantics/ren.sh helper and the
+bls12_381_G1_multiScalarMul/files data file are kept as well.
 
-  builtin/   904 cases
-    constant/        97
+  builtin/     943 cases
     interleaving/    18
-    semantics/      789
+    parser/         102
+    semantics/      823
   example/    17 cases
-  term/       70 cases
+  term/       77 cases
 
-UPLC language versions present in the inputs: program 1.0.0 (1452 occurrences) and
-program 1.1.0 (81 occurrences; 1.1.0 adds constr/case for V3+).
+UPLC program versions present in the inputs: 1.0.0 (905), 1.1.0 (82), 1.2.0 (5).
 
 ## File layout per case
 
 Each case lives in its own directory named after the case. Inside:
 
-  <case>.uplc                  The UPLC program in textual surface syntax
-                               (the conformance runner's input).
-  <case>.uplc.expected         The expected result. Either the pretty-printed
-                               result term, e.g. "(program 1.0.0 (con integer 24))",
-                               or the literal text "evaluation failure" when the
-                               program is expected to fail (error / out of budget /
-                               type error), or "parse error" for malformed input.
-  <case>.uplc.budget.expected  The expected execution budget on success, in the
-                               format:
-                                 ({cpu: <n>
-                                 | mem: <n>})
-                               For cases whose result is "evaluation failure" this
-                               file also contains "evaluation failure" (no budget).
+  <case>.uplc                The UPLC program in textual surface syntax
+                             (the conformance runner's input).
+  <case>.uplc.expected       The expected result. Either the pretty-printed
+                             result term, e.g. "(program 1.0.0 (con integer 24))",
+                             or the literal text "evaluation failure" when the
+                             program is expected to fail (error / out of budget /
+                             type error), or "parse/decode error" for malformed
+                             input.
+  <case>.budget.expected     The expected execution budget on success, in the
+                             format:
+                               ({cpu: <n>
+                               | mem: <n>})
+                             For cases whose result is "evaluation failure" or
+                             "parse/decode error" this file holds that text instead
+                             of a budget.
+  <case>.flat                The flat encoding of the program, for most cases.
+  <case>.flat.expected       The expected outcome of evaluating the flat input.
 
-A few directories also contain an upstream README.md describing how the test
-vectors were generated (secp256k1, bls12_381, builtin semantics/interleaving).
-These are documentation, not cases.
+The conformance runner evaluates the .uplc inputs only. The .flat inputs are not
+run yet.
+
+## Evaluation configuration
+
+The reference evaluates every case at the newest protocol version (12) with builtin
+semantics variant G and the newest cost model. The runner uses the closest
+configuration the evaluator offers (language V4, protocol version 12, semantics
+variant E, V3 cost model). Cases that depend on the missing behaviour are listed
+in ../conformance_expected_failures.txt, each tagged with a gap category. The
+runner fails when a listed case passes or an unlisted case fails.
 
 ## Build exclusion (verified)
 
@@ -60,9 +74,9 @@ The CMake source globs in lib/CMakeLists.txt are:
   SOURCE_FILES   = src/*.c  include/*.h  include/*.inl
   TEST_SRC_FILES = tests/*.cpp  tests/*.h  tests/*.inl
 
-Nothing under this directory matches: the only extensions present are .uplc,
-.uplc.expected, .uplc.budget.expected and .md. There are no .c, .cpp, .h, or .inl
-files in this corpus, so no file here is compiled, linked, covered, or MISRA-checked.
+Nothing under this directory matches: the extensions present are .uplc,
+.uplc.expected, .budget.expected, .flat, .flat.expected, .sh and .md. There are no .c,
+.cpp, .h, or .inl files in this corpus, so no file here is compiled, linked, covered, or MISRA-checked.
 No CMake change was required to exclude the corpus.
 
 The conformance runner reads these files at run time as data; it does not compile

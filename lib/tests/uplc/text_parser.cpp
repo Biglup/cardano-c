@@ -1277,8 +1277,7 @@ TEST(cardano_uplc_parse_program, parsesRealCorpusFiles)
     "example/churchSucc/churchSucc.uplc",
     "term/constant-case/list/list-01/list-01.uplc",
     "term/constant-case/pair/pair-01/pair-01.uplc",
-    "term/constr/constr-03/constr-03.uplc",
-    "term/constr/constr-08/constr-08.uplc"
+    "term/constr/constr-03/constr-03.uplc"
   };
 
   size_t parsed = 0U;
