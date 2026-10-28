@@ -80,6 +80,55 @@ test_signed_int(cardano_cbor_writer_t* writer, int64_t value, const char* hex)
 }
 
 /**
+ * Writes a negative integer from its raw argument to the buffer.
+ *
+ * @param writer The CBOR writer.
+ * @param argument The argument n of the negative integer -1 - n.
+ * @param hex The expected hex string.
+ */
+static void
+test_negative_int(cardano_cbor_writer_t* writer, uint64_t argument, const char* hex)
+{
+  EXPECT_EQ(cardano_cbor_writer_write_negative_int(writer, argument), CARDANO_SUCCESS);
+  const size_t hex_string_size = cardano_cbor_writer_get_hex_size(writer);
+  char*        encoded_hex     = (char*)malloc(hex_string_size);
+
+  ASSERT_EQ(cardano_cbor_writer_encode_hex(writer, encoded_hex, hex_string_size), CARDANO_SUCCESS);
+  ASSERT_EQ(std::string(encoded_hex), hex);
+
+  free(encoded_hex);
+
+  EXPECT_EQ(cardano_cbor_writer_reset(writer), CARDANO_SUCCESS);
+}
+
+/**
+ * Writes a big integer, given in base 10, as a tagged bignum to the buffer.
+ *
+ * @param writer The CBOR writer.
+ * @param decimal The value in base 10.
+ * @param hex The expected hex string.
+ */
+static void
+test_bigint(cardano_cbor_writer_t* writer, const char* decimal, const char* hex)
+{
+  cardano_bigint_t* bigint = NULL;
+
+  ASSERT_EQ(cardano_bigint_from_string(decimal, strlen(decimal), 10, &bigint), CARDANO_SUCCESS);
+  EXPECT_EQ(cardano_cbor_writer_write_bigint(writer, bigint), CARDANO_SUCCESS);
+  cardano_bigint_unref(&bigint);
+
+  const size_t hex_string_size = cardano_cbor_writer_get_hex_size(writer);
+  char*        encoded_hex     = (char*)malloc(hex_string_size);
+
+  ASSERT_EQ(cardano_cbor_writer_encode_hex(writer, encoded_hex, hex_string_size), CARDANO_SUCCESS);
+  EXPECT_EQ(std::string(encoded_hex), hex) << decimal;
+
+  free(encoded_hex);
+
+  EXPECT_EQ(cardano_cbor_writer_reset(writer), CARDANO_SUCCESS);
+}
+
+/**
  * Writes a typed value to the buffer.
  *
  * @param writer The CBOR writer.
@@ -375,7 +424,7 @@ TEST(cardano_cbor_writer_write_bigint, writesTheNegativeValueAsATaggedBignumEnco
 
   // Act
   cardano_bigint_t* bigint = NULL;
-  EXPECT_EQ(cardano_bigint_from_string("-340199290171201906221318119490500689920", strlen("-340199290171201906221318119490500689920"), 10, &bigint), CARDANO_SUCCESS);
+  EXPECT_EQ(cardano_bigint_from_string("-340199290171201906221318119490500689921", strlen("-340199290171201906221318119490500689921"), 10, &bigint), CARDANO_SUCCESS);
 
   cardano_error_t write_result  = cardano_cbor_writer_write_bigint(writer, bigint);
   size_t          required_size = cardano_cbor_writer_get_encode_size(writer);
@@ -390,6 +439,36 @@ TEST(cardano_cbor_writer_write_bigint, writesTheNegativeValueAsATaggedBignumEnco
   // Cleanup
   cardano_cbor_writer_unref(&writer);
   cardano_bigint_unref(&bigint);
+}
+
+TEST(cardano_cbor_writer_write_bigint, writesNegativeBignumsAsMinusOneMinusTheMagnitude)
+{
+  // Arrange
+  cardano_cbor_writer_t* writer = cardano_cbor_writer_new();
+
+  // Assert
+  test_bigint(writer, "-1", "c340");
+  test_bigint(writer, "-18446744073709551616", "c348ffffffffffffffff");
+  test_bigint(writer, "-18446744073709551617", "c349010000000000000000");
+  test_bigint(writer, "-18446744073709551618", "c349010000000000000001");
+  test_bigint(writer, "-340282366920938463463374607431768211456", "c350ffffffffffffffffffffffffffffffff");
+
+  // Cleanup
+  cardano_cbor_writer_unref(&writer);
+}
+
+TEST(cardano_cbor_writer_write_bigint, writesPositiveBignumsAsTheMagnitude)
+{
+  // Arrange
+  cardano_cbor_writer_t* writer = cardano_cbor_writer_new();
+
+  // Assert
+  test_bigint(writer, "0", "c240");
+  test_bigint(writer, "18446744073709551616", "c249010000000000000000");
+  test_bigint(writer, "340282366920938463463374607431768211456", "c2510100000000000000000000000000000000");
+
+  // Cleanup
+  cardano_cbor_writer_unref(&writer);
 }
 
 TEST(cardano_cbor_writer_write_bigint, returnsNullIfGivenANullPtr)
@@ -790,6 +869,33 @@ TEST(cardano_cbor_writer_write_signed_int, writeSignedIntegers)
 
   // Cleanup
   cardano_cbor_writer_unref(&writer);
+}
+
+TEST(cardano_cbor_writer_write_negative_int, writesTheRawArgumentAsMajorTypeOne)
+{
+  // Arrange
+  cardano_cbor_writer_t* writer = cardano_cbor_writer_new();
+
+  // Assert
+  test_negative_int(writer, 0U, "20");
+  test_negative_int(writer, 23U, "37");
+  test_negative_int(writer, 99U, "3863");
+  test_negative_int(writer, 4294967296U, "3b0000000100000000");
+  test_negative_int(writer, 9223372036854775807U, "3b7fffffffffffffff");
+  test_negative_int(writer, 9223372036854775808U, "3b8000000000000000");
+  test_negative_int(writer, UINT64_MAX, "3bffffffffffffffff");
+
+  // Cleanup
+  cardano_cbor_writer_unref(&writer);
+}
+
+TEST(cardano_cbor_writer_write_negative_int, returnsErrorIfGivenANullWriter)
+{
+  // Act
+  cardano_error_t write_result = cardano_cbor_writer_write_negative_int(nullptr, 0U);
+
+  // Assert
+  EXPECT_EQ(write_result, CARDANO_ERROR_POINTER_IS_NULL);
 }
 
 TEST(cardano_cbor_writer_write_textstring, canWriteFixedLenghtStrings)

@@ -228,7 +228,6 @@ builtin/semantics/unValueData/multi-token/multi-token.uplc cost-model
 builtin/semantics/unValueData/multi-token/multi-token.flat cost-model
 builtin/semantics/unValueData/negative-quantity/negative-quantity.uplc cost-model
 builtin/semantics/unValueData/negative-quantity/negative-quantity.flat cost-model
-builtin/semantics/unValueData/quantity-underflow/quantity-underflow.flat other CBOR negative bignums (tag 3) decode to -n instead of -1 - n
 builtin/semantics/unValueData/roundtrip-from-data/roundtrip-from-data.uplc cost-model
 builtin/semantics/unValueData/roundtrip-from-data/roundtrip-from-data.flat cost-model
 builtin/semantics/unValueData/single-entry/single-entry.uplc cost-model

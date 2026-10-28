@@ -928,7 +928,7 @@ TEST(cardano_metadatum_from_cbor, canDecodeBigNegativeInteger)
 
   cardano_bigint_t* value = NULL;
   EXPECT_EQ(cardano_metadatum_to_integer(metadatum, &value), CARDANO_SUCCESS);
-  EXPECT_EQ(cardano_bigint_to_int(value), -72057594037927936);
+  EXPECT_EQ(cardano_bigint_to_int(value), -72057594037927937);
   cardano_bigint_unref(&value);
 
   // Cleanup
@@ -2466,6 +2466,134 @@ TEST(cardano_metadatum_to_cbor, canSerializeBigInteger)
   free(cbor_hex);
   cardano_cbor_writer_unref(&writer);
   cardano_metadatum_unref(&data);
+}
+
+TEST(cardano_metadatum_to_cbor, encodesIntegerBoundariesCanonically)
+{
+  const char* vectors[][2] = {
+    { "-9223372036854775809", "3b8000000000000000" },
+    { "-18446744073709551616", "3bffffffffffffffff" },
+    { "-18446744073709551617", "c349010000000000000000" },
+    { "-18446744073709551618", "c349010000000000000001" },
+    { "-340282366920938463463374607431768211456", "c350ffffffffffffffffffffffffffffffff" },
+    { "340282366920938463463374607431768211456", "c2510100000000000000000000000000000000" },
+  };
+
+  for (const auto& vector: vectors)
+  {
+    // Arrange
+    cardano_metadatum_t*   data   = nullptr;
+    cardano_cbor_writer_t* writer = cardano_cbor_writer_new();
+
+    ASSERT_EQ(cardano_metadatum_new_integer_from_string(vector[0], strlen(vector[0]), 10, &data), CARDANO_SUCCESS);
+
+    // Act
+    cardano_error_t error = cardano_metadatum_to_cbor(data, writer);
+
+    // Assert
+    EXPECT_EQ(error, CARDANO_SUCCESS);
+
+    const size_t cbor_size = cardano_cbor_writer_get_hex_size(writer);
+    char*        cbor_hex  = (char*)malloc(cbor_size);
+
+    EXPECT_EQ(cardano_cbor_writer_encode_hex(writer, cbor_hex, cbor_size), CARDANO_SUCCESS);
+    EXPECT_STREQ(cbor_hex, vector[1]) << vector[0];
+
+    // Cleanup
+    free(cbor_hex);
+    cardano_cbor_writer_unref(&writer);
+    cardano_metadatum_unref(&data);
+
+    // Arrange
+    cardano_cbor_reader_t* reader = cardano_cbor_reader_from_hex(vector[1], strlen(vector[1]));
+
+    // Act
+    error = cardano_metadatum_from_cbor(reader, &data);
+
+    // Assert
+    ASSERT_EQ(error, CARDANO_SUCCESS) << vector[1];
+
+    cardano_bigint_t* value = nullptr;
+    EXPECT_EQ(cardano_metadatum_to_integer(data, &value), CARDANO_SUCCESS);
+
+    const size_t string_size = cardano_bigint_get_string_size(value, 10);
+    char*        string      = (char*)malloc(string_size);
+
+    EXPECT_EQ(cardano_bigint_to_string(value, string, string_size, 10), CARDANO_SUCCESS);
+    EXPECT_STREQ(string, vector[0]) << vector[1];
+
+    // Cleanup
+    free(string);
+    cardano_bigint_unref(&value);
+    cardano_metadatum_unref(&data);
+    cardano_cbor_reader_unref(&reader);
+  }
+}
+
+TEST(cardano_metadatum_to_cbor, returnsErrorWhenMemoryAllocationFailsForANegativeBignum)
+{
+  // Arrange
+  cardano_metadatum_t*   data   = nullptr;
+  cardano_cbor_writer_t* writer = cardano_cbor_writer_new();
+
+  ASSERT_EQ(cardano_metadatum_new_integer_from_string("-18446744073709551617", strlen("-18446744073709551617"), 10, &data), CARDANO_SUCCESS);
+
+  reset_allocators_run_count();
+  cardano_set_allocators(fail_right_away_malloc, realloc, free);
+
+  // Act
+  cardano_error_t error = cardano_metadatum_to_cbor(data, writer);
+
+  // Assert
+  EXPECT_EQ(error, CARDANO_ERROR_MEMORY_ALLOCATION_FAILED);
+
+  // Cleanup
+  cardano_set_allocators(malloc, realloc, free);
+  cardano_cbor_writer_unref(&writer);
+  cardano_metadatum_unref(&data);
+}
+
+TEST(cardano_metadatum_from_cbor, returnsErrorWhenMemoryAllocationFailsWhileReadingANegativeInteger)
+{
+  const int allocation_count = 16;
+
+  for (int index = 0; index < allocation_count; ++index)
+  {
+    // Arrange
+    cardano_metadatum_t*   data   = nullptr;
+    cardano_cbor_reader_t* reader = cardano_cbor_reader_from_hex("3bffffffffffffffff", strlen("3bffffffffffffffff"));
+
+    set_malloc_fail_index(index);
+    cardano_set_allocators(fail_malloc_at_exact_index, realloc, free);
+
+    // Act
+    cardano_error_t error = cardano_metadatum_from_cbor(reader, &data);
+
+    cardano_set_allocators(malloc, realloc, free);
+
+    // Assert
+    EXPECT_THAT(error, testing::AnyOf(CARDANO_SUCCESS, CARDANO_ERROR_MEMORY_ALLOCATION_FAILED));
+
+    // Cleanup
+    cardano_metadatum_unref(&data);
+    cardano_cbor_reader_unref(&reader);
+  }
+}
+
+TEST(cardano_metadatum_from_cbor, returnsErrorIfNegativeIntegerIsTruncated)
+{
+  // Arrange
+  cardano_metadatum_t*   data   = nullptr;
+  cardano_cbor_reader_t* reader = cardano_cbor_reader_from_hex("3bffff", strlen("3bffff"));
+
+  // Act
+  cardano_error_t error = cardano_metadatum_from_cbor(reader, &data);
+
+  // Assert
+  EXPECT_EQ(error, CARDANO_ERROR_DECODING);
+
+  // Cleanup
+  cardano_cbor_reader_unref(&reader);
 }
 
 TEST(cardano_metadatum_to_cbor, canSerializeTextString)

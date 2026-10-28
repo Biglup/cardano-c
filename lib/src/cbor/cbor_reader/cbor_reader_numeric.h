@@ -119,13 +119,32 @@ cardano_error_t
 _cbor_reader_read_uint(cardano_cbor_reader_t* reader, uint64_t* value);
 
 /**
+ * \brief Reads a negative integer (major type 1) from the CBOR stream as its raw argument.
+ *
+ * A negative integer is encoded as an unsigned argument \c n and represents the value \c -1 - n.
+ * This function returns \c n unchanged, so the full range of the encoding, down to \c -2^64,
+ * can be read without overflowing a signed 64-bit integer.
+ *
+ * \param[in] reader A pointer to the \ref cardano_cbor_reader_t instance that represents the CBOR
+ *                   stream from which the negative integer is to be read.
+ * \param[out] argument A pointer to a uint64_t variable where the argument \c n will be stored.
+ *
+ * \return A \ref cardano_error_t indicating the result of the read operation. \ref CARDANO_SUCCESS is
+ * returned if a negative integer is successfully read from the stream. If the next data item is not
+ * a negative integer or the stream is malformed, an appropriate error code is returned.
+ */
+cardano_error_t
+_cbor_reader_read_negative_int(cardano_cbor_reader_t* reader, uint64_t* argument);
+
+/**
  * \brief Decodes and reads a big integer (bignum) from CBOR format.
  *
  * This function reads and decodes a bignum from a provided CBOR reader, following the
  * encoding format specified in RFC 7049, section 2.4.2. Bignums are used to represent
  * integers that are too large to be represented directly in the available integer types
- * of CBOR. The function interprets the appropriate tag (2 for unsigned bignum) and decodes
- * the integer value, ensuring its correct representation as a bignum in the resulting bigint object.
+ * of CBOR. The function interprets the appropriate tag and decodes the integer value: tag 2
+ * (unsigned bignum) yields the byte string magnitude \c n, and tag 3 (negative bignum) yields
+ * \c -1 - n, as defined in RFC 8949, section 3.4.3.
  *
  * \param[in] reader The \ref cardano_cbor_reader_t instance from which the bignum will be read.
  * \param[out] bigint A pointer to a pointer that will be set to the address of the newly created \ref cardano_bigint_t object

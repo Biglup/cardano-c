@@ -61,6 +61,10 @@ CBOR Writer
 
 ------------
 
+.. doxygenfunction:: cardano_cbor_writer_write_negative_int
+
+------------
+
 .. doxygenfunction:: cardano_cbor_writer_write_signed_int
 
 ------------

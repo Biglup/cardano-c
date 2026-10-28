@@ -65,6 +65,10 @@ CBOR Reader
 
 ------------
 
+.. doxygenfunction:: cardano_cbor_reader_read_negative_int
+
+------------
+
 .. doxygenfunction:: cardano_cbor_reader_read_bigint
 
 ------------

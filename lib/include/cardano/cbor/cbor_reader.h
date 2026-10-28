@@ -539,13 +539,44 @@ CARDANO_NODISCARD
 CARDANO_EXPORT cardano_error_t cardano_cbor_reader_read_uint(cardano_cbor_reader_t* reader, uint64_t* value);
 
 /**
+ * \brief Reads the next data item as a negative integer (major type 1) and returns its raw argument.
+ *
+ * A CBOR negative integer carries an unsigned argument \c n and represents the value \c -1 - n.
+ * This function returns \c n unchanged, so every negative integer the encoding allows, down to
+ * \c -2^64, can be read without overflowing a signed 64-bit integer.
+ *
+ * \param[in] reader A pointer to the \ref cardano_cbor_reader_t instance from which the negative integer
+ * is to be read.
+ * \param[out] argument Pointer to a `uint64_t` variable where the argument \c n will be stored.
+ *
+ * \return A \ref cardano_error_t indicating the result of the operation: \ref CARDANO_SUCCESS on success,
+ * or an appropriate error code indicating the reason for failure, such as \ref CARDANO_ERROR_DECODING when
+ * the next data item is not a negative integer.
+ *
+ * Usage Example:
+ * \code{.c}
+ * uint64_t argument = 0;
+ *
+ * cardano_error_t error = cardano_cbor_reader_read_negative_int(reader, &argument);
+ *
+ * if (error == CARDANO_SUCCESS)
+ * {
+ *   printf("Decoded negative integer: -1 - %llu\n", (unsigned long long)argument);
+ * }
+ * \endcode
+ */
+CARDANO_NODISCARD
+CARDANO_EXPORT cardano_error_t cardano_cbor_reader_read_negative_int(cardano_cbor_reader_t* reader, uint64_t* argument);
+
+/**
  * \brief Decodes and reads a big integer (bignum) from CBOR format.
  *
  * This function reads and decodes a bignum from a provided CBOR reader, following the
  * encoding format specified in RFC 7049, section 2.4.2. Bignums are used to represent
  * integers that are too large to be represented directly in the available integer types
- * of CBOR. The function interprets the appropriate tag (2 for unsigned bignum) and decodes
- * the integer value, ensuring its correct representation as a bignum in the resulting bigint object.
+ * of CBOR. The function interprets the appropriate tag and decodes the integer value: tag 2
+ * (unsigned bignum) yields the byte string magnitude \c n, and tag 3 (negative bignum) yields
+ * \c -1 - n, as defined in RFC 8949, section 3.4.3.
  *
  * \param[in] reader The \ref cardano_cbor_reader_t instance from which the bignum will be read.
  * \param[out] bigint A pointer to a pointer that will be set to the address of the newly created \ref cardano_bigint_t object
