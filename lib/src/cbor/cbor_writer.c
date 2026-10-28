@@ -256,6 +256,7 @@ cardano_cbor_writer_write_bigint(cardano_cbor_writer_t* writer, const cardano_bi
   {
     tag = CARDANO_CBOR_TAG_NEGATIVE_BIG_NUM;
     cardano_bigint_negate(bigint, copy);
+    cardano_bigint_decrement(copy);
   }
 
   result = cardano_cbor_writer_write_tag(writer, tag);
@@ -265,6 +266,15 @@ cardano_cbor_writer_write_bigint(cardano_cbor_writer_t* writer, const cardano_bi
     cardano_bigint_unref(&copy);
 
     return result;
+  }
+
+  if (cardano_bigint_is_zero(copy))
+  {
+    static const byte_t empty = 0U;
+
+    cardano_bigint_unref(&copy);
+
+    return cardano_cbor_writer_write_bytestring(writer, &empty, 0U);
   }
 
   const size_t size = cardano_bigint_get_bytes_size(copy);
@@ -434,6 +444,17 @@ cardano_cbor_writer_write_uint(cardano_cbor_writer_t* writer, const uint64_t val
   }
 
   return write_type_value(writer->buffer, CARDANO_CBOR_MAJOR_TYPE_UNSIGNED_INTEGER, value);
+}
+
+cardano_error_t
+cardano_cbor_writer_write_negative_int(cardano_cbor_writer_t* writer, const uint64_t argument)
+{
+  if (writer == NULL)
+  {
+    return CARDANO_ERROR_POINTER_IS_NULL;
+  }
+
+  return write_type_value(writer->buffer, CARDANO_CBOR_MAJOR_TYPE_NEGATIVE_INTEGER, argument);
 }
 
 cardano_error_t

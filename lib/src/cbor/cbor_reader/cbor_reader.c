@@ -469,6 +469,12 @@ cardano_cbor_reader_read_uint(cardano_cbor_reader_t* reader, uint64_t* value)
 }
 
 cardano_error_t
+cardano_cbor_reader_read_negative_int(cardano_cbor_reader_t* reader, uint64_t* argument)
+{
+  return _cbor_reader_read_negative_int(reader, argument);
+}
+
+cardano_error_t
 cardano_cbor_reader_read_bigint(cardano_cbor_reader_t* reader, cardano_bigint_t** bigint)
 {
   return _cardano_reader_read_bigint(reader, bigint);

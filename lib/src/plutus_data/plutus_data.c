@@ -542,9 +542,17 @@ cardano_plutus_data_from_cbor(cardano_cbor_reader_t* reader, cardano_plutus_data
     }
     case CARDANO_CBOR_READER_STATE_NEGATIVE_INTEGER:
     {
-      int64_t integer = 0;
+      uint64_t argument = 0;
 
-      result = cardano_cbor_reader_read_int(reader, &integer);
+      result = cardano_cbor_reader_read_negative_int(reader, &argument);
+
+      if (result != CARDANO_SUCCESS)
+      {
+        cardano_plutus_data_deallocate(data);
+        return result;
+      }
+
+      result = cardano_bigint_from_unsigned_int(argument, &data->integer);
 
       if (result != CARDANO_SUCCESS)
       {
@@ -552,13 +560,8 @@ cardano_plutus_data_from_cbor(cardano_cbor_reader_t* reader, cardano_plutus_data
         return result;
       }
 
-      result = cardano_bigint_from_int(integer, &data->integer);
-
-      if (result != CARDANO_SUCCESS)
-      {
-        cardano_plutus_data_deallocate(data);
-        return result;
-      }
+      cardano_bigint_negate(data->integer, data->integer);
+      cardano_bigint_decrement(data->integer);
 
       data->kind = CARDANO_PLUTUS_DATA_KIND_INTEGER;
 
@@ -686,22 +689,60 @@ cardano_plutus_data_to_cbor(const cardano_plutus_data_t* plutus_data, cardano_cb
     }
     case CARDANO_PLUTUS_DATA_KIND_INTEGER:
     {
-      size_t bit_length = cardano_bigint_bit_length(plutus_data->integer);
+      const bool   is_negative = cardano_bigint_signum(plutus_data->integer) < 0;
+      const size_t bit_length  = cardano_bigint_bit_length(plutus_data->integer);
 
-      if ((cardano_bigint_signum(plutus_data->integer) < 0) && (bit_length <= 64U))
+      if (bit_length <= 64U)
       {
-        result = cardano_cbor_writer_write_signed_int(writer, cardano_bigint_to_int(plutus_data->integer));
-      }
-      else if (bit_length <= 64U)
-      {
-        result = cardano_cbor_writer_write_uint(writer, cardano_bigint_to_unsigned_int(plutus_data->integer));
+        const uint64_t absolute = cardano_bigint_to_unsigned_int(plutus_data->integer);
+
+        if (is_negative)
+        {
+          result = cardano_cbor_writer_write_negative_int(writer, absolute - 1U);
+        }
+        else
+        {
+          result = cardano_cbor_writer_write_uint(writer, absolute);
+        }
       }
       else
       {
-        const size_t size  = cardano_bigint_get_bytes_size(plutus_data->integer);
+        cardano_bigint_t* magnitude = NULL;
+
+        result = cardano_bigint_clone(plutus_data->integer, &magnitude);
+
+        if (result != CARDANO_SUCCESS)
+        {
+          return result;
+        }
+
+        if (is_negative)
+        {
+          cardano_bigint_negate(plutus_data->integer, magnitude);
+          cardano_bigint_decrement(magnitude);
+        }
+
+        if (is_negative && (cardano_bigint_bit_length(magnitude) <= 64U))
+        {
+          result = cardano_cbor_writer_write_negative_int(writer, cardano_bigint_to_unsigned_int(magnitude));
+          cardano_bigint_unref(&magnitude);
+
+          return result;
+        }
+
+        const size_t size  = cardano_bigint_get_bytes_size(magnitude);
         byte_t*      bytes = _cardano_malloc(size);
 
-        result = cardano_bigint_to_bytes(plutus_data->integer, CARDANO_BYTE_ORDER_BIG_ENDIAN, bytes, size);
+        if (bytes == NULL)
+        {
+          cardano_bigint_unref(&magnitude);
+
+          return CARDANO_ERROR_MEMORY_ALLOCATION_FAILED;
+        }
+
+        result = cardano_bigint_to_bytes(magnitude, CARDANO_BYTE_ORDER_BIG_ENDIAN, bytes, size);
+
+        cardano_bigint_unref(&magnitude);
 
         if (result != CARDANO_SUCCESS)
         {
@@ -709,7 +750,7 @@ cardano_plutus_data_to_cbor(const cardano_plutus_data_t* plutus_data, cardano_cb
           return result;
         }
 
-        result = cardano_cbor_writer_write_tag(writer, (cardano_bigint_signum(plutus_data->integer) < 0) ? CARDANO_CBOR_TAG_NEGATIVE_BIG_NUM : CARDANO_CBOR_TAG_UNSIGNED_BIG_NUM);
+        result = cardano_cbor_writer_write_tag(writer, is_negative ? CARDANO_CBOR_TAG_NEGATIVE_BIG_NUM : CARDANO_CBOR_TAG_UNSIGNED_BIG_NUM);
 
         if (result != CARDANO_SUCCESS)
         {

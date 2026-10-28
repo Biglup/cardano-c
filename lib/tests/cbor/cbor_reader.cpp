@@ -67,6 +67,43 @@ verify_int(const char* hex, const int64_t expected_int, const cardano_cbor_reade
 }
 
 static void
+verify_negative_int(const char* hex, const uint64_t expected_argument)
+{
+  cardano_cbor_reader_t* reader = cardano_cbor_reader_from_hex(hex, strlen(hex));
+
+  uint64_t        argument = 0;
+  cardano_error_t result   = cardano_cbor_reader_read_negative_int(reader, &argument);
+
+  EXPECT_EQ(result, CARDANO_SUCCESS) << hex;
+  EXPECT_EQ(argument, expected_argument) << hex;
+
+  size_t bytes_remaining = 1;
+  EXPECT_EQ(cardano_cbor_reader_get_bytes_remaining(reader, &bytes_remaining), CARDANO_SUCCESS);
+  EXPECT_EQ(bytes_remaining, 0U) << hex;
+
+  cardano_cbor_reader_unref(&reader);
+}
+
+static void
+verify_bigint(const char* hex, const char* expected_decimal)
+{
+  cardano_cbor_reader_t* reader = cardano_cbor_reader_from_hex(hex, strlen(hex));
+  cardano_bigint_t*      bigint = NULL;
+
+  ASSERT_EQ(cardano_cbor_reader_read_bigint(reader, &bigint), CARDANO_SUCCESS) << hex;
+
+  const size_t string_size = cardano_bigint_get_string_size(bigint, 10);
+  char*        string      = (char*)malloc(string_size);
+
+  EXPECT_EQ(cardano_bigint_to_string(bigint, string, string_size, 10), CARDANO_SUCCESS);
+  EXPECT_STREQ(string, expected_decimal) << hex;
+
+  free(string);
+  cardano_bigint_unref(&bigint);
+  cardano_cbor_reader_unref(&reader);
+}
+
+static void
 verify_float(const char* hex, const double expected_float, const cardano_cbor_reader_state_t expected_state)
 {
   cardano_cbor_reader_t* reader = cardano_cbor_reader_from_hex(hex, strlen(hex));
@@ -1253,6 +1290,67 @@ TEST(cardano_cbor_reader_read_uint, canReadNegativeIntegers)
   verify_int("3a00010000", -65537, CARDANO_CBOR_READER_STATE_NEGATIVE_INTEGER);
   verify_int("3affffffff", -4294967296, CARDANO_CBOR_READER_STATE_NEGATIVE_INTEGER);
   verify_int("3b0000000100000000", -4294967297, CARDANO_CBOR_READER_STATE_NEGATIVE_INTEGER);
+}
+
+TEST(cardano_cbor_reader_read_negative_int, readsTheRawArgument)
+{
+  verify_negative_int("20", 0U);
+  verify_negative_int("37", 23U);
+  verify_negative_int("3863", 99U);
+  verify_negative_int("3b0000000100000000", 4294967296U);
+  verify_negative_int("3b7fffffffffffffff", 9223372036854775807U);
+  verify_negative_int("3b8000000000000000", 9223372036854775808U);
+  verify_negative_int("3bffffffffffffffff", UINT64_MAX);
+}
+
+TEST(cardano_cbor_reader_read_negative_int, returnErrorIfReaderIsNull)
+{
+  uint64_t argument = 0;
+
+  EXPECT_EQ(cardano_cbor_reader_read_negative_int(nullptr, &argument), CARDANO_ERROR_POINTER_IS_NULL);
+}
+
+TEST(cardano_cbor_reader_read_negative_int, returnErrorIfArgumentIsNull)
+{
+  cardano_cbor_reader_t* reader = cardano_cbor_reader_from_hex("20", strlen("20"));
+
+  EXPECT_EQ(cardano_cbor_reader_read_negative_int(reader, nullptr), CARDANO_ERROR_POINTER_IS_NULL);
+
+  cardano_cbor_reader_unref(&reader);
+}
+
+TEST(cardano_cbor_reader_read_negative_int, returnErrorIfNotANegativeInteger)
+{
+  cardano_cbor_reader_t* reader   = cardano_cbor_reader_from_hex("01", strlen("01"));
+  uint64_t               argument = 0;
+
+  EXPECT_EQ(cardano_cbor_reader_read_negative_int(reader, &argument), CARDANO_ERROR_DECODING);
+
+  cardano_cbor_reader_unref(&reader);
+}
+
+TEST(cardano_cbor_reader_read_negative_int, returnErrorIfArgumentIsTruncated)
+{
+  cardano_cbor_reader_t* reader   = cardano_cbor_reader_from_hex("3bffff", strlen("3bffff"));
+  uint64_t               argument = 0;
+
+  EXPECT_EQ(cardano_cbor_reader_read_negative_int(reader, &argument), CARDANO_ERROR_DECODING);
+
+  cardano_cbor_reader_unref(&reader);
+}
+
+TEST(cardano_cbor_reader_read_negative_int, returnErrorWhenMemoryAllocationFails)
+{
+  cardano_cbor_reader_t* reader   = cardano_cbor_reader_from_hex("3bffffffffffffffff", strlen("3bffffffffffffffff"));
+  uint64_t               argument = 0;
+
+  reset_allocators_run_count();
+  cardano_set_allocators(fail_right_away_malloc, realloc, free);
+
+  EXPECT_EQ(cardano_cbor_reader_read_negative_int(reader, &argument), CARDANO_ERROR_MEMORY_ALLOCATION_FAILED);
+
+  cardano_set_allocators(malloc, realloc, free);
+  cardano_cbor_reader_unref(&reader);
 }
 
 TEST(cardano_cbor_reader_read_double, canReadHalfPresitionValues)
@@ -3366,12 +3464,28 @@ TEST(cardano_cbor_reader_read_bigint, canReadNegativeBigint)
 
   EXPECT_EQ(result, CARDANO_SUCCESS);
 
-  EXPECT_STREQ(string, "-340199290171201906221318119490500689920");
+  EXPECT_STREQ(string, "-340199290171201906221318119490500689921");
 
   // Cleanup
   free(string);
   cardano_cbor_reader_unref(&reader);
   cardano_bigint_unref(&bigint);
+}
+
+TEST(cardano_cbor_reader_read_bigint, decodesNegativeBignumsAsMinusOneMinusTheMagnitude)
+{
+  verify_bigint("c340", "-1");
+  verify_bigint("c348ffffffffffffffff", "-18446744073709551616");
+  verify_bigint("c349010000000000000000", "-18446744073709551617");
+  verify_bigint("c349010000000000000001", "-18446744073709551618");
+  verify_bigint("c350ffffffffffffffffffffffffffffffff", "-340282366920938463463374607431768211456");
+}
+
+TEST(cardano_cbor_reader_read_bigint, decodesPositiveBignumsAsTheMagnitude)
+{
+  verify_bigint("c240", "0");
+  verify_bigint("c249010000000000000000", "18446744073709551616");
+  verify_bigint("c2510100000000000000000000000000000000", "340282366920938463463374607431768211456");
 }
 
 TEST(cardano_cbor_reader_read_bigint, returnErrorWhenCborIsInvalid)

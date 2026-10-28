@@ -24,6 +24,8 @@
 #include <cardano/error.h>
 
 #include <cardano/buffer.h>
+#include <cardano/crypto/blake2b_hash.h>
+#include <cardano/crypto/blake2b_hash_size.h>
 #include <cardano/plutus_data/plutus_data.h>
 
 #include "../allocators_helpers.h"
@@ -48,6 +50,32 @@ static const char* BIG_NUMBERS[]      = {
   "1337829155615373710780861189358723839738261900670472008493768766460943065914931970040774692071540815257661221428415268570880739215388841910028989315213224986535176632464067341466233795236134699058357952960",
   "45981213582240091300385870382262347274104141060516509284758089043905194449918733499912740694341485053723341097850038365519925374324306213051881991025304309829953615052414155047559800693983587151987253760",
   "2413605787847473064058493109882761763812632923885676112901376523745345875592342323079462001682936368998782686824629943810471167748859099323567551094056876663897197968204837564889906128763937156053"
+};
+
+/**
+ * \brief An integer with its canonical Plutus data CBOR and the blake2b-256 hash of that CBOR.
+ */
+typedef struct
+{
+    const char* decimal;
+    const char* cbor;
+    const char* hash;
+} integer_vector_t;
+
+static const integer_vector_t INTEGER_BOUNDARY_VECTORS[] = {
+  { "-9223372036854775809", "3b8000000000000000", "e2a47752ef4828f7483c5026a4bc7ed4e452f8101dcf82864f1b1e907c60c572" },
+  { "-18446744073709551616", "3bffffffffffffffff", "69393b55a0ae218f47bfa0376159277a159c76662f738592c1553e3d904c5ac7" },
+  { "-18446744073709551617", "c349010000000000000000", "42e2692b0e46ba0dc699ee2f1aa07e1bffb800c35c7b138ddb756d8bf998bc89" },
+  { "-18446744073709551618", "c349010000000000000001", "4030e370c7a0cb0efdeb05c42cca353d0740f9fc7f05f9a585c69b0850208e30" },
+  { "-340282366920938463463374607431768211456", "c350ffffffffffffffffffffffffffffffff", "ffab25cae61e7a695eff9e2b32281b5e0eea2096242c598d6236b0c551751c44" },
+  { "340282366920938463463374607431768211456", "c2510100000000000000000000000000000000", "4ea513acfa0740583f1c5abc413d985ad01c48d3d62e0d65b8721e3de8390a3d" },
+  { "18446744073709551616", "c249010000000000000000", "0b854352f6a4c02db6f13ac878a41f0b11f54950ad9b88170fb509c916ff0a71" },
+  { "-13407807929942597099574024998205846127479365820592393377723561443721764030073546976801874298166903427690031858186486050853753882811946569946433649006084096",
+    "c35840ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff",
+    "8e07c147a103e69aadc9be059aeed25e358741ff27f5496e0322f17f0d6d8cf2" },
+  { "-13407807929942597099574024998205846127479365820592393377723561443721764030073546976801874298166903427690031858186486050853753882811946569946433649006084097",
+    "c35f5840010000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000004100ff",
+    "8e7a1e2d24d1199e843eaeecff59890724e47f712c32ac9f2c3547b794e8285d" }
 };
 
 /* UNIT TESTS ****************************************************************/
@@ -695,7 +723,7 @@ TEST(cardano_plutus_data_from_cbor, canDecodeBigNegativeInteger)
 
   cardano_bigint_t* value = NULL;
   EXPECT_EQ(cardano_plutus_data_to_integer(plutus_data, &value), CARDANO_SUCCESS);
-  EXPECT_EQ(cardano_bigint_to_int(value), -72057594037927936);
+  EXPECT_EQ(cardano_bigint_to_int(value), -72057594037927937);
   cardano_bigint_unref(&value);
 
   // Cleanup
@@ -2487,6 +2515,170 @@ TEST(cardano_plutus_data_to_cbor, canSerializeBigInteger)
 
   // Cleanup
   free(cbor_hex);
+  cardano_cbor_writer_unref(&writer);
+  cardano_plutus_data_unref(&data);
+}
+
+TEST(cardano_plutus_data_to_cbor, encodesIntegerBoundariesLikeTheReferenceImplementation)
+{
+  for (const integer_vector_t& vector: INTEGER_BOUNDARY_VECTORS)
+  {
+    // Arrange
+    cardano_plutus_data_t* data   = nullptr;
+    cardano_cbor_writer_t* writer = cardano_cbor_writer_new();
+
+    ASSERT_EQ(cardano_plutus_data_new_integer_from_string(vector.decimal, strlen(vector.decimal), 10, &data), CARDANO_SUCCESS);
+
+    // Act
+    cardano_error_t error = cardano_plutus_data_to_cbor(data, writer);
+
+    // Assert
+    EXPECT_EQ(error, CARDANO_SUCCESS);
+
+    cardano_buffer_t* cbor = nullptr;
+    EXPECT_EQ(cardano_cbor_writer_encode_in_buffer(writer, &cbor), CARDANO_SUCCESS);
+
+    const size_t cbor_hex_size = cardano_buffer_get_hex_size(cbor);
+    char*        cbor_hex      = (char*)malloc(cbor_hex_size);
+
+    EXPECT_EQ(cardano_buffer_to_hex(cbor, cbor_hex, cbor_hex_size), CARDANO_SUCCESS);
+    EXPECT_STREQ(cbor_hex, vector.cbor) << vector.decimal;
+
+    cardano_blake2b_hash_t* hash = nullptr;
+    EXPECT_EQ(cardano_blake2b_compute_hash(cardano_buffer_get_data(cbor), cardano_buffer_get_size(cbor), CARDANO_BLAKE2B_HASH_SIZE_256, &hash), CARDANO_SUCCESS);
+
+    const size_t hash_hex_size = cardano_blake2b_hash_get_hex_size(hash);
+    char*        hash_hex      = (char*)malloc(hash_hex_size);
+
+    EXPECT_EQ(cardano_blake2b_hash_to_hex(hash, hash_hex, hash_hex_size), CARDANO_SUCCESS);
+    EXPECT_STREQ(hash_hex, vector.hash) << vector.decimal;
+
+    // Cleanup
+    free(hash_hex);
+    free(cbor_hex);
+    cardano_blake2b_hash_unref(&hash);
+    cardano_buffer_unref(&cbor);
+    cardano_cbor_writer_unref(&writer);
+    cardano_plutus_data_unref(&data);
+  }
+}
+
+TEST(cardano_plutus_data_from_cbor, decodesIntegerBoundariesLikeTheReferenceImplementation)
+{
+  for (const integer_vector_t& vector: INTEGER_BOUNDARY_VECTORS)
+  {
+    // Arrange
+    cardano_plutus_data_t* data   = nullptr;
+    cardano_cbor_reader_t* reader = cardano_cbor_reader_from_hex(vector.cbor, strlen(vector.cbor));
+
+    // Act
+    cardano_error_t error = cardano_plutus_data_from_cbor(reader, &data);
+
+    // Assert
+    ASSERT_EQ(error, CARDANO_SUCCESS) << vector.decimal;
+
+    cardano_bigint_t* value = nullptr;
+    EXPECT_EQ(cardano_plutus_data_to_integer(data, &value), CARDANO_SUCCESS);
+
+    const size_t string_size = cardano_bigint_get_string_size(value, 10);
+    char*        string      = (char*)malloc(string_size);
+
+    EXPECT_EQ(cardano_bigint_to_string(value, string, string_size, 10), CARDANO_SUCCESS);
+    EXPECT_STREQ(string, vector.decimal) << vector.cbor;
+
+    // Cleanup
+    free(string);
+    cardano_bigint_unref(&value);
+    cardano_plutus_data_unref(&data);
+    cardano_cbor_reader_unref(&reader);
+  }
+}
+
+TEST(cardano_plutus_data_from_cbor, returnsErrorWhenMemoryAllocationFailsWhileReadingANegativeInteger)
+{
+  const int allocation_count = 16;
+
+  for (int index = 0; index < allocation_count; ++index)
+  {
+    // Arrange
+    cardano_plutus_data_t* data   = nullptr;
+    cardano_cbor_reader_t* reader = cardano_cbor_reader_from_hex("3bffffffffffffffff", strlen("3bffffffffffffffff"));
+
+    set_malloc_fail_index(index);
+    cardano_set_allocators(fail_malloc_at_exact_index, realloc, free);
+
+    // Act
+    cardano_error_t error = cardano_plutus_data_from_cbor(reader, &data);
+
+    cardano_set_allocators(malloc, realloc, free);
+
+    // Assert
+    EXPECT_THAT(error, testing::AnyOf(CARDANO_SUCCESS, CARDANO_ERROR_MEMORY_ALLOCATION_FAILED));
+
+    // Cleanup
+    cardano_plutus_data_unref(&data);
+    cardano_cbor_reader_unref(&reader);
+  }
+}
+
+TEST(cardano_plutus_data_from_cbor, returnsErrorIfNegativeIntegerIsTruncated)
+{
+  // Arrange
+  cardano_plutus_data_t* data   = nullptr;
+  cardano_cbor_reader_t* reader = cardano_cbor_reader_from_hex("3bffff", strlen("3bffff"));
+
+  // Act
+  cardano_error_t error = cardano_plutus_data_from_cbor(reader, &data);
+
+  // Assert
+  EXPECT_EQ(error, CARDANO_ERROR_DECODING);
+
+  // Cleanup
+  cardano_cbor_reader_unref(&reader);
+}
+
+TEST(cardano_plutus_data_to_cbor, returnsErrorWhenMemoryAllocationFailsForABignum)
+{
+  // Arrange
+  cardano_plutus_data_t* data   = nullptr;
+  cardano_cbor_writer_t* writer = cardano_cbor_writer_new();
+
+  ASSERT_EQ(cardano_plutus_data_new_integer_from_string("-18446744073709551617", strlen("-18446744073709551617"), 10, &data), CARDANO_SUCCESS);
+
+  reset_allocators_run_count();
+  cardano_set_allocators(fail_right_away_malloc, realloc, free);
+
+  // Act
+  cardano_error_t error = cardano_plutus_data_to_cbor(data, writer);
+
+  // Assert
+  EXPECT_EQ(error, CARDANO_ERROR_MEMORY_ALLOCATION_FAILED);
+
+  // Cleanup
+  cardano_set_allocators(malloc, realloc, free);
+  cardano_cbor_writer_unref(&writer);
+  cardano_plutus_data_unref(&data);
+}
+
+TEST(cardano_plutus_data_to_cbor, returnsErrorWhenMemoryAllocationFailsForTheBignumBytes)
+{
+  // Arrange
+  cardano_plutus_data_t* data   = nullptr;
+  cardano_cbor_writer_t* writer = cardano_cbor_writer_new();
+
+  ASSERT_EQ(cardano_plutus_data_new_integer_from_string("-18446744073709551617", strlen("-18446744073709551617"), 10, &data), CARDANO_SUCCESS);
+
+  reset_allocators_run_count();
+  cardano_set_allocators(fail_after_one_malloc, realloc, free);
+
+  // Act
+  cardano_error_t error = cardano_plutus_data_to_cbor(data, writer);
+
+  // Assert
+  EXPECT_EQ(error, CARDANO_ERROR_MEMORY_ALLOCATION_FAILED);
+
+  // Cleanup
+  cardano_set_allocators(malloc, realloc, free);
   cardano_cbor_writer_unref(&writer);
   cardano_plutus_data_unref(&data);
 }

@@ -165,8 +165,9 @@ CARDANO_EXPORT size_t cardano_cbor_writer_refcount(const cardano_cbor_writer_t* 
  * This function writes a provided big integer value as a bignum, following the
  * encoding format specified in RFC 7049, section 2.4.2. Bignums are used to represent
  * integers that are too large to be represented directly in the available integer types
- * of CBOR. The function applies the appropriate tag (2 for unsigned bignum) before encoding
- * the integer value, ensuring its correct interpretation as a bignum in the resulting CBOR data.
+ * of CBOR. The function applies the appropriate tag before encoding the integer value: a value
+ * \c v >= 0 is written as tag 2 (unsigned bignum) with magnitude \c v, and a value \c v < 0 is
+ * written as tag 3 (negative bignum) with magnitude \c -1 - v, as defined in RFC 8949, section 3.4.3.
  *
  * \param[in] writer The \ref cardano_cbor_writer_t instance to which the bignum will be written.
  * \param[in] bigint The \ref cardano_bigint_t object representing the big integer value to be encoded as a bignum.
@@ -588,6 +589,40 @@ CARDANO_EXPORT cardano_error_t cardano_cbor_writer_write_end_map(cardano_cbor_wr
  */
 CARDANO_NODISCARD
 CARDANO_EXPORT cardano_error_t cardano_cbor_writer_write_uint(cardano_cbor_writer_t* writer, uint64_t value);
+
+/**
+ * \brief Encodes and writes a negative integer (major type 1) from its raw argument.
+ *
+ * A CBOR negative integer carries an unsigned argument \c n and represents the value \c -1 - n.
+ * This function writes \c n unchanged, so every negative integer the encoding allows, down to
+ * \c -2^64, can be written, including those that do not fit in a signed 64-bit integer.
+ *
+ * \param[in] writer A pointer to the \ref cardano_cbor_writer_t instance tasked with constructing the CBOR stream.
+ * \param[in] argument The argument \c n of the negative integer \c -1 - n to be written.
+ *
+ * \return Returns \ref CARDANO_SUCCESS upon successful encoding and writing of the negative integer to the
+ *         CBOR stream. In the event of an error, a specific error code from the \ref cardano_error_t enumeration
+ *         is returned to detail the cause of the problem.
+ *
+ * Example usage:
+ * \code{.c}
+ * cardano_cbor_writer_t* writer = cardano_cbor_writer_new();
+ *
+ * if (writer)
+ * {
+ *   cardano_error_t result = cardano_cbor_writer_write_negative_int(writer, UINT64_MAX);
+ *
+ *   if (result != CARDANO_SUCCESS)
+ *   {
+ *     printf("Error: %s\n", cardano_error_to_string(result));
+ *   }
+ *
+ *   cardano_cbor_writer_unref(&writer);
+ * }
+ * \endcode
+ */
+CARDANO_NODISCARD
+CARDANO_EXPORT cardano_error_t cardano_cbor_writer_write_negative_int(cardano_cbor_writer_t* writer, uint64_t argument);
 
 /**
  * \brief Encodes and writes a signed integer value to the CBOR stream, using CBOR major types 0 or 1.

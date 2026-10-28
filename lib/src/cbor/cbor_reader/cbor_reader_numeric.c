@@ -601,6 +601,59 @@ _cbor_reader_read_uint(cardano_cbor_reader_t* reader, uint64_t* value)
 }
 
 cardano_error_t
+_cbor_reader_read_negative_int(cardano_cbor_reader_t* reader, uint64_t* argument)
+{
+  if (reader == NULL)
+  {
+    return CARDANO_ERROR_POINTER_IS_NULL;
+  }
+
+  if (argument == NULL)
+  {
+    return CARDANO_ERROR_POINTER_IS_NULL;
+  }
+
+  byte_t          header = 0;
+  cardano_error_t result = _cbor_reader_peek_initial_byte(reader, CARDANO_CBOR_MAJOR_TYPE_NEGATIVE_INTEGER, &header);
+
+  if (result != CARDANO_SUCCESS)
+  {
+    return result;
+  }
+
+  cardano_buffer_t* buffer = NULL;
+
+  result = cardano_cbor_reader_get_remainder_bytes(reader, &buffer);
+
+  if (result != CARDANO_SUCCESS)
+  {
+    return result;
+  }
+
+  uint64_t value      = 0;
+  size_t   bytes_read = 0;
+
+  result = _cbor_reader_decode_unsigned_integer(buffer, header, &value, &bytes_read);
+
+  cardano_buffer_unref(&buffer);
+
+  if (result != CARDANO_SUCCESS)
+  {
+    return result;
+  }
+
+  cardano_error_t advance_result = _cbor_reader_advance_buffer(reader, bytes_read);
+
+  assert(advance_result == CARDANO_SUCCESS);
+  CARDANO_UNUSED(advance_result);
+
+  _cbor_reader_advance_data_item_counters(reader);
+  *argument = value;
+
+  return CARDANO_SUCCESS;
+}
+
+cardano_error_t
 _cardano_reader_read_bigint(cardano_cbor_reader_t* reader, cardano_bigint_t** bigint)
 {
   if (reader == NULL)
@@ -652,6 +705,7 @@ _cardano_reader_read_bigint(cardano_cbor_reader_t* reader, cardano_bigint_t** bi
   if (tag == CARDANO_CBOR_TAG_NEGATIVE_BIG_NUM)
   {
     cardano_bigint_negate(copy, *bigint);
+    cardano_bigint_decrement(*bigint);
   }
 
   cardano_bigint_unref(&copy);

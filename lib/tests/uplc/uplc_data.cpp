@@ -28,9 +28,12 @@
 #include <cardano/error.h>
 #include <cardano/plutus_data/plutus_data.h>
 
+#include "../../src/allocators.h"
 #include "../../src/uplc/arena/uplc_arena.h"
 #include "../../src/uplc/cost/uplc_ex_mem.h"
 #include "../../src/uplc/data/uplc_data.h"
+
+#include "../allocators_helpers.h"
 
 #include <gmock/gmock.h>
 #include <string>
@@ -290,6 +293,125 @@ TEST(cardano_uplc_data_from_cbor_bytes, negativeIntegerBeyondInt64MatchesLibrary
     cardano_plutus_data_unref(&library_node);
     cardano_uplc_arena_free(&arena);
   }
+}
+
+/* INTEGER BOUNDARIES *******************************************************/
+
+namespace
+{
+
+const char* kIntegerBoundaries[][2] = {
+  { "-9223372036854775809", "3b8000000000000000" },
+  { "-18446744073709551616", "3bffffffffffffffff" },
+  { "-18446744073709551617", "c349010000000000000000" },
+  { "-18446744073709551618", "c349010000000000000001" },
+  { "-340282366920938463463374607431768211456", "c350ffffffffffffffffffffffffffffffff" },
+  { "18446744073709551616", "c249010000000000000000" },
+  { "340282366920938463463374607431768211456", "c2510100000000000000000000000000000000" },
+  { "-13407807929942597099574024998205846127479365820592393377723561443721764030073546976801874298166903427690031858186486050853753882811946569946433649006084096",
+    "c35840ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff" },
+  { "-13407807929942597099574024998205846127479365820592393377723561443721764030073546976801874298166903427690031858186486050853753882811946569946433649006084097",
+    "c35f5840010000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000004100ff" },
+};
+
+std::string
+integer_node_to_decimal(const cardano_uplc_data_t* node)
+{
+  cardano_plutus_data_t* library = nullptr;
+  cardano_bigint_t*      value   = nullptr;
+
+  EXPECT_EQ(cardano_uplc_data_to_plutus_data(node, &library), CARDANO_SUCCESS);
+  EXPECT_EQ(cardano_plutus_data_to_integer(library, &value), CARDANO_SUCCESS);
+
+  std::string out(cardano_bigint_get_string_size(value, 10), '\0');
+  EXPECT_EQ(cardano_bigint_to_string(value, &out[0], out.size(), 10), CARDANO_SUCCESS);
+  out.resize(out.size() - 1U);
+
+  cardano_bigint_unref(&value);
+  cardano_plutus_data_unref(&library);
+
+  return out;
+}
+
+cardano_uplc_data_t*
+integer_node_from_decimal(cardano_uplc_arena_t* arena, const std::string& decimal)
+{
+  cardano_bigint_t*    value = nullptr;
+  cardano_uplc_data_t* node  = nullptr;
+
+  EXPECT_EQ(cardano_bigint_from_string(decimal.c_str(), decimal.size(), 10, &value), CARDANO_SUCCESS);
+  EXPECT_EQ(cardano_uplc_data_new_integer(arena, value, &node), CARDANO_SUCCESS);
+  cardano_bigint_unref(&value);
+
+  return node;
+}
+
+} // namespace
+
+TEST(cardano_uplc_data_from_cbor_bytes, decodesIntegerBoundariesLikeTheReferenceImplementation)
+{
+  for (const auto& vector: kIntegerBoundaries)
+  {
+    cardano_uplc_arena_t* arena = make_arena();
+    std::vector<uint8_t>  bytes = from_hex(vector[1]);
+    cardano_uplc_data_t*  node  = nullptr;
+
+    ASSERT_EQ(cardano_uplc_data_from_cbor_bytes(arena, bytes.data(), bytes.size(), &node), CARDANO_SUCCESS) << vector[1];
+
+    EXPECT_EQ(integer_node_to_decimal(node), vector[0]) << vector[1];
+    EXPECT_EQ(arena_serialise_hex(node), vector[1]) << vector[0];
+
+    cardano_uplc_arena_free(&arena);
+  }
+}
+
+TEST(cardano_uplc_data_to_cbor, encodesIntegerBoundariesLikeTheReferenceImplementation)
+{
+  for (const auto& vector: kIntegerBoundaries)
+  {
+    cardano_uplc_arena_t* arena = make_arena();
+    cardano_uplc_data_t*  node  = integer_node_from_decimal(arena, vector[0]);
+
+    EXPECT_EQ(arena_serialise_hex(node), vector[1]) << vector[0];
+
+    cardano_uplc_arena_free(&arena);
+  }
+}
+
+TEST(cardano_uplc_data_to_cbor, returnsErrorWhenMemoryAllocationFailsForABignum)
+{
+  cardano_uplc_arena_t*  arena  = make_arena();
+  cardano_uplc_data_t*   node   = integer_node_from_decimal(arena, "-340282366920938463463374607431768211456");
+  cardano_cbor_writer_t* writer = cardano_cbor_writer_new();
+
+  reset_allocators_run_count();
+  cardano_set_allocators(fail_right_away_malloc, realloc, free);
+
+  EXPECT_EQ(cardano_uplc_data_to_cbor(node, writer), CARDANO_ERROR_MEMORY_ALLOCATION_FAILED);
+
+  reset_allocators_run_count();
+  cardano_set_allocators(fail_after_one_malloc, realloc, free);
+
+  EXPECT_EQ(cardano_uplc_data_to_cbor(node, writer), CARDANO_ERROR_MEMORY_ALLOCATION_FAILED);
+
+  cardano_set_allocators(malloc, realloc, free);
+  cardano_cbor_writer_unref(&writer);
+  cardano_uplc_arena_free(&arena);
+}
+
+TEST(cardano_uplc_data_from_cbor_bytes, returnsErrorWhenMemoryAllocationFailsForANegativeIntegerBeyondInt64)
+{
+  cardano_uplc_arena_t* arena = make_arena();
+  std::vector<uint8_t>  bytes = from_hex("3bffffffffffffffff");
+  cardano_uplc_data_t*  node  = nullptr;
+
+  reset_allocators_run_count();
+  cardano_set_allocators(fail_right_away_malloc, realloc, free);
+
+  EXPECT_EQ(cardano_uplc_data_from_cbor_bytes(arena, bytes.data(), bytes.size(), &node), CARDANO_ERROR_MEMORY_ALLOCATION_FAILED);
+
+  cardano_set_allocators(malloc, realloc, free);
+  cardano_uplc_arena_free(&arena);
 }
 
 /* MEMOIZED EX-MEM **********************************************************/

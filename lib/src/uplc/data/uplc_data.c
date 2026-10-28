@@ -690,8 +690,9 @@ integer_equals(const cardano_uplc_data_t* lhs, const cardano_uplc_data_t* rhs)
  * \brief Writes the canonical CBOR for an integer leaf.
  *
  * Replicates the library's plutus-data integer encoding exactly: uint / nint for
- * values fitting 64 bits and the bignum tags 2 / 3 with chunked indefinite byte
- * strings for larger magnitudes.
+ * values in [-2^64, 2^64 - 1] and the bignum tags 2 / 3 with chunked indefinite
+ * byte strings outside that range. Tag 3 carries the magnitude \c -1 - v of a
+ * negative value \c v, as defined in RFC 8949, section 3.4.3.
  *
  * \param[in] data An integer data node.
  * \param[in] writer The CBOR writer.
@@ -712,36 +713,65 @@ write_integer(const cardano_uplc_data_t* data, cardano_cbor_writer_t* writer)
   }
 
   {
-    const cardano_bigint_t* value      = data->as.integer.big;
-    size_t                  bit_length = cardano_bigint_bit_length(value);
-    cardano_error_t         result     = CARDANO_SUCCESS;
-
-    if ((cardano_bigint_signum(value) < 0) && (bit_length <= 64U))
-    {
-      return cardano_cbor_writer_write_signed_int(writer, cardano_bigint_to_int(value));
-    }
+    const cardano_bigint_t* value       = data->as.integer.big;
+    const bool              is_negative = cardano_bigint_signum(value) < 0;
+    const size_t            bit_length  = cardano_bigint_bit_length(value);
+    cardano_bigint_t*       magnitude   = NULL;
+    cardano_error_t         result      = CARDANO_SUCCESS;
 
     if (bit_length <= 64U)
     {
-      return cardano_cbor_writer_write_uint(writer, cardano_bigint_to_unsigned_int(value));
+      const uint64_t absolute = cardano_bigint_to_unsigned_int(value);
+
+      if (is_negative)
+      {
+        return cardano_cbor_writer_write_negative_int(writer, absolute - 1U);
+      }
+
+      return cardano_cbor_writer_write_uint(writer, absolute);
+    }
+
+    result = cardano_bigint_clone(value, &magnitude);
+
+    if (result != CARDANO_SUCCESS)
+    {
+      return result;
+    }
+
+    if (is_negative)
+    {
+      cardano_bigint_negate(value, magnitude);
+      cardano_bigint_decrement(magnitude);
+    }
+
+    if (is_negative && (cardano_bigint_bit_length(magnitude) <= 64U))
+    {
+      result = cardano_cbor_writer_write_negative_int(writer, cardano_bigint_to_unsigned_int(magnitude));
+      cardano_bigint_unref(&magnitude);
+
+      return result;
     }
 
     {
-      const size_t size  = cardano_bigint_get_bytes_size(value);
+      const size_t size  = cardano_bigint_get_bytes_size(magnitude);
       byte_t*      bytes = (byte_t*)_cardano_malloc(size);
 
       if (bytes == NULL)
       {
+        cardano_bigint_unref(&magnitude);
+
         return CARDANO_ERROR_MEMORY_ALLOCATION_FAILED;
       }
 
-      result = cardano_bigint_to_bytes(value, CARDANO_BYTE_ORDER_BIG_ENDIAN, bytes, size);
+      result = cardano_bigint_to_bytes(magnitude, CARDANO_BYTE_ORDER_BIG_ENDIAN, bytes, size);
+
+      cardano_bigint_unref(&magnitude);
 
       if (result == CARDANO_SUCCESS)
       {
         result = cardano_cbor_writer_write_tag(
           writer,
-          (cardano_bigint_signum(value) < 0) ? CARDANO_CBOR_TAG_NEGATIVE_BIG_NUM : CARDANO_CBOR_TAG_UNSIGNED_BIG_NUM);
+          is_negative ? CARDANO_CBOR_TAG_NEGATIVE_BIG_NUM : CARDANO_CBOR_TAG_UNSIGNED_BIG_NUM);
       }
 
       if (result == CARDANO_SUCCESS)
@@ -1712,9 +1742,9 @@ parse_map(
  *        node.
  *
  * Replicates \c _cardano_reader_read_bigint exactly: the magnitude is the big-endian
- * unsigned value of the byte string, and tag 3 negates it (yielding \c -magnitude,
- * matching the library's \c cardano_bigint_negate). The node down-converts to an
- * inline \c int64_t when it fits.
+ * unsigned value of the byte string, and tag 3 yields \c -1 - magnitude, as defined
+ * in RFC 8949, section 3.4.3. The node down-converts to an inline \c int64_t when it
+ * fits.
  *
  * \param[in] arena The arena.
  * \param[in,out] cursor The byte cursor, positioned just past the tag head byte.
@@ -1774,6 +1804,7 @@ parse_bignum(cardano_uplc_arena_t* arena, cursor_t* cursor, bool negative, carda
     }
 
     cardano_bigint_negate(magnitude, negated);
+    cardano_bigint_decrement(negated);
     cardano_bigint_unref(&magnitude);
 
     return node_from_bigint(arena, negated, out);
@@ -1984,13 +2015,25 @@ parse_data_node(cardano_uplc_arena_t* arena, cursor_t* cursor, uint32_t depth, c
         return result;
       }
 
+      if (value <= (uint64_t)INT64_MAX)
       {
-        uint64_t bits = (uint64_t)(-1) - value;
-        int64_t  decoded;
+        return cardano_uplc_data_new_integer_small(arena, (int64_t)(-1) - (int64_t)value, out);
+      }
 
-        cardano_safe_memcpy(&decoded, sizeof(decoded), &bits, sizeof(decoded));
+      {
+        cardano_bigint_t* integer = NULL;
 
-        return cardano_uplc_data_new_integer_small(arena, decoded, out);
+        result = cardano_bigint_from_unsigned_int(value, &integer);
+
+        if (result != CARDANO_SUCCESS)
+        {
+          return result;
+        }
+
+        cardano_bigint_negate(integer, integer);
+        cardano_bigint_decrement(integer);
+
+        return node_from_bigint(arena, integer, out);
       }
     }
     case PRV_CBOR_MAJOR_BYTES:

@@ -908,9 +908,17 @@ cardano_metadatum_from_cbor(cardano_cbor_reader_t* reader, cardano_metadatum_t**
     }
     case CARDANO_CBOR_READER_STATE_NEGATIVE_INTEGER:
     {
-      int64_t integer = 0;
+      uint64_t argument = 0;
 
-      result = cardano_cbor_reader_read_int(reader, &integer);
+      result = cardano_cbor_reader_read_negative_int(reader, &argument);
+
+      if (result != CARDANO_SUCCESS)
+      {
+        cardano_metadatum_deallocate(data);
+        return result;
+      }
+
+      result = cardano_bigint_from_unsigned_int(argument, &data->integer);
 
       if (result != CARDANO_SUCCESS)
       {
@@ -918,13 +926,8 @@ cardano_metadatum_from_cbor(cardano_cbor_reader_t* reader, cardano_metadatum_t**
         return result;
       }
 
-      result = cardano_bigint_from_int(integer, &data->integer);
-
-      if (result != CARDANO_SUCCESS)
-      {
-        cardano_metadatum_deallocate(data);
-        return result;
-      }
+      cardano_bigint_negate(data->integer, data->integer);
+      cardano_bigint_decrement(data->integer);
 
       data->kind = CARDANO_METADATUM_KIND_INTEGER;
 
@@ -1148,15 +1151,46 @@ cardano_metadatum_to_cbor(const cardano_metadatum_t* metadatum, cardano_cbor_wri
     }
     case CARDANO_METADATUM_KIND_INTEGER:
     {
-      size_t bit_length = cardano_bigint_bit_length(metadatum->integer);
+      const bool   is_negative = cardano_bigint_signum(metadatum->integer) < 0;
+      const size_t bit_length  = cardano_bigint_bit_length(metadatum->integer);
 
-      if ((cardano_bigint_signum(metadatum->integer) < 0) && (bit_length <= 64U))
+      if (bit_length <= 64U)
       {
-        result = cardano_cbor_writer_write_signed_int(writer, cardano_bigint_to_int(metadatum->integer));
+        const uint64_t absolute = cardano_bigint_to_unsigned_int(metadatum->integer);
+
+        if (is_negative)
+        {
+          result = cardano_cbor_writer_write_negative_int(writer, absolute - 1U);
+        }
+        else
+        {
+          result = cardano_cbor_writer_write_uint(writer, absolute);
+        }
       }
-      else if (bit_length <= 64U)
+      else if (is_negative)
       {
-        result = cardano_cbor_writer_write_uint(writer, cardano_bigint_to_unsigned_int(metadatum->integer));
+        cardano_bigint_t* magnitude = NULL;
+
+        result = cardano_bigint_clone(metadatum->integer, &magnitude);
+
+        if (result != CARDANO_SUCCESS)
+        {
+          return result;
+        }
+
+        cardano_bigint_negate(metadatum->integer, magnitude);
+        cardano_bigint_decrement(magnitude);
+
+        if (cardano_bigint_bit_length(magnitude) <= 64U)
+        {
+          result = cardano_cbor_writer_write_negative_int(writer, cardano_bigint_to_unsigned_int(magnitude));
+        }
+        else
+        {
+          result = cardano_cbor_writer_write_bigint(writer, metadatum->integer);
+        }
+
+        cardano_bigint_unref(&magnitude);
       }
       else
       {
