@@ -253,16 +253,16 @@ cardano_uplc_builtin_first_version(cardano_uplc_builtin_t builtin, cardano_uplc_
  *
  * Encodes the ledger's \c builtinsIntroducedIn schedule: each builtin becomes
  * available in a given Plutus language at the protocol major version that
- * introduced its release batch for that language. A script must not use a builtin
- * before it is available, which the node enforces; the evaluator uses this to
- * reject such a use rather than running it.
+ * introduced its release batch for that language. A script that names a builtin
+ * before it is available cannot be deserialised, so the script decoder rejects it
+ * (see \ref cardano_uplc_flat_decode_script_program).
  *
  * \param[in] builtin The builtin tag to query.
  * \param[in] language The Plutus language of the script using the builtin.
  * \param[in] protocol_major The major protocol version the transaction is evaluated under.
  *
  * \return \c true when the builtin is available, \c false otherwise (including for
- *         an invalid builtin tag).
+ *         an invalid builtin tag or language).
  */
 bool
 cardano_uplc_builtin_available(

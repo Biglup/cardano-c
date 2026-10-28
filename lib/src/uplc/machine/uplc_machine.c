@@ -41,6 +41,17 @@
 
 #include <stddef.h>
 
+/* CONSTANTS *****************************************************************/
+
+/**
+ * \brief The protocol major version (van Rossem) from which \c case may scrutinise
+ *        a constant of a built-in type
+ *        (plutus-ledger-api/src/PlutusLedgerApi/Common/Eval.hs,
+ *        \c defaultCaserBuiltinFor).
+ */
+// cppcheck-suppress misra-c2012-8.9; Reason: file-scope constant data grouped with the module
+static const uint64_t CASE_ON_BUILTINS_PROTOCOL_VERSION = 11U;
+
 /* MACHINE LOOP **************************************************************/
 
 /**
@@ -93,7 +104,8 @@ typedef struct
  * the full cost model (machine-step costs plus the per-builtin costing functions)
  * and the builtin semantics variant; the step loop reads its machine-step costs
  * through the accumulator, and the saturated-builtin path reads \c cost_model.builtins
- * and \c semantics to charge builtin costs.
+ * and \c semantics to charge builtin costs. \c protocol_major decides whether
+ * \c case may scrutinise a constant.
  */
 typedef struct
 {
@@ -102,7 +114,6 @@ typedef struct
     cardano_uplc_budget_t            initial;
     cardano_uplc_cost_model_t        cost_model;
     cardano_uplc_builtin_semantics_t semantics;
-    cardano_uplc_lang_version_t      language;
     uint64_t                         protocol_major;
 } machine_t;
 
@@ -520,11 +531,6 @@ try_call_builtin(
 
   if ((arg_count == arity) && (forces == force_count))
   {
-    if (!cardano_uplc_builtin_available(func, machine->language, machine->protocol_major))
-    {
-      return PRV_STEP_UNSUPPORTED_BUILTIN;
-    }
-
     const cardano_uplc_value_t*        result  = NULL;
     cardano_uplc_int_builtin_outcome_t outcome = cardano_uplc_int_builtin_run(
       machine->arena,
@@ -880,7 +886,9 @@ constant_value(
  * in-range index; a non-empty list selects branch 0 and pushes its head then
  * tail; an empty list selects branch 1; a pair selects branch 0 and pushes its
  * first then second component. Any other constant kind, or an out-of-range or
- * missing branch, is a script error.
+ * missing branch, is a script error. Before protocol version 11 casing on any
+ * constant is a script error, as the ledger's unavailable caser makes it
+ * (plutus-ledger-api/src/PlutusLedgerApi/Common/Eval.hs, \c defaultCaserBuiltinFor).
  *
  * \param[in,out] machine The machine context.
  * \param[in] frame The cases frame holding the branches and environment.
@@ -902,6 +910,11 @@ case_on_constant(
   size_t                      tag        = (size_t)0;
 
   *host_error = CARDANO_SUCCESS;
+
+  if (machine->protocol_major < CASE_ON_BUILTINS_PROTOCOL_VERSION)
+  {
+    return PRV_STEP_SCRIPT_ERROR;
+  }
 
   switch (constant->kind)
   {
@@ -1877,7 +1890,6 @@ cardano_uplc_int_evaluate_with_costs(
   const cardano_uplc_program_t*    program,
   const cardano_uplc_cost_model_t* cost_model,
   cardano_uplc_builtin_semantics_t semantics,
-  cardano_uplc_lang_version_t      language,
   uint64_t                         protocol_major,
   cardano_uplc_budget_t            initial_budget,
   cardano_uplc_eval_result_t*      out)
@@ -1899,7 +1911,6 @@ cardano_uplc_int_evaluate_with_costs(
   machine.initial        = initial_budget;
   machine.cost_model     = *cost_model;
   machine.semantics      = semantics;
-  machine.language       = language;
   machine.protocol_major = protocol_major;
 
   error = cardano_uplc_step_accumulator_init(&machine.acc, &machine.cost_model.machine);
@@ -2071,8 +2082,5 @@ cardano_uplc_evaluate(
 
   cardano_uplc_builtin_costs_select_division_shapes(&cost_model.builtins, semantics);
 
-  // This generic entry point does not carry a protocol version; gate by language
-  // only by assuming the newest protocol, where every builtin of the language is
-  // available. The transaction evaluator threads the real protocol version below.
-  return cardano_uplc_int_evaluate_with_costs(arena, program, &cost_model, semantics, lang_version(version), VAN_ROSSEM_PROTOCOL_VERSION, initial_budget, out);
+  return cardano_uplc_int_evaluate_with_costs(arena, program, &cost_model, semantics, VAN_ROSSEM_PROTOCOL_VERSION, initial_budget, out);
 }

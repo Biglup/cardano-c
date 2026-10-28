@@ -48,7 +48,8 @@ extern "C" {
  *
  * Runs the Compute/Return/Done transition machine over \p program->term,
  * charging the default machine-step costs for \p version with slippage batching,
- * and reports the outcome through \p out.
+ * and reports the outcome through \p out. The builtin semantics variant and the
+ * \c case rules are those of \p version at protocol version 11.
  *
  * The loop is iterative, not host-recursive, so a deeply nested term cannot
  * overflow the C stack. Builtin bodies are implemented in later milestones: a
@@ -125,9 +126,10 @@ cardano_uplc_evaluate(
  * \param[in] cost_model The full cost model to charge against. Must not be NULL.
  * \param[in] semantics The builtin semantics variant driving the version-dependent
  *            builtin behaviours.
- * \param[in] language The Plutus language of the program, used to gate builtins.
  * \param[in] protocol_major The major protocol version the program is evaluated
- *            under, used together with \p language to gate builtins.
+ *            under; below 11 a \c case on a constant fails the script. Builtin
+ *            availability is not checked here: the ledger rejects an unavailable
+ *            builtin when it deserialises the script.
  * \param[in] initial_budget The CPU and memory ceiling for the evaluation.
  * \param[out] out On a \ref CARDANO_SUCCESS return, the script outcome, spent
  *             budget and result term.
@@ -141,7 +143,6 @@ cardano_uplc_int_evaluate_with_costs(
   const cardano_uplc_program_t*    program,
   const cardano_uplc_cost_model_t* cost_model,
   cardano_uplc_builtin_semantics_t semantics,
-  cardano_uplc_lang_version_t      language,
   uint64_t                         protocol_major,
   cardano_uplc_budget_t            initial_budget,
   cardano_uplc_eval_result_t*      out);

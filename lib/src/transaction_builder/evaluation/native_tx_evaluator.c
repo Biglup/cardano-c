@@ -155,6 +155,19 @@ typedef enum
   PRV_SCRIPT_V3 = 2
 } script_version_t;
 
+/**
+ * \brief The outcome of evaluating one redeemer that the host could run.
+ */
+typedef enum
+{
+  /** \brief The script deserialised and evaluated successfully. */
+  PRV_REDEEMER_SUCCEEDED = 0,
+  /** \brief The script cannot be deserialised for its language at the protocol version. */
+  PRV_REDEEMER_NOT_DESERIALISABLE = 1,
+  /** \brief The script deserialised but failed phase-2 evaluation. */
+  PRV_REDEEMER_SCRIPT_FAILED = 2
+} redeemer_outcome_t;
+
 /* STATIC FUNCTIONS **********************************************************/
 
 /**
@@ -1374,11 +1387,42 @@ apply_arguments(
 }
 
 /**
+ * \brief Deserialises a script the way the ledger does before evaluating it.
+ *
+ * Decodes the script for its language at \p protocol_major
+ * (\ref cardano_uplc_program_from_ledger_script): the language and every builtin
+ * it names must be available there. The Plutus Core version of the program is
+ * not checked here; the ledger checks it when evaluating the script, so an
+ * unavailable one is a phase-2 failure.
+ *
+ * \return \ref CARDANO_SUCCESS on success, \ref CARDANO_ERROR_DECODING when the
+ *         script cannot be deserialised, or a propagated host error.
+ */
+static cardano_error_t
+deserialise_script(
+  cardano_uplc_arena_t*          arena,
+  script_version_t               version,
+  uint64_t                       protocol_major,
+  const cardano_buffer_t*        script_bytes,
+  const cardano_uplc_program_t** program)
+{
+  return cardano_uplc_program_from_ledger_script(
+    arena,
+    cardano_buffer_get_data(script_bytes),
+    cardano_buffer_get_size(script_bytes),
+    uplc_lang_version(version),
+    protocol_major,
+    program);
+}
+
+/**
  * \brief Evaluates one redeemer and writes its consumed ex-units into a new redeemer.
  *
  * The whole evaluation runs inside a per-redeemer arena that is freed on every
- * path. A script that fails (error term, out of budget, unsupported builtin) is a
- * phase-2 validation failure reported through \p out_failed, not a host error.
+ * path. A script that cannot be deserialised for its language at the protocol
+ * version, or that fails (Plutus Core version not available at the protocol
+ * version, error term, out of budget, unsupported builtin), is reported through
+ * \p out_outcome, not as a host error.
  *
  * The CEK machine is bounded by \p remaining, the budget left for the whole
  * transaction; on a successful evaluation the script's spent units are deducted
@@ -1396,7 +1440,7 @@ eval_redeemer(
   cardano_redeemer_t*    redeemer,
   cardano_uplc_budget_t* remaining,
   cardano_redeemer_t**   out_redeemer,
-  bool*                  out_failed)
+  redeemer_outcome_t*    out_outcome)
 {
   cardano_blake2b_hash_t*       script_hash    = NULL;
   cardano_plutus_data_t*        datum          = NULL;
@@ -1411,7 +1455,7 @@ eval_redeemer(
   cardano_error_t               result = CARDANO_SUCCESS;
 
   *out_redeemer = NULL;
-  *out_failed   = false;
+  *out_outcome  = PRV_REDEEMER_SUCCEEDED;
 
   result = resolve_script_hash(tx, witness_set, resolved_inputs, redeemer, &script_hash, &datum);
 
@@ -1440,15 +1484,29 @@ eval_redeemer(
 
   if (result == CARDANO_SUCCESS)
   {
-    result = cardano_uplc_program_from_script_bytes(arena, cardano_buffer_get_data(script_bytes), cardano_buffer_get_size(script_bytes), &program);
+    result = deserialise_script(arena, version, ctx->protocol_major, script_bytes, &program);
+
+    if (result == CARDANO_ERROR_DECODING)
+    {
+      *out_outcome = PRV_REDEEMER_NOT_DESERIALISABLE;
+      result       = CARDANO_SUCCESS;
+    }
   }
 
-  if (result == CARDANO_SUCCESS)
+  if ((result == CARDANO_SUCCESS) && (*out_outcome == PRV_REDEEMER_SUCCEEDED))
+  {
+    if (!cardano_uplc_plc_version_available(uplc_lang_version(version), ctx->protocol_major, program->version_major, program->version_minor, program->version_patch))
+    {
+      *out_outcome = PRV_REDEEMER_SCRIPT_FAILED;
+    }
+  }
+
+  if ((result == CARDANO_SUCCESS) && (*out_outcome == PRV_REDEEMER_SUCCEEDED))
   {
     result = apply_arguments(arena, version, program, redeemer, datum, script_context, &applied);
   }
 
-  if (result == CARDANO_SUCCESS)
+  if ((result == CARDANO_SUCCESS) && (*out_outcome == PRV_REDEEMER_SUCCEEDED))
   {
     cardano_uplc_selected_cost_model_t selected;
 
@@ -1456,11 +1514,11 @@ eval_redeemer(
 
     if (result == CARDANO_SUCCESS)
     {
-      result = cardano_uplc_int_evaluate_with_costs(arena, applied, &selected.model, selected.semantics, uplc_lang_version(version), ctx->protocol_major, *remaining, &eval_result);
+      result = cardano_uplc_int_evaluate_with_costs(arena, applied, &selected.model, selected.semantics, ctx->protocol_major, *remaining, &eval_result);
     }
   }
 
-  if (result == CARDANO_SUCCESS)
+  if ((result == CARDANO_SUCCESS) && (*out_outcome == PRV_REDEEMER_SUCCEEDED))
   {
     if (eval_result.status == CARDANO_UPLC_EVAL_SUCCESS)
     {
@@ -1485,7 +1543,7 @@ eval_redeemer(
     }
     else
     {
-      *out_failed = true;
+      *out_outcome = PRV_REDEEMER_SCRIPT_FAILED;
     }
   }
 
@@ -1500,13 +1558,32 @@ eval_redeemer(
 }
 
 /**
+ * \brief Stores a failure message in the evaluator, truncated to fit.
+ *
+ * \param[in,out] impl The evaluator implementation receiving the message.
+ * \param[in] message The NUL-terminated message.
+ */
+static void
+set_error_message(cardano_tx_evaluator_impl_t* impl, const char* message)
+{
+  const size_t length = cardano_safe_strlen(message, sizeof(impl->error_message) - 1U);
+
+  cardano_safe_memcpy(impl->error_message, sizeof(impl->error_message), message, length);
+  impl->error_message[length] = '\0';
+}
+
+/**
  * \brief The \ref cardano_tx_evaluate_func_t entry of the native evaluator.
  *
  * Builds the resolved-input set from the additional UTxOs (the transaction's own
  * inputs must be resolvable there), evaluates every redeemer in the witness set,
  * and returns a redeemer list whose entries carry the computed ex-units. A script
- * that fails phase-2 validation is reported as \ref CARDANO_ERROR_SCRIPT_EVALUATION_FAILURE,
- * naming the failing redeemer in the error message.
+ * that cannot be deserialised for its language at the protocol version (an
+ * unavailable language or builtin, or a malformed script) is reported as
+ * \ref CARDANO_ERROR_DECODING, and a script that fails phase-2 validation
+ * (including a Plutus Core version not available at the protocol version) as
+ * \ref CARDANO_ERROR_SCRIPT_EVALUATION_FAILURE, each with an error message
+ * naming the failure.
  */
 static cardano_error_t
 evaluate_transaction(
@@ -1547,20 +1624,25 @@ evaluate_transaction(
   {
     cardano_redeemer_t* redeemer     = NULL;
     cardano_redeemer_t* new_redeemer = NULL;
-    bool                failed       = false;
+    redeemer_outcome_t  outcome      = PRV_REDEEMER_SUCCEEDED;
 
     result = cardano_redeemer_list_get(in_list, i, &redeemer);
 
     if (result == CARDANO_SUCCESS)
     {
-      result = eval_redeemer(ctx, tx, witness_set, additional_utxos, redeemer, &remaining, &new_redeemer, &failed);
+      result = eval_redeemer(ctx, tx, witness_set, additional_utxos, redeemer, &remaining, &new_redeemer, &outcome);
     }
 
-    if ((result == CARDANO_SUCCESS) && failed)
+    if ((result == CARDANO_SUCCESS) && (outcome == PRV_REDEEMER_NOT_DESERIALISABLE))
     {
-      cardano_safe_memcpy(impl->error_message, sizeof(impl->error_message), "phase-2 validation failed for a redeemer", sizeof(impl->error_message) - 1U);
-      impl->error_message[sizeof(impl->error_message) - 1U] = '\0';
-      result                                                = CARDANO_ERROR_SCRIPT_EVALUATION_FAILURE;
+      set_error_message(impl, "a redeemer's script cannot be deserialised at this protocol version");
+      result = CARDANO_ERROR_DECODING;
+    }
+
+    if ((result == CARDANO_SUCCESS) && (outcome == PRV_REDEEMER_SCRIPT_FAILED))
+    {
+      set_error_message(impl, "phase-2 validation failed for a redeemer");
+      result = CARDANO_ERROR_SCRIPT_EVALUATION_FAILURE;
     }
 
     if (result == CARDANO_SUCCESS)

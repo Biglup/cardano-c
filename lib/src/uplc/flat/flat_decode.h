@@ -24,6 +24,7 @@
 
 /* INCLUDES ******************************************************************/
 
+#include "../ast/uplc_lang_version.h"
 #include "../ast/uplc_program.h"
 #include "../ast/uplc_term.h"
 #include <cardano/error.h>
@@ -123,10 +124,13 @@ cardano_uplc_flat_decode_term(
  * Reads three version words (major, minor, patch), then one term through
  * \ref cardano_uplc_flat_decode_term, then a final filler run: a sequence of zero
  * bits up to and including a terminating one bit that byte-aligns the stream. A
- * truncated stream, a missing terminating filler bit or a version word that does
- * not fit in 32 bits is rejected with \ref CARDANO_ERROR_DECODING. A \c Constr or
- * \c Case term in a program whose version is below 1.1.0 is rejected the same way,
- * matching the reference decoder.
+ * truncated stream, a missing terminating filler bit, bytes left over after the
+ * filler or a version word that does not fit in 32 bits is rejected with
+ * \ref CARDANO_ERROR_DECODING. A \c Constr or \c Case term in a program whose
+ * version is below 1.1.0 is rejected the same way, matching the reference decoder.
+ *
+ * No ledger script checks are applied; \ref cardano_uplc_flat_decode_script_program
+ * decodes a program the way the ledger deserialises a script.
  *
  * The returned program and its whole term tree are owned by \p arena; a single
  * \ref cardano_uplc_arena_free releases everything regardless of the exit path.
@@ -138,13 +142,49 @@ cardano_uplc_flat_decode_term(
  * \return \ref CARDANO_SUCCESS on success, \ref CARDANO_ERROR_POINTER_IS_NULL if
  *         any argument is NULL, \ref CARDANO_ERROR_DECODING for a malformed or
  *         truncated stream, a version word too large for 32 bits, a \c Constr or
- *         \c Case term before version 1.1.0 or a missing terminating filler bit, or \ref CARDANO_ERROR_MEMORY_ALLOCATION_FAILED if
- *         the arena cannot serve a node.
+ *         \c Case term before version 1.1.0, a missing terminating filler bit or
+ *         bytes after it, or \ref CARDANO_ERROR_MEMORY_ALLOCATION_FAILED if the
+ *         arena cannot serve a node.
  */
 cardano_error_t
 cardano_uplc_flat_decode_program(
   cardano_uplc_arena_t*          arena,
   cardano_uplc_flat_reader_t*    reader,
+  const cardano_uplc_program_t** program);
+
+/**
+ * \brief Decodes a flat-encoded ledger script for a language at a protocol version.
+ *
+ * Decodes like \ref cardano_uplc_flat_decode_program and also applies the checks
+ * the ledger's script decoder makes
+ * (plutus-ledger-api/src/PlutusLedgerApi/Common/SerialisedScript.hs,
+ * \c scriptCBORDecoder): every builtin must be available in \p language at
+ * \p protocol_major (\ref cardano_uplc_builtin_available), every constant type
+ * header must be at most 32 flat type tags, and every \c Constr term must have at
+ * most 1024 fields. A script that fails any of them cannot be deserialised.
+ *
+ * Ownership matches \ref cardano_uplc_flat_decode_program: the program and its
+ * term tree are owned by \p arena.
+ *
+ * \param[in] arena The arena every node and interior object is allocated from.
+ * \param[in,out] reader The flat reader, advanced past the encoded program.
+ * \param[in] language The Plutus language of the script.
+ * \param[in] protocol_major The major protocol version the script is used under.
+ * \param[out] program On success, the decoded program; left untouched on failure.
+ *
+ * \return \ref CARDANO_SUCCESS on success, \ref CARDANO_ERROR_POINTER_IS_NULL if
+ *         \p arena, \p reader or \p program is NULL, \ref CARDANO_ERROR_DECODING
+ *         for any failure \ref cardano_uplc_flat_decode_program reports or a
+ *         failed ledger script check, or
+ *         \ref CARDANO_ERROR_MEMORY_ALLOCATION_FAILED if the arena cannot serve a
+ *         node.
+ */
+cardano_error_t
+cardano_uplc_flat_decode_script_program(
+  cardano_uplc_arena_t*          arena,
+  cardano_uplc_flat_reader_t*    reader,
+  cardano_uplc_lang_version_t    language,
+  uint64_t                       protocol_major,
   const cardano_uplc_program_t** program);
 
 #ifdef __cplusplus

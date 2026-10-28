@@ -64,13 +64,22 @@ extern "C" {
  *         carries no entry for a version, the per-version default coefficients for
  *         the protocol version are used instead.
  *
+ * \remark Each script is deserialised the way the ledger does at the protocol
+ *         version: its language and every builtin it names must be available
+ *         there. A script that cannot be deserialised makes
+ *         \ref cardano_tx_evaluator_evaluate return \ref CARDANO_ERROR_DECODING.
+ *         A script whose Plutus Core version is not available at the protocol
+ *         version, or that runs and fails, returns
+ *         \ref CARDANO_ERROR_SCRIPT_EVALUATION_FAILURE.
+ *
  * \param[in] slot_config The slot/time parameters used to convert the transaction
  *            validity interval to POSIX time. Must not be NULL.
  * \param[in] cost_models The ledger cost models keyed by Plutus language version.
  *            May be NULL, in which case the evaluator uses the per-version default
  *            semantics for the protocol version.
  * \param[in] protocol_major The protocol major version selecting the builtin
- *            semantics variant at the Chang and Van-Rossem boundaries.
+ *            semantics variant and the language, builtin and Plutus Core
+ *            versions each script may use.
  * \param[out] tx_evaluator On success, set to the newly created evaluator. The
  *             caller owns it and releases it with \ref cardano_tx_evaluator_unref.
  *             Left untouched on failure.

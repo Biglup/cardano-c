@@ -25,6 +25,7 @@
 #include <cardano/cbor/cbor_writer.h>
 
 #include "uplc_constant.h"
+#include "uplc_lang_version.h"
 #include "uplc_program.h"
 #include "uplc_term.h"
 
@@ -44,21 +45,24 @@
  * \brief Reads exactly one CBOR bytestring that consumes the whole reader.
  *
  * Succeeds only when the next item is a definite-length CBOR bytestring (major
- * type 2) and the reader holds nothing after it. The exact-consumption rule
- * rejects any trailing bytes after the bytestring, and the indefinite-length
- * form is rejected because it does not peek as a single bytestring item.
+ * type 2) and, unless \p allow_trailing is set, the reader holds nothing after
+ * it. The indefinite-length form is rejected because it does not peek as a
+ * single bytestring item.
  *
  * \param[in] data The bytes to read. May be NULL only when \p size is 0.
  * \param[in] size The number of bytes in \p data.
+ * \param[in] allow_trailing Whether bytes after the bytestring are ignored rather
+ *            than rejected.
  * \param[out] inner On success, the decoded bytestring contents; the caller
  *             releases it with \ref cardano_buffer_unref. Left untouched on failure.
  *
  * \return \ref CARDANO_SUCCESS on success, \ref CARDANO_ERROR_DECODING when the
- *         item is not a single all-consuming bytestring, or
- *         \ref CARDANO_ERROR_MEMORY_ALLOCATION_FAILED if the reader cannot be made.
+ *         item is not a bytestring or is followed by bytes that are not allowed,
+ *         or \ref CARDANO_ERROR_MEMORY_ALLOCATION_FAILED if the reader cannot be
+ *         made.
  */
 static cardano_error_t
-peel_bytestring(const byte_t* data, const size_t size, cardano_buffer_t** inner)
+peel_bytestring(const byte_t* data, const size_t size, const bool allow_trailing, cardano_buffer_t** inner)
 {
   cardano_cbor_reader_t*      reader    = NULL;
   cardano_buffer_t*           bytes     = NULL;
@@ -98,7 +102,7 @@ peel_bytestring(const byte_t* data, const size_t size, cardano_buffer_t** inner)
 
   result = cardano_cbor_reader_get_bytes_remaining(reader, &remaining);
 
-  if ((result != CARDANO_SUCCESS) || (remaining != 0U))
+  if ((result != CARDANO_SUCCESS) || ((remaining != 0U) && !allow_trailing))
   {
     cardano_buffer_unref(&bytes);
     cardano_cbor_reader_unref(&reader);
@@ -114,30 +118,17 @@ peel_bytestring(const byte_t* data, const size_t size, cardano_buffer_t** inner)
 }
 
 /**
- * \brief Runs the flat program decoder over a buffer of flat bytes.
+ * \brief Initializes a flat reader over the contents of a buffer.
  *
- * \param[in] arena The arena every node and interior object is allocated from.
  * \param[in] flat The flat-encoded program bytes.
- * \param[out] program On success, the decoded program; left untouched on failure.
+ * \param[out] reader The reader to initialize.
  *
- * \return \ref CARDANO_SUCCESS on success, or a propagated decode or allocation
- *         error from the flat program decoder.
+ * \return \ref CARDANO_SUCCESS on success, or a propagated reader error.
  */
 static cardano_error_t
-decode_flat(
-  cardano_uplc_arena_t*          arena,
-  const cardano_buffer_t*        flat,
-  const cardano_uplc_program_t** program)
+init_flat_reader(const cardano_buffer_t* flat, cardano_uplc_flat_reader_t* reader)
 {
-  cardano_uplc_flat_reader_t reader = { NULL, 0U, 0U, 0U };
-  cardano_error_t            result = cardano_uplc_flat_reader_init(&reader, cardano_buffer_get_data(flat), cardano_buffer_get_size(flat));
-
-  if (result != CARDANO_SUCCESS)
-  {
-    return result;
-  }
-
-  return cardano_uplc_flat_decode_program(arena, &reader, program);
+  return cardano_uplc_flat_reader_init(reader, cardano_buffer_get_data(flat), cardano_buffer_get_size(flat));
 }
 
 /* DEFINITIONS ***************************************************************/
@@ -149,8 +140,9 @@ cardano_uplc_program_from_script_bytes(
   size_t                         size,
   const cardano_uplc_program_t** program)
 {
-  cardano_buffer_t* outer  = NULL;
-  cardano_error_t   result = CARDANO_SUCCESS;
+  cardano_buffer_t*          outer  = NULL;
+  cardano_uplc_flat_reader_t reader = { NULL, 0U, 0U, 0U };
+  cardano_error_t            result = CARDANO_SUCCESS;
 
   if ((arena == NULL) || (program == NULL))
   {
@@ -162,14 +154,67 @@ cardano_uplc_program_from_script_bytes(
     return CARDANO_ERROR_POINTER_IS_NULL;
   }
 
-  result = peel_bytestring(script_bytes, size, &outer);
+  result = peel_bytestring(script_bytes, size, false, &outer);
 
   if (result != CARDANO_SUCCESS)
   {
     return result;
   }
 
-  result = decode_flat(arena, outer, program);
+  result = init_flat_reader(outer, &reader);
+
+  if (result == CARDANO_SUCCESS)
+  {
+    result = cardano_uplc_flat_decode_program(arena, &reader, program);
+  }
+
+  cardano_buffer_unref(&outer);
+
+  return result;
+}
+
+cardano_error_t
+cardano_uplc_program_from_ledger_script(
+  cardano_uplc_arena_t*             arena,
+  const byte_t*                     script_bytes,
+  const size_t                      size,
+  const cardano_uplc_lang_version_t language,
+  const uint64_t                    protocol_major,
+  const cardano_uplc_program_t**    program)
+{
+  cardano_buffer_t*          outer          = NULL;
+  cardano_uplc_flat_reader_t reader         = { NULL, 0U, 0U, 0U };
+  const bool                 allow_trailing = (language == CARDANO_UPLC_LANG_VERSION_V1) || (language == CARDANO_UPLC_LANG_VERSION_V2);
+  cardano_error_t            result         = CARDANO_SUCCESS;
+
+  if ((arena == NULL) || (program == NULL))
+  {
+    return CARDANO_ERROR_POINTER_IS_NULL;
+  }
+
+  if ((script_bytes == NULL) && (size != 0U))
+  {
+    return CARDANO_ERROR_POINTER_IS_NULL;
+  }
+
+  if (!cardano_uplc_lang_version_available(language, protocol_major))
+  {
+    return CARDANO_ERROR_DECODING;
+  }
+
+  result = peel_bytestring(script_bytes, size, allow_trailing, &outer);
+
+  if (result != CARDANO_SUCCESS)
+  {
+    return result;
+  }
+
+  result = init_flat_reader(outer, &reader);
+
+  if (result == CARDANO_SUCCESS)
+  {
+    result = cardano_uplc_flat_decode_script_program(arena, &reader, language, protocol_major, program);
+  }
 
   cardano_buffer_unref(&outer);
 

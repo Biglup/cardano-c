@@ -25,6 +25,7 @@
 /* INCLUDES ******************************************************************/
 
 #include "../arena/uplc_arena.h"
+#include "uplc_lang_version.h"
 #include "uplc_term.h"
 #include <cardano/buffer.h>
 #include <cardano/error.h>
@@ -88,6 +89,47 @@ cardano_uplc_program_from_script_bytes(
   struct cardano_uplc_arena_t*   arena,
   const byte_t*                  script_bytes,
   size_t                         size,
+  const cardano_uplc_program_t** program);
+
+/**
+ * \brief Deserialises an on-chain Plutus script the way the ledger does for a
+ *        language at a protocol version.
+ *
+ * Mirrors \c deserialiseScript
+ * (plutus-ledger-api/src/PlutusLedgerApi/Common/SerialisedScript.hs). The
+ * language must be enabled at \p protocol_major
+ * (\ref cardano_uplc_lang_version_available). The script bytes are one CBOR
+ * bytestring, as for \ref cardano_uplc_program_from_script_bytes, except that V1
+ * and V2 scripts may carry trailing bytes after it, which are ignored; V3 and V4
+ * scripts with trailing bytes are rejected. The flat program is decoded with the
+ * ledger's script checks (\ref cardano_uplc_flat_decode_script_program): builtin
+ * availability, the constant type header limit and the \c constr field limit.
+ *
+ * The Plutus Core version of the program is not checked here; the ledger checks
+ * it before evaluation (\ref cardano_uplc_plc_version_available).
+ *
+ * \param[in] arena The arena every node and interior object is allocated from.
+ * \param[in] script_bytes The raw on-chain script bytes. May be NULL only when
+ *            \p size is 0.
+ * \param[in] size The number of bytes in \p script_bytes.
+ * \param[in] language The Plutus language of the script.
+ * \param[in] protocol_major The major protocol version the script is used under.
+ * \param[out] program On success, the decoded program; left untouched on failure.
+ *
+ * \return \ref CARDANO_SUCCESS on success, \ref CARDANO_ERROR_POINTER_IS_NULL if
+ *         \p arena or \p program is NULL, or if \p script_bytes is NULL while
+ *         \p size is non-zero, \ref CARDANO_ERROR_DECODING when the script cannot
+ *         be deserialised for \p language at \p protocol_major, or
+ *         \ref CARDANO_ERROR_MEMORY_ALLOCATION_FAILED if the arena or an interior
+ *         object cannot be allocated.
+ */
+cardano_error_t
+cardano_uplc_program_from_ledger_script(
+  struct cardano_uplc_arena_t*   arena,
+  const byte_t*                  script_bytes,
+  size_t                         size,
+  cardano_uplc_lang_version_t    language,
+  uint64_t                       protocol_major,
   const cardano_uplc_program_t** program);
 
 /**

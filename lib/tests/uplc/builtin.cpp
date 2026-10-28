@@ -393,41 +393,63 @@ TEST(cardano_uplc_builtin_first_version, returnsErrorOnInvalidTag)
 
 TEST(cardano_uplc_builtin_available, matchesBuiltinsIntroducedInSchedule)
 {
-  // batch1 (AddInteger): V1@5, V2@7, V3@9.
-  EXPECT_TRUE(cardano_uplc_builtin_available(CARDANO_UPLC_BUILTIN_ADD_INTEGER, CARDANO_UPLC_LANG_VERSION_V1, 5U));
-  EXPECT_FALSE(cardano_uplc_builtin_available(CARDANO_UPLC_BUILTIN_ADD_INTEGER, CARDANO_UPLC_LANG_VERSION_V1, 4U));
-  EXPECT_TRUE(cardano_uplc_builtin_available(CARDANO_UPLC_BUILTIN_ADD_INTEGER, CARDANO_UPLC_LANG_VERSION_V2, 7U));
-  EXPECT_FALSE(cardano_uplc_builtin_available(CARDANO_UPLC_BUILTIN_ADD_INTEGER, CARDANO_UPLC_LANG_VERSION_V2, 6U));
-  EXPECT_TRUE(cardano_uplc_builtin_available(CARDANO_UPLC_BUILTIN_ADD_INTEGER, CARDANO_UPLC_LANG_VERSION_V3, 9U));
-  EXPECT_FALSE(cardano_uplc_builtin_available(CARDANO_UPLC_BUILTIN_ADD_INTEGER, CARDANO_UPLC_LANG_VERSION_V3, 8U));
+  struct BatchRow
+  {
+      cardano_uplc_builtin_t first;
+      cardano_uplc_builtin_t last;
+      uint64_t               introduced_in[4];
+  };
 
-  // batch3 (verifyEcdsa): V2@8.
-  EXPECT_TRUE(cardano_uplc_builtin_available(CARDANO_UPLC_BUILTIN_VERIFY_ECDSA_SECP256K1_SIGNATURE, CARDANO_UPLC_LANG_VERSION_V2, 8U));
-  EXPECT_FALSE(cardano_uplc_builtin_available(CARDANO_UPLC_BUILTIN_VERIFY_ECDSA_SECP256K1_SIGNATURE, CARDANO_UPLC_LANG_VERSION_V2, 7U));
+  const BatchRow rows[] = {
+    { CARDANO_UPLC_BUILTIN_ADD_INTEGER, CARDANO_UPLC_BUILTIN_MK_NIL_PAIR_DATA, { 5U, 7U, 9U, 12U } },
+    { CARDANO_UPLC_BUILTIN_SERIALISE_DATA, CARDANO_UPLC_BUILTIN_SERIALISE_DATA, { 11U, 7U, 9U, 12U } },
+    { CARDANO_UPLC_BUILTIN_VERIFY_ECDSA_SECP256K1_SIGNATURE, CARDANO_UPLC_BUILTIN_VERIFY_SCHNORR_SECP256K1_SIGNATURE, { 11U, 8U, 9U, 12U } },
+    { CARDANO_UPLC_BUILTIN_BLS12_381_G1_ADD, CARDANO_UPLC_BUILTIN_BLAKE2B_224, { 11U, 11U, 9U, 12U } },
+    { CARDANO_UPLC_BUILTIN_INTEGER_TO_BYTE_STRING, CARDANO_UPLC_BUILTIN_BYTE_STRING_TO_INTEGER, { 11U, 10U, 9U, 12U } },
+    { CARDANO_UPLC_BUILTIN_AND_BYTE_STRING, CARDANO_UPLC_BUILTIN_RIPEMD_160, { 11U, 11U, 10U, 12U } },
+    { CARDANO_UPLC_BUILTIN_EXP_MOD_INTEGER, CARDANO_UPLC_BUILTIN_SCALE_VALUE, { 11U, 11U, 11U, 12U } }
+  };
 
-  // batch4b (integerToByteString): V2@10, V3@9.
-  EXPECT_TRUE(cardano_uplc_builtin_available(CARDANO_UPLC_BUILTIN_INTEGER_TO_BYTE_STRING, CARDANO_UPLC_LANG_VERSION_V2, 10U));
-  EXPECT_FALSE(cardano_uplc_builtin_available(CARDANO_UPLC_BUILTIN_INTEGER_TO_BYTE_STRING, CARDANO_UPLC_LANG_VERSION_V2, 9U));
-  EXPECT_TRUE(cardano_uplc_builtin_available(CARDANO_UPLC_BUILTIN_INTEGER_TO_BYTE_STRING, CARDANO_UPLC_LANG_VERSION_V3, 9U));
+  const cardano_uplc_lang_version_t languages[] = {
+    CARDANO_UPLC_LANG_VERSION_V1,
+    CARDANO_UPLC_LANG_VERSION_V2,
+    CARDANO_UPLC_LANG_VERSION_V3,
+    CARDANO_UPLC_LANG_VERSION_V4
+  };
 
-  // batch4a (BLS): V2@11, V3@9.
-  EXPECT_TRUE(cardano_uplc_builtin_available(CARDANO_UPLC_BUILTIN_BLS12_381_G1_ADD, CARDANO_UPLC_LANG_VERSION_V2, 11U));
-  EXPECT_FALSE(cardano_uplc_builtin_available(CARDANO_UPLC_BUILTIN_BLS12_381_G1_ADD, CARDANO_UPLC_LANG_VERSION_V2, 10U));
-  EXPECT_TRUE(cardano_uplc_builtin_available(CARDANO_UPLC_BUILTIN_BLS12_381_G1_ADD, CARDANO_UPLC_LANG_VERSION_V3, 9U));
+  for (const BatchRow& row: rows)
+  {
+    for (size_t l = 0U; l < 4U; ++l)
+    {
+      const uint64_t intro = row.introduced_in[l];
 
-  // batch5 (bitwise/ripemd_160): V3@10.
-  EXPECT_TRUE(cardano_uplc_builtin_available(CARDANO_UPLC_BUILTIN_AND_BYTE_STRING, CARDANO_UPLC_LANG_VERSION_V3, 10U));
-  EXPECT_FALSE(cardano_uplc_builtin_available(CARDANO_UPLC_BUILTIN_AND_BYTE_STRING, CARDANO_UPLC_LANG_VERSION_V3, 9U));
+      for (cardano_uplc_builtin_t builtin: { row.first, row.last })
+      {
+        EXPECT_FALSE(cardano_uplc_builtin_available(builtin, languages[l], intro - 1U))
+          << "builtin " << builtin << " language " << l << " protocol " << (intro - 1U);
+        EXPECT_TRUE(cardano_uplc_builtin_available(builtin, languages[l], intro))
+          << "builtin " << builtin << " language " << l << " protocol " << intro;
+        EXPECT_TRUE(cardano_uplc_builtin_available(builtin, languages[l], 12U))
+          << "builtin " << builtin << " language " << l << " protocol 12";
+      }
+    }
+  }
+}
 
-  // batch6 (expModInteger): V3@11; and the cross-language V2/V1 cases at @11.
-  EXPECT_TRUE(cardano_uplc_builtin_available(CARDANO_UPLC_BUILTIN_EXP_MOD_INTEGER, CARDANO_UPLC_LANG_VERSION_V3, 11U));
-  EXPECT_FALSE(cardano_uplc_builtin_available(CARDANO_UPLC_BUILTIN_EXP_MOD_INTEGER, CARDANO_UPLC_LANG_VERSION_V3, 10U));
-  EXPECT_FALSE(cardano_uplc_builtin_available(CARDANO_UPLC_BUILTIN_EXP_MOD_INTEGER, CARDANO_UPLC_LANG_VERSION_V2, 10U));
+TEST(cardano_uplc_builtin_available, coversEveryBuiltinTagFromProtocolTwelve)
+{
+  for (size_t tag = 0U; tag < (size_t)CARDANO_UPLC_BUILTIN_COUNT; ++tag)
+  {
+    EXPECT_TRUE(cardano_uplc_builtin_available((cardano_uplc_builtin_t)tag, CARDANO_UPLC_LANG_VERSION_V1, 12U)) << tag;
+    EXPECT_TRUE(cardano_uplc_builtin_available((cardano_uplc_builtin_t)tag, CARDANO_UPLC_LANG_VERSION_V4, 12U)) << tag;
+    EXPECT_FALSE(cardano_uplc_builtin_available((cardano_uplc_builtin_t)tag, CARDANO_UPLC_LANG_VERSION_V4, 11U)) << tag;
+  }
+}
 
-  // A V3-introduced builtin used by a V2 script is unavailable until V2 gets it (PV11).
-  EXPECT_FALSE(cardano_uplc_builtin_available(CARDANO_UPLC_BUILTIN_AND_BYTE_STRING, CARDANO_UPLC_LANG_VERSION_V2, 10U));
-  EXPECT_TRUE(cardano_uplc_builtin_available(CARDANO_UPLC_BUILTIN_AND_BYTE_STRING, CARDANO_UPLC_LANG_VERSION_V2, 11U));
-
-  // An invalid tag is never available.
-  EXPECT_FALSE(cardano_uplc_builtin_available((cardano_uplc_builtin_t)CARDANO_UPLC_BUILTIN_COUNT, CARDANO_UPLC_LANG_VERSION_V3, 11U));
+TEST(cardano_uplc_builtin_available, rejectsAnInvalidTagOrLanguage)
+{
+  EXPECT_FALSE(cardano_uplc_builtin_available((cardano_uplc_builtin_t)CARDANO_UPLC_BUILTIN_COUNT, CARDANO_UPLC_LANG_VERSION_V3, 12U));
+  EXPECT_FALSE(cardano_uplc_builtin_available((cardano_uplc_builtin_t)-1, CARDANO_UPLC_LANG_VERSION_V3, 12U));
+  EXPECT_FALSE(cardano_uplc_builtin_available(CARDANO_UPLC_BUILTIN_ADD_INTEGER, (cardano_uplc_lang_version_t)4, 12U));
+  EXPECT_FALSE(cardano_uplc_builtin_available(CARDANO_UPLC_BUILTIN_ADD_INTEGER, (cardano_uplc_lang_version_t)-1, 12U));
 }

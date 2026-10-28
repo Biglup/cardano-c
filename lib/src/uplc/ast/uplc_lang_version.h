@@ -51,6 +51,50 @@ typedef enum
   CARDANO_UPLC_LANG_VERSION_V4 = 3
 } cardano_uplc_lang_version_t;
 
+/**
+ * \brief Returns whether a Plutus language is enabled at a protocol version.
+ *
+ * Encodes the ledger's \c ledgerLanguageIntroducedIn schedule
+ * (plutus-ledger-api/src/PlutusLedgerApi/Common/Versions.hs): V1 from protocol 5,
+ * V2 from 7, V3 from 9 and V4 from 12. A script in a language that is not yet
+ * enabled cannot be deserialised.
+ *
+ * \param[in] language The Plutus language of the script.
+ * \param[in] protocol_major The major protocol version the script is used under.
+ *
+ * \return \c true when the language is enabled, \c false otherwise (including for
+ *         an invalid language).
+ */
+bool
+cardano_uplc_lang_version_available(cardano_uplc_lang_version_t language, uint64_t protocol_major);
+
+/**
+ * \brief Returns whether a Plutus Core program version may be evaluated in a
+ *        language at a protocol version.
+ *
+ * Encodes the ledger's \c plcVersionsIntroducedIn schedule
+ * (plutus-ledger-api/src/PlutusLedgerApi/Common/Versions.hs): 1.0.0 is available
+ * once the language is enabled, 1.1.0 is available in V1 and V2 from protocol 11
+ * and in V3 and V4 once they are enabled, and 1.2.0 is available in every
+ * language from protocol 12. Any other version triple is never available.
+ *
+ * \param[in] language The Plutus language of the script.
+ * \param[in] protocol_major The major protocol version the script is evaluated under.
+ * \param[in] major The major component of the program version.
+ * \param[in] minor The minor component of the program version.
+ * \param[in] patch The patch component of the program version.
+ *
+ * \return \c true when the program version is available, \c false otherwise
+ *         (including for an invalid language).
+ */
+bool
+cardano_uplc_plc_version_available(
+  cardano_uplc_lang_version_t language,
+  uint64_t                    protocol_major,
+  uint32_t                    major,
+  uint32_t                    minor,
+  uint32_t                    patch);
+
 #ifdef __cplusplus
 }
 #endif /* __cplusplus */
