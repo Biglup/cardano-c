@@ -1209,22 +1209,24 @@ TEST(cardano_uplc_string_ex_mem, char_count_semantics)
   cardano_uplc_arena_free(&arena);
 }
 
+/**
+ * \brief A string is charged by its utf-8 byte length divided by 4, rounded down.
+ *
+ *        "abcd" is 4 bytes, so it costs 4/4 = 1. A 2 byte and a 3 byte string cost
+ *        2/4 = 0 and 3/4 = 0. A 7 byte string costs 7/4 = 1 and a 9 byte string
+ *        costs 9/4 = 2.
+ */
 TEST(cardano_uplc_string_ex_mem, utf8_byte_semantics)
 {
   cardano_uplc_arena_t* arena = nullptr;
   ASSERT_EQ(cardano_uplc_arena_new(4096U, &arena), CARDANO_SUCCESS);
 
-  // "abcd": 4 bytes -> 4/4 = 1.
   EXPECT_EQ(cardano_uplc_constant_ex_mem(new_string_const(arena, "abcd"), true), 1);
-  // 2 bytes -> 2/4 = 0.
   EXPECT_EQ(cardano_uplc_constant_ex_mem(new_string_const(arena, "\xC3\xA9"), true), 0);
-  // 3 bytes -> 3/4 = 0.
   EXPECT_EQ(cardano_uplc_constant_ex_mem(new_string_const(arena, "abc"), true), 0);
   // empty -> 0.
   EXPECT_EQ(cardano_uplc_constant_ex_mem(new_string_const(arena, ""), true), 0);
-  // 7 bytes -> 7/4 = 1.
   EXPECT_EQ(cardano_uplc_constant_ex_mem(new_string_const(arena, "1234567"), true), 1);
-  // 9 bytes -> 9/4 = 2.
   EXPECT_EQ(cardano_uplc_constant_ex_mem(new_string_const(arena, "123456789"), true), 2);
 
   cardano_uplc_arena_free(&arena);
