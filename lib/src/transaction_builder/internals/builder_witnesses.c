@@ -199,7 +199,9 @@ copy_with_required_guard(
  * \brief Returns the position of a credential in the guard set of the transaction body.
  *
  * The position is the index a guarding redeemer points to: guards keep the order in which they
- * were added, and key hash guards count towards it.
+ * were added, and key hash guards count towards it. The credential must already be in the guard
+ * set of the body, since the callers add it just before the lookup; if it is not found, the
+ * position of the last guard is returned.
  *
  * \param[in] state A pointer to the \ref cardano_builder_state_t tracking the transaction under
  *                  construction. This parameter must not be NULL.

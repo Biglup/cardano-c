@@ -88,10 +88,9 @@ extern "C" {
  *         \ref CARDANO_ERROR_SCRIPT_EVALUATION_FAILURE. A sub-transaction
  *         redeemer that runs a Plutus V1, V2 or V3 script returns
  *         \ref CARDANO_ERROR_INVALID_SCRIPT_LANGUAGE, since those languages only
- *         run at the top level. Below
- *         protocol version 12 the free variable check, like the ledger's, does
- *         not look inside \c constr and \c case terms; from 12 on it covers the
- *         whole script.
+ *         run at the top level. Below protocol version 12 the free variable check,
+ *         like the ledger's, does not look inside \c constr and \c case terms; from
+ *         12 on it covers the whole script.
  *
  * \remark A redeemer whose index points past the items of its purpose in its
  *         transaction level (for example past the end of the guard set) returns

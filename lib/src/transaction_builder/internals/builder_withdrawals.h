@@ -42,11 +42,11 @@ extern "C" {
  *
  * This function inserts the withdrawal for \p address with the given amount into the withdrawal map
  * of the transaction body, creating the map when it is missing. When \p redeemer is not NULL it is
- * attached as a reward redeemer keyed by the sortable id of the reward credential in the state
+ * attached as a reward redeemer keyed by the sortable id of the reward account in the state
  * withdrawal redeemer map. When \p redeemer is NULL and the reward credential is a script credential
  * the sortable id is still recorded in the map with a NULL redeemer so redeemer indices can be
- * computed; script credentials are processed by the node before key hash credentials regardless of
- * the canonical sorting, so key hash credentials are skipped.
+ * computed; the ids follow the ledger order of the withdrawals, where script credentials sort before
+ * key hash credentials, so key hash credentials are skipped.
  *
  * \param[in,out] state A pointer to the \ref cardano_builder_state_t tracking the transaction under
  *                      construction. This parameter must not be NULL.
@@ -102,7 +102,7 @@ cardano_builder_withdraw_rewards_ex(
  * \brief Records a reward withdrawal whose redeemer payload is resolved during balancing.
  *
  * This function records the withdrawal with an empty placeholder redeemer and registers the callback
- * in the state deferred redeemer list keyed by the sortable id of the reward credential. The callback
+ * in the state deferred redeemer list keyed by the sortable id of the reward account. The callback
  * is invoked while the transaction is balanced to produce the final redeemer payload.
  *
  * \param[in,out] state A pointer to the \ref cardano_builder_state_t tracking the transaction under

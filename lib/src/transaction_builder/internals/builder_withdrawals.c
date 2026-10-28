@@ -27,19 +27,19 @@
 #include <cardano/transaction_body/transaction_body.h>
 #include <cardano/witness_set/witness_set.h>
 
-#include "../../allocators.h"
-#include "../../string_safe.h"
+#include "../../common/ledger_order.h"
 #include "builder_redeemers.h"
 
 /* STATIC FUNCTIONS **********************************************************/
 
 /**
- * \brief Computes a deterministic, sortable hash ID for a credential.
+ * \brief Computes a deterministic, sortable hash ID for a reward account.
  *
- * This function creates a unique identifier by concatenating the credential's type
- * and its raw hash bytes.
+ * The identifier is the ledger order key of the account (its network, its credential kind and
+ * its credential hash), so the IDs sort in the order the ledger uses to resolve reward redeemer
+ * indices.
  *
- * \param[in] credential A pointer to the `cardano_credential_t` object.
+ * \param[in] address A pointer to the `cardano_reward_address_t` object.
  * \param[out] id On success, this will be populated with a pointer to a newly allocated
  * `cardano_blake2b_hash_t` object representing the unique ID.
  *
@@ -50,46 +50,20 @@
  * and must release it by calling `cardano_blake2b_hash_unref`.
  */
 static cardano_error_t
-compute_credential_sortable_id(cardano_credential_t* credential, cardano_blake2b_hash_t** id)
+compute_withdrawal_sortable_id(cardano_reward_address_t* address, cardano_blake2b_hash_t** id)
 {
-  if ((credential == NULL) || (id == NULL))
+  if ((address == NULL) || (id == NULL))
   {
     return CARDANO_ERROR_INVALID_ARGUMENT;
   }
 
-  cardano_credential_type_t type;
-  cardano_error_t           result = cardano_credential_get_type(credential, &type);
+  byte_t          key[CARDANO_LEDGER_ORDER_KEY_SIZE] = { 0 };
+  cardano_error_t result                             = _cardano_ledger_order_reward_address_key(address, key);
 
-  if (result != CARDANO_SUCCESS)
+  if (result == CARDANO_SUCCESS)
   {
-    return result;
+    result = cardano_blake2b_hash_from_bytes(key, sizeof(key), id);
   }
-
-  cardano_blake2b_hash_t* hash       = cardano_credential_get_hash(credential);
-  const byte_t*           hash_bytes = cardano_blake2b_hash_get_data(hash);
-  size_t                  hash_size  = cardano_blake2b_hash_get_bytes_size(hash);
-
-  const size_t total_size = sizeof(type) + hash_size;
-  byte_t*      id_bytes   = (byte_t*)_cardano_malloc(total_size);
-
-  if (id_bytes == NULL)
-  {
-    cardano_blake2b_hash_unref(&hash);
-    return CARDANO_ERROR_MEMORY_ALLOCATION_FAILED;
-  }
-
-  size_t cursor = 0;
-
-  cardano_safe_memcpy(&id_bytes[cursor], total_size, &type, sizeof(type));
-  cursor += sizeof(type);
-
-  cardano_safe_memcpy(&id_bytes[cursor], total_size - cursor, hash_bytes, hash_size);
-
-  cardano_blake2b_hash_unref(&hash);
-
-  result = cardano_blake2b_hash_from_bytes(id_bytes, total_size, id);
-
-  _cardano_free(id_bytes);
 
   return result;
 }
@@ -161,11 +135,11 @@ cardano_builder_withdraw_rewards(
 
   cardano_blake2b_hash_t* hash = NULL;
 
-  result = compute_credential_sortable_id(credential, &hash);
+  result = compute_withdrawal_sortable_id(address, &hash);
 
   if (result != CARDANO_SUCCESS)
   {
-    *error_message = "Failed to compute credential sortable ID.";
+    *error_message = "Failed to compute the withdrawal sortable id.";
 
     return result;
   }
@@ -286,12 +260,9 @@ cardano_builder_withdraw_rewards_with_deferred_redeemer(
     return result;
   }
 
-  cardano_credential_t* credential = cardano_reward_address_get_credential(address);
-  cardano_credential_unref(&credential);
-
   cardano_blake2b_hash_t* hash = NULL;
 
-  result = compute_credential_sortable_id(credential, &hash);
+  result = compute_withdrawal_sortable_id(address, &hash);
 
   if (result != CARDANO_SUCCESS)
   {

@@ -5961,6 +5961,52 @@ TEST(cardano_tx_builder_withdraw_rewards, canWithdrawRewards)
   cardano_plutus_data_unref(&redeemer);
 }
 
+TEST(cardano_tx_builder_withdraw_rewards, assignsRedeemerIndicesInLedgerOrder)
+{
+  // Arrange
+  cardano_protocol_parameters_t* params        = init_protocol_parameters();
+  cardano_plutus_data_t*         redeemer      = create_plutus_data(PLUTUS_DATA_CBOR);
+  cardano_reward_address_t*      key_reward    = nullptr;
+  cardano_reward_address_t*      script_reward = nullptr;
+  uint64_t                       key_index     = 99U;
+  uint64_t                       script_index  = 99U;
+  cardano_redeemer_t*            script_value  = nullptr;
+  cardano_redeemer_t*            key_value     = nullptr;
+
+  EXPECT_EQ(cardano_reward_address_from_bech32(REWARD_ADDRESS, strlen(REWARD_ADDRESS), &key_reward), CARDANO_SUCCESS);
+  EXPECT_EQ(cardano_reward_address_from_bech32(SCRIPT_REWARD_ADDRESS, strlen(SCRIPT_REWARD_ADDRESS), &script_reward), CARDANO_SUCCESS);
+
+  cardano_tx_builder_t* tx_builder = cardano_tx_builder_new(params, &CARDANO_MAINNET_SLOT_CONFIG);
+
+  // Act
+  cardano_tx_builder_withdraw_rewards(tx_builder, key_reward, 1000, redeemer);
+  cardano_tx_builder_withdraw_rewards(tx_builder, script_reward, 1002, redeemer);
+
+  // Assert
+  EXPECT_EQ(tx_builder->last_error, CARDANO_SUCCESS);
+  EXPECT_EQ(cardano_transaction_find_withdrawal_index(tx_builder->state.transaction, script_reward, &script_index), CARDANO_SUCCESS);
+  EXPECT_EQ(cardano_transaction_find_withdrawal_index(tx_builder->state.transaction, key_reward, &key_index), CARDANO_SUCCESS);
+  EXPECT_EQ(script_index, 0U);
+  EXPECT_EQ(key_index, 1U);
+
+  ASSERT_EQ(cardano_blake2b_hash_to_redeemer_map_get_length(tx_builder->state.withdrawals_to_redeemer_map), 2U);
+  EXPECT_EQ(cardano_blake2b_hash_to_redeemer_map_get_value_at(tx_builder->state.withdrawals_to_redeemer_map, 0U, &script_value), CARDANO_SUCCESS);
+  EXPECT_EQ(cardano_blake2b_hash_to_redeemer_map_get_value_at(tx_builder->state.withdrawals_to_redeemer_map, 1U, &key_value), CARDANO_SUCCESS);
+  ASSERT_NE(script_value, nullptr);
+  ASSERT_NE(key_value, nullptr);
+  EXPECT_EQ(cardano_redeemer_get_index(script_value), script_index);
+  EXPECT_EQ(cardano_redeemer_get_index(key_value), key_index);
+
+  // Cleanup
+  cardano_redeemer_unref(&script_value);
+  cardano_redeemer_unref(&key_value);
+  cardano_tx_builder_unref(&tx_builder);
+  cardano_protocol_parameters_unref(&params);
+  cardano_reward_address_unref(&key_reward);
+  cardano_reward_address_unref(&script_reward);
+  cardano_plutus_data_unref(&redeemer);
+}
+
 TEST(cardano_tx_builder_withdraw_rewards, returnsErrorIfMemoryAllocationFails)
 {
   // Arrange
@@ -5977,7 +6023,7 @@ TEST(cardano_tx_builder_withdraw_rewards, returnsErrorIfMemoryAllocationFails)
   EXPECT_EQ(cardano_reward_address_from_bech32(REWARD_ADDRESS2, strlen(REWARD_ADDRESS2), &reward_address2), CARDANO_SUCCESS);
   EXPECT_EQ(cardano_reward_address_from_bech32(SCRIPT_REWARD_ADDRESS2, strlen(SCRIPT_REWARD_ADDRESS2), &script_reward2), CARDANO_SUCCESS);
 
-  for (int i = 0; i < 45; ++i)
+  for (int i = 0; i < 29; ++i)
   {
     cardano_tx_builder_t* tx_builder = cardano_tx_builder_new(params, &CARDANO_MAINNET_SLOT_CONFIG);
 
