@@ -53,6 +53,7 @@
 #include <cardano/transaction_body/account_balance_interval.h>
 #include <cardano/transaction_body/transaction_output.h>
 #include <cardano/transaction_body/value.h>
+#include <cardano/transaction_builder/balancing/deferred_redeemer_list.h>
 #include <cardano/typedefs.h>
 #include <cardano/voting_procedures/voter.h>
 #include <cardano/voting_procedures/voting_procedure.h>
@@ -82,13 +83,14 @@ extern "C" {
  *   the batch.
  * - **Sub Transaction Fields Only**: Fees, collateral and starting account balance intervals only exist on a
  *   top level transaction, so this builder has no functions for them.
- * - **Native Scripts, PlutusV4 Scripts and Key Witnesses**: PlutusV1, PlutusV2 and PlutusV3 scripts can not run
- *   inside a sub transaction and are rejected. PlutusV4 scripts are accepted: an input locked by a PlutusV4 script
- *   can be spent, a PlutusV4 policy can mint, a PlutusV4 script account can withdraw, a PlutusV4 script credential
- *   can publish certificates or vote, a PlutusV4 guardrails script can validate parameter change and treasury
- *   withdrawals proposals, and a script hash guard can be satisfied, each with a redeemer. The builder
- *   computes the execution units of those redeemers with the native evaluator when the sub transaction is built,
- *   before the parties sign it.
+ * - **Native Scripts, PlutusV4 Scripts and Key Witnesses**: PlutusV1, PlutusV2 and PlutusV3 scripts can not run inside a
+ *   sub transaction and are rejected. PlutusV4 scripts are accepted: an input locked by a PlutusV4 script can be spent, a
+ *   PlutusV4 policy can mint, a PlutusV4 script account can withdraw, a PlutusV4 script credential can publish
+ *   certificates or vote, a PlutusV4 guardrails script can validate parameter change and treasury withdrawals proposals,
+ *   and a script hash guard can be satisfied, each with a redeemer. The builder computes the execution units of those
+ *   redeemers with the native evaluator when the sub transaction is built, before the parties sign it. A redeemer can
+ *   also be produced by a callback when the sub transaction is built, so that it can carry indices that are local to the
+ *   body of the sub transaction.
  */
 typedef struct cardano_sub_tx_builder_t cardano_sub_tx_builder_t;
 
@@ -309,6 +311,49 @@ CARDANO_EXPORT void cardano_sub_tx_builder_add_input(
   cardano_utxo_t*           utxo,
   cardano_plutus_data_t*    redeemer,
   cardano_plutus_data_t*    datum);
+
+/**
+ * \brief Adds an input locked by a PlutusV4 script whose redeemer payload is produced by a deferred callback.
+ *
+ * Behaves like \ref cardano_sub_tx_builder_add_input, but instead of a literal redeemer the caller provides a callback
+ * that builds the payload once the layout of the sub transaction is final. This is the mechanism for redeemers that
+ * carry indices of elements of the script context (see \ref cardano_deferred_redeemer_fn_t and the
+ * \ref cardano_transaction_find_input_index family).
+ *
+ * The callback is invoked when `cardano_sub_tx_builder_build` is called, after the index of every spend redeemer is
+ * set and before the scripts are evaluated, so the produced payload is evaluated and covered by the script data hash.
+ * It receives a transaction whose body holds the sorted inputs, the outputs and every other field of the sub
+ * transaction body, with a zero fee, together with the UTXOs spent by the sub transaction in that same sorted order.
+ * Every index the callback computes is therefore local to the body of the sub transaction, the body that is signed.
+ *
+ * The callback must be a pure function of its arguments. The caller must keep `user_context` valid until the sub
+ * transaction is built.
+ *
+ * \param[in] builder A pointer to the \ref cardano_sub_tx_builder_t instance in which to add the input.
+ * \param[in] utxo A pointer to the \ref cardano_utxo_t structure representing the resolved UTXO to be used as an input.
+ * \param[in] callback The \ref cardano_deferred_redeemer_fn_t callback producing the redeemer payload.
+ * \param[in] user_context An opaque pointer forwarded to the callback. Can be NULL.
+ * \param[in] datum A pointer to the \ref cardano_plutus_data_t structure representing the datum for the PlutusV4 script (optional; can be NULL).
+ *
+ * Usage Example:
+ * \code{.c}
+ * cardano_sub_tx_builder_t* sub_tx_builder = ...;      // Initialized sub transaction builder
+ * cardano_utxo_t* input_utxo = ...;                    // UTXO locked by a PlutusV4 script
+ * cardano_deferred_redeemer_fn_t callback = ...;       // Builds the redeemer from the sub transaction body
+ *
+ * cardano_sub_tx_builder_add_input_with_deferred_redeemer(sub_tx_builder, input_utxo, callback, input_utxo, NULL);
+ * \endcode
+ *
+ * \note Any errors resulting from adding this input will be deferred and reported when `cardano_sub_tx_builder_build` is called.
+ *       A callback that fails makes `cardano_sub_tx_builder_build` return the error of the callback, and a callback
+ *       that produces no payload makes it return \ref CARDANO_ERROR_POINTER_IS_NULL.
+ */
+CARDANO_EXPORT void cardano_sub_tx_builder_add_input_with_deferred_redeemer(
+  cardano_sub_tx_builder_t*      builder,
+  cardano_utxo_t*                utxo,
+  cardano_deferred_redeemer_fn_t callback,
+  void*                          user_context,
+  cardano_plutus_data_t*         datum);
 
 /**
  * \brief Adds a reference input to the sub transaction.
@@ -549,6 +594,40 @@ CARDANO_EXPORT void cardano_sub_tx_builder_mint_token(
   cardano_asset_name_t*     name,
   int64_t                   amount,
   cardano_plutus_data_t*    redeemer);
+
+/**
+ * \brief Adds a token minting operation whose redeemer payload is produced by a deferred callback.
+ *
+ * Behaves like \ref cardano_sub_tx_builder_mint_token, but the redeemer payload of the PlutusV4 policy is built by the
+ * callback from the body of the sub transaction when it is built. See
+ * \ref cardano_sub_tx_builder_add_input_with_deferred_redeemer.
+ *
+ * \param[in] builder A pointer to the \ref cardano_sub_tx_builder_t instance for building the sub transaction.
+ * \param[in] policy_id A pointer to a \ref cardano_blake2b_hash_t representing the unique minting policy ID.
+ * \param[in] name A pointer to a \ref cardano_asset_name_t defining the name of the asset being minted or burned.
+ * \param[in] amount The number of tokens to mint or burn; positive values indicate minting, and negative values indicate burning.
+ * \param[in] callback The \ref cardano_deferred_redeemer_fn_t callback producing the redeemer payload.
+ * \param[in] user_context An opaque pointer forwarded to the callback. Can be NULL.
+ *
+ * Usage Example:
+ * \code{.c}
+ * cardano_sub_tx_builder_t* sub_tx_builder = ...;  // Initialized sub transaction builder
+ * cardano_blake2b_hash_t* policy_id = ...;         // Hash of the PlutusV4 policy
+ * cardano_asset_name_t* asset_name = ...;          // Asset name for the token
+ * cardano_deferred_redeemer_fn_t callback = ...;   // Builds the redeemer from the sub transaction body
+ *
+ * cardano_sub_tx_builder_mint_token_with_deferred_redeemer(sub_tx_builder, policy_id, asset_name, 100, callback, NULL);
+ * \endcode
+ *
+ * \note Errors related to this operation will be deferred until `cardano_sub_tx_builder_build` is called.
+ */
+CARDANO_EXPORT void cardano_sub_tx_builder_mint_token_with_deferred_redeemer(
+  cardano_sub_tx_builder_t*      builder,
+  cardano_blake2b_hash_t*        policy_id,
+  cardano_asset_name_t*          name,
+  int64_t                        amount,
+  cardano_deferred_redeemer_fn_t callback,
+  void*                          user_context);
 
 /**
  * \brief Adds a token minting operation to the sub transaction builder using policy ID and asset name in hexadecimal format.
@@ -1078,6 +1157,38 @@ CARDANO_EXPORT void cardano_sub_tx_builder_withdraw_rewards(
   cardano_plutus_data_t*    redeemer);
 
 /**
+ * \brief Withdraws rewards with a redeemer payload produced by a deferred callback.
+ *
+ * Behaves like \ref cardano_sub_tx_builder_withdraw_rewards, but the redeemer payload of the PlutusV4 script account
+ * is built by the callback from the body of the sub transaction when it is built. See
+ * \ref cardano_sub_tx_builder_add_input_with_deferred_redeemer.
+ *
+ * \param[in] builder A pointer to the \ref cardano_sub_tx_builder_t instance used for constructing the sub transaction.
+ * \param[in] address A pointer to the \ref cardano_reward_address_t representing the reward account address
+ *                    from which rewards should be withdrawn.
+ * \param[in] amount  The amount of rewards to withdraw from the account, in lovelace.
+ * \param[in] callback The \ref cardano_deferred_redeemer_fn_t callback producing the redeemer payload.
+ * \param[in] user_context An opaque pointer forwarded to the callback. Can be NULL.
+ *
+ * Usage Example:
+ * \code{.c}
+ * cardano_sub_tx_builder_t* sub_tx_builder = ...;   // Initialized sub transaction builder
+ * cardano_reward_address_t* reward_address = ...;   // Reward address of a PlutusV4 script account
+ * cardano_deferred_redeemer_fn_t callback = ...;    // Builds the redeemer from the sub transaction body
+ *
+ * cardano_sub_tx_builder_withdraw_rewards_with_deferred_redeemer(sub_tx_builder, reward_address, 2532145, callback, NULL);
+ * \endcode
+ *
+ * \note Errors related to reward withdrawal will be deferred until `cardano_sub_tx_builder_build` is called.
+ */
+CARDANO_EXPORT void cardano_sub_tx_builder_withdraw_rewards_with_deferred_redeemer(
+  cardano_sub_tx_builder_t*      builder,
+  cardano_reward_address_t*      address,
+  int64_t                        amount,
+  cardano_deferred_redeemer_fn_t callback,
+  void*                          user_context);
+
+/**
  * \brief Withdraws rewards from a specified reward account using a string address in the sub transaction builder.
  *
  * This function behaves like `cardano_sub_tx_builder_withdraw_rewards` but accepts the reward account as a Bech32
@@ -1597,6 +1708,43 @@ CARDANO_EXPORT void cardano_sub_tx_builder_vote(
   cardano_plutus_data_t*          redeemer);
 
 /**
+ * \brief Casts a vote whose redeemer payload is produced by a deferred callback.
+ *
+ * Behaves like \ref cardano_sub_tx_builder_vote, but the redeemer payload of the PlutusV4 script voter is built by the
+ * callback from the body of the sub transaction when it is built. See
+ * \ref cardano_sub_tx_builder_add_input_with_deferred_redeemer. The \ref cardano_transaction_find_vote_index function
+ * can be used to look up the position of the voter in ledger voter order, which is the voting redeemer index, from
+ * inside the callback.
+ *
+ * \param[in] builder A pointer to the \ref cardano_sub_tx_builder_t instance managing the sub transaction.
+ * \param[in] voter A pointer to a \ref cardano_voter_t structure representing the voter participating in the governance action.
+ * \param[in] action_id A pointer to a \ref cardano_governance_action_id_t identifying the governance action being voted on.
+ * \param[in] vote A pointer to a \ref cardano_voting_procedure_t defining the voting procedure and choice.
+ * \param[in] callback The \ref cardano_deferred_redeemer_fn_t callback producing the redeemer payload.
+ * \param[in] user_context An opaque pointer forwarded to the callback. Can be NULL.
+ *
+ * Usage Example:
+ * \code{.c}
+ * cardano_sub_tx_builder_t* sub_tx_builder = ...;       // Initialized sub transaction builder
+ * cardano_voter_t* voter = ...;                         // Voter identified by a PlutusV4 script
+ * cardano_governance_action_id_t* action_id = ...;      // Governance action ID
+ * cardano_voting_procedure_t* vote = ...;               // Voting procedure with choice
+ * cardano_deferred_redeemer_fn_t callback = ...;        // Builds the redeemer from the sub transaction body
+ *
+ * cardano_sub_tx_builder_vote_with_deferred_redeemer(sub_tx_builder, voter, action_id, vote, callback, NULL);
+ * \endcode
+ *
+ * \note Errors related to the voting operation will be deferred until `cardano_sub_tx_builder_build` is called.
+ */
+CARDANO_EXPORT void cardano_sub_tx_builder_vote_with_deferred_redeemer(
+  cardano_sub_tx_builder_t*       builder,
+  cardano_voter_t*                voter,
+  cardano_governance_action_id_t* action_id,
+  cardano_voting_procedure_t*     vote,
+  cardano_deferred_redeemer_fn_t  callback,
+  void*                           user_context);
+
+/**
  * \brief Adds a certificate to the sub transaction.
  *
  * This function adds a specified certificate to the sub transaction being constructed. Certificates are used to perform
@@ -1623,6 +1771,36 @@ CARDANO_EXPORT void cardano_sub_tx_builder_add_certificate(
   cardano_sub_tx_builder_t* builder,
   cardano_certificate_t*    certificate,
   cardano_plutus_data_t*    redeemer);
+
+/**
+ * \brief Adds a certificate whose redeemer payload is produced by a deferred callback.
+ *
+ * Behaves like \ref cardano_sub_tx_builder_add_certificate, but the redeemer payload of the PlutusV4 script credential
+ * is built by the callback from the body of the sub transaction when it is built. See
+ * \ref cardano_sub_tx_builder_add_input_with_deferred_redeemer. The \ref cardano_transaction_find_certificate_index
+ * function can be used to look up the position of the certificate from inside the callback.
+ *
+ * \param[in] builder A pointer to the \ref cardano_sub_tx_builder_t instance managing the sub transaction.
+ * \param[in] certificate A pointer to a \ref cardano_certificate_t structure representing the certificate to add.
+ * \param[in] callback The \ref cardano_deferred_redeemer_fn_t callback producing the redeemer payload.
+ * \param[in] user_context An opaque pointer forwarded to the callback. Can be NULL.
+ *
+ * Usage Example:
+ * \code{.c}
+ * cardano_sub_tx_builder_t* sub_tx_builder = ...;  // Initialized sub transaction builder
+ * cardano_certificate_t* certificate = ...;        // Certificate of a PlutusV4 script credential
+ * cardano_deferred_redeemer_fn_t callback = ...;   // Builds the redeemer from the sub transaction body
+ *
+ * cardano_sub_tx_builder_add_certificate_with_deferred_redeemer(sub_tx_builder, certificate, callback, NULL);
+ * \endcode
+ *
+ * \note Errors related to the certificate addition will be deferred until `cardano_sub_tx_builder_build` is called.
+ */
+CARDANO_EXPORT void cardano_sub_tx_builder_add_certificate_with_deferred_redeemer(
+  cardano_sub_tx_builder_t*      builder,
+  cardano_certificate_t*         certificate,
+  cardano_deferred_redeemer_fn_t callback,
+  void*                          user_context);
 
 /**
  * \brief Proposes a parameter change within a sub transaction.
@@ -2268,20 +2446,24 @@ CARDANO_EXPORT void cardano_sub_tx_builder_propose_info_ex(
  * the outputs that were added, and the difference is the intent a batcher matches against the rest of the batch.
  * If any of the previous operations failed, this function reports the first error that was recorded.
  *
- * When the sub transaction carries redeemers, this function sets the index of every spend redeemer to the position
- * of its input in the sorted inputs, evaluates the redeemers natively against the UTXOs added as inputs and
- * reference inputs, writes the computed execution units into the redeemers and sets the script data hash of the sub
- * transaction. The indices of the mint, withdrawal, certificate, vote and guard redeemers are local to the sub
- * transaction body. Building fails with \ref CARDANO_ERROR_ELEMENT_NOT_FOUND when no Plutus script with the hash of
- * a guard, of the payment credential of a spent input, of a minting policy, of a withdrawing account, of a
- * certificate credential or of a voter is added with `cardano_sub_tx_builder_add_script` or carried as a reference
- * script by one of those UTXOs, with \ref CARDANO_ERROR_INVALID_SCRIPT_LANGUAGE when that script is a PlutusV1,
- * PlutusV2 or PlutusV3 script, with \ref CARDANO_ERROR_DECODING when a script cannot be deserialized, and with
+ * When the sub transaction carries redeemers, this function sets the index of every spend redeemer to the position of
+ * its input in the sorted inputs, resolves the deferred redeemers against the body of the sub transaction, evaluates
+ * the redeemers natively against the UTXOs added as inputs and reference inputs, writes the computed execution units
+ * into the redeemers and sets the script data hash of the sub transaction. The indices of the mint, withdrawal,
+ * certificate, vote and guard redeemers are local to the sub transaction body. Building fails with
+ * \ref CARDANO_ERROR_ELEMENT_NOT_FOUND when no Plutus script with the hash of a guard, of the payment credential of a
+ * spent input, of a minting policy, of a withdrawing account, of a certificate credential or of a voter is added with
+ * `cardano_sub_tx_builder_add_script` or carried as a reference script by one of those UTXOs, with
+ * \ref CARDANO_ERROR_INVALID_SCRIPT_LANGUAGE when that script is a PlutusV1, PlutusV2 or PlutusV3 script, with
+ * \ref CARDANO_ERROR_DECODING when a script cannot be deserialized, and with
  * \ref CARDANO_ERROR_SCRIPT_EVALUATION_FAILURE when a script fails phase-2 validation. The message of the failure is
  * available through \ref cardano_sub_tx_builder_get_last_error.
  *
  * An input locked by a datum hash whose datum was not provided to `cardano_sub_tx_builder_add_input` makes this
  * function fail with \ref CARDANO_ERROR_ELEMENT_NOT_FOUND.
+ *
+ * A deferred redeemer callback that fails makes this function fail with the error of the callback, and one that
+ * produces no payload makes it fail with \ref CARDANO_ERROR_POINTER_IS_NULL.
  *
  * \param[in] builder A pointer to the \ref cardano_sub_tx_builder_t instance that manages the sub transaction details.
  * \param[out] sub_transaction A pointer to a \ref cardano_sub_transaction_t pointer where the created sub transaction

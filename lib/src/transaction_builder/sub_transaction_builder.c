@@ -275,6 +275,26 @@ cardano_sub_tx_builder_add_input(
 }
 
 void
+cardano_sub_tx_builder_add_input_with_deferred_redeemer(
+  cardano_sub_tx_builder_t*      builder,
+  cardano_utxo_t*                utxo,
+  cardano_deferred_redeemer_fn_t callback,
+  void*                          user_context,
+  cardano_plutus_data_t*         datum)
+{
+  if ((builder == NULL) || (builder->last_error != CARDANO_SUCCESS))
+  {
+    return;
+  }
+
+  const char* error_message = NULL;
+
+  const cardano_error_t result = cardano_builder_add_input_with_deferred_redeemer(&builder->state, utxo, callback, user_context, datum, &error_message);
+
+  track_builder_result(builder, result, error_message);
+}
+
+void
 cardano_sub_tx_builder_add_reference_input(
   cardano_sub_tx_builder_t* builder,
   cardano_utxo_t*           utxo)
@@ -433,6 +453,27 @@ cardano_sub_tx_builder_mint_token(
   const char* error_message = NULL;
 
   const cardano_error_t result = cardano_builder_mint_token(&builder->state, policy_id, name, amount, redeemer, &error_message);
+
+  track_builder_result(builder, result, error_message);
+}
+
+void
+cardano_sub_tx_builder_mint_token_with_deferred_redeemer(
+  cardano_sub_tx_builder_t*      builder,
+  cardano_blake2b_hash_t*        policy_id,
+  cardano_asset_name_t*          name,
+  const int64_t                  amount,
+  cardano_deferred_redeemer_fn_t callback,
+  void*                          user_context)
+{
+  if ((builder == NULL) || (builder->last_error != CARDANO_SUCCESS))
+  {
+    return;
+  }
+
+  const char* error_message = NULL;
+
+  const cardano_error_t result = cardano_builder_mint_token_with_deferred_redeemer(&builder->state, policy_id, name, amount, callback, user_context, &error_message);
 
   track_builder_result(builder, result, error_message);
 }
@@ -731,6 +772,26 @@ cardano_sub_tx_builder_withdraw_rewards(
   const char* error_message = NULL;
 
   const cardano_error_t result = cardano_builder_withdraw_rewards(&builder->state, address, amount, redeemer, &error_message);
+
+  track_builder_result(builder, result, error_message);
+}
+
+void
+cardano_sub_tx_builder_withdraw_rewards_with_deferred_redeemer(
+  cardano_sub_tx_builder_t*      builder,
+  cardano_reward_address_t*      address,
+  const int64_t                  amount,
+  cardano_deferred_redeemer_fn_t callback,
+  void*                          user_context)
+{
+  if ((builder == NULL) || (builder->last_error != CARDANO_SUCCESS))
+  {
+    return;
+  }
+
+  const char* error_message = NULL;
+
+  const cardano_error_t result = cardano_builder_withdraw_rewards_with_deferred_redeemer(&builder->state, address, amount, callback, user_context, &error_message);
 
   track_builder_result(builder, result, error_message);
 }
@@ -1051,6 +1112,27 @@ cardano_sub_tx_builder_vote(
 }
 
 void
+cardano_sub_tx_builder_vote_with_deferred_redeemer(
+  cardano_sub_tx_builder_t*       builder,
+  cardano_voter_t*                voter,
+  cardano_governance_action_id_t* action_id,
+  cardano_voting_procedure_t*     vote,
+  cardano_deferred_redeemer_fn_t  callback,
+  void*                           user_context)
+{
+  if ((builder == NULL) || (builder->last_error != CARDANO_SUCCESS))
+  {
+    return;
+  }
+
+  const char* error_message = NULL;
+
+  const cardano_error_t result = cardano_builder_vote_with_deferred_redeemer(&builder->state, voter, action_id, vote, callback, user_context, &error_message);
+
+  track_builder_result(builder, result, error_message);
+}
+
+void
 cardano_sub_tx_builder_add_certificate(
   cardano_sub_tx_builder_t* builder,
   cardano_certificate_t*    certificate,
@@ -1064,6 +1146,25 @@ cardano_sub_tx_builder_add_certificate(
   const char* error_message = NULL;
 
   const cardano_error_t result = cardano_builder_add_certificate(&builder->state, certificate, redeemer, &error_message);
+
+  track_builder_result(builder, result, error_message);
+}
+
+void
+cardano_sub_tx_builder_add_certificate_with_deferred_redeemer(
+  cardano_sub_tx_builder_t*      builder,
+  cardano_certificate_t*         certificate,
+  cardano_deferred_redeemer_fn_t callback,
+  void*                          user_context)
+{
+  if ((builder == NULL) || (builder->last_error != CARDANO_SUCCESS))
+  {
+    return;
+  }
+
+  const char* error_message = NULL;
+
+  const cardano_error_t result = cardano_builder_add_certificate_with_deferred_redeemer(&builder->state, certificate, callback, user_context, &error_message);
 
   track_builder_result(builder, result, error_message);
 }
