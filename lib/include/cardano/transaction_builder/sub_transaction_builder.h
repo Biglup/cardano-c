@@ -509,6 +509,132 @@ CARDANO_EXPORT void cardano_sub_tx_builder_send_value_ex(
   cardano_value_t*          value);
 
 /**
+ * \brief Locks a specified amount of lovelace at a script address.
+ *
+ * This function adds a transaction output to the sub transaction that sends lovelace to a script address.
+ *
+ * \param[in] builder A pointer to the \ref cardano_sub_tx_builder_t instance to which the locked output will be added.
+ * \param[in] script_address A pointer to the \ref cardano_address_t representing the script address where the lovelace will be locked.
+ * \param[in] amount The amount of lovelace to be locked at the script address.
+ * \param[in] datum A pointer to the \ref cardano_datum_t object containing the data to lock with the transaction.
+ *
+ * Usage Example:
+ * \code{.c}
+ * cardano_sub_tx_builder_t* sub_tx_builder = ...; // Initialized sub transaction builder
+ * cardano_address_t* script_addr = ...;           // Script address
+ * uint64_t lovelace_amount = 5000000;             // Amount of lovelace to lock
+ * cardano_datum_t* datum = ...;                   // Datum associated with the script
+ *
+ * cardano_sub_tx_builder_lock_lovelace(sub_tx_builder, script_addr, lovelace_amount, datum);
+ * \endcode
+ *
+ * \note Errors such as an invalid amount or address will be reported when `cardano_sub_tx_builder_build` is called.
+ *       A datum hash only commits to the datum, so provide the datum itself with `cardano_sub_tx_builder_add_datum` to
+ *       include it in the witness set of the sub transaction.
+ */
+CARDANO_EXPORT void cardano_sub_tx_builder_lock_lovelace(
+  cardano_sub_tx_builder_t* builder,
+  cardano_address_t*        script_address,
+  uint64_t                  amount,
+  cardano_datum_t*          datum);
+
+/**
+ * \brief Locks a specified amount of lovelace at a script address using an address in raw byte format.
+ *
+ * This function adds a transaction output to the sub transaction, sending lovelace to a script address.
+ *
+ * \param[in] builder A pointer to the \ref cardano_sub_tx_builder_t instance where the locked output will be added.
+ * \param[in] script_address A pointer to a raw byte array containing the script address where the lovelace will be locked.
+ * \param[in] script_address_size The size, in bytes, of the script address.
+ * \param[in] amount The amount of lovelace to be locked at the specified script address.
+ * \param[in] datum A pointer to the \ref cardano_datum_t object containing the datum for the script output.
+ *
+ * Usage Example:
+ * \code{.c}
+ * cardano_sub_tx_builder_t* sub_tx_builder = ...; // Initialized sub transaction builder
+ * const char* script_addr_bytes = ...;            // Raw bytes of script address
+ * size_t script_addr_size = ...;                  // Size of the address in bytes
+ * uint64_t lovelace_amount = 5000000;             // Amount of lovelace to lock
+ * cardano_datum_t* datum = ...;                   // Datum associated with the script
+ *
+ * cardano_sub_tx_builder_lock_lovelace_ex(sub_tx_builder, script_addr_bytes, script_addr_size, lovelace_amount, datum);
+ * \endcode
+ *
+ * \note Errors such as an invalid amount or address will be deferred until `cardano_sub_tx_builder_build` is called.
+ *       A datum hash only commits to the datum, so provide the datum itself with `cardano_sub_tx_builder_add_datum` to
+ *       include it in the witness set of the sub transaction.
+ */
+CARDANO_EXPORT void cardano_sub_tx_builder_lock_lovelace_ex(
+  cardano_sub_tx_builder_t* builder,
+  const char*               script_address,
+  size_t                    script_address_size,
+  uint64_t                  amount,
+  cardano_datum_t*          datum);
+
+/**
+ * \brief Locks a specified value (including ADA and multi-asset tokens) at a script address.
+ *
+ * This function adds a transaction output to the sub transaction, sending a specified value to a script address.
+ *
+ * \param[in] builder A pointer to the \ref cardano_sub_tx_builder_t instance where the locked output will be added.
+ * \param[in] script_address A pointer to the \ref cardano_address_t object representing the script address where the value will be locked.
+ * \param[in] value A pointer to the \ref cardano_value_t object representing the amount and type of value (ADA or tokens) to be locked at the script address.
+ * \param[in] datum A pointer to the \ref cardano_datum_t object containing the datum for the script output.
+ *
+ * Usage Example:
+ * \code{.c}
+ * cardano_sub_tx_builder_t* sub_tx_builder = ...; // Initialized sub transaction builder
+ * cardano_address_t* script_addr = ...;           // Script address to lock value at
+ * cardano_value_t* value = ...;                   // Value including ADA and/or tokens
+ * cardano_datum_t* datum = ...;                   // Datum associated with the script
+ *
+ * cardano_sub_tx_builder_lock_value(sub_tx_builder, script_addr, value, datum);
+ * \endcode
+ *
+ * \note Errors such as invalid address or value will be deferred until `cardano_sub_tx_builder_build` is called.
+ *       A datum hash only commits to the datum, so provide the datum itself with `cardano_sub_tx_builder_add_datum` to
+ *       include it in the witness set of the sub transaction.
+ */
+CARDANO_EXPORT void cardano_sub_tx_builder_lock_value(
+  cardano_sub_tx_builder_t* builder,
+  cardano_address_t*        script_address,
+  cardano_value_t*          value,
+  cardano_datum_t*          datum);
+
+/**
+ * \brief Locks a specified value (including ADA and multi-asset tokens) at a script address using a raw address string.
+ *
+ * This function adds a transaction output to the sub transaction, sending a specified value to a script address represented by a raw address string.
+ *
+ * \param[in] builder A pointer to the \ref cardano_sub_tx_builder_t instance where the locked output will be added.
+ * \param[in] script_address A pointer to a character array containing the raw script address string where the value will be locked.
+ * \param[in] script_address_size The size of the `script_address` string in bytes.
+ * \param[in] value A pointer to the \ref cardano_value_t object representing the amount and type of value (ADA or tokens) to be locked at the script address.
+ * \param[in] datum A pointer to the \ref cardano_datum_t object containing the datum for the script output.
+ *
+ * Usage Example:
+ * \code{.c}
+ * cardano_sub_tx_builder_t* sub_tx_builder = ...; // Initialized sub transaction builder
+ * const char* script_addr_str = "addr_test1...";  // Raw address string for the script address
+ * size_t script_addr_size = strlen(script_addr_str);
+ * cardano_value_t* value = ...;                   // Value including ADA and/or tokens
+ * cardano_datum_t* datum = ...;                   // Datum associated with the script (optional)
+ *
+ * cardano_sub_tx_builder_lock_value_ex(sub_tx_builder, script_addr_str, script_addr_size, value, datum);
+ * \endcode
+ *
+ * \note Errors such as invalid address or value will be deferred until `cardano_sub_tx_builder_build` is called.
+ *       A datum hash only commits to the datum, so provide the datum itself with `cardano_sub_tx_builder_add_datum` to
+ *       include it in the witness set of the sub transaction.
+ */
+CARDANO_EXPORT void cardano_sub_tx_builder_lock_value_ex(
+  cardano_sub_tx_builder_t* builder,
+  const char*               script_address,
+  size_t                    script_address_size,
+  cardano_value_t*          value,
+  cardano_datum_t*          datum);
+
+/**
  * \brief Sets metadata for a sub transaction builder with a specified tag.
  *
  * This function attaches metadata to the sub transaction being built, associating it with a specific metadata tag. Metadata can include additional information for the sub transaction, often used to encode arbitrary data on-chain.
@@ -927,6 +1053,30 @@ CARDANO_EXPORT void cardano_sub_tx_builder_add_guard_with_redeemer(
   cardano_sub_tx_builder_t* builder,
   cardano_credential_t*     guard,
   cardano_plutus_data_t*    redeemer);
+
+/**
+ * \brief Adds a datum to the sub transaction builder for use in script-locked UTXOs.
+ *
+ * This function registers a Plutus datum with the sub transaction builder. When the sub transaction is built, the
+ * datum is included in the plutus data of its witness set and is covered by its script data hash.
+ *
+ * \param[in] builder A pointer to the \ref cardano_sub_tx_builder_t instance used for constructing the sub transaction.
+ * \param[in] datum A pointer to a \ref cardano_plutus_data_t object representing the datum to be included.
+ *
+ * Usage Example:
+ * \code{.c}
+ * cardano_sub_tx_builder_t* sub_tx_builder = ...;  // Initialized sub transaction builder
+ * cardano_plutus_data_t* datum = ...;              // Initialized Plutus datum
+ *
+ * cardano_sub_tx_builder_add_datum(sub_tx_builder, datum);
+ * \endcode
+ *
+ * \note Errors related to adding a datum are deferred and will be reported when `cardano_sub_tx_builder_build` is called.
+ *       The caller must ensure that the `datum` remains valid until the sub transaction is built.
+ */
+CARDANO_EXPORT void cardano_sub_tx_builder_add_datum(
+  cardano_sub_tx_builder_t* builder,
+  cardano_plutus_data_t*    datum);
 
 /**
  * \brief Requires a guard from the top level transaction that carries the sub transaction.

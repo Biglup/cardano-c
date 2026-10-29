@@ -65,6 +65,22 @@ Sub Transaction Builder
 
 ------------
 
+.. doxygenfunction:: cardano_sub_tx_builder_lock_lovelace
+
+------------
+
+.. doxygenfunction:: cardano_sub_tx_builder_lock_lovelace_ex
+
+------------
+
+.. doxygenfunction:: cardano_sub_tx_builder_lock_value
+
+------------
+
+.. doxygenfunction:: cardano_sub_tx_builder_lock_value_ex
+
+------------
+
 .. doxygenfunction:: cardano_sub_tx_builder_set_metadata
 
 ------------
@@ -114,6 +130,10 @@ Sub Transaction Builder
 ------------
 
 .. doxygenfunction:: cardano_sub_tx_builder_add_guard_with_redeemer
+
+------------
+
+.. doxygenfunction:: cardano_sub_tx_builder_add_datum
 
 ------------
 
