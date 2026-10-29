@@ -4288,7 +4288,7 @@ TEST(cardano_tx_builder_add_input, retursErrorIfMissingCollateralUtxos)
   cardano_utxo_list_unref(&utxos);
 }
 
-TEST(cardano_tx_builder_add_input, returnsErrorIfScriptInputIsAddedWithoutRedeemer)
+TEST(cardano_tx_builder_add_input, buildsWithoutCollateralIfScriptInputIsAddedWithoutRedeemer)
 {
   // Arrange
   cardano_protocol_parameters_t* params         = init_protocol_parameters();
@@ -4310,13 +4310,24 @@ TEST(cardano_tx_builder_add_input, returnsErrorIfScriptInputIsAddedWithoutRedeem
 
   cardano_tx_builder_add_input(tx_builder, utxo, nullptr, datum);
 
-  cardano_error_t result = cardano_tx_builder_build(tx_builder, &tx);
-  EXPECT_THAT(result, CARDANO_ERROR_POINTER_IS_NULL);
+  const cardano_error_t result = cardano_tx_builder_build(tx_builder, &tx);
 
   // Assert
-  EXPECT_THAT(tx_builder->last_error, CARDANO_ERROR_POINTER_IS_NULL);
+  EXPECT_EQ(result, CARDANO_SUCCESS) << cardano_tx_builder_get_last_error(tx_builder);
+  ASSERT_NE(tx, nullptr);
+
+  cardano_transaction_body_t*      body              = cardano_transaction_get_body(tx);
+  cardano_transaction_input_set_t* collateral        = cardano_transaction_body_get_collateral(body);
+  cardano_transaction_output_t*    collateral_return = cardano_transaction_body_get_collateral_return(body);
+
+  EXPECT_EQ(cardano_transaction_input_set_get_length(collateral), 0U);
+  EXPECT_EQ(collateral_return, nullptr);
+  EXPECT_EQ(cardano_transaction_body_get_total_collateral(body), nullptr);
 
   // Cleanup
+  cardano_transaction_output_unref(&collateral_return);
+  cardano_transaction_input_set_unref(&collateral);
+  cardano_transaction_body_unref(&body);
   cardano_tx_builder_unref(&tx_builder);
   cardano_protocol_parameters_unref(&params);
 
@@ -5793,8 +5804,6 @@ TEST(cardano_tx_builder_add_datum, computesTheScriptDataHashOfATransactionWithOn
   EXPECT_EQ(cardano_address_from_string(CHANGE_ADDRESS, strlen(CHANGE_ADDRESS), &address), CARDANO_SUCCESS);
 
   // Act
-  cardano_tx_builder_set_collateral_utxos(tx_builder, utxos);
-  cardano_tx_builder_set_collateral_change_address(tx_builder, address);
   cardano_tx_builder_lock_lovelace(tx_builder, address, 2000000U, datum);
   cardano_tx_builder_add_datum(tx_builder, data);
 
@@ -5811,12 +5820,20 @@ TEST(cardano_tx_builder_add_datum, computesTheScriptDataHashOfATransactionWithOn
   cardano_blake2b_hash_t*     hash        = cardano_transaction_body_get_script_data_hash(body);
   cardano_blake2b_hash_t*     expected    = compute_datums_only_script_data_hash(tx);
 
+  cardano_transaction_input_set_t* collateral        = cardano_transaction_body_get_collateral(body);
+  cardano_transaction_output_t*    collateral_return = cardano_transaction_body_get_collateral_return(body);
+
+  EXPECT_EQ(cardano_transaction_input_set_get_length(collateral), 0U);
+  EXPECT_EQ(collateral_return, nullptr);
+  EXPECT_EQ(cardano_transaction_body_get_total_collateral(body), nullptr);
   EXPECT_EQ(cardano_redeemer_list_get_length(redeemers), 0U);
   EXPECT_EQ(cardano_plutus_data_set_get_length(datums), 1U);
   ASSERT_NE(hash, nullptr);
   EXPECT_TRUE(cardano_blake2b_hash_equals(hash, expected));
 
   // Cleanup
+  cardano_transaction_output_unref(&collateral_return);
+  cardano_transaction_input_set_unref(&collateral);
   cardano_blake2b_hash_unref(&expected);
   cardano_blake2b_hash_unref(&hash);
   cardano_transaction_body_unref(&body);
