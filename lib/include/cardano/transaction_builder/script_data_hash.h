@@ -49,8 +49,10 @@ extern "C" {
  * the datums and an empty language views map. No Plutus script is executed in that case, so the cost models
  * are not used and may be empty.
  *
- * When there are neither redeemers nor datums, or there are redeemers but the cost models are empty, no hash
- * is computed and `data_hash` is set to NULL.
+ * When there are redeemers, the hash is computed from the redeemers, the datums (if any) and the language views
+ * encoded from the given cost models. If the cost models are empty, the language views are an empty map.
+ *
+ * When there are neither redeemers nor datums, no hash is computed and `data_hash` is set to NULL.
  *
  * \param[in] costmdls A pointer to \ref cardano_costmdls_t representing the cost models for script execution.
  *                     It must not be NULL, but it may be empty.

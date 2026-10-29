@@ -26,25 +26,6 @@
 #include <cardano/witness_set/plutus_data_set.h>
 #include <cardano/witness_set/redeemer_list.h>
 
-/* STATIC FUNCTIONS **********************************************************/
-
-/**
- * \brief Checks if the provided cost models are empty.
- *
- * \param costmdls A pointer to \ref cardano_costmdls_t representing the cost models for script execution.
- * \return `true` if the cost models are empty; otherwise, `false`.
- */
-static bool
-is_costmdls_empty(const cardano_costmdls_t* costmdls)
-{
-  const bool has_plutus_v1 = cardano_costmdls_has(costmdls, CARDANO_PLUTUS_LANGUAGE_VERSION_V1);
-  const bool has_plutus_v2 = cardano_costmdls_has(costmdls, CARDANO_PLUTUS_LANGUAGE_VERSION_V2);
-  const bool has_plutus_v3 = cardano_costmdls_has(costmdls, CARDANO_PLUTUS_LANGUAGE_VERSION_V3);
-  const bool has_plutus_v4 = cardano_costmdls_has(costmdls, CARDANO_PLUTUS_LANGUAGE_VERSION_V4);
-
-  return (costmdls == NULL) || (!has_plutus_v1 && !has_plutus_v2 && !has_plutus_v3 && !has_plutus_v4);
-}
-
 /* DEFINITIONS ***************************************************************/
 
 cardano_error_t
@@ -71,12 +52,6 @@ cardano_compute_script_data_hash(
   const size_t redeemers_size   = cardano_redeemer_list_get_length(redeemers);
 
   if ((plutus_data_size == 0U) && (redeemers_size == 0U))
-  {
-    *data_hash = NULL;
-    return result;
-  }
-
-  if ((redeemers_size > 0U) && is_costmdls_empty(costmdls))
   {
     *data_hash = NULL;
     return result;

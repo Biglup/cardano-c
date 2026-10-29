@@ -306,7 +306,11 @@ TEST(cardano_compute_script_data_hash, returnsNullIfBothDatumAndRedeemersAreNull
   cardano_cost_model_unref(&plutusV2_costs);
 }
 
-TEST(cardano_compute_script_data_hash, returnsNullIfCostMdlsAreEmpty)
+/**
+ * Preimage (redeemers map, empty language views map):
+ * a182010082d8799fff821a00cccbfa1b0000000249397d10a0
+ */
+TEST(cardano_compute_script_data_hash, canComputeHashWithOnlyRedeemerAndEmptyCostModels)
 {
   cardano_redeemer_t*      redeemer  = create_redeemer(REDEEMER_CBOR);
   cardano_redeemer_list_t* redeemers = NULL;
@@ -314,11 +318,93 @@ TEST(cardano_compute_script_data_hash, returnsNullIfCostMdlsAreEmpty)
   cardano_costmdls_t*      costmdls  = NULL;
 
   EXPECT_EQ(cardano_costmdls_new(&costmdls), CARDANO_SUCCESS);
-
   EXPECT_EQ(cardano_redeemer_list_new(&redeemers), CARDANO_SUCCESS);
   EXPECT_EQ(cardano_redeemer_list_add(redeemers, redeemer), CARDANO_SUCCESS);
+
   EXPECT_EQ(cardano_compute_script_data_hash(costmdls, redeemers, NULL, &data_hash), CARDANO_SUCCESS);
-  EXPECT_EQ(data_hash, nullptr);
+  ASSERT_NE(data_hash, nullptr);
+
+  const size_t hash_size = cardano_blake2b_hash_get_hex_size(data_hash);
+  char*        hash      = (char*)malloc(hash_size);
+
+  EXPECT_EQ(cardano_blake2b_hash_to_hex(data_hash, hash, hash_size), CARDANO_SUCCESS);
+
+  EXPECT_STREQ(hash, "81110a2ec347afe0c0997ba4887d15b4a25924a5e63f3db4ac2a0eecec9b12ee");
+
+  free(hash);
+  cardano_redeemer_unref(&redeemer);
+  cardano_redeemer_list_unref(&redeemers);
+  cardano_costmdls_unref(&costmdls);
+  cardano_blake2b_hash_unref(&data_hash);
+}
+
+/**
+ * Preimage (redeemers map, datums set, empty language views map):
+ * a182010082d8799fff821a00cccbfa1b0000000249397d10d9010281c25103a0c92075c0dbf3b8acbc5f96ce3f0ad2a0
+ */
+TEST(cardano_compute_script_data_hash, canComputeHashWithRedeemerAndDatumAndEmptyCostModels)
+{
+  cardano_redeemer_t*        redeemer  = create_redeemer(REDEEMER_CBOR);
+  cardano_redeemer_list_t*   redeemers = NULL;
+  cardano_blake2b_hash_t*    data_hash = NULL;
+  cardano_costmdls_t*        costmdls  = NULL;
+  cardano_plutus_data_t*     data      = NULL;
+  cardano_plutus_data_set_t* datums    = NULL;
+
+  EXPECT_EQ(cardano_costmdls_new(&costmdls), CARDANO_SUCCESS);
+  EXPECT_EQ(cardano_redeemer_list_new(&redeemers), CARDANO_SUCCESS);
+  EXPECT_EQ(cardano_redeemer_list_add(redeemers, redeemer), CARDANO_SUCCESS);
+
+  EXPECT_EQ(cardano_plutus_data_new_integer_from_string("1234567890123456789012345678901234567890", strlen("1234567890123456789012345678901234567890"), 10, &data), CARDANO_SUCCESS);
+  EXPECT_EQ(cardano_plutus_data_set_new(&datums), CARDANO_SUCCESS);
+  EXPECT_EQ(cardano_plutus_data_set_add(datums, data), CARDANO_SUCCESS);
+
+  EXPECT_EQ(cardano_compute_script_data_hash(costmdls, redeemers, datums, &data_hash), CARDANO_SUCCESS);
+  ASSERT_NE(data_hash, nullptr);
+
+  const size_t hash_size = cardano_blake2b_hash_get_hex_size(data_hash);
+  char*        hash      = (char*)malloc(hash_size);
+
+  EXPECT_EQ(cardano_blake2b_hash_to_hex(data_hash, hash, hash_size), CARDANO_SUCCESS);
+
+  EXPECT_STREQ(hash, "3332fb7e14237047cb87e3a9a17137fed09cf0ac226c0e648fc760169377a9aa");
+
+  free(hash);
+  cardano_plutus_data_unref(&data);
+  cardano_plutus_data_set_unref(&datums);
+  cardano_redeemer_unref(&redeemer);
+  cardano_redeemer_list_unref(&redeemers);
+  cardano_costmdls_unref(&costmdls);
+  cardano_blake2b_hash_unref(&data_hash);
+}
+
+TEST(cardano_compute_script_data_hash, doesntCrashOnMemoryAllocErrorWithRedeemerAndEmptyCostModels)
+{
+  cardano_redeemer_t*      redeemer  = create_redeemer(REDEEMER_CBOR);
+  cardano_redeemer_list_t* redeemers = NULL;
+  cardano_costmdls_t*      costmdls  = NULL;
+
+  EXPECT_EQ(cardano_costmdls_new(&costmdls), CARDANO_SUCCESS);
+  EXPECT_EQ(cardano_redeemer_list_new(&redeemers), CARDANO_SUCCESS);
+  EXPECT_EQ(cardano_redeemer_list_add(redeemers, redeemer), CARDANO_SUCCESS);
+
+  for (int i = 0; i < 12; ++i)
+  {
+    reset_allocators_run_count();
+    set_malloc_limit(i);
+    cardano_set_allocators(fail_malloc_at_limit, realloc, free);
+
+    cardano_blake2b_hash_t* data_hash = NULL;
+    const cardano_error_t   result    = cardano_compute_script_data_hash(costmdls, redeemers, NULL, &data_hash);
+
+    cardano_set_allocators(malloc, realloc, free);
+
+    EXPECT_EQ(result, CARDANO_ERROR_MEMORY_ALLOCATION_FAILED);
+    cardano_blake2b_hash_unref(&data_hash);
+  }
+
+  reset_allocators_run_count();
+  reset_limited_malloc();
 
   cardano_redeemer_unref(&redeemer);
   cardano_redeemer_list_unref(&redeemers);
