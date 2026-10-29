@@ -401,6 +401,84 @@ cardano_sub_tx_builder_send_value_ex(
 }
 
 void
+cardano_sub_tx_builder_lock_lovelace(
+  cardano_sub_tx_builder_t* builder,
+  cardano_address_t*        script_address,
+  uint64_t                  amount,
+  cardano_datum_t*          datum)
+{
+  if ((builder == NULL) || (builder->last_error != CARDANO_SUCCESS))
+  {
+    return;
+  }
+
+  const char* error_message = NULL;
+
+  const cardano_error_t result = cardano_builder_lock_lovelace(&builder->state, script_address, amount, datum, &error_message);
+
+  track_builder_result(builder, result, error_message);
+}
+
+void
+cardano_sub_tx_builder_lock_lovelace_ex(
+  cardano_sub_tx_builder_t* builder,
+  const char*               script_address,
+  size_t                    script_address_size,
+  uint64_t                  amount,
+  cardano_datum_t*          datum)
+{
+  if ((builder == NULL) || (builder->last_error != CARDANO_SUCCESS))
+  {
+    return;
+  }
+
+  const char* error_message = NULL;
+
+  const cardano_error_t result = cardano_builder_lock_lovelace_ex(&builder->state, script_address, script_address_size, amount, datum, &error_message);
+
+  track_builder_result(builder, result, error_message);
+}
+
+void
+cardano_sub_tx_builder_lock_value(
+  cardano_sub_tx_builder_t* builder,
+  cardano_address_t*        script_address,
+  cardano_value_t*          value,
+  cardano_datum_t*          datum)
+{
+  if ((builder == NULL) || (builder->last_error != CARDANO_SUCCESS))
+  {
+    return;
+  }
+
+  const char* error_message = NULL;
+
+  const cardano_error_t result = cardano_builder_lock_value(&builder->state, script_address, value, datum, &error_message);
+
+  track_builder_result(builder, result, error_message);
+}
+
+void
+cardano_sub_tx_builder_lock_value_ex(
+  cardano_sub_tx_builder_t* builder,
+  const char*               script_address,
+  size_t                    script_address_size,
+  cardano_value_t*          value,
+  cardano_datum_t*          datum)
+{
+  if ((builder == NULL) || (builder->last_error != CARDANO_SUCCESS))
+  {
+    return;
+  }
+
+  const char* error_message = NULL;
+
+  const cardano_error_t result = cardano_builder_lock_value_ex(&builder->state, script_address, script_address_size, value, datum, &error_message);
+
+  track_builder_result(builder, result, error_message);
+}
+
+void
 cardano_sub_tx_builder_set_metadata(
   cardano_sub_tx_builder_t* builder,
   const uint64_t            tag,
@@ -641,6 +719,23 @@ cardano_sub_tx_builder_add_guard_with_redeemer(
   const char* error_message = NULL;
 
   const cardano_error_t result = cardano_builder_add_guard_with_redeemer(&builder->state, guard, redeemer, &error_message);
+
+  track_builder_result(builder, result, error_message);
+}
+
+void
+cardano_sub_tx_builder_add_datum(
+  cardano_sub_tx_builder_t* builder,
+  cardano_plutus_data_t*    datum)
+{
+  if ((builder == NULL) || (builder->last_error != CARDANO_SUCCESS))
+  {
+    return;
+  }
+
+  const char* error_message = NULL;
+
+  const cardano_error_t result = cardano_builder_add_datum(&builder->state, datum, &error_message);
 
   track_builder_result(builder, result, error_message);
 }

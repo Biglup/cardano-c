@@ -743,6 +743,71 @@ record_first_error(cardano_sub_tx_builder_t* builder)
   EXPECT_EQ(builder->last_error, CARDANO_ERROR_INVALID_ARGUMENT);
 }
 
+/**
+ * Gets the first output of a sub transaction.
+ * \param sub_tx The sub transaction.
+ * \return A new reference to the first output.
+ */
+static cardano_transaction_output_t*
+get_first_output(cardano_sub_transaction_t* sub_tx)
+{
+  cardano_transaction_output_list_t* outputs = cardano_sub_transaction_body_get_outputs(get_body(sub_tx));
+  cardano_transaction_output_t*      output  = NULL;
+
+  EXPECT_EQ(cardano_transaction_output_list_get(outputs, 0, &output), CARDANO_SUCCESS);
+
+  cardano_transaction_output_list_unref(&outputs);
+
+  return output;
+}
+
+/**
+ * Creates an inline datum from plutus data.
+ * \param data The plutus data carried by the datum.
+ * \return A new instance of the datum.
+ */
+static cardano_datum_t*
+create_inline_datum(cardano_plutus_data_t* data)
+{
+  cardano_datum_t* datum = NULL;
+
+  EXPECT_EQ(cardano_datum_new_inline_data(data, &datum), CARDANO_SUCCESS);
+
+  return datum;
+}
+
+/**
+ * Creates a datum that carries the hash of a datum.
+ * \param hash_hex The datum hash, in hexadecimal format.
+ * \return A new instance of the datum.
+ */
+static cardano_datum_t*
+create_hash_datum(const char* hash_hex)
+{
+  cardano_datum_t* datum = NULL;
+
+  EXPECT_EQ(cardano_datum_new_data_hash_hex(hash_hex, strlen(hash_hex), &datum), CARDANO_SUCCESS);
+
+  return datum;
+}
+
+/**
+ * Creates a value of lovelace and one native asset.
+ * \return A new instance of the value.
+ */
+static cardano_value_t*
+create_value_with_assets()
+{
+  cardano_utxo_t*               utxo     = create_utxo(UTXO_WITH_ASSETS_CBOR);
+  cardano_transaction_output_t* resolved = cardano_utxo_get_output(utxo);
+  cardano_value_t*              value    = cardano_transaction_output_get_value(resolved);
+
+  cardano_transaction_output_unref(&resolved);
+  cardano_utxo_unref(&utxo);
+
+  return value;
+}
+
 /* UNIT TESTS ****************************************************************/
 
 TEST(cardano_sub_tx_builder_new, canCreateASubTxBuilder)
@@ -1965,6 +2030,818 @@ TEST(cardano_sub_tx_builder_send_value_ex, canSendValue)
   cardano_protocol_parameters_unref(&params);
   cardano_utxo_unref(&utxo);
   free(body_hex);
+}
+
+TEST(cardano_sub_tx_builder_lock_lovelace, doesntCrashIfGivenNull)
+{
+  cardano_sub_tx_builder_lock_lovelace(nullptr, nullptr, 0, nullptr);
+}
+
+TEST(cardano_sub_tx_builder_lock_lovelace, returnsErrorIfAddressIsNull)
+{
+  // Arrange
+  cardano_protocol_parameters_t* params  = init_protocol_parameters();
+  cardano_sub_tx_builder_t*      builder = cardano_sub_tx_builder_new(params, &CARDANO_MAINNET_SLOT_CONFIG);
+
+  // Act
+  cardano_sub_tx_builder_lock_lovelace(builder, nullptr, 2000000, nullptr);
+
+  // Assert
+  EXPECT_EQ(builder->last_error, CARDANO_ERROR_POINTER_IS_NULL);
+
+  // Cleanup
+  cardano_sub_tx_builder_unref(&builder);
+  cardano_protocol_parameters_unref(&params);
+}
+
+TEST(cardano_sub_tx_builder_lock_lovelace, canLockWithInlineDatum)
+{
+  // Arrange
+  cardano_protocol_parameters_t* params  = init_protocol_parameters();
+  cardano_sub_tx_builder_t*      builder = cardano_sub_tx_builder_new(params, &CARDANO_MAINNET_SLOT_CONFIG);
+  cardano_address_t*             address = create_address(ADDRESS);
+  cardano_plutus_data_t*         data    = create_plutus_data(PLUTUS_DATA_CBOR);
+  cardano_datum_t*               datum   = create_inline_datum(data);
+
+  // Act
+  cardano_sub_tx_builder_lock_lovelace(builder, address, 2000000, datum);
+
+  cardano_sub_transaction_t*    sub_tx         = build_sub_transaction(builder);
+  cardano_transaction_output_t* output         = get_first_output(sub_tx);
+  cardano_address_t*            locked_address = cardano_transaction_output_get_address(output);
+  cardano_value_t*              locked_value   = cardano_transaction_output_get_value(output);
+  cardano_datum_t*              locked_datum   = cardano_transaction_output_get_datum(output);
+  cardano_witness_set_t*        witness_set    = cardano_sub_transaction_get_witness_set(sub_tx);
+  cardano_plutus_data_set_t*    witness_datums = cardano_witness_set_get_plutus_data(witness_set);
+
+  // Assert
+  ASSERT_NE(sub_tx, nullptr);
+  EXPECT_STREQ(cardano_address_get_string(locked_address), ADDRESS);
+  EXPECT_EQ(cardano_value_get_coin(locked_value), 2000000U);
+  ASSERT_NE(locked_datum, nullptr);
+  cardano_datum_type_t locked_type = CARDANO_DATUM_TYPE_DATA_HASH;
+
+  EXPECT_EQ(cardano_datum_get_type(locked_datum, &locked_type), CARDANO_SUCCESS);
+  EXPECT_EQ(locked_type, CARDANO_DATUM_TYPE_INLINE_DATA);
+
+  cardano_plutus_data_t* locked_data = cardano_datum_get_inline_data(locked_datum);
+
+  EXPECT_TRUE(cardano_plutus_data_equals(locked_data, data));
+  cardano_plutus_data_unref(&locked_data);
+  EXPECT_EQ(witness_datums, nullptr);
+
+  // Cleanup
+  cardano_plutus_data_set_unref(&witness_datums);
+  cardano_witness_set_unref(&witness_set);
+  cardano_datum_unref(&locked_datum);
+  cardano_value_unref(&locked_value);
+  cardano_address_unref(&locked_address);
+  cardano_transaction_output_unref(&output);
+  cardano_sub_transaction_unref(&sub_tx);
+  cardano_sub_tx_builder_unref(&builder);
+  cardano_protocol_parameters_unref(&params);
+  cardano_datum_unref(&datum);
+  cardano_plutus_data_unref(&data);
+  cardano_address_unref(&address);
+}
+
+TEST(cardano_sub_tx_builder_lock_lovelace, canLockWithDatumHash)
+{
+  // Arrange
+  cardano_protocol_parameters_t* params  = init_protocol_parameters();
+  cardano_sub_tx_builder_t*      builder = cardano_sub_tx_builder_new(params, &CARDANO_MAINNET_SLOT_CONFIG);
+  cardano_address_t*             address = create_address(ADDRESS);
+  cardano_datum_t*               datum   = create_hash_datum("0000000000000000000000000000000000000000000000000000000000000000");
+
+  // Act
+  cardano_sub_tx_builder_lock_lovelace(builder, address, 2000000, datum);
+
+  cardano_sub_transaction_t*    sub_tx         = build_sub_transaction(builder);
+  cardano_transaction_output_t* output         = get_first_output(sub_tx);
+  cardano_address_t*            locked_address = cardano_transaction_output_get_address(output);
+  cardano_value_t*              locked_value   = cardano_transaction_output_get_value(output);
+  cardano_datum_t*              locked_datum   = cardano_transaction_output_get_datum(output);
+  cardano_witness_set_t*        witness_set    = cardano_sub_transaction_get_witness_set(sub_tx);
+  cardano_plutus_data_set_t*    witness_datums = cardano_witness_set_get_plutus_data(witness_set);
+
+  // Assert
+  ASSERT_NE(sub_tx, nullptr);
+  EXPECT_STREQ(cardano_address_get_string(locked_address), ADDRESS);
+  EXPECT_EQ(cardano_value_get_coin(locked_value), 2000000U);
+  ASSERT_NE(locked_datum, nullptr);
+  cardano_datum_type_t locked_type = CARDANO_DATUM_TYPE_DATA_HASH;
+
+  EXPECT_EQ(cardano_datum_get_type(locked_datum, &locked_type), CARDANO_SUCCESS);
+  EXPECT_EQ(locked_type, CARDANO_DATUM_TYPE_DATA_HASH);
+  EXPECT_TRUE(cardano_datum_equals(locked_datum, datum));
+  EXPECT_EQ(witness_datums, nullptr);
+
+  // Cleanup
+  cardano_plutus_data_set_unref(&witness_datums);
+  cardano_witness_set_unref(&witness_set);
+  cardano_datum_unref(&locked_datum);
+  cardano_value_unref(&locked_value);
+  cardano_address_unref(&locked_address);
+  cardano_transaction_output_unref(&output);
+  cardano_sub_transaction_unref(&sub_tx);
+  cardano_sub_tx_builder_unref(&builder);
+  cardano_protocol_parameters_unref(&params);
+  cardano_datum_unref(&datum);
+  cardano_address_unref(&address);
+}
+
+TEST(cardano_sub_tx_builder_lock_lovelace, keepsTheFirstErrorIfBuilderIsInErrorState)
+{
+  // Arrange
+  cardano_protocol_parameters_t* params  = init_protocol_parameters();
+  cardano_sub_tx_builder_t*      builder = cardano_sub_tx_builder_new(params, &CARDANO_MAINNET_SLOT_CONFIG);
+  cardano_address_t*             address = create_address(ADDRESS);
+  cardano_sub_transaction_t*     sub_tx  = nullptr;
+
+  record_first_error(builder);
+
+  // Act
+  cardano_sub_tx_builder_lock_lovelace(builder, address, 2000000, nullptr);
+
+  const cardano_error_t              result  = cardano_sub_tx_builder_build(builder, &sub_tx);
+  cardano_transaction_output_list_t* outputs = cardano_transaction_body_get_outputs(get_state_body(builder));
+
+  // Assert
+  EXPECT_EQ(result, CARDANO_ERROR_INVALID_ARGUMENT);
+  EXPECT_STREQ(cardano_sub_tx_builder_get_last_error(builder), FIRST_ERROR);
+  EXPECT_EQ(cardano_transaction_output_list_get_length(outputs), 0U);
+  EXPECT_EQ(sub_tx, nullptr);
+
+  // Cleanup
+  cardano_transaction_output_list_unref(&outputs);
+  cardano_sub_tx_builder_unref(&builder);
+  cardano_protocol_parameters_unref(&params);
+  cardano_address_unref(&address);
+}
+
+TEST(cardano_sub_tx_builder_lock_lovelace, returnsErrorIfMemoryAllocationFails)
+{
+  // Arrange
+  cardano_protocol_parameters_t* params  = init_protocol_parameters();
+  cardano_address_t*             address = create_address(ADDRESS);
+  cardano_plutus_data_t*         data    = create_plutus_data(PLUTUS_DATA_CBOR);
+  cardano_datum_t*               datum   = create_inline_datum(data);
+
+  // Act & Assert
+  bool succeeded = false;
+
+  for (int i = 0; (i < 100) && !succeeded; ++i)
+  {
+    cardano_sub_tx_builder_t* builder = cardano_sub_tx_builder_new(params, &CARDANO_MAINNET_SLOT_CONFIG);
+
+    reset_allocators_run_count();
+    set_malloc_limit(i);
+    cardano_set_allocators(fail_malloc_at_limit, realloc, free);
+
+    cardano_sub_tx_builder_lock_lovelace(builder, address, 2000000, datum);
+
+    reset_allocators_run_count();
+    reset_limited_malloc();
+    cardano_set_allocators(malloc, realloc, free);
+
+    if (builder->last_error == CARDANO_SUCCESS)
+    {
+      succeeded = true;
+    }
+    else
+    {
+      EXPECT_EQ(builder->last_error, CARDANO_ERROR_MEMORY_ALLOCATION_FAILED);
+    }
+
+    cardano_sub_tx_builder_unref(&builder);
+  }
+
+  EXPECT_TRUE(succeeded);
+
+  // Cleanup
+  cardano_protocol_parameters_unref(&params);
+  cardano_datum_unref(&datum);
+  cardano_plutus_data_unref(&data);
+  cardano_address_unref(&address);
+}
+
+TEST(cardano_sub_tx_builder_lock_lovelace_ex, doesntCrashIfGivenNull)
+{
+  cardano_sub_tx_builder_lock_lovelace_ex(nullptr, nullptr, 0, 0, nullptr);
+}
+
+TEST(cardano_sub_tx_builder_lock_lovelace_ex, returnsErrorIfAddressIsNull)
+{
+  // Arrange
+  cardano_protocol_parameters_t* params  = init_protocol_parameters();
+  cardano_sub_tx_builder_t*      builder = cardano_sub_tx_builder_new(params, &CARDANO_MAINNET_SLOT_CONFIG);
+
+  // Act
+  cardano_sub_tx_builder_lock_lovelace_ex(builder, nullptr, 0, 2000000, nullptr);
+
+  // Assert
+  EXPECT_EQ(builder->last_error, CARDANO_ERROR_POINTER_IS_NULL);
+
+  // Cleanup
+  cardano_sub_tx_builder_unref(&builder);
+  cardano_protocol_parameters_unref(&params);
+}
+
+TEST(cardano_sub_tx_builder_lock_lovelace_ex, canLockWithInlineDatum)
+{
+  // Arrange
+  cardano_protocol_parameters_t* params  = init_protocol_parameters();
+  cardano_sub_tx_builder_t*      builder = cardano_sub_tx_builder_new(params, &CARDANO_MAINNET_SLOT_CONFIG);
+  cardano_plutus_data_t*         data    = create_plutus_data(PLUTUS_DATA_CBOR);
+  cardano_datum_t*               datum   = create_inline_datum(data);
+
+  // Act
+  cardano_sub_tx_builder_lock_lovelace_ex(builder, ADDRESS, strlen(ADDRESS), 2000000, datum);
+
+  cardano_sub_transaction_t*    sub_tx         = build_sub_transaction(builder);
+  cardano_transaction_output_t* output         = get_first_output(sub_tx);
+  cardano_address_t*            locked_address = cardano_transaction_output_get_address(output);
+  cardano_value_t*              locked_value   = cardano_transaction_output_get_value(output);
+  cardano_datum_t*              locked_datum   = cardano_transaction_output_get_datum(output);
+  cardano_witness_set_t*        witness_set    = cardano_sub_transaction_get_witness_set(sub_tx);
+  cardano_plutus_data_set_t*    witness_datums = cardano_witness_set_get_plutus_data(witness_set);
+
+  // Assert
+  ASSERT_NE(sub_tx, nullptr);
+  EXPECT_STREQ(cardano_address_get_string(locked_address), ADDRESS);
+  EXPECT_EQ(cardano_value_get_coin(locked_value), 2000000U);
+  ASSERT_NE(locked_datum, nullptr);
+  cardano_datum_type_t locked_type = CARDANO_DATUM_TYPE_DATA_HASH;
+
+  EXPECT_EQ(cardano_datum_get_type(locked_datum, &locked_type), CARDANO_SUCCESS);
+  EXPECT_EQ(locked_type, CARDANO_DATUM_TYPE_INLINE_DATA);
+
+  cardano_plutus_data_t* locked_data = cardano_datum_get_inline_data(locked_datum);
+
+  EXPECT_TRUE(cardano_plutus_data_equals(locked_data, data));
+  cardano_plutus_data_unref(&locked_data);
+  EXPECT_EQ(witness_datums, nullptr);
+
+  // Cleanup
+  cardano_plutus_data_set_unref(&witness_datums);
+  cardano_witness_set_unref(&witness_set);
+  cardano_datum_unref(&locked_datum);
+  cardano_value_unref(&locked_value);
+  cardano_address_unref(&locked_address);
+  cardano_transaction_output_unref(&output);
+  cardano_sub_transaction_unref(&sub_tx);
+  cardano_sub_tx_builder_unref(&builder);
+  cardano_protocol_parameters_unref(&params);
+  cardano_datum_unref(&datum);
+  cardano_plutus_data_unref(&data);
+}
+
+TEST(cardano_sub_tx_builder_lock_lovelace_ex, canLockWithDatumHash)
+{
+  // Arrange
+  cardano_protocol_parameters_t* params  = init_protocol_parameters();
+  cardano_sub_tx_builder_t*      builder = cardano_sub_tx_builder_new(params, &CARDANO_MAINNET_SLOT_CONFIG);
+  cardano_datum_t*               datum   = create_hash_datum("0000000000000000000000000000000000000000000000000000000000000000");
+
+  // Act
+  cardano_sub_tx_builder_lock_lovelace_ex(builder, ADDRESS, strlen(ADDRESS), 2000000, datum);
+
+  cardano_sub_transaction_t*    sub_tx         = build_sub_transaction(builder);
+  cardano_transaction_output_t* output         = get_first_output(sub_tx);
+  cardano_address_t*            locked_address = cardano_transaction_output_get_address(output);
+  cardano_value_t*              locked_value   = cardano_transaction_output_get_value(output);
+  cardano_datum_t*              locked_datum   = cardano_transaction_output_get_datum(output);
+  cardano_witness_set_t*        witness_set    = cardano_sub_transaction_get_witness_set(sub_tx);
+  cardano_plutus_data_set_t*    witness_datums = cardano_witness_set_get_plutus_data(witness_set);
+
+  // Assert
+  ASSERT_NE(sub_tx, nullptr);
+  EXPECT_STREQ(cardano_address_get_string(locked_address), ADDRESS);
+  EXPECT_EQ(cardano_value_get_coin(locked_value), 2000000U);
+  ASSERT_NE(locked_datum, nullptr);
+  cardano_datum_type_t locked_type = CARDANO_DATUM_TYPE_DATA_HASH;
+
+  EXPECT_EQ(cardano_datum_get_type(locked_datum, &locked_type), CARDANO_SUCCESS);
+  EXPECT_EQ(locked_type, CARDANO_DATUM_TYPE_DATA_HASH);
+  EXPECT_TRUE(cardano_datum_equals(locked_datum, datum));
+  EXPECT_EQ(witness_datums, nullptr);
+
+  // Cleanup
+  cardano_plutus_data_set_unref(&witness_datums);
+  cardano_witness_set_unref(&witness_set);
+  cardano_datum_unref(&locked_datum);
+  cardano_value_unref(&locked_value);
+  cardano_address_unref(&locked_address);
+  cardano_transaction_output_unref(&output);
+  cardano_sub_transaction_unref(&sub_tx);
+  cardano_sub_tx_builder_unref(&builder);
+  cardano_protocol_parameters_unref(&params);
+  cardano_datum_unref(&datum);
+}
+
+TEST(cardano_sub_tx_builder_lock_lovelace_ex, keepsTheFirstErrorIfBuilderIsInErrorState)
+{
+  // Arrange
+  cardano_protocol_parameters_t* params  = init_protocol_parameters();
+  cardano_sub_tx_builder_t*      builder = cardano_sub_tx_builder_new(params, &CARDANO_MAINNET_SLOT_CONFIG);
+  cardano_sub_transaction_t*     sub_tx  = nullptr;
+
+  record_first_error(builder);
+
+  // Act
+  cardano_sub_tx_builder_lock_lovelace_ex(builder, ADDRESS, strlen(ADDRESS), 2000000, nullptr);
+
+  const cardano_error_t              result  = cardano_sub_tx_builder_build(builder, &sub_tx);
+  cardano_transaction_output_list_t* outputs = cardano_transaction_body_get_outputs(get_state_body(builder));
+
+  // Assert
+  EXPECT_EQ(result, CARDANO_ERROR_INVALID_ARGUMENT);
+  EXPECT_STREQ(cardano_sub_tx_builder_get_last_error(builder), FIRST_ERROR);
+  EXPECT_EQ(cardano_transaction_output_list_get_length(outputs), 0U);
+  EXPECT_EQ(sub_tx, nullptr);
+
+  // Cleanup
+  cardano_transaction_output_list_unref(&outputs);
+  cardano_sub_tx_builder_unref(&builder);
+  cardano_protocol_parameters_unref(&params);
+}
+
+TEST(cardano_sub_tx_builder_lock_lovelace_ex, returnsErrorIfMemoryAllocationFails)
+{
+  // Arrange
+  cardano_protocol_parameters_t* params = init_protocol_parameters();
+  cardano_plutus_data_t*         data   = create_plutus_data(PLUTUS_DATA_CBOR);
+  cardano_datum_t*               datum  = create_inline_datum(data);
+
+  // Act & Assert
+  bool succeeded = false;
+
+  for (int i = 0; (i < 100) && !succeeded; ++i)
+  {
+    cardano_sub_tx_builder_t* builder = cardano_sub_tx_builder_new(params, &CARDANO_MAINNET_SLOT_CONFIG);
+
+    reset_allocators_run_count();
+    set_malloc_limit(i);
+    cardano_set_allocators(fail_malloc_at_limit, realloc, free);
+
+    cardano_sub_tx_builder_lock_lovelace_ex(builder, ADDRESS, strlen(ADDRESS), 2000000, datum);
+
+    reset_allocators_run_count();
+    reset_limited_malloc();
+    cardano_set_allocators(malloc, realloc, free);
+
+    if (builder->last_error == CARDANO_SUCCESS)
+    {
+      succeeded = true;
+    }
+    else
+    {
+      EXPECT_THAT(builder->last_error, testing::AnyOf(CARDANO_ERROR_MEMORY_ALLOCATION_FAILED, CARDANO_ERROR_DECODING));
+    }
+
+    cardano_sub_tx_builder_unref(&builder);
+  }
+
+  EXPECT_TRUE(succeeded);
+
+  // Cleanup
+  cardano_protocol_parameters_unref(&params);
+  cardano_datum_unref(&datum);
+  cardano_plutus_data_unref(&data);
+}
+
+TEST(cardano_sub_tx_builder_lock_value, doesntCrashIfGivenNull)
+{
+  cardano_sub_tx_builder_lock_value(nullptr, nullptr, nullptr, nullptr);
+}
+
+TEST(cardano_sub_tx_builder_lock_value, returnsErrorIfAddressIsNull)
+{
+  // Arrange
+  cardano_protocol_parameters_t* params  = init_protocol_parameters();
+  cardano_sub_tx_builder_t*      builder = cardano_sub_tx_builder_new(params, &CARDANO_MAINNET_SLOT_CONFIG);
+  cardano_value_t*               amount  = create_value_with_assets();
+
+  // Act
+  cardano_sub_tx_builder_lock_value(builder, nullptr, amount, nullptr);
+
+  // Assert
+  EXPECT_EQ(builder->last_error, CARDANO_ERROR_POINTER_IS_NULL);
+
+  // Cleanup
+  cardano_sub_tx_builder_unref(&builder);
+  cardano_protocol_parameters_unref(&params);
+  cardano_value_unref(&amount);
+}
+
+TEST(cardano_sub_tx_builder_lock_value, returnsErrorIfValueIsNull)
+{
+  // Arrange
+  cardano_protocol_parameters_t* params  = init_protocol_parameters();
+  cardano_sub_tx_builder_t*      builder = cardano_sub_tx_builder_new(params, &CARDANO_MAINNET_SLOT_CONFIG);
+  cardano_address_t*             address = create_address(ADDRESS);
+
+  // Act
+  cardano_sub_tx_builder_lock_value(builder, address, nullptr, nullptr);
+
+  // Assert
+  EXPECT_EQ(builder->last_error, CARDANO_ERROR_POINTER_IS_NULL);
+
+  // Cleanup
+  cardano_sub_tx_builder_unref(&builder);
+  cardano_protocol_parameters_unref(&params);
+  cardano_address_unref(&address);
+}
+
+TEST(cardano_sub_tx_builder_lock_value, canLockWithInlineDatum)
+{
+  // Arrange
+  cardano_protocol_parameters_t* params  = init_protocol_parameters();
+  cardano_sub_tx_builder_t*      builder = cardano_sub_tx_builder_new(params, &CARDANO_MAINNET_SLOT_CONFIG);
+  cardano_address_t*             address = create_address(ADDRESS);
+  cardano_value_t*               amount  = create_value_with_assets();
+  cardano_plutus_data_t*         data    = create_plutus_data(PLUTUS_DATA_CBOR);
+  cardano_datum_t*               datum   = create_inline_datum(data);
+
+  // Act
+  cardano_sub_tx_builder_lock_value(builder, address, amount, datum);
+
+  cardano_sub_transaction_t*    sub_tx         = build_sub_transaction(builder);
+  cardano_transaction_output_t* output         = get_first_output(sub_tx);
+  cardano_address_t*            locked_address = cardano_transaction_output_get_address(output);
+  cardano_value_t*              locked_value   = cardano_transaction_output_get_value(output);
+  cardano_datum_t*              locked_datum   = cardano_transaction_output_get_datum(output);
+  cardano_witness_set_t*        witness_set    = cardano_sub_transaction_get_witness_set(sub_tx);
+  cardano_plutus_data_set_t*    witness_datums = cardano_witness_set_get_plutus_data(witness_set);
+
+  // Assert
+  ASSERT_NE(sub_tx, nullptr);
+  EXPECT_STREQ(cardano_address_get_string(locked_address), ADDRESS);
+  EXPECT_TRUE(cardano_value_equals(locked_value, amount));
+  ASSERT_NE(locked_datum, nullptr);
+  cardano_datum_type_t locked_type = CARDANO_DATUM_TYPE_DATA_HASH;
+
+  EXPECT_EQ(cardano_datum_get_type(locked_datum, &locked_type), CARDANO_SUCCESS);
+  EXPECT_EQ(locked_type, CARDANO_DATUM_TYPE_INLINE_DATA);
+
+  cardano_plutus_data_t* locked_data = cardano_datum_get_inline_data(locked_datum);
+
+  EXPECT_TRUE(cardano_plutus_data_equals(locked_data, data));
+  cardano_plutus_data_unref(&locked_data);
+  EXPECT_EQ(witness_datums, nullptr);
+
+  // Cleanup
+  cardano_plutus_data_set_unref(&witness_datums);
+  cardano_witness_set_unref(&witness_set);
+  cardano_datum_unref(&locked_datum);
+  cardano_value_unref(&locked_value);
+  cardano_address_unref(&locked_address);
+  cardano_transaction_output_unref(&output);
+  cardano_sub_transaction_unref(&sub_tx);
+  cardano_sub_tx_builder_unref(&builder);
+  cardano_protocol_parameters_unref(&params);
+  cardano_datum_unref(&datum);
+  cardano_plutus_data_unref(&data);
+  cardano_address_unref(&address);
+  cardano_value_unref(&amount);
+}
+
+TEST(cardano_sub_tx_builder_lock_value, canLockWithDatumHash)
+{
+  // Arrange
+  cardano_protocol_parameters_t* params  = init_protocol_parameters();
+  cardano_sub_tx_builder_t*      builder = cardano_sub_tx_builder_new(params, &CARDANO_MAINNET_SLOT_CONFIG);
+  cardano_address_t*             address = create_address(ADDRESS);
+  cardano_value_t*               amount  = create_value_with_assets();
+  cardano_datum_t*               datum   = create_hash_datum("0000000000000000000000000000000000000000000000000000000000000000");
+
+  // Act
+  cardano_sub_tx_builder_lock_value(builder, address, amount, datum);
+
+  cardano_sub_transaction_t*    sub_tx         = build_sub_transaction(builder);
+  cardano_transaction_output_t* output         = get_first_output(sub_tx);
+  cardano_address_t*            locked_address = cardano_transaction_output_get_address(output);
+  cardano_value_t*              locked_value   = cardano_transaction_output_get_value(output);
+  cardano_datum_t*              locked_datum   = cardano_transaction_output_get_datum(output);
+  cardano_witness_set_t*        witness_set    = cardano_sub_transaction_get_witness_set(sub_tx);
+  cardano_plutus_data_set_t*    witness_datums = cardano_witness_set_get_plutus_data(witness_set);
+
+  // Assert
+  ASSERT_NE(sub_tx, nullptr);
+  EXPECT_STREQ(cardano_address_get_string(locked_address), ADDRESS);
+  EXPECT_TRUE(cardano_value_equals(locked_value, amount));
+  ASSERT_NE(locked_datum, nullptr);
+  cardano_datum_type_t locked_type = CARDANO_DATUM_TYPE_DATA_HASH;
+
+  EXPECT_EQ(cardano_datum_get_type(locked_datum, &locked_type), CARDANO_SUCCESS);
+  EXPECT_EQ(locked_type, CARDANO_DATUM_TYPE_DATA_HASH);
+  EXPECT_TRUE(cardano_datum_equals(locked_datum, datum));
+  EXPECT_EQ(witness_datums, nullptr);
+
+  // Cleanup
+  cardano_plutus_data_set_unref(&witness_datums);
+  cardano_witness_set_unref(&witness_set);
+  cardano_datum_unref(&locked_datum);
+  cardano_value_unref(&locked_value);
+  cardano_address_unref(&locked_address);
+  cardano_transaction_output_unref(&output);
+  cardano_sub_transaction_unref(&sub_tx);
+  cardano_sub_tx_builder_unref(&builder);
+  cardano_protocol_parameters_unref(&params);
+  cardano_datum_unref(&datum);
+  cardano_address_unref(&address);
+  cardano_value_unref(&amount);
+}
+
+TEST(cardano_sub_tx_builder_lock_value, keepsTheFirstErrorIfBuilderIsInErrorState)
+{
+  // Arrange
+  cardano_protocol_parameters_t* params  = init_protocol_parameters();
+  cardano_sub_tx_builder_t*      builder = cardano_sub_tx_builder_new(params, &CARDANO_MAINNET_SLOT_CONFIG);
+  cardano_address_t*             address = create_address(ADDRESS);
+  cardano_value_t*               amount  = create_value_with_assets();
+  cardano_sub_transaction_t*     sub_tx  = nullptr;
+
+  record_first_error(builder);
+
+  // Act
+  cardano_sub_tx_builder_lock_value(builder, address, amount, nullptr);
+
+  const cardano_error_t              result  = cardano_sub_tx_builder_build(builder, &sub_tx);
+  cardano_transaction_output_list_t* outputs = cardano_transaction_body_get_outputs(get_state_body(builder));
+
+  // Assert
+  EXPECT_EQ(result, CARDANO_ERROR_INVALID_ARGUMENT);
+  EXPECT_STREQ(cardano_sub_tx_builder_get_last_error(builder), FIRST_ERROR);
+  EXPECT_EQ(cardano_transaction_output_list_get_length(outputs), 0U);
+  EXPECT_EQ(sub_tx, nullptr);
+
+  // Cleanup
+  cardano_transaction_output_list_unref(&outputs);
+  cardano_sub_tx_builder_unref(&builder);
+  cardano_protocol_parameters_unref(&params);
+  cardano_address_unref(&address);
+  cardano_value_unref(&amount);
+}
+
+TEST(cardano_sub_tx_builder_lock_value, returnsErrorIfMemoryAllocationFails)
+{
+  // Arrange
+  cardano_protocol_parameters_t* params  = init_protocol_parameters();
+  cardano_address_t*             address = create_address(ADDRESS);
+  cardano_value_t*               amount  = create_value_with_assets();
+  cardano_plutus_data_t*         data    = create_plutus_data(PLUTUS_DATA_CBOR);
+  cardano_datum_t*               datum   = create_inline_datum(data);
+
+  // Act & Assert
+  bool succeeded = false;
+
+  for (int i = 0; (i < 100) && !succeeded; ++i)
+  {
+    cardano_sub_tx_builder_t* builder = cardano_sub_tx_builder_new(params, &CARDANO_MAINNET_SLOT_CONFIG);
+
+    reset_allocators_run_count();
+    set_malloc_limit(i);
+    cardano_set_allocators(fail_malloc_at_limit, realloc, free);
+
+    cardano_sub_tx_builder_lock_value(builder, address, amount, datum);
+
+    reset_allocators_run_count();
+    reset_limited_malloc();
+    cardano_set_allocators(malloc, realloc, free);
+
+    if (builder->last_error == CARDANO_SUCCESS)
+    {
+      succeeded = true;
+    }
+    else
+    {
+      EXPECT_EQ(builder->last_error, CARDANO_ERROR_MEMORY_ALLOCATION_FAILED);
+    }
+
+    cardano_sub_tx_builder_unref(&builder);
+  }
+
+  EXPECT_TRUE(succeeded);
+
+  // Cleanup
+  cardano_protocol_parameters_unref(&params);
+  cardano_datum_unref(&datum);
+  cardano_plutus_data_unref(&data);
+  cardano_address_unref(&address);
+  cardano_value_unref(&amount);
+}
+
+TEST(cardano_sub_tx_builder_lock_value_ex, doesntCrashIfGivenNull)
+{
+  cardano_sub_tx_builder_lock_value_ex(nullptr, nullptr, 0, nullptr, nullptr);
+}
+
+TEST(cardano_sub_tx_builder_lock_value_ex, returnsErrorIfAddressIsNull)
+{
+  // Arrange
+  cardano_protocol_parameters_t* params  = init_protocol_parameters();
+  cardano_sub_tx_builder_t*      builder = cardano_sub_tx_builder_new(params, &CARDANO_MAINNET_SLOT_CONFIG);
+  cardano_value_t*               amount  = create_value_with_assets();
+
+  // Act
+  cardano_sub_tx_builder_lock_value_ex(builder, nullptr, 0, amount, nullptr);
+
+  // Assert
+  EXPECT_EQ(builder->last_error, CARDANO_ERROR_POINTER_IS_NULL);
+
+  // Cleanup
+  cardano_sub_tx_builder_unref(&builder);
+  cardano_protocol_parameters_unref(&params);
+  cardano_value_unref(&amount);
+}
+
+TEST(cardano_sub_tx_builder_lock_value_ex, returnsErrorIfValueIsNull)
+{
+  // Arrange
+  cardano_protocol_parameters_t* params  = init_protocol_parameters();
+  cardano_sub_tx_builder_t*      builder = cardano_sub_tx_builder_new(params, &CARDANO_MAINNET_SLOT_CONFIG);
+
+  // Act
+  cardano_sub_tx_builder_lock_value_ex(builder, ADDRESS, strlen(ADDRESS), nullptr, nullptr);
+
+  // Assert
+  EXPECT_EQ(builder->last_error, CARDANO_ERROR_POINTER_IS_NULL);
+
+  // Cleanup
+  cardano_sub_tx_builder_unref(&builder);
+  cardano_protocol_parameters_unref(&params);
+}
+
+TEST(cardano_sub_tx_builder_lock_value_ex, canLockWithInlineDatum)
+{
+  // Arrange
+  cardano_protocol_parameters_t* params  = init_protocol_parameters();
+  cardano_sub_tx_builder_t*      builder = cardano_sub_tx_builder_new(params, &CARDANO_MAINNET_SLOT_CONFIG);
+  cardano_value_t*               amount  = create_value_with_assets();
+  cardano_plutus_data_t*         data    = create_plutus_data(PLUTUS_DATA_CBOR);
+  cardano_datum_t*               datum   = create_inline_datum(data);
+
+  // Act
+  cardano_sub_tx_builder_lock_value_ex(builder, ADDRESS, strlen(ADDRESS), amount, datum);
+
+  cardano_sub_transaction_t*    sub_tx         = build_sub_transaction(builder);
+  cardano_transaction_output_t* output         = get_first_output(sub_tx);
+  cardano_address_t*            locked_address = cardano_transaction_output_get_address(output);
+  cardano_value_t*              locked_value   = cardano_transaction_output_get_value(output);
+  cardano_datum_t*              locked_datum   = cardano_transaction_output_get_datum(output);
+  cardano_witness_set_t*        witness_set    = cardano_sub_transaction_get_witness_set(sub_tx);
+  cardano_plutus_data_set_t*    witness_datums = cardano_witness_set_get_plutus_data(witness_set);
+
+  // Assert
+  ASSERT_NE(sub_tx, nullptr);
+  EXPECT_STREQ(cardano_address_get_string(locked_address), ADDRESS);
+  EXPECT_TRUE(cardano_value_equals(locked_value, amount));
+  ASSERT_NE(locked_datum, nullptr);
+  cardano_datum_type_t locked_type = CARDANO_DATUM_TYPE_DATA_HASH;
+
+  EXPECT_EQ(cardano_datum_get_type(locked_datum, &locked_type), CARDANO_SUCCESS);
+  EXPECT_EQ(locked_type, CARDANO_DATUM_TYPE_INLINE_DATA);
+
+  cardano_plutus_data_t* locked_data = cardano_datum_get_inline_data(locked_datum);
+
+  EXPECT_TRUE(cardano_plutus_data_equals(locked_data, data));
+  cardano_plutus_data_unref(&locked_data);
+  EXPECT_EQ(witness_datums, nullptr);
+
+  // Cleanup
+  cardano_plutus_data_set_unref(&witness_datums);
+  cardano_witness_set_unref(&witness_set);
+  cardano_datum_unref(&locked_datum);
+  cardano_value_unref(&locked_value);
+  cardano_address_unref(&locked_address);
+  cardano_transaction_output_unref(&output);
+  cardano_sub_transaction_unref(&sub_tx);
+  cardano_sub_tx_builder_unref(&builder);
+  cardano_protocol_parameters_unref(&params);
+  cardano_datum_unref(&datum);
+  cardano_plutus_data_unref(&data);
+  cardano_value_unref(&amount);
+}
+
+TEST(cardano_sub_tx_builder_lock_value_ex, canLockWithDatumHash)
+{
+  // Arrange
+  cardano_protocol_parameters_t* params  = init_protocol_parameters();
+  cardano_sub_tx_builder_t*      builder = cardano_sub_tx_builder_new(params, &CARDANO_MAINNET_SLOT_CONFIG);
+  cardano_value_t*               amount  = create_value_with_assets();
+  cardano_datum_t*               datum   = create_hash_datum("0000000000000000000000000000000000000000000000000000000000000000");
+
+  // Act
+  cardano_sub_tx_builder_lock_value_ex(builder, ADDRESS, strlen(ADDRESS), amount, datum);
+
+  cardano_sub_transaction_t*    sub_tx         = build_sub_transaction(builder);
+  cardano_transaction_output_t* output         = get_first_output(sub_tx);
+  cardano_address_t*            locked_address = cardano_transaction_output_get_address(output);
+  cardano_value_t*              locked_value   = cardano_transaction_output_get_value(output);
+  cardano_datum_t*              locked_datum   = cardano_transaction_output_get_datum(output);
+  cardano_witness_set_t*        witness_set    = cardano_sub_transaction_get_witness_set(sub_tx);
+  cardano_plutus_data_set_t*    witness_datums = cardano_witness_set_get_plutus_data(witness_set);
+
+  // Assert
+  ASSERT_NE(sub_tx, nullptr);
+  EXPECT_STREQ(cardano_address_get_string(locked_address), ADDRESS);
+  EXPECT_TRUE(cardano_value_equals(locked_value, amount));
+  ASSERT_NE(locked_datum, nullptr);
+  cardano_datum_type_t locked_type = CARDANO_DATUM_TYPE_DATA_HASH;
+
+  EXPECT_EQ(cardano_datum_get_type(locked_datum, &locked_type), CARDANO_SUCCESS);
+  EXPECT_EQ(locked_type, CARDANO_DATUM_TYPE_DATA_HASH);
+  EXPECT_TRUE(cardano_datum_equals(locked_datum, datum));
+  EXPECT_EQ(witness_datums, nullptr);
+
+  // Cleanup
+  cardano_plutus_data_set_unref(&witness_datums);
+  cardano_witness_set_unref(&witness_set);
+  cardano_datum_unref(&locked_datum);
+  cardano_value_unref(&locked_value);
+  cardano_address_unref(&locked_address);
+  cardano_transaction_output_unref(&output);
+  cardano_sub_transaction_unref(&sub_tx);
+  cardano_sub_tx_builder_unref(&builder);
+  cardano_protocol_parameters_unref(&params);
+  cardano_datum_unref(&datum);
+  cardano_value_unref(&amount);
+}
+
+TEST(cardano_sub_tx_builder_lock_value_ex, keepsTheFirstErrorIfBuilderIsInErrorState)
+{
+  // Arrange
+  cardano_protocol_parameters_t* params  = init_protocol_parameters();
+  cardano_sub_tx_builder_t*      builder = cardano_sub_tx_builder_new(params, &CARDANO_MAINNET_SLOT_CONFIG);
+  cardano_value_t*               amount  = create_value_with_assets();
+  cardano_sub_transaction_t*     sub_tx  = nullptr;
+
+  record_first_error(builder);
+
+  // Act
+  cardano_sub_tx_builder_lock_value_ex(builder, ADDRESS, strlen(ADDRESS), amount, nullptr);
+
+  const cardano_error_t              result  = cardano_sub_tx_builder_build(builder, &sub_tx);
+  cardano_transaction_output_list_t* outputs = cardano_transaction_body_get_outputs(get_state_body(builder));
+
+  // Assert
+  EXPECT_EQ(result, CARDANO_ERROR_INVALID_ARGUMENT);
+  EXPECT_STREQ(cardano_sub_tx_builder_get_last_error(builder), FIRST_ERROR);
+  EXPECT_EQ(cardano_transaction_output_list_get_length(outputs), 0U);
+  EXPECT_EQ(sub_tx, nullptr);
+
+  // Cleanup
+  cardano_transaction_output_list_unref(&outputs);
+  cardano_sub_tx_builder_unref(&builder);
+  cardano_protocol_parameters_unref(&params);
+  cardano_value_unref(&amount);
+}
+
+TEST(cardano_sub_tx_builder_lock_value_ex, returnsErrorIfMemoryAllocationFails)
+{
+  // Arrange
+  cardano_protocol_parameters_t* params = init_protocol_parameters();
+  cardano_value_t*               amount = create_value_with_assets();
+  cardano_plutus_data_t*         data   = create_plutus_data(PLUTUS_DATA_CBOR);
+  cardano_datum_t*               datum  = create_inline_datum(data);
+
+  // Act & Assert
+  bool succeeded = false;
+
+  for (int i = 0; (i < 100) && !succeeded; ++i)
+  {
+    cardano_sub_tx_builder_t* builder = cardano_sub_tx_builder_new(params, &CARDANO_MAINNET_SLOT_CONFIG);
+
+    reset_allocators_run_count();
+    set_malloc_limit(i);
+    cardano_set_allocators(fail_malloc_at_limit, realloc, free);
+
+    cardano_sub_tx_builder_lock_value_ex(builder, ADDRESS, strlen(ADDRESS), amount, datum);
+
+    reset_allocators_run_count();
+    reset_limited_malloc();
+    cardano_set_allocators(malloc, realloc, free);
+
+    if (builder->last_error == CARDANO_SUCCESS)
+    {
+      succeeded = true;
+    }
+    else
+    {
+      EXPECT_THAT(builder->last_error, testing::AnyOf(CARDANO_ERROR_MEMORY_ALLOCATION_FAILED, CARDANO_ERROR_DECODING));
+    }
+
+    cardano_sub_tx_builder_unref(&builder);
+  }
+
+  EXPECT_TRUE(succeeded);
+
+  // Cleanup
+  cardano_protocol_parameters_unref(&params);
+  cardano_datum_unref(&datum);
+  cardano_plutus_data_unref(&data);
+  cardano_value_unref(&amount);
 }
 
 TEST(cardano_sub_tx_builder_set_metadata, doesntCrashIfGivenNull)
@@ -12507,5 +13384,237 @@ TEST(cardano_sub_tx_builder_vote_with_deferred_redeemer, returnsErrorIfMemoryAll
   cardano_governance_action_id_unref(&action_id);
   cardano_voter_unref(&voter);
   cardano_script_unref(&script);
+  cardano_protocol_parameters_unref(&params);
+}
+
+static const char* DATUM_SCRIPT_DATA_HASH = "bdbe6c43b5d8a5c73cd5bcbef8bd410e321f62be95bbed4b26142a72848f32c4";
+
+TEST(cardano_sub_tx_builder_add_datum, doesntCrashIfGivenNull)
+{
+  cardano_sub_tx_builder_add_datum(nullptr, nullptr);
+}
+
+TEST(cardano_sub_tx_builder_add_datum, returnsErrorIfDatumIsNull)
+{
+  // Arrange
+  cardano_protocol_parameters_t* params  = init_protocol_parameters();
+  cardano_sub_tx_builder_t*      builder = cardano_sub_tx_builder_new(params, &CARDANO_MAINNET_SLOT_CONFIG);
+
+  // Act
+  cardano_sub_tx_builder_add_datum(builder, nullptr);
+
+  // Assert
+  EXPECT_EQ(builder->last_error, CARDANO_ERROR_POINTER_IS_NULL);
+
+  // Cleanup
+  cardano_sub_tx_builder_unref(&builder);
+  cardano_protocol_parameters_unref(&params);
+}
+
+TEST(cardano_sub_tx_builder_add_datum, keepsTheFirstErrorIfBuilderIsInErrorState)
+{
+  // Arrange
+  cardano_protocol_parameters_t* params  = init_protocol_parameters();
+  cardano_sub_tx_builder_t*      builder = cardano_sub_tx_builder_new(params, &CARDANO_MAINNET_SLOT_CONFIG);
+  cardano_plutus_data_t*         datum   = create_plutus_data(PLUTUS_DATA_CBOR);
+  cardano_sub_transaction_t*     sub_tx  = nullptr;
+
+  record_first_error(builder);
+
+  // Act
+  cardano_sub_tx_builder_add_datum(builder, datum);
+
+  cardano_witness_set_t* witness_set = cardano_transaction_get_witness_set(builder->state.transaction);
+  const cardano_error_t  result      = cardano_sub_tx_builder_build(builder, &sub_tx);
+
+  // Assert
+  EXPECT_EQ(result, CARDANO_ERROR_INVALID_ARGUMENT);
+  EXPECT_STREQ(cardano_sub_tx_builder_get_last_error(builder), FIRST_ERROR);
+  EXPECT_EQ(cardano_witness_set_get_plutus_data(witness_set), nullptr);
+  EXPECT_EQ(sub_tx, nullptr);
+
+  // Cleanup
+  cardano_witness_set_unref(&witness_set);
+  cardano_sub_tx_builder_unref(&builder);
+  cardano_protocol_parameters_unref(&params);
+  cardano_plutus_data_unref(&datum);
+}
+
+TEST(cardano_sub_tx_builder_add_datum, returnsErrorIfMemoryAllocationFails)
+{
+  // Arrange
+  cardano_protocol_parameters_t* params = init_protocol_parameters();
+  cardano_plutus_data_t*         datum  = create_plutus_data(PLUTUS_DATA_CBOR);
+
+  // Act & Assert
+  bool succeeded = false;
+
+  for (int i = 0; (i < 100) && !succeeded; ++i)
+  {
+    cardano_sub_tx_builder_t* builder = cardano_sub_tx_builder_new(params, &CARDANO_MAINNET_SLOT_CONFIG);
+
+    reset_allocators_run_count();
+    set_malloc_limit(i);
+    cardano_set_allocators(fail_malloc_at_limit, realloc, free);
+
+    cardano_sub_tx_builder_add_datum(builder, datum);
+
+    reset_allocators_run_count();
+    reset_limited_malloc();
+    cardano_set_allocators(malloc, realloc, free);
+
+    if (builder->last_error == CARDANO_SUCCESS)
+    {
+      succeeded = true;
+    }
+    else
+    {
+      EXPECT_EQ(builder->last_error, CARDANO_ERROR_MEMORY_ALLOCATION_FAILED);
+    }
+
+    cardano_sub_tx_builder_unref(&builder);
+  }
+
+  EXPECT_TRUE(succeeded);
+
+  // Cleanup
+  cardano_protocol_parameters_unref(&params);
+  cardano_plutus_data_unref(&datum);
+}
+
+TEST(cardano_sub_tx_builder_add_datum, putsTheDatumInTheWitnessSet)
+{
+  // Arrange
+  cardano_protocol_parameters_t* params  = init_dijkstra_protocol_parameters();
+  cardano_sub_tx_builder_t*      builder = cardano_sub_tx_builder_new(params, &CARDANO_MAINNET_SLOT_CONFIG);
+  cardano_plutus_data_t*         datum   = create_plutus_data(PLUTUS_DATA_CBOR);
+
+  // Act
+  cardano_sub_tx_builder_add_datum(builder, datum);
+
+  cardano_sub_transaction_t* sub_tx      = build_sub_transaction(builder);
+  cardano_witness_set_t*     witness_set = cardano_sub_transaction_get_witness_set(sub_tx);
+  cardano_plutus_data_set_t* datums      = cardano_witness_set_get_plutus_data(witness_set);
+  cardano_plutus_data_t*     carried     = NULL;
+
+  // Assert
+  ASSERT_NE(datums, nullptr);
+  EXPECT_EQ(cardano_plutus_data_set_get_length(datums), 1U);
+  EXPECT_EQ(cardano_plutus_data_set_get(datums, 0U, &carried), CARDANO_SUCCESS);
+  EXPECT_TRUE(cardano_plutus_data_equals(carried, datum));
+
+  // Cleanup
+  cardano_plutus_data_unref(&carried);
+  cardano_plutus_data_set_unref(&datums);
+  cardano_witness_set_unref(&witness_set);
+  cardano_sub_transaction_unref(&sub_tx);
+  cardano_sub_tx_builder_unref(&builder);
+  cardano_protocol_parameters_unref(&params);
+  cardano_plutus_data_unref(&datum);
+}
+
+TEST(cardano_sub_tx_builder_add_datum, includesTheDatumInTheScriptDataHash)
+{
+  // Arrange
+  cardano_protocol_parameters_t* params        = init_dijkstra_protocol_parameters();
+  cardano_sub_tx_builder_t*      builder       = cardano_sub_tx_builder_new(params, &CARDANO_MAINNET_SLOT_CONFIG);
+  cardano_sub_tx_builder_t*      plain_builder = cardano_sub_tx_builder_new(params, &CARDANO_MAINNET_SLOT_CONFIG);
+  cardano_address_t*             address       = create_address(ADDRESS);
+  cardano_plutus_data_t*         datum         = create_plutus_data(PLUTUS_DATA_CBOR);
+  cardano_blake2b_hash_t*        datum_hash    = compute_datum_hash(datum);
+  cardano_blake2b_hash_t*        expected      = create_hash(DATUM_SCRIPT_DATA_HASH);
+  cardano_datum_t*               locked        = NULL;
+
+  EXPECT_EQ(cardano_datum_new_data_hash(datum_hash, &locked), CARDANO_SUCCESS);
+
+  // Act
+  cardano_sub_tx_builder_lock_lovelace(builder, address, 2000000, locked);
+  cardano_sub_tx_builder_lock_lovelace(plain_builder, address, 2000000, locked);
+  cardano_sub_tx_builder_add_datum(builder, datum);
+
+  cardano_sub_transaction_t* sub_tx   = build_sub_transaction(builder);
+  cardano_sub_transaction_t* plain_tx = build_sub_transaction(plain_builder);
+  cardano_blake2b_hash_t*    hash     = cardano_sub_transaction_body_get_script_data_hash(get_body(sub_tx));
+  cardano_blake2b_hash_t*    plain    = cardano_sub_transaction_body_get_script_data_hash(get_body(plain_tx));
+
+  // Assert
+  ASSERT_NE(hash, nullptr);
+  EXPECT_TRUE(cardano_blake2b_hash_equals(hash, expected));
+  EXPECT_EQ(plain, nullptr);
+
+  // Cleanup
+  cardano_blake2b_hash_unref(&plain);
+  cardano_blake2b_hash_unref(&hash);
+  cardano_sub_transaction_unref(&plain_tx);
+  cardano_sub_transaction_unref(&sub_tx);
+  cardano_datum_unref(&locked);
+  cardano_blake2b_hash_unref(&expected);
+  cardano_blake2b_hash_unref(&datum_hash);
+  cardano_plutus_data_unref(&datum);
+  cardano_address_unref(&address);
+  cardano_sub_tx_builder_unref(&plain_builder);
+  cardano_sub_tx_builder_unref(&builder);
+  cardano_protocol_parameters_unref(&params);
+}
+
+TEST(cardano_sub_tx_builder_add_datum, carriesTheDatumOfALockedOutputAlongsideAScriptInput)
+{
+  // Arrange
+  cardano_protocol_parameters_t* params     = init_dijkstra_protocol_parameters();
+  cardano_sub_tx_builder_t*      builder    = cardano_sub_tx_builder_new(params, &CARDANO_MAINNET_SLOT_CONFIG);
+  cardano_script_t*              script     = create_script(ALWAYS_SUCCEEDS_V4_CBOR);
+  cardano_plutus_data_t*         datum      = create_plutus_data(PLUTUS_DATA_CBOR);
+  cardano_plutus_data_t*         redeemer   = create_plutus_data(OTHER_PLUTUS_DATA_CBOR);
+  cardano_utxo_t*                utxo       = create_script_utxo(LOW_TX_ID, script, datum);
+  cardano_address_t*             address    = create_address(ADDRESS);
+  cardano_blake2b_hash_t*        datum_hash = compute_datum_hash(datum);
+  cardano_datum_t*               locked     = NULL;
+
+  EXPECT_EQ(cardano_datum_new_data_hash(datum_hash, &locked), CARDANO_SUCCESS);
+
+  // Act
+  cardano_sub_tx_builder_add_script(builder, script);
+  cardano_sub_tx_builder_add_input(builder, utxo, redeemer, nullptr);
+  cardano_sub_tx_builder_lock_lovelace(builder, address, 2000000, locked);
+  cardano_sub_tx_builder_add_datum(builder, datum);
+
+  cardano_sub_transaction_t*    sub_tx      = build_sub_transaction(builder);
+  cardano_witness_set_t*        witness_set = cardano_sub_transaction_get_witness_set(sub_tx);
+  cardano_plutus_data_set_t*    datums      = cardano_witness_set_get_plutus_data(witness_set);
+  cardano_transaction_output_t* output      = get_first_output(sub_tx);
+  cardano_datum_t*              out_datum   = cardano_transaction_output_get_datum(output);
+  cardano_blake2b_hash_t*       hash        = cardano_sub_transaction_body_get_script_data_hash(get_body(sub_tx));
+  cardano_blake2b_hash_t*       expected    = compute_sub_tx_script_data_hash(params, sub_tx);
+  cardano_redeemer_t*           spend       = find_sub_tx_redeemer(sub_tx, redeemer);
+  cardano_plutus_data_t*        carried     = NULL;
+
+  // Assert
+  ASSERT_NE(sub_tx, nullptr);
+  ASSERT_NE(spend, nullptr);
+  EXPECT_EQ(cardano_plutus_data_set_get_length(datums), 1U);
+  EXPECT_EQ(cardano_plutus_data_set_get(datums, 0U, &carried), CARDANO_SUCCESS);
+  EXPECT_TRUE(cardano_plutus_data_equals(carried, datum));
+  EXPECT_TRUE(cardano_datum_equals(out_datum, locked));
+  ASSERT_NE(hash, nullptr);
+  EXPECT_TRUE(cardano_blake2b_hash_equals(hash, expected));
+
+  // Cleanup
+  cardano_plutus_data_unref(&carried);
+  cardano_redeemer_unref(&spend);
+  cardano_blake2b_hash_unref(&expected);
+  cardano_blake2b_hash_unref(&hash);
+  cardano_datum_unref(&out_datum);
+  cardano_transaction_output_unref(&output);
+  cardano_plutus_data_set_unref(&datums);
+  cardano_witness_set_unref(&witness_set);
+  cardano_sub_transaction_unref(&sub_tx);
+  cardano_datum_unref(&locked);
+  cardano_blake2b_hash_unref(&datum_hash);
+  cardano_address_unref(&address);
+  cardano_utxo_unref(&utxo);
+  cardano_plutus_data_unref(&redeemer);
+  cardano_plutus_data_unref(&datum);
+  cardano_script_unref(&script);
+  cardano_sub_tx_builder_unref(&builder);
   cardano_protocol_parameters_unref(&params);
 }
