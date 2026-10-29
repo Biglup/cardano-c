@@ -382,8 +382,8 @@ CARDANO_EXPORT void cardano_tx_builder_set_utxos(cardano_tx_builder_t* builder, 
  * \brief Sets the UTXO list for collateral when scripts are included in the transaction.
  *
  * This function assigns a specific list of UTXOs (`cardano_utxo_list_t`) for use as collateral if the transaction
- * involves script execution. The builder asks for collateral when the transaction has script data (datums or
- * redeemers) or when any of the sub transactions it carries has redeemers. In that case building fails with
+ * involves script execution. The builder asks for collateral when the transaction or any of the sub transactions it
+ * carries has redeemers. In that case building fails with
  * \ref CARDANO_ERROR_POINTER_IS_NULL if this list is not set, and with \ref CARDANO_ERROR_BALANCE_INSUFFICIENT if it
  * is empty.
  *
@@ -397,7 +397,7 @@ CARDANO_EXPORT void cardano_tx_builder_set_utxos(cardano_tx_builder_t* builder, 
  * cardano_tx_builder_set_collateral_utxos(tx_builder, collateral_utxos);
  * \endcode
  *
- * \note Only necessary if the transaction has script data or one of its sub transactions has redeemers. The collateral
+ * \note Only necessary if the transaction or one of its sub transactions has redeemers. The collateral
  *       change address must also be set with \ref cardano_tx_builder_set_collateral_change_address in that case.
  */
 CARDANO_EXPORT void cardano_tx_builder_set_collateral_utxos(cardano_tx_builder_t* builder, cardano_utxo_list_t* utxos);
@@ -2878,8 +2878,7 @@ CARDANO_EXPORT void cardano_tx_builder_propose_info_ex(
  *
  * This function finalizes the transaction by aggregating all previously added inputs, outputs, certificates, and other data.
  * If any required data is missing or incorrect, this function will report the errors encountered during the build process.
- * When the transaction has script data (datums or redeemers) or one of its sub transactions has redeemers, the
- * collateral change address and a non empty list of collateral UTXOs must be set, see
+ * When the transaction or one of its sub transactions has redeemers, the collateral change address and a non empty list of collateral UTXOs must be set, see
  * \ref cardano_tx_builder_set_collateral_utxos.
  * See \ref cardano_tx_builder_add_sub_transaction for the failures that are specific to a transaction that carries
  * sub transactions, such as a missing required top level guard, sub transactions that do not balance or collateral

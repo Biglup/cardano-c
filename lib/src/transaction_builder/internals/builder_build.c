@@ -977,7 +977,7 @@ cardano_builder_build(
     return result;
   }
 
-  if (cardano_transaction_has_script_data(state->transaction) || is_collateral_required)
+  if (is_collateral_required)
   {
     if (state->collateral_address == NULL)
     {
