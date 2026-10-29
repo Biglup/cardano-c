@@ -1357,6 +1357,49 @@ TEST(cardano_tx_evaluator_native, evaluatesAPlutusV1SpendWithDatumHash)
   cardano_plutus_v1_script_unref(&script);
 }
 
+TEST(cardano_tx_evaluator_native, returnsErrorOnMemoryAllocationFailureWhileResolvingADatumHash)
+{
+  cardano_plutus_v1_script_t* script    = build_v1_script(3U);
+  cardano_utxo_list_t*        utxos     = nullptr;
+  cardano_transaction_t*      tx        = build_v1_spend_tx(script, &utxos);
+  cardano_tx_evaluator_t*     evaluator = nullptr;
+  bool                        succeeded = false;
+
+  EXPECT_EQ(cardano_tx_evaluator_new_native(&kSlotConfig, nullptr, 10U, &evaluator), CARDANO_SUCCESS);
+
+  for (int limit = 0; (limit < 100000) && !succeeded; ++limit)
+  {
+    cardano_redeemer_list_t* result = nullptr;
+
+    reset_allocators_run_count();
+    reset_limited_malloc();
+    set_malloc_limit(limit);
+    cardano_set_allocators(fail_malloc_at_limit, realloc, free);
+
+    const cardano_error_t error = cardano_tx_evaluator_evaluate(evaluator, tx, utxos, &result);
+
+    cardano_set_allocators(malloc, realloc, free);
+
+    if (error == CARDANO_SUCCESS)
+    {
+      succeeded = true;
+    }
+    else
+    {
+      EXPECT_EQ(result, nullptr);
+    }
+
+    cardano_redeemer_list_unref(&result);
+  }
+
+  EXPECT_TRUE(succeeded);
+
+  cardano_tx_evaluator_unref(&evaluator);
+  cardano_transaction_unref(&tx);
+  cardano_utxo_list_unref(&utxos);
+  cardano_plutus_v1_script_unref(&script);
+}
+
 TEST(cardano_tx_evaluator_native, evaluatesAPlutusV2Spend)
 {
   cardano_plutus_v2_script_t* script = build_v2_script(3U);

@@ -549,8 +549,10 @@ cardano_datum_get_data_hash(const cardano_datum_t* datum)
   cardano_blake2b_hash_t* hash             = NULL;
   cardano_error_t         read_hash_result = cardano_blake2b_hash_from_bytes(datum->hash_bytes, sizeof(datum->hash_bytes), &hash);
 
-  assert(read_hash_result == CARDANO_SUCCESS);
-  CARDANO_UNUSED(read_hash_result);
+  if (read_hash_result != CARDANO_SUCCESS)
+  {
+    return NULL;
+  }
 
   return hash;
 }

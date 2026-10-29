@@ -381,9 +381,9 @@ CARDANO_EXPORT cardano_plutus_data_t* cardano_datum_get_inline_data(cardano_datu
  *                   the hash is to be retrieved.
  *
  * \return A pointer to a new \ref cardano_blake2b_hash_t object containing the hash.
- *         If the input datum is NULL, returns NULL. The caller is responsible for
- *         managing the lifecycle of this object, including releasing it with
- *         \ref cardano_blake2b_hash_unref.
+ *         If the input datum is NULL or the hash cannot be allocated, returns NULL.
+ *         The caller is responsible for managing the lifecycle of this object,
+ *         including releasing it with \ref cardano_blake2b_hash_unref.
  *
  * Usage Example:
  * \code{.c}
