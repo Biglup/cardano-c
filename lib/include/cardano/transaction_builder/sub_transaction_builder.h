@@ -2460,8 +2460,9 @@ CARDANO_EXPORT void cardano_sub_tx_builder_propose_info_ex(
  * \ref CARDANO_ERROR_SCRIPT_EVALUATION_FAILURE when a script fails phase-2 validation. The message of the failure is
  * available through \ref cardano_sub_tx_builder_get_last_error.
  *
- * An input locked by a datum hash whose datum was not provided to `cardano_sub_tx_builder_add_input` makes this
- * function fail with \ref CARDANO_ERROR_ELEMENT_NOT_FOUND.
+ * An input locked by a datum hash whose datum was not provided to `cardano_sub_tx_builder_add_input` or to
+ * `cardano_sub_tx_builder_add_input_with_deferred_redeemer` makes this function fail with
+ * \ref CARDANO_ERROR_ELEMENT_NOT_FOUND.
  *
  * A deferred redeemer callback that fails makes this function fail with the error of the callback, and one that
  * produces no payload makes it fail with \ref CARDANO_ERROR_POINTER_IS_NULL.

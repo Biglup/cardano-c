@@ -361,9 +361,10 @@ typedef enum
 
   /**
    * \brief The top level transaction of a batch carries a witness datum that the ledger does not allow once its sub
-   * transactions are removed. A top level transaction that needs a PlutusV1, PlutusV2 or PlutusV3 script has its
-   * datums checked with its sub transactions removed, so each of its witness datums must be needed by a script input it
-   * spends or match a datum hash of its own outputs or of the outputs behind its own reference inputs.
+   * transactions are removed. A top level transaction that needs a PlutusV1, PlutusV2 or PlutusV3 script has its datums
+   * checked with its sub transactions removed, so each of its witness datums must be needed by a spent input locked by
+   * a Plutus script among the scripts of the batch, or match a datum hash of its own outputs or of the outputs behind
+   * its own reference inputs.
    */
   CARDANO_ERROR_NOT_ALLOWED_SUPPLEMENTAL_DATUMS = 1105,
 
