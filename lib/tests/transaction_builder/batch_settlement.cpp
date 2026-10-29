@@ -37,7 +37,10 @@
 #include <cardano/crypto/ed25519_public_key.h>
 #include <cardano/crypto/ed25519_signature.h>
 #include <cardano/error.h>
+#include <cardano/plutus_data/plutus_data.h>
+#include <cardano/protocol_params/costmdls.h>
 #include <cardano/protocol_params/protocol_parameters.h>
+#include <cardano/scripts/script.h>
 #include <cardano/transaction/sub_transaction.h>
 #include <cardano/transaction/transaction.h>
 #include <cardano/transaction_body/account_balance_interval.h>
@@ -108,6 +111,17 @@ static const int64_t MAX_CHANGE_COST = 2000000;
  * \brief The most a fee may exceed the minimum fee of the signed transaction, in bytes of fee.
  */
 static const int64_t MAX_FEE_EXCESS_IN_BYTES = 3;
+
+/**
+ * \brief The cost models of the Plutus V1, V2 and V3 languages. The Plutus V4 cost model of these tests reuses the
+ * parameters of the Plutus V3 cost model, since both languages share the parameter names and order.
+ */
+static const char* COSTMDLS_ALL_CBOR = "a30098a61a0003236119032c01011903e819023b00011903e8195e7104011903e818201a0001ca761928eb041959d818641959d818641959d818641959d818641959d818641959d81864186418641959d81864194c5118201a0002acfa182019b551041a000363151901ff00011a00015c3518201a000797751936f404021a0002ff941a0006ea7818dc0001011903e8196ff604021a0003bd081a00034ec5183e011a00102e0f19312a011a00032e801901a5011a0002da781903e819cf06011a00013a34182019a8f118201903e818201a00013aac0119e143041903e80a1a00030219189c011a00030219189c011a0003207c1901d9011a000330001901ff0119ccf3182019fd40182019ffd5182019581e18201940b318201a00012adf18201a0002ff941a0006ea7818dc0001011a00010f92192da7000119eabb18201a0002ff941a0006ea7818dc0001011a0002ff941a0006ea7818dc0001011a000c504e197712041a001d6af61a0001425b041a00040c660004001a00014fab18201a0003236119032c010119a0de18201a00033d7618201979f41820197fb8182019a95d1820197df718201995aa18201a0374f693194a1f0a0198af1a0003236119032c01011903e819023b00011903e8195e7104011903e818201a0001ca761928eb041959d818641959d818641959d818641959d818641959d818641959d81864186418641959d81864194c5118201a0002acfa182019b551041a000363151901ff00011a00015c3518201a000797751936f404021a0002ff941a0006ea7818dc0001011903e8196ff604021a0003bd081a00034ec5183e011a00102e0f19312a011a00032e801901a5011a0002da781903e819cf06011a00013a34182019a8f118201903e818201a00013aac0119e143041903e80a1a00030219189c011a00030219189c011a0003207c1901d9011a000330001901ff0119ccf3182019fd40182019ffd5182019581e18201940b318201a00012adf18201a0002ff941a0006ea7818dc0001011a00010f92192da7000119eabb18201a0002ff941a0006ea7818dc0001011a0002ff941a0006ea7818dc0001011a0011b22c1a0005fdde00021a000c504e197712041a001d6af61a0001425b041a00040c660004001a00014fab18201a0003236119032c010119a0de18201a00033d7618201979f41820197fb8182019a95d1820197df718201995aa18201a0223accc0a1a0374f693194a1f0a1a02515e841980b30a0298b31a0003236119032c01011903e819023b00011903e8195e7104011903e818201a0001ca761928eb041959d818641959d818641959d818641959d818641959d818641959d81864186418641959d81864194c5118201a0002acfa182019b551041a000363151901ff00011a00015c3518201a000797751936f404021a0002ff941a0006ea7818dc0001011903e8196ff604021a0003bd081a00034ec5183e011a00102e0f19312a011a00032e801901a5011a0002da781903e819cf06011a00013a34182019a8f118201903e818201a00013aac0119e143041903e80a1a00030219189c011a00030219189c011a0003207c1901d9011a000330001901ff0119ccf3182019fd40182019ffd5182019581e18201940b318201a00012adf18201a0002ff941a0006ea7818dc0001011a00010f92192da7000119eabb18201a0002ff941a0006ea7818dc0001011a0002ff941a0006ea7818dc0001011a0011b22c1a0005fdde00021a000c504e197712041a001d6af61a0001425b041a00040c660004001a00014fab18201a0003236119032c010119a0de18201a00033d7618201979f41820197fb8182019a95d1820197df718201995aa18201a0223accc0a1a0374f693194a1f0a1a02515e841980b30a01020304";
+
+/**
+ * \brief A Plutus V4 script that succeeds whatever its arguments are.
+ */
+static const char* ALWAYS_SUCCEEDS_V4_CBOR = "820446450100002499";
 
 static const size_t TOKEN           = 0U;
 static const size_t ASSET_POOL_SIZE = 3U;
@@ -231,6 +245,38 @@ new_protocol_parameters()
   cardano_unit_interval_unref(&steps_prices);
   cardano_unit_interval_unref(&script_ref_cost);
   cardano_ex_unit_prices_unref(&ex_unit_prices);
+
+  return params;
+}
+
+/**
+ * Creates the protocol parameters of a Dijkstra era network, which price the batches of these tests and carry the cost
+ * model of the Plutus V4 language, the only Plutus language that runs inside a sub transaction.
+ * \return A new instance of the protocol parameters.
+ */
+static cardano_protocol_parameters_t*
+new_dijkstra_protocol_parameters()
+{
+  cardano_protocol_parameters_t* params   = new_protocol_parameters();
+  cardano_protocol_version_t*    version  = NULL;
+  cardano_costmdls_t*            costmdls = NULL;
+  cardano_cost_model_t*          v3_model = NULL;
+  cardano_cost_model_t*          v4_model = NULL;
+  cardano_cbor_reader_t*         reader   = cardano_cbor_reader_from_hex(COSTMDLS_ALL_CBOR, strlen(COSTMDLS_ALL_CBOR));
+
+  EXPECT_EQ(cardano_costmdls_from_cbor(reader, &costmdls), CARDANO_SUCCESS);
+  EXPECT_EQ(cardano_costmdls_get(costmdls, CARDANO_PLUTUS_LANGUAGE_VERSION_V3, &v3_model), CARDANO_SUCCESS);
+  EXPECT_EQ(cardano_cost_model_new(CARDANO_PLUTUS_LANGUAGE_VERSION_V4, cardano_cost_model_get_costs(v3_model), cardano_cost_model_get_costs_size(v3_model), &v4_model), CARDANO_SUCCESS);
+  EXPECT_EQ(cardano_costmdls_insert(costmdls, v4_model), CARDANO_SUCCESS);
+  EXPECT_EQ(cardano_protocol_parameters_set_cost_models(params, costmdls), CARDANO_SUCCESS);
+  EXPECT_EQ(cardano_protocol_version_new(12U, 0U, &version), CARDANO_SUCCESS);
+  EXPECT_EQ(cardano_protocol_parameters_set_protocol_version(params, version), CARDANO_SUCCESS);
+
+  cardano_protocol_version_unref(&version);
+  cardano_cost_model_unref(&v4_model);
+  cardano_cost_model_unref(&v3_model);
+  cardano_costmdls_unref(&costmdls);
+  cardano_cbor_reader_unref(&reader);
 
   return params;
 }
@@ -551,7 +597,7 @@ new_intent_builder(
 
     EXPECT_EQ(cardano_utxo_list_get(party.utxos, i, &utxo), CARDANO_SUCCESS);
 
-    cardano_sub_tx_builder_add_input(builder, utxo);
+    cardano_sub_tx_builder_add_input(builder, utxo, NULL, NULL);
     cardano_utxo_unref(&utxo);
   }
 
@@ -1381,6 +1427,136 @@ TEST(cardano_batch_settlement, settlesAnIntentHandedOverAsBytesThatDepositsRegis
   cardano_utxo_list_unref(&all_utxos);
   cardano_account_balance_interval_unref(&interval);
   cardano_reward_address_unref(&reward_address);
+  cardano_protocol_parameters_unref(&params);
+  free_party(staker);
+  free_party(batcher);
+}
+
+/**
+ * A staker spends, in its signed intent, a UTXO of 10000000 lovelace locked by a Plutus V4 script next to a UTXO of
+ * 100000000 lovelace locked by its key, and pays 105000000 lovelace back to itself, so the imbalance of its sub
+ * transaction is 5000000 lovelace, which the batcher keeps as change.
+ *
+ * The sub transaction carries the spend redeemer with the execution units computed when it was built, and the batch
+ * pays for them: the top level body has no redeemers of its own, so the script fee of the batch is the price of the
+ * execution units of the sub transaction, and the fee covers it together with the size of the signed batch.
+ */
+TEST(cardano_batch_settlement, settlesAnIntentThatSpendsAPlutusV4ScriptInput)
+{
+  // Arrange
+  cardano_protocol_parameters_t* params         = new_dijkstra_protocol_parameters();
+  party_t                        staker         = new_party(BUYER_KEY_HEX);
+  party_t                        batcher        = new_party(BATCHER_KEY_HEX);
+  cardano_script_t*              script         = NULL;
+  cardano_credential_t*          script_cred    = NULL;
+  cardano_enterprise_address_t*  script_address = NULL;
+  cardano_plutus_data_t*         redeemer       = NULL;
+  cardano_cbor_reader_t*         script_reader  = cardano_cbor_reader_from_hex(ALWAYS_SUCCEEDS_V4_CBOR, strlen(ALWAYS_SUCCEEDS_V4_CBOR));
+
+  ASSERT_EQ(cardano_script_from_cbor(script_reader, &script), CARDANO_SUCCESS);
+
+  cardano_blake2b_hash_t* script_hash = cardano_script_get_hash(script);
+
+  ASSERT_EQ(cardano_credential_new(script_hash, CARDANO_CREDENTIAL_TYPE_SCRIPT_HASH, &script_cred), CARDANO_SUCCESS);
+  ASSERT_EQ(cardano_enterprise_address_from_credentials(CARDANO_NETWORK_ID_TEST_NET, script_cred, &script_address), CARDANO_SUCCESS);
+  ASSERT_EQ(cardano_plutus_data_new_integer_from_int(42, &redeemer), CARDANO_SUCCESS);
+
+  cardano_address_t* locked_address = cardano_enterprise_address_to_address(script_address);
+  cardano_utxo_t*    script_utxo    = new_utxo(3U, locked_address, amounts_t(10000000, 0));
+
+  fund_party(staker, 1U, amounts_t(100000000, 0));
+  fund_party(batcher, 2U, amounts_t(20000000, 0));
+
+  cardano_sub_tx_builder_t* intent_builder = new_intent_builder(params, staker, batcher, amounts_t(105000000, 0));
+
+  cardano_sub_tx_builder_add_script(intent_builder, script);
+  cardano_sub_tx_builder_add_input(intent_builder, script_utxo, redeemer, NULL);
+
+  ASSERT_EQ(cardano_utxo_list_add(staker.utxos, script_utxo), CARDANO_SUCCESS);
+
+  cardano_sub_transaction_t* signed_sub_tx = sign_intent(intent_builder, staker);
+
+  ASSERT_NE(signed_sub_tx, nullptr);
+
+  expect_intent(params, staker, signed_sub_tx, amounts_t(5000000, 0));
+
+  cardano_witness_set_t* sub_witness_set = cardano_sub_transaction_get_witness_set(signed_sub_tx);
+  cardano_witness_set_unref(&sub_witness_set);
+
+  cardano_redeemer_list_t* sub_redeemers = cardano_witness_set_get_redeemers(sub_witness_set);
+  cardano_redeemer_list_unref(&sub_redeemers);
+
+  cardano_redeemer_t* spend = NULL;
+
+  ASSERT_EQ(cardano_redeemer_list_get_length(sub_redeemers), 1U);
+  ASSERT_EQ(cardano_redeemer_list_get(sub_redeemers, 0U, &spend), CARDANO_SUCCESS);
+
+  cardano_ex_units_t* spend_units = cardano_redeemer_get_ex_units(spend);
+
+  EXPECT_EQ(cardano_redeemer_get_tag(spend), CARDANO_REDEEMER_TAG_SPEND);
+  EXPECT_NE(cardano_ex_units_get_cpu_steps(spend_units), 0U);
+  EXPECT_NE(cardano_ex_units_get_memory(spend_units), 0U);
+
+  const std::string                  signed_cbor = encode_sub_transaction(signed_sub_tx);
+  const std::vector<signed_intent_t> intents     = { { &staker, signed_sub_tx, signed_cbor } };
+  cardano_utxo_list_t*               all_utxos   = join_utxos({ &staker, &batcher });
+  cardano_tx_builder_t*              tx_builder  = cardano_tx_builder_new(params, &CARDANO_MAINNET_SLOT_CONFIG);
+
+  cardano_tx_builder_set_change_address(tx_builder, batcher.address);
+  cardano_tx_builder_set_utxos(tx_builder, batcher.utxos);
+  cardano_tx_builder_set_collateral_change_address(tx_builder, batcher.address);
+  cardano_tx_builder_set_collateral_utxos(tx_builder, batcher.utxos);
+
+  // Act
+  cardano_tx_builder_add_sub_transaction(tx_builder, signed_sub_tx, staker.utxos);
+  cardano_tx_builder_add_guard(tx_builder, batcher.credential);
+
+  cardano_transaction_t* tx = NULL;
+
+  ASSERT_EQ(cardano_tx_builder_build(tx_builder, &tx), CARDANO_SUCCESS) << cardano_tx_builder_get_last_error(tx_builder);
+
+  cardano_blake2b_hash_t*     tx_id             = cardano_transaction_get_id(tx);
+  cardano_vkey_witness_set_t* batcher_witnesses = sign_with_party(batcher, tx_id);
+
+  EXPECT_EQ(cardano_transaction_apply_vkey_witnesses(tx, batcher_witnesses), CARDANO_SUCCESS);
+
+  // Assert
+  expect_valid_settlement(params, tx, all_utxos, batcher, intents, amounts_t(-5000000, 0));
+
+  cardano_ex_unit_prices_t* prices         = cardano_protocol_parameters_get_execution_costs(params);
+  cardano_unit_interval_t*  ref_script_fee = cardano_protocol_parameters_get_ref_script_cost_per_byte(params);
+  cardano_utxo_list_t*      no_references  = NULL;
+  uint64_t                  script_fee     = 0U;
+
+  EXPECT_EQ(cardano_utxo_list_new(&no_references), CARDANO_SUCCESS);
+  EXPECT_EQ(cardano_compute_min_script_fee(tx, prices, no_references, ref_script_fee, &script_fee), CARDANO_SUCCESS);
+
+  cardano_transaction_body_t* body = cardano_transaction_get_body(tx);
+  cardano_transaction_body_unref(&body);
+
+  EXPECT_GT(script_fee, 0U);
+  EXPECT_GT(cardano_transaction_body_get_fee(body), script_fee);
+
+  // Cleanup
+  cardano_utxo_list_unref(&no_references);
+  cardano_unit_interval_unref(&ref_script_fee);
+  cardano_ex_unit_prices_unref(&prices);
+  cardano_vkey_witness_set_unref(&batcher_witnesses);
+  cardano_blake2b_hash_unref(&tx_id);
+  cardano_transaction_unref(&tx);
+  cardano_tx_builder_unref(&tx_builder);
+  cardano_utxo_list_unref(&all_utxos);
+  cardano_ex_units_unref(&spend_units);
+  cardano_redeemer_unref(&spend);
+  cardano_sub_transaction_unref(&signed_sub_tx);
+  cardano_utxo_unref(&script_utxo);
+  cardano_address_unref(&locked_address);
+  cardano_plutus_data_unref(&redeemer);
+  cardano_enterprise_address_unref(&script_address);
+  cardano_credential_unref(&script_cred);
+  cardano_blake2b_hash_unref(&script_hash);
+  cardano_cbor_reader_unref(&script_reader);
+  cardano_script_unref(&script);
   cardano_protocol_parameters_unref(&params);
   free_party(staker);
   free_party(batcher);

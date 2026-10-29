@@ -300,7 +300,7 @@ build_signed_sub_transaction(
   cardano_sub_tx_builder_t* builder = cardano_sub_tx_builder_new(params, &CARDANO_PREPROD_SLOT_CONFIG);
   cardano_value_t*          value   = create_value(lovelace, tokens);
 
-  cardano_sub_tx_builder_add_input(builder, party->utxo);
+  cardano_sub_tx_builder_add_input(builder, party->utxo, NULL, NULL);
   cardano_sub_tx_builder_send_value(builder, party->address, value);
   cardano_sub_tx_builder_require_top_level_guard(builder, batcher->credential, NULL);
 

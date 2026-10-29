@@ -48,6 +48,9 @@ extern "C" {
  * witness set and the auxiliary data of that transaction are shared with the sub transaction. Fields
  * that only exist on a top level transaction, such as the fee and the collateral, are left out.
  *
+ * The index of every spend redeemer is set to the position of its input in the sorted inputs of the
+ * sub transaction, since the sub transaction is never balanced and its inputs are known at this point.
+ *
  * When the sub transaction carries redeemers, its scripts are evaluated with the native evaluator,
  * configured from the cost models and protocol version of the state, and the computed execution
  * units are written into the redeemers. The sub transaction is evaluated at position 0 of a batch

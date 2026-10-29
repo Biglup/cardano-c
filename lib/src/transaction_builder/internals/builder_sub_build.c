@@ -32,6 +32,7 @@
 #include <cardano/transaction_body/transaction_body.h>
 #include <cardano/transaction_body/transaction_input_set.h>
 #include <cardano/transaction_body/transaction_output_list.h>
+#include <cardano/transaction_builder/balancing/input_to_redeemer_map.h>
 #include <cardano/transaction_builder/evaluation/native_tx_evaluator.h>
 #include <cardano/witness_set/redeemer_list.h>
 #include <cardano/witness_set/witness_set.h>
@@ -92,6 +93,44 @@ create_input_set(cardano_utxo_list_t* utxos, cardano_transaction_input_set_t** i
   *inputs = input_set;
 
   return CARDANO_SUCCESS;
+}
+
+/**
+ * \brief Sets the index of every spend redeemer to the position of its input in the sorted input set.
+ *
+ * A spend redeemer points at its input by the position of that input in the inputs of the body, so
+ * its index can only be known once the input set of the sub transaction exists. Inputs spent without
+ * a redeemer are skipped.
+ *
+ * \param[in] inputs A pointer to the \ref cardano_transaction_input_set_t spent by the sub transaction.
+ * \param[in,out] input_to_redeemer_map A pointer to the \ref cardano_input_to_redeemer_map_t that maps
+ *                                      every input spent with a redeemer to that redeemer.
+ *
+ * \return \ref CARDANO_SUCCESS if every spend redeemer index was set, or an appropriate error code
+ *         indicating the failure reason.
+ */
+static cardano_error_t
+set_spend_redeemer_indices(
+  cardano_transaction_input_set_t* inputs,
+  cardano_input_to_redeemer_map_t* input_to_redeemer_map)
+{
+  cardano_error_t result = CARDANO_SUCCESS;
+  const size_t    length = cardano_transaction_input_set_get_length(inputs);
+
+  for (size_t i = 0U; (i < length) && (result == CARDANO_SUCCESS); ++i)
+  {
+    cardano_transaction_input_t* input = NULL;
+
+    result = cardano_transaction_input_set_get(inputs, i, &input);
+    cardano_transaction_input_unref(&input);
+
+    if (result == CARDANO_SUCCESS)
+    {
+      result = cardano_input_to_redeemer_map_update_redeemer_index(input_to_redeemer_map, input, i);
+    }
+  }
+
+  return result;
 }
 
 /**
@@ -544,6 +583,16 @@ cardano_builder_build_sub_transaction(
   if (result != CARDANO_SUCCESS)
   {
     *error_message = "Failed to create the sub transaction inputs.";
+
+    return result;
+  }
+
+  result = set_spend_redeemer_indices(inputs, state->input_to_redeemer_map);
+
+  if (result != CARDANO_SUCCESS)
+  {
+    *error_message = "Failed to set the spend redeemer indices of the sub transaction.";
+    cardano_transaction_input_set_unref(&inputs);
 
     return result;
   }

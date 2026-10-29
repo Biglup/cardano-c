@@ -81,12 +81,13 @@ extern "C" {
  *   the batch.
  * - **Sub Transaction Fields Only**: Fees, collateral and starting account balance intervals only exist on a
  *   top level transaction, so this builder has no functions for them.
- * - **Native Scripts, PlutusV4 Guards and Key Witnesses**: PlutusV1, PlutusV2 and PlutusV3 scripts can not run
- *   inside a sub transaction and are rejected. PlutusV4 scripts are accepted, and a script hash guard can be
- *   satisfied by a guarding redeemer, whose execution units the builder computes with the native evaluator when
- *   the sub transaction is built, before the parties sign it. The other functions of this builder take no
- *   redeemer, so the governance proposals that are validated by the guardrails script have no functions on this
- *   builder: parameter change and treasury withdrawals proposals belong in a top level transaction.
+ * - **Native Scripts, PlutusV4 Scripts and Key Witnesses**: PlutusV1, PlutusV2 and PlutusV3 scripts can not run
+ *   inside a sub transaction and are rejected. PlutusV4 scripts are accepted: an input locked by a PlutusV4 script
+ *   can be spent with a spend redeemer, and a script hash guard can be satisfied by a guarding redeemer. The
+ *   builder computes the execution units of those redeemers with the native evaluator when the sub transaction is
+ *   built, before the parties sign it. The other functions of this builder take no redeemer, so the governance
+ *   proposals that are validated by the guardrails script have no functions on this builder: parameter change and
+ *   treasury withdrawals proposals belong in a top level transaction.
  */
 typedef struct cardano_sub_tx_builder_t cardano_sub_tx_builder_t;
 
@@ -272,29 +273,41 @@ CARDANO_EXPORT void cardano_sub_tx_builder_set_invalid_before_ex(cardano_sub_tx_
  * \brief Adds an input to the sub transaction.
  *
  * This function appends a specified UTXO as an input to the sub transaction being built. The builder never selects
- * inputs by itself, so the sub transaction spends exactly the UTXOs added through this function. Only inputs locked
- * by a key or by a native script can be spent, since the input functions of this builder take no redeemer.
- * An input set cannot hold the same input twice, so a UTXO whose input (transaction id and index) was already added
- * as an input is rejected.
+ * inputs by itself, so the sub transaction spends exactly the UTXOs added through this function. An input locked by
+ * a key or by a native script is spent without a redeemer. An input locked by a PlutusV4 script is spent with a
+ * redeemer, and optionally with its datum when the UTXO only carries the datum hash. Provide the script with
+ * `cardano_sub_tx_builder_add_script` or through a reference input.
+ *
+ * The redeemer points to the position of the input in the inputs of the sub transaction, which are sorted, so its
+ * index is set when the sub transaction is built. The builder then evaluates the script with the native evaluator and
+ * writes the execution units into the redeemer. An input set cannot hold the same input twice, so a UTXO whose input
+ * (transaction id and index) was already added as an input is rejected.
  *
  * \param[in] builder A pointer to the \ref cardano_sub_tx_builder_t instance in which to add the input.
  * \param[in] utxo A pointer to the \ref cardano_utxo_t structure representing the resolved UTXO to be used as an input.
+ * \param[in] redeemer A pointer to the \ref cardano_plutus_data_t structure representing the redeemer for the PlutusV4 script (optional; can be NULL).
+ * \param[in] datum A pointer to the \ref cardano_plutus_data_t structure representing the datum for the PlutusV4 script (optional; can be NULL).
  *
  * Usage Example:
  * \code{.c}
  * cardano_sub_tx_builder_t* sub_tx_builder = ...;  // Initialized sub transaction builder
  * cardano_utxo_t* input_utxo = ...;                // UTXO to add as an input
+ * cardano_plutus_data_t* redeemer = ...;           // Optional redeemer for the input
+ * cardano_plutus_data_t* datum = ...;              // Optional datum for the input
  *
- * cardano_sub_tx_builder_add_input(sub_tx_builder, input_utxo);
+ * cardano_sub_tx_builder_add_input(sub_tx_builder, input_utxo, redeemer, datum);
  * \endcode
  *
  * \note Any errors resulting from adding this input will be deferred and reported when `cardano_sub_tx_builder_build` is called.
  *       An input that was already added as an input makes `cardano_sub_tx_builder_build` return
- *       \ref CARDANO_ERROR_DUPLICATED_KEY.
+ *       \ref CARDANO_ERROR_DUPLICATED_KEY. An input locked by a PlutusV1, PlutusV2 or PlutusV3 script can not be spent
+ *       inside a sub transaction and makes `cardano_sub_tx_builder_build` return \ref CARDANO_ERROR_INVALID_SCRIPT_LANGUAGE.
  */
 CARDANO_EXPORT void cardano_sub_tx_builder_add_input(
   cardano_sub_tx_builder_t* builder,
-  cardano_utxo_t*           utxo);
+  cardano_utxo_t*           utxo,
+  cardano_plutus_data_t*    redeemer,
+  cardano_plutus_data_t*    datum);
 
 /**
  * \brief Adds a reference input to the sub transaction.
@@ -627,8 +640,8 @@ CARDANO_EXPORT void cardano_sub_tx_builder_mint_token_with_id_ex(
  *
  * This function allows the addition of a native or PlutusV4 script (`cardano_script_t`) to the witness set of the sub
  * transaction. Native scripts define the conditions under which outputs can be unlocked and tokens can be minted,
- * and a PlutusV4 script can satisfy a script hash guard added with `cardano_sub_tx_builder_add_guard_with_redeemer`.
- * PlutusV1, PlutusV2 and PlutusV3 scripts can not run inside a sub transaction, so adding one of them is reported as
+ * and a PlutusV4 script can unlock an input added with a redeemer through `cardano_sub_tx_builder_add_input` or satisfy
+ * a script hash guard added with `cardano_sub_tx_builder_add_guard_with_redeemer`. PlutusV1, PlutusV2 and PlutusV3 scripts can not run inside a sub transaction, so adding one of them is reported as
  * an error.
  *
  * \param[in] builder A pointer to the \ref cardano_sub_tx_builder_t instance managing the sub transaction details.
@@ -1976,12 +1989,13 @@ CARDANO_EXPORT void cardano_sub_tx_builder_propose_info_ex(
  * the outputs that were added, and the difference is the intent a batcher matches against the rest of the batch.
  * If any of the previous operations failed, this function reports the first error that was recorded.
  *
- * When the sub transaction carries guarding redeemers, this function evaluates them natively against the UTXOs
- * added as inputs and reference inputs, writes the computed execution units into the redeemers and sets the script
- * data hash of the sub transaction. Building fails with \ref CARDANO_ERROR_ELEMENT_NOT_FOUND when no Plutus script
- * with the hash of a guard is added with `cardano_sub_tx_builder_add_script` or carried as a reference script by
- * one of those UTXOs, with \ref CARDANO_ERROR_INVALID_SCRIPT_LANGUAGE when that script is a PlutusV1, PlutusV2 or
- * PlutusV3 script, with \ref CARDANO_ERROR_DECODING when a script cannot be deserialized, and with
+ * When the sub transaction carries spend or guarding redeemers, this function sets the index of every spend redeemer
+ * to the position of its input in the sorted inputs, evaluates the redeemers natively against the UTXOs added as
+ * inputs and reference inputs, writes the computed execution units into the redeemers and sets the script data hash
+ * of the sub transaction. Building fails with \ref CARDANO_ERROR_ELEMENT_NOT_FOUND when no Plutus script with the
+ * hash of a guard or of the payment credential of a spent input is added with `cardano_sub_tx_builder_add_script`
+ * or carried as a reference script by one of those UTXOs, with \ref CARDANO_ERROR_INVALID_SCRIPT_LANGUAGE when that
+ * script is a PlutusV1, PlutusV2 or PlutusV3 script, with \ref CARDANO_ERROR_DECODING when a script cannot be deserialized, and with
  * \ref CARDANO_ERROR_SCRIPT_EVALUATION_FAILURE when a script fails phase-2 validation. The message of the failure is
  * available through \ref cardano_sub_tx_builder_get_last_error.
 
@@ -1996,7 +2010,7 @@ CARDANO_EXPORT void cardano_sub_tx_builder_propose_info_ex(
  * cardano_sub_transaction_t* sub_transaction = NULL;
  * cardano_sub_tx_builder_t* sub_tx_builder   = ...; // Initialized sub transaction builder
  *
- * cardano_sub_tx_builder_add_input(sub_tx_builder, utxo);                       // Offer the value of a UTXO
+ * cardano_sub_tx_builder_add_input(sub_tx_builder, utxo, NULL, NULL);           // Offer the value of a UTXO
  * cardano_sub_tx_builder_send_lovelace_ex(sub_tx_builder, "add...", size, 50000); // Ask for an output in return
  * cardano_sub_tx_builder_set_invalid_after(sub_tx_builder, 1000);               // Set the sub transaction validity
  *

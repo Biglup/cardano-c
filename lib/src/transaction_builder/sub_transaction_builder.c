@@ -258,7 +258,9 @@ cardano_sub_tx_builder_set_invalid_before_ex(
 void
 cardano_sub_tx_builder_add_input(
   cardano_sub_tx_builder_t* builder,
-  cardano_utxo_t*           utxo)
+  cardano_utxo_t*           utxo,
+  cardano_plutus_data_t*    redeemer,
+  cardano_plutus_data_t*    datum)
 {
   if ((builder == NULL) || (builder->last_error != CARDANO_SUCCESS))
   {
@@ -267,7 +269,7 @@ cardano_sub_tx_builder_add_input(
 
   const char* error_message = NULL;
 
-  const cardano_error_t result = cardano_builder_add_input(&builder->state, utxo, NULL, NULL, &error_message);
+  const cardano_error_t result = cardano_builder_add_input(&builder->state, utxo, redeemer, datum, &error_message);
 
   track_builder_result(builder, result, error_message);
 }

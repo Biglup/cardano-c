@@ -153,7 +153,7 @@ create_sub_transaction(
 
     EXPECT_EQ(cardano_utxo_list_get(inputs, i, &utxo), CARDANO_SUCCESS);
 
-    cardano_sub_tx_builder_add_input(builder, utxo);
+    cardano_sub_tx_builder_add_input(builder, utxo, NULL, NULL);
     cardano_utxo_unref(&utxo);
   }
 

@@ -103,7 +103,7 @@ cardano-c can build the nested transactions of [CIP-118](https://cips.cardano.or
 // Each party spends its own UTXO and pays itself what it wants to end up with. The imbalance is its offer.
 cardano_sub_tx_builder_t* sub_tx_builder = cardano_sub_tx_builder_new(protocol_params, &CARDANO_PREPROD_SLOT_CONFIG);
 
-cardano_sub_tx_builder_add_input(sub_tx_builder, party_utxo);
+cardano_sub_tx_builder_add_input(sub_tx_builder, party_utxo, NULL, NULL);
 cardano_sub_tx_builder_send_value(sub_tx_builder, party_address, wanted_value);
 cardano_sub_tx_builder_require_top_level_guard(sub_tx_builder, batcher_credential, NULL);
 cardano_sub_tx_builder_build(sub_tx_builder, &sub_transaction);

@@ -533,7 +533,7 @@ main(const int argc, char** argv)
   // carries its final execution units and script data hash before it is signed.
   cardano_sub_tx_builder_t* sub_builder = cardano_sub_tx_builder_new(protocol_params, &CARDANO_PREPROD_SLOT_CONFIG);
 
-  cardano_sub_tx_builder_add_input(sub_builder, sub_tx_utxo);
+  cardano_sub_tx_builder_add_input(sub_builder, sub_tx_utxo, NULL, NULL);
   cardano_sub_tx_builder_send_lovelace(sub_builder, payment_address, LOVELACE_FOR_SUB_TX);
   cardano_sub_tx_builder_add_script(sub_builder, guard_script);
   cardano_sub_tx_builder_add_guard_with_redeemer(sub_builder, guard, redeemer);
