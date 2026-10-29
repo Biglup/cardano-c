@@ -787,7 +787,7 @@ build_party_sub_transaction(
     EXPECT_EQ(cardano_value_add_asset_with_id_ex(value, NFT_ASSET_ID_HEX, strlen(NFT_ASSET_ID_HEX), nft_quantity), CARDANO_SUCCESS);
   }
 
-  cardano_sub_tx_builder_add_input(builder, utxo);
+  cardano_sub_tx_builder_add_input(builder, utxo, nullptr, nullptr);
   cardano_sub_tx_builder_send_value(builder, address, value);
 
   EXPECT_EQ(cardano_sub_tx_builder_build(builder, &sub_transaction), CARDANO_SUCCESS);
@@ -822,7 +822,7 @@ build_guarded_party_sub_transaction(
   cardano_value_t*              value           = cardano_value_new_from_coin(lovelace);
   cardano_sub_transaction_t*    sub_transaction = nullptr;
 
-  cardano_sub_tx_builder_add_input(builder, utxo);
+  cardano_sub_tx_builder_add_input(builder, utxo, nullptr, nullptr);
   cardano_sub_tx_builder_send_value(builder, address, value);
   cardano_sub_tx_builder_require_top_level_guard(builder, required_guard, nullptr);
 
@@ -867,7 +867,7 @@ build_script_party_sub_transaction(
   cardano_plutus_data_t*        data            = nullptr;
   cardano_ex_units_t*           ex_units        = nullptr;
 
-  cardano_sub_tx_builder_add_input(builder, utxo);
+  cardano_sub_tx_builder_add_input(builder, utxo, nullptr, nullptr);
   cardano_sub_tx_builder_add_reference_input(builder, reference_utxo);
   cardano_sub_tx_builder_send_value(builder, address, value);
 

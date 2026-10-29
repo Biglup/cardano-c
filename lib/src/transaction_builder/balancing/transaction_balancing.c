@@ -24,6 +24,10 @@
 #include "internals/collateral.h"
 #include "internals/scripts_needed.h"
 #include "internals/unique_signers.h"
+#include <cardano/cbor/cbor_writer.h>
+#include <cardano/common/datum.h>
+#include <cardano/crypto/blake2b_hash.h>
+#include <cardano/crypto/blake2b_hash_size.h>
 #include <cardano/transaction_builder/balancing/implicit_coin.h>
 #include <cardano/transaction_builder/balancing/transaction_balancing.h>
 #include <cardano/transaction_builder/fee.h>
@@ -1097,6 +1101,358 @@ check_legacy_mode_sub_transactions(
     "The top level transaction needs a PlutusV1, PlutusV2 or PlutusV3 script, so the sub transactions must balance between themselves. Add a balancing sub transaction, top level change can not absorb their imbalance.");
 
   return CARDANO_ERROR_UNBALANCED_SUB_TRANSACTIONS;
+}
+
+/**
+ * \brief Computes the hash the ledger keys a witness datum by.
+ *
+ * \param[in]  data The datum to hash.
+ * \param[out] hash On success, the Blake2b-256 hash of the CBOR of the datum. The caller must release it with
+ *                  \ref cardano_blake2b_hash_unref.
+ *
+ * \return \ref CARDANO_SUCCESS if the datum was hashed, or an appropriate error code.
+ */
+static cardano_error_t
+compute_datum_hash(cardano_plutus_data_t* data, cardano_blake2b_hash_t** hash)
+{
+  cardano_cbor_writer_t* writer = cardano_cbor_writer_new();
+
+  if (writer == NULL)
+  {
+    return CARDANO_ERROR_MEMORY_ALLOCATION_FAILED;
+  }
+
+  cardano_buffer_t* buffer = NULL;
+  cardano_error_t   result = cardano_plutus_data_to_cbor(data, writer);
+
+  if (result == CARDANO_SUCCESS)
+  {
+    result = cardano_cbor_writer_encode_in_buffer(writer, &buffer);
+  }
+
+  if (result == CARDANO_SUCCESS)
+  {
+    result = cardano_blake2b_compute_hash(
+      cardano_buffer_get_data(buffer),
+      cardano_buffer_get_size(buffer),
+      (size_t)CARDANO_BLAKE2B_HASH_SIZE_256,
+      hash);
+  }
+
+  cardano_buffer_unref(&buffer);
+  cardano_cbor_writer_unref(&writer);
+
+  return result;
+}
+
+/**
+ * \brief Adds the datum hash of an output to a set of hashes, when the output carries a datum hash.
+ *
+ * \param[in,out] hashes The set that receives the datum hash.
+ * \param[in]     output The output whose datum hash is added.
+ *
+ * \return \ref CARDANO_SUCCESS if the output was inspected, or an appropriate error code.
+ */
+static cardano_error_t
+add_output_datum_hash(cardano_blake2b_hash_set_t* hashes, cardano_transaction_output_t* output)
+{
+  cardano_datum_t* datum = cardano_transaction_output_get_datum(output);
+  cardano_datum_unref(&datum);
+
+  if (datum == NULL)
+  {
+    return CARDANO_SUCCESS;
+  }
+
+  cardano_datum_type_t datum_type = CARDANO_DATUM_TYPE_INLINE_DATA;
+
+  cardano_error_t result = cardano_datum_get_type(datum, &datum_type);
+
+  if ((result != CARDANO_SUCCESS) || (datum_type != CARDANO_DATUM_TYPE_DATA_HASH))
+  {
+    return result;
+  }
+
+  cardano_blake2b_hash_t* hash = NULL;
+
+  result = cardano_blake2b_hash_from_bytes(
+    cardano_datum_get_data_hash_bytes(datum),
+    cardano_datum_get_data_hash_bytes_size(datum),
+    &hash);
+
+  if (result != CARDANO_SUCCESS)
+  {
+    return result;
+  }
+
+  result = cardano_blake2b_hash_set_add(hashes, hash);
+  cardano_blake2b_hash_unref(&hash);
+
+  return result;
+}
+
+/**
+ * \brief Adds the datum hashes of the outputs behind a list of UTXOs to a set of hashes.
+ *
+ * \param[in,out] hashes             The set that receives the datum hashes.
+ * \param[in]     utxos              The UTXOs whose datum hashes are added, or NULL when there are none.
+ * \param[in]     script_locked_only Whether only the UTXOs held at an address whose payment credential is a script hash
+ *                                   are inspected.
+ *
+ * \return \ref CARDANO_SUCCESS if the UTXOs were inspected, or an appropriate error code.
+ */
+static cardano_error_t
+add_utxo_datum_hashes(cardano_blake2b_hash_set_t* hashes, cardano_utxo_list_t* utxos, const bool script_locked_only)
+{
+  const size_t length = cardano_utxo_list_get_length(utxos);
+
+  for (size_t i = 0U; i < length; ++i)
+  {
+    cardano_utxo_t* utxo = NULL;
+
+    cardano_error_t result = cardano_utxo_list_get(utxos, i, &utxo);
+    cardano_utxo_unref(&utxo);
+
+    if (result != CARDANO_SUCCESS)
+    {
+      return result;
+    }
+
+    cardano_transaction_output_t* output = cardano_utxo_get_output(utxo);
+    cardano_transaction_output_unref(&output);
+
+    cardano_address_t* address = cardano_transaction_output_get_address(output);
+    cardano_address_unref(&address);
+
+    cardano_blake2b_hash_t* script_hash = _cardano_get_payment_script_hash(address);
+    const bool              is_locked   = script_hash != NULL;
+
+    cardano_blake2b_hash_unref(&script_hash);
+
+    if (is_locked || !script_locked_only)
+    {
+      result = add_output_datum_hash(hashes, output);
+    }
+
+    if (result != CARDANO_SUCCESS)
+    {
+      return result;
+    }
+  }
+
+  return CARDANO_SUCCESS;
+}
+
+/**
+ * \brief Collects the datum hashes the top level transaction alone allows its witness datums to have.
+ *
+ * Those are the datum hashes of the spent outputs held at a script address, which the scripts that lock them need,
+ * and the datum hashes of the outputs of the body and of the outputs behind its reference inputs. The outputs and the
+ * reference inputs of the sub transactions take no part.
+ *
+ * \param[in]  tx                The top level transaction, whose outputs are the ones of the current iteration.
+ * \param[in]  reference_inputs  The resolved reference inputs of the transaction, or NULL when it has none.
+ * \param[in]  pre_selected_utxo The UTXOs that must be included in the transaction inputs, or NULL when there are none.
+ * \param[in]  selection         The UTXOs spent by the transaction on this iteration.
+ * \param[out] allowed_hashes    On success, the allowed datum hashes. The caller must release them with
+ *                               \ref cardano_blake2b_hash_set_unref.
+ *
+ * \return \ref CARDANO_SUCCESS if the hashes were collected, or an appropriate error code.
+ */
+static cardano_error_t
+get_top_level_allowed_datum_hashes(
+  cardano_transaction_t*       tx,
+  cardano_utxo_list_t*         reference_inputs,
+  cardano_utxo_list_t*         pre_selected_utxo,
+  cardano_utxo_list_t*         selection,
+  cardano_blake2b_hash_set_t** allowed_hashes)
+{
+  cardano_blake2b_hash_set_t* hashes = NULL;
+
+  cardano_error_t result = cardano_blake2b_hash_set_new(&hashes);
+
+  if (result != CARDANO_SUCCESS)
+  {
+    return result;
+  }
+
+  result = add_utxo_datum_hashes(hashes, pre_selected_utxo, true);
+
+  if (result == CARDANO_SUCCESS)
+  {
+    result = add_utxo_datum_hashes(hashes, selection, true);
+  }
+
+  if (result == CARDANO_SUCCESS)
+  {
+    result = add_utxo_datum_hashes(hashes, reference_inputs, false);
+  }
+
+  cardano_transaction_body_t* body = cardano_transaction_get_body(tx);
+  cardano_transaction_body_unref(&body);
+
+  cardano_transaction_output_list_t* outputs = cardano_transaction_body_get_outputs(body);
+  cardano_transaction_output_list_unref(&outputs);
+
+  const size_t output_count = cardano_transaction_output_list_get_length(outputs);
+
+  for (size_t i = 0U; (result == CARDANO_SUCCESS) && (i < output_count); ++i)
+  {
+    cardano_transaction_output_t* output = NULL;
+
+    result = cardano_transaction_output_list_get(outputs, i, &output);
+    cardano_transaction_output_unref(&output);
+
+    if (result == CARDANO_SUCCESS)
+    {
+      result = add_output_datum_hash(hashes, output);
+    }
+  }
+
+  if (result != CARDANO_SUCCESS)
+  {
+    cardano_blake2b_hash_set_unref(&hashes);
+
+    return result;
+  }
+
+  *allowed_hashes = hashes;
+
+  return CARDANO_SUCCESS;
+}
+
+/**
+ * \brief Checks whether the top level transaction carries a witness datum that the ledger does not allow once its sub
+ * transactions are removed.
+ *
+ * \param[in]  tx                  The top level transaction, whose inputs and outputs are the ones of the current
+ *                                 iteration.
+ * \param[in]  datums              The witness datums of the top level transaction.
+ * \param[in]  reference_inputs    The resolved reference inputs of the transaction, or NULL when it has none.
+ * \param[in]  pre_selected_utxo   The UTXOs that must be included in the transaction inputs, or NULL when there are
+ *                                 none.
+ * \param[in]  selection           The UTXOs spent by the transaction on this iteration.
+ * \param[out] has_foreign_datums  Set to true if a witness datum is neither needed by a spent input nor allowed by the
+ *                                 outputs and the reference inputs of the top level transaction.
+ *
+ * \return \ref CARDANO_SUCCESS if the witness datums were inspected, or an appropriate error code.
+ */
+static cardano_error_t
+has_datums_not_allowed_by_top_level(
+  cardano_transaction_t*     tx,
+  cardano_plutus_data_set_t* datums,
+  cardano_utxo_list_t*       reference_inputs,
+  cardano_utxo_list_t*       pre_selected_utxo,
+  cardano_utxo_list_t*       selection,
+  bool*                      has_foreign_datums)
+{
+  cardano_blake2b_hash_set_t* allowed_hashes = NULL;
+
+  cardano_error_t result = get_top_level_allowed_datum_hashes(tx, reference_inputs, pre_selected_utxo, selection, &allowed_hashes);
+
+  if (result != CARDANO_SUCCESS)
+  {
+    return result;
+  }
+
+  const size_t datum_count = cardano_plutus_data_set_get_length(datums);
+  bool         found       = false;
+
+  for (size_t i = 0U; (result == CARDANO_SUCCESS) && !found && (i < datum_count); ++i)
+  {
+    cardano_plutus_data_t* datum = NULL;
+
+    result = cardano_plutus_data_set_get(datums, i, &datum);
+    cardano_plutus_data_unref(&datum);
+
+    cardano_blake2b_hash_t* hash = NULL;
+
+    if (result == CARDANO_SUCCESS)
+    {
+      result = compute_datum_hash(datum, &hash);
+    }
+
+    if (result == CARDANO_SUCCESS)
+    {
+      found = !_cardano_blake2b_hash_set_has(allowed_hashes, hash);
+    }
+
+    cardano_blake2b_hash_unref(&hash);
+  }
+
+  cardano_blake2b_hash_set_unref(&allowed_hashes);
+
+  *has_foreign_datums = found;
+
+  return result;
+}
+
+/**
+ * \brief Rejects an iteration of the balancing loop whose top level transaction carries a witness datum the ledger
+ * does not allow in legacy mode.
+ *
+ * Every witness datum of a level must be needed by a script input that level spends, or match a datum hash of the
+ * outputs it creates or of the outputs behind its reference inputs. A sub transaction normally extends the datum
+ * hashes the top level transaction may carry with its own outputs and reference inputs, but when the top level
+ * transaction is validated in legacy mode the ledger checks its datums with the sub transactions removed.
+ *
+ * \param[in] tx                The top level transaction, whose inputs and outputs are the ones of the current
+ *                              iteration.
+ * \param[in] reference_inputs  The resolved reference inputs of the transaction, or NULL when it has none.
+ * \param[in] pre_selected_utxo The UTXOs that must be included in the transaction inputs, or NULL when there are none.
+ * \param[in] selection         The UTXOs spent by the transaction on this iteration.
+ *
+ * \return \ref CARDANO_SUCCESS if the iteration may go on, \ref CARDANO_ERROR_NOT_ALLOWED_SUPPLEMENTAL_DATUMS if the
+ *         transaction carries sub transactions, is validated in legacy mode and carries a witness datum that the
+ *         ledger does not allow once the sub transactions are removed, or an appropriate error code.
+ */
+static cardano_error_t
+check_legacy_mode_supplemental_datums(
+  cardano_transaction_t* tx,
+  cardano_utxo_list_t*   reference_inputs,
+  cardano_utxo_list_t*   pre_selected_utxo,
+  cardano_utxo_list_t*   selection)
+{
+  cardano_transaction_body_t* body = cardano_transaction_get_body(tx);
+  cardano_transaction_body_unref(&body);
+
+  cardano_sub_transaction_set_t* sub_transactions = cardano_transaction_body_get_sub_transactions(body);
+  cardano_sub_transaction_set_unref(&sub_transactions);
+
+  cardano_witness_set_t* witness_set = cardano_transaction_get_witness_set(tx);
+  cardano_witness_set_unref(&witness_set);
+
+  cardano_plutus_data_set_t* datums = cardano_witness_set_get_plutus_data(witness_set);
+  cardano_plutus_data_set_unref(&datums);
+
+  if ((cardano_sub_transaction_set_get_length(sub_transactions) == 0U) || (cardano_plutus_data_set_get_length(datums) == 0U))
+  {
+    return CARDANO_SUCCESS;
+  }
+
+  bool has_foreign_datums = false;
+
+  cardano_error_t result = has_datums_not_allowed_by_top_level(tx, datums, reference_inputs, pre_selected_utxo, selection, &has_foreign_datums);
+
+  if ((result != CARDANO_SUCCESS) || !has_foreign_datums)
+  {
+    return result;
+  }
+
+  bool is_legacy_mode = false;
+
+  result = is_legacy_mode_transaction(tx, reference_inputs, pre_selected_utxo, selection, &is_legacy_mode);
+
+  if ((result != CARDANO_SUCCESS) || !is_legacy_mode)
+  {
+    return result;
+  }
+
+  cardano_transaction_set_last_error(
+    tx,
+    "The top level transaction needs a PlutusV1, PlutusV2 or PlutusV3 script, so each of its witness datums must be needed by an input it spends or match a datum hash of its own outputs or reference inputs. For example, a datum that only matches an output or a reference input of a sub transaction is not allowed.");
+
+  return CARDANO_ERROR_NOT_ALLOWED_SUPPLEMENTAL_DATUMS;
 }
 
 /**
@@ -2217,6 +2573,11 @@ balance_transaction(
     }
 
     result = check_legacy_mode_sub_transactions(unbalanced_tx, sub_transactions_imbalance, reference_inputs, pre_selected_utxo, selection);
+
+    if (result == CARDANO_SUCCESS)
+    {
+      result = check_legacy_mode_supplemental_datums(unbalanced_tx, reference_inputs, pre_selected_utxo, selection);
+    }
 
     if (result != CARDANO_SUCCESS)
     {

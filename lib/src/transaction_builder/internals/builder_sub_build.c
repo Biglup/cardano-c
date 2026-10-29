@@ -32,6 +32,8 @@
 #include <cardano/transaction_body/transaction_body.h>
 #include <cardano/transaction_body/transaction_input_set.h>
 #include <cardano/transaction_body/transaction_output_list.h>
+#include <cardano/transaction_builder/balancing/deferred_redeemer_list.h>
+#include <cardano/transaction_builder/balancing/input_to_redeemer_map.h>
 #include <cardano/transaction_builder/evaluation/native_tx_evaluator.h>
 #include <cardano/witness_set/redeemer_list.h>
 #include <cardano/witness_set/witness_set.h>
@@ -92,6 +94,117 @@ create_input_set(cardano_utxo_list_t* utxos, cardano_transaction_input_set_t** i
   *inputs = input_set;
 
   return CARDANO_SUCCESS;
+}
+
+/**
+ * \brief Sets the index of every spend redeemer to the position of its input in the sorted input set.
+ *
+ * A spend redeemer points at its input by the position of that input in the inputs of the body, so
+ * its index can only be known once the input set of the sub transaction exists. Inputs spent without
+ * a redeemer are skipped.
+ *
+ * \param[in] inputs A pointer to the \ref cardano_transaction_input_set_t spent by the sub transaction.
+ * \param[in,out] input_to_redeemer_map A pointer to the \ref cardano_input_to_redeemer_map_t that maps
+ *                                      every input spent with a redeemer to that redeemer.
+ *
+ * \return \ref CARDANO_SUCCESS if every spend redeemer index was set, or an appropriate error code
+ *         indicating the failure reason.
+ */
+static cardano_error_t
+set_spend_redeemer_indices(
+  cardano_transaction_input_set_t* inputs,
+  cardano_input_to_redeemer_map_t* input_to_redeemer_map)
+{
+  cardano_error_t result = CARDANO_SUCCESS;
+  const size_t    length = cardano_transaction_input_set_get_length(inputs);
+
+  for (size_t i = 0U; (i < length) && (result == CARDANO_SUCCESS); ++i)
+  {
+    cardano_transaction_input_t* input = NULL;
+
+    result = cardano_transaction_input_set_get(inputs, i, &input);
+    cardano_transaction_input_unref(&input);
+
+    if (result == CARDANO_SUCCESS)
+    {
+      result = cardano_input_to_redeemer_map_update_redeemer_index(input_to_redeemer_map, input, i);
+    }
+  }
+
+  return result;
+}
+
+/**
+ * \brief Orders two resolved UTXOs by their inputs, the order of the inputs of a body.
+ *
+ * \param[in] lhs A pointer to the first \ref cardano_utxo_t to compare.
+ * \param[in] rhs A pointer to the second \ref cardano_utxo_t to compare.
+ * \param[in] context Unused.
+ *
+ * \return A negative value if the input of \p lhs sorts before the input of \p rhs, zero if both inputs are
+ *         equal, and a positive value otherwise.
+ */
+static int32_t
+compare_utxo_inputs(cardano_utxo_t* lhs, cardano_utxo_t* rhs, void* context)
+{
+  CARDANO_UNUSED(context);
+
+  cardano_transaction_input_t* lhs_input = cardano_utxo_get_input(lhs);
+  cardano_transaction_input_unref(&lhs_input);
+
+  cardano_transaction_input_t* rhs_input = cardano_utxo_get_input(rhs);
+  cardano_transaction_input_unref(&rhs_input);
+
+  return cardano_transaction_input_compare(lhs_input, rhs_input);
+}
+
+/**
+ * \brief Resolves the deferred redeemers of the sub transaction against the body that is signed.
+ *
+ * Every deferred redeemer callback receives a transaction and its resolved inputs. The transaction held by the
+ * state carries every field of the sub transaction body but its inputs, so its inputs are set to the sorted inputs
+ * of the sub transaction and the resolved inputs are given in that same order. The callbacks therefore observe the
+ * inputs, outputs and every other field of the sub transaction body, and any index they compute is local to it.
+ * Nothing is changed when no deferred redeemer was added.
+ *
+ * \param[in,out] state A pointer to the \ref cardano_builder_state_t tracking the sub transaction under
+ *                      construction. This parameter must not be NULL.
+ * \param[in] inputs A pointer to the sorted \ref cardano_transaction_input_set_t spent by the sub transaction.
+ *
+ * \return \ref CARDANO_SUCCESS if every deferred redeemer was resolved, or the error returned by the first
+ *         callback that failed, or another appropriate error code indicating the failure reason.
+ */
+static cardano_error_t
+resolve_deferred_redeemers(cardano_builder_state_t* state, cardano_transaction_input_set_t* inputs)
+{
+  if (cardano_deferred_redeemer_list_get_length(state->deferred_redeemers) == 0U)
+  {
+    return CARDANO_SUCCESS;
+  }
+
+  cardano_transaction_body_t* body = cardano_transaction_get_body(state->transaction);
+  cardano_transaction_body_unref(&body);
+
+  cardano_error_t result = cardano_transaction_body_set_inputs(body, inputs);
+
+  if (result != CARDANO_SUCCESS)
+  {
+    return result;
+  }
+
+  cardano_utxo_list_t* resolved_inputs = cardano_utxo_list_clone(state->pre_selected_inputs);
+
+  if (resolved_inputs == NULL)
+  {
+    return CARDANO_ERROR_MEMORY_ALLOCATION_FAILED;
+  }
+
+  cardano_utxo_list_sort(resolved_inputs, compare_utxo_inputs, NULL);
+
+  result = cardano_deferred_redeemer_list_resolve(state->deferred_redeemers, state->transaction, resolved_inputs);
+  cardano_utxo_list_unref(&resolved_inputs);
+
+  return result;
 }
 
 /**
@@ -544,6 +657,26 @@ cardano_builder_build_sub_transaction(
   if (result != CARDANO_SUCCESS)
   {
     *error_message = "Failed to create the sub transaction inputs.";
+
+    return result;
+  }
+
+  result = set_spend_redeemer_indices(inputs, state->input_to_redeemer_map);
+
+  if (result != CARDANO_SUCCESS)
+  {
+    *error_message = "Failed to set the spend redeemer indices of the sub transaction.";
+    cardano_transaction_input_set_unref(&inputs);
+
+    return result;
+  }
+
+  result = resolve_deferred_redeemers(state, inputs);
+
+  if (result != CARDANO_SUCCESS)
+  {
+    *error_message = "Failed to resolve the deferred redeemers of the sub transaction.";
+    cardano_transaction_input_set_unref(&inputs);
 
     return result;
   }

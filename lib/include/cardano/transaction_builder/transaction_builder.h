@@ -1554,6 +1554,13 @@ CARDANO_EXPORT void cardano_tx_builder_add_starting_account_balance_interval_ex(
  * whatever source provides it: the witness set, a reference input or a spent input, including the inputs chosen by coin
  * selection. A script that is only present and that the transaction does not need does not trigger this rule.
  *
+ * In that same legacy mode the ledger checks the witness datums of the transaction with its sub transactions removed:
+ * each datum the transaction carries must be needed by a script input it spends, or match the datum hash of one of its
+ * own outputs or of the output behind one of its own reference inputs. A datum whose hash only an output or a reference
+ * input of a sub transaction carries makes building fail with \ref CARDANO_ERROR_NOT_ALLOWED_SUPPLEMENTAL_DATUMS, and
+ * the fix is to leave that datum to the sub transaction. Whatever the mode, the datums needed by the inputs a level
+ * spends must be in the witness set of that same level, while the scripts of every level are shared by the whole batch.
+ *
  * The fee of the transaction pays for the whole batch: the size of the sub transactions, the execution units of their
  * redeemers and their reference scripts, the ones carried by the UTXOs they spend and the ones of their resolved
  * reference inputs, counted once per sub transaction that references them, as the ledger does when it measures the

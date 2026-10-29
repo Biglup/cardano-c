@@ -2863,6 +2863,143 @@ TEST(cardano_tx_evaluator_native_v4, findsATopLevelScriptInASubTransactionWitnes
   cardano_plutus_v4_script_unref(&script);
 }
 
+/**
+ * \brief Builds a top-level Plutus V3 spend of a script input whose output carries
+ *        the hash of \p datum, next to a sub-transaction spending the key input
+ *        of 0x11 with \p sub_ws. The script stays in the top-level witness set
+ *        unless \p script_in_sub is set, in which case only \p sub_ws carries it.
+ */
+static cardano_transaction_t*
+build_v3_spend_with_sub_tx(
+  cardano_plutus_v3_script_t* script,
+  cardano_plutus_data_t*      datum,
+  cardano_witness_set_t*      sub_ws,
+  bool                        script_in_sub,
+  cardano_utxo_list_t**       out_utxos)
+{
+  cardano_transaction_t* tx = build_spend_tx(script, datum == nullptr, out_utxos);
+
+  if (datum != nullptr)
+  {
+    cardano_utxo_t* utxo = nullptr;
+    EXPECT_EQ(cardano_utxo_list_get(*out_utxos, 0U, &utxo), CARDANO_SUCCESS);
+
+    cardano_transaction_output_t* output     = cardano_utxo_get_output(utxo);
+    cardano_blake2b_hash_t*       datum_hash = datum_hash_of(datum);
+    cardano_datum_t*              hash_datum = nullptr;
+
+    EXPECT_EQ(cardano_datum_new_data_hash(datum_hash, &hash_datum), CARDANO_SUCCESS);
+    EXPECT_EQ(cardano_transaction_output_set_datum(output, hash_datum), CARDANO_SUCCESS);
+
+    cardano_datum_unref(&hash_datum);
+    cardano_blake2b_hash_unref(&datum_hash);
+    cardano_transaction_output_unref(&output);
+    cardano_utxo_unref(&utxo);
+  }
+
+  if (script_in_sub)
+  {
+    cardano_plutus_v3_script_set_t* scripts = nullptr;
+    EXPECT_EQ(cardano_plutus_v3_script_set_new(&scripts), CARDANO_SUCCESS);
+    EXPECT_EQ(cardano_plutus_v3_script_set_add(scripts, script), CARDANO_SUCCESS);
+    EXPECT_EQ(cardano_witness_set_set_plutus_v3_scripts(sub_ws, scripts), CARDANO_SUCCESS);
+    cardano_plutus_v3_script_set_unref(&scripts);
+
+    cardano_witness_set_t* top_ws = cardano_transaction_get_witness_set(tx);
+    EXPECT_EQ(cardano_witness_set_set_plutus_v3_scripts(top_ws, nullptr), CARDANO_SUCCESS);
+    cardano_witness_set_unref(&top_ws);
+  }
+
+  cardano_sub_transaction_t*     sub_tx = build_sub_tx(0x11U, {}, sub_ws);
+  cardano_sub_transaction_set_t* set    = nullptr;
+  cardano_transaction_body_t*    body   = cardano_transaction_get_body(tx);
+
+  EXPECT_EQ(cardano_sub_transaction_set_new(&set), CARDANO_SUCCESS);
+  EXPECT_EQ(cardano_sub_transaction_set_add(set, sub_tx), CARDANO_SUCCESS);
+  EXPECT_EQ(cardano_transaction_body_set_sub_transactions(body, set), CARDANO_SUCCESS);
+
+  add_key_utxo(*out_utxos, 0x11U);
+
+  cardano_transaction_body_unref(&body);
+  cardano_sub_transaction_set_unref(&set);
+  cardano_sub_transaction_unref(&sub_tx);
+
+  return tx;
+}
+
+/**
+ * \brief Builds a plutus-data set holding \p datum.
+ */
+static cardano_plutus_data_set_t*
+datum_set_of(cardano_plutus_data_t* datum)
+{
+  cardano_plutus_data_set_t* set = nullptr;
+
+  EXPECT_EQ(cardano_plutus_data_set_new(&set), CARDANO_SUCCESS);
+  EXPECT_EQ(cardano_plutus_data_set_add(set, datum), CARDANO_SUCCESS);
+
+  return set;
+}
+
+TEST(cardano_tx_evaluator_native_v4, resolvesATopLevelDatumOnlyFromTheTopLevelWitnessSet)
+{
+  cardano_plutus_v3_script_t* script = build_v3_script(true);
+  cardano_plutus_data_t*      datum  = unit_data();
+  cardano_plutus_data_set_t*  datums = datum_set_of(datum);
+  cardano_witness_set_t*      sub_ws = v4_witness_set(nullptr, false);
+  cardano_utxo_list_t*        utxos  = nullptr;
+  cardano_redeemer_list_t*    result = nullptr;
+
+  EXPECT_EQ(cardano_witness_set_set_plutus_data(sub_ws, datums), CARDANO_SUCCESS);
+
+  cardano_transaction_t* tx = build_v3_spend_with_sub_tx(script, datum, sub_ws, false, &utxos);
+
+  EXPECT_EQ(evaluate_level(tx, utxos, nullptr, &result), CARDANO_ERROR_ELEMENT_NOT_FOUND);
+  EXPECT_EQ(result, nullptr);
+
+  cardano_witness_set_t* top_ws = cardano_transaction_get_witness_set(tx);
+  EXPECT_EQ(cardano_witness_set_set_plutus_data(top_ws, datums), CARDANO_SUCCESS);
+  cardano_witness_set_unref(&top_ws);
+
+  EXPECT_EQ(evaluate_level(tx, utxos, nullptr, &result), CARDANO_SUCCESS);
+  ASSERT_NE(result, nullptr);
+  EXPECT_EQ(cardano_redeemer_list_get_length(result), 1U);
+
+  cardano_redeemer_list_unref(&result);
+  cardano_transaction_unref(&tx);
+  cardano_utxo_list_unref(&utxos);
+  cardano_witness_set_unref(&sub_ws);
+  cardano_plutus_data_set_unref(&datums);
+  cardano_plutus_data_unref(&datum);
+  cardano_plutus_v3_script_unref(&script);
+}
+
+TEST(cardano_tx_evaluator_native_v4, findsATopLevelPlutusV3ScriptInASubTransactionWitnessSet)
+{
+  cardano_plutus_v3_script_t* script = build_v3_script(true);
+  cardano_witness_set_t*      sub_ws = v4_witness_set(nullptr, false);
+  cardano_utxo_list_t*        utxos  = nullptr;
+  cardano_redeemer_list_t*    result = nullptr;
+  cardano_transaction_t*      tx     = build_v3_spend_with_sub_tx(script, nullptr, sub_ws, true, &utxos);
+
+  cardano_witness_set_t*          top_ws      = cardano_transaction_get_witness_set(tx);
+  cardano_plutus_v3_script_set_t* top_scripts = cardano_witness_set_get_plutus_v3_scripts(top_ws);
+
+  EXPECT_EQ(top_scripts, nullptr);
+
+  EXPECT_EQ(evaluate_level(tx, utxos, nullptr, &result), CARDANO_SUCCESS);
+  ASSERT_NE(result, nullptr);
+  EXPECT_EQ(cardano_redeemer_list_get_length(result), 1U);
+
+  cardano_redeemer_list_unref(&result);
+  cardano_plutus_v3_script_set_unref(&top_scripts);
+  cardano_witness_set_unref(&top_ws);
+  cardano_transaction_unref(&tx);
+  cardano_utxo_list_unref(&utxos);
+  cardano_witness_set_unref(&sub_ws);
+  cardano_plutus_v3_script_unref(&script);
+}
+
 TEST(cardano_tx_evaluator_native_v4, rejectsAPlutusV3ScriptInASubTransaction)
 {
   cardano_plutus_v3_script_t* script = build_v3_script(true);
