@@ -23,10 +23,14 @@
 
 #include "builder_build.h"
 
+#include <cardano/address/address.h>
 #include <cardano/common/credential.h>
 #include <cardano/common/guard_set.h>
 #include <cardano/common/protocol_version.h>
+#include <cardano/common/utxo.h>
+#include <cardano/common/utxo_list.h>
 #include <cardano/crypto/blake2b_hash.h>
+#include <cardano/crypto/blake2b_hash_set.h>
 #include <cardano/protocol_params/cost_model.h>
 #include <cardano/protocol_params/costmdls.h>
 #include <cardano/scripts/plutus_scripts/plutus_language_version.h>
@@ -35,6 +39,8 @@
 #include <cardano/transaction_body/sub_transaction_body.h>
 #include <cardano/transaction_body/sub_transaction_set.h>
 #include <cardano/transaction_body/transaction_body.h>
+#include <cardano/transaction_body/transaction_input_set.h>
+#include <cardano/transaction_body/transaction_output.h>
 #include <cardano/transaction_builder/balancing/transaction_balancing.h>
 #include <cardano/transaction_builder/script_data_hash.h>
 #include <cardano/witness_set/plutus_data_set.h>
@@ -42,6 +48,8 @@
 #include <cardano/witness_set/witness_set.h>
 
 #include "../balancing/internals/collateral.h"
+#include "../balancing/internals/scripts_needed.h"
+#include "../balancing/internals/unique_signers.h"
 
 #include <assert.h>
 
@@ -88,67 +96,6 @@ get_cost_model_for_version(
   }
 
   return CARDANO_SUCCESS;
-}
-
-/**
- * \brief Retrieves the cost models flagged by the builder state.
- *
- * \param[in] state A pointer to the \ref cardano_builder_state_t instance from which the cost models will be retrieved.
- * \param[out] costmdls A pointer to an initialized \ref cardano_costmdls_t object where the cost models will be stored.
- *                      This parameter must not be NULL.
- *
- * \return \ref cardano_error_t indicating the result of the operation. Returns \ref CARDANO_SUCCESS if the cost models
- *         were successfully retrieved and stored, or an appropriate error code if an error occurs during retrieval.
- */
-static cardano_error_t
-get_cost_models(cardano_builder_state_t* state, cardano_costmdls_t* costmdls)
-{
-  cardano_costmdls_t* pparams_costmdls = cardano_protocol_parameters_get_cost_models(state->params);
-  cardano_costmdls_unref(&pparams_costmdls);
-
-  cardano_error_t result = CARDANO_SUCCESS;
-
-  if (state->has_plutus_v1)
-  {
-    result = get_cost_model_for_version(pparams_costmdls, costmdls, CARDANO_PLUTUS_LANGUAGE_VERSION_V1);
-
-    if (result != CARDANO_SUCCESS)
-    {
-      return result;
-    }
-  }
-
-  if (state->has_plutus_v2)
-  {
-    result = get_cost_model_for_version(pparams_costmdls, costmdls, CARDANO_PLUTUS_LANGUAGE_VERSION_V2);
-
-    if (result != CARDANO_SUCCESS)
-    {
-      return result;
-    }
-  }
-
-  if (state->has_plutus_v3)
-  {
-    result = get_cost_model_for_version(pparams_costmdls, costmdls, CARDANO_PLUTUS_LANGUAGE_VERSION_V3);
-
-    if (result != CARDANO_SUCCESS)
-    {
-      return result;
-    }
-  }
-
-  if (state->has_plutus_v4)
-  {
-    result = get_cost_model_for_version(pparams_costmdls, costmdls, CARDANO_PLUTUS_LANGUAGE_VERSION_V4);
-
-    if (result != CARDANO_SUCCESS)
-    {
-      return result;
-    }
-  }
-
-  return result;
 }
 
 /**
@@ -583,6 +530,328 @@ get_balancing_utxos(cardano_builder_state_t* state, cardano_utxo_list_t** utxos)
   return CARDANO_SUCCESS;
 }
 
+/**
+ * \brief Adds to a list the resolved UTXO of an input the transaction spends, unless the list holds it.
+ *
+ * The UTXO is looked up among the available UTXOs and the resolved spend inputs of the sub
+ * transactions, which hold every UTXO coin selection can add to the inputs of the transaction.
+ *
+ * \param[in] state A pointer to the \ref cardano_builder_state_t tracking the transaction under
+ *                  construction.
+ * \param[in] input A pointer to the \ref cardano_transaction_input_t spent by the transaction.
+ * \param[in,out] spent_utxos A pointer to the \ref cardano_utxo_list_t that receives the UTXO.
+ *
+ * \return \ref CARDANO_SUCCESS if the list holds the UTXO, \ref CARDANO_ERROR_ELEMENT_NOT_FOUND if
+ *         the input is not resolved, or an appropriate error code indicating the failure reason.
+ */
+static cardano_error_t
+add_spent_utxo(
+  const cardano_builder_state_t*     state,
+  const cardano_transaction_input_t* input,
+  cardano_utxo_list_t*               spent_utxos)
+{
+  cardano_utxo_t* utxo = cardano_utxo_list_find(spent_utxos, find_utxo, input);
+
+  if (utxo != NULL)
+  {
+    cardano_utxo_unref(&utxo);
+
+    return CARDANO_SUCCESS;
+  }
+
+  utxo = cardano_utxo_list_find(state->available_utxos, find_utxo, input);
+
+  if (utxo == NULL)
+  {
+    utxo = cardano_utxo_list_find(state->sub_transaction_inputs, find_utxo, input);
+  }
+
+  if (utxo == NULL)
+  {
+    return CARDANO_ERROR_ELEMENT_NOT_FOUND;
+  }
+
+  const cardano_error_t result = cardano_utxo_list_add(spent_utxos, utxo);
+  cardano_utxo_unref(&utxo);
+
+  return result;
+}
+
+/**
+ * \brief Creates the list of resolved UTXOs a transaction spends.
+ *
+ * Those are the pre selected inputs, which a sub transaction spends even though the body of the
+ * transaction held by its state does not list them, and the inputs of the body, which at the top
+ * level also hold the inputs chosen by coin selection.
+ *
+ * \param[in] state A pointer to the \ref cardano_builder_state_t tracking the transaction under
+ *                  construction.
+ * \param[in] tx A pointer to the \ref cardano_transaction_t whose inputs are resolved.
+ * \param[out] spent_utxos On success, this will point to the resolved UTXOs. The caller is
+ *                         responsible for releasing it with \ref cardano_utxo_list_unref.
+ *
+ * \return \ref CARDANO_SUCCESS if every input was resolved, \ref CARDANO_ERROR_ELEMENT_NOT_FOUND if
+ *         an input is not resolved, or an appropriate error code indicating the failure reason.
+ */
+static cardano_error_t
+get_spent_utxos(
+  cardano_builder_state_t* state,
+  cardano_transaction_t*   tx,
+  cardano_utxo_list_t**    spent_utxos)
+{
+  cardano_transaction_body_t* body = cardano_transaction_get_body(tx);
+  cardano_transaction_body_unref(&body);
+
+  cardano_transaction_input_set_t* inputs = cardano_transaction_body_get_inputs(body);
+  cardano_transaction_input_set_unref(&inputs);
+
+  cardano_utxo_list_t* utxos = cardano_utxo_list_clone(state->pre_selected_inputs);
+
+  if (utxos == NULL)
+  {
+    return CARDANO_ERROR_MEMORY_ALLOCATION_FAILED;
+  }
+
+  cardano_error_t result = CARDANO_SUCCESS;
+  const size_t    length = cardano_transaction_input_set_get_length(inputs);
+
+  for (size_t i = 0U; (i < length) && (result == CARDANO_SUCCESS); ++i)
+  {
+    cardano_transaction_input_t* input = NULL;
+
+    result = cardano_transaction_input_set_get(inputs, i, &input);
+    cardano_transaction_input_unref(&input);
+
+    if (result == CARDANO_SUCCESS)
+    {
+      result = add_spent_utxo(state, input, utxos);
+    }
+  }
+
+  if (result != CARDANO_SUCCESS)
+  {
+    cardano_utxo_list_unref(&utxos);
+
+    return result;
+  }
+
+  *spent_utxos = utxos;
+
+  return CARDANO_SUCCESS;
+}
+
+/**
+ * \brief Adds to a set the payment script hash of every spent UTXO locked by a script.
+ *
+ * \param[in,out] script_hashes A pointer to the \ref cardano_blake2b_hash_set_t that receives the
+ *                              script hashes. A hash the set already holds is not added again.
+ * \param[in] spent_utxos A pointer to the \ref cardano_utxo_list_t with the spent UTXOs.
+ *
+ * \return \ref CARDANO_SUCCESS if the UTXOs were inspected, or an appropriate error code indicating
+ *         the failure reason.
+ */
+static cardano_error_t
+add_spent_script_hashes(cardano_blake2b_hash_set_t* script_hashes, cardano_utxo_list_t* spent_utxos)
+{
+  cardano_error_t result = CARDANO_SUCCESS;
+  const size_t    length = cardano_utxo_list_get_length(spent_utxos);
+
+  for (size_t i = 0U; (i < length) && (result == CARDANO_SUCCESS); ++i)
+  {
+    cardano_utxo_t* utxo = NULL;
+
+    result = cardano_utxo_list_get(spent_utxos, i, &utxo);
+    cardano_utxo_unref(&utxo);
+
+    if (result == CARDANO_SUCCESS)
+    {
+      cardano_transaction_output_t* output = cardano_utxo_get_output(utxo);
+      cardano_transaction_output_unref(&output);
+
+      cardano_address_t* address = cardano_transaction_output_get_address(output);
+      cardano_address_unref(&address);
+
+      cardano_blake2b_hash_t* script_hash = _cardano_get_payment_script_hash(address);
+
+      if ((script_hash != NULL) && !_cardano_blake2b_hash_set_has(script_hashes, script_hash))
+      {
+        result = cardano_blake2b_hash_set_add(script_hashes, script_hash);
+      }
+
+      cardano_blake2b_hash_unref(&script_hash);
+    }
+  }
+
+  return result;
+}
+
+/**
+ * \brief Finds the Plutus languages of the scripts a transaction needs.
+ *
+ * Like the ledger, only the scripts the body needs count: the scripts of its spent inputs, mint,
+ * withdrawals, certificates, voters, proposal guardrails and guards. Each one is looked up among the
+ * scripts provided to the batch: the ones of the witness set of the transaction and of the witness
+ * sets of its sub transactions, and the reference scripts of the reference inputs, the spent inputs
+ * and the UTXOs the sub transactions spend or reference. A provided script that no field of the body
+ * needs adds no language, and a needed script that is not provided adds none either, since its
+ * language is unknown.
+ *
+ * \param[in] state A pointer to the \ref cardano_builder_state_t tracking the transaction under
+ *                  construction.
+ * \param[in] tx A pointer to the \ref cardano_transaction_t whose needed scripts are inspected.
+ * \param[out] has_plutus_v1 Set to true if a needed script is a PlutusV1 script.
+ * \param[out] has_plutus_v2 Set to true if a needed script is a PlutusV2 script.
+ * \param[out] has_plutus_v3 Set to true if a needed script is a PlutusV3 script.
+ * \param[out] has_plutus_v4 Set to true if a needed script is a PlutusV4 script.
+ *
+ * \return \ref CARDANO_SUCCESS if the languages were found, or an appropriate error code indicating
+ *         the failure reason.
+ */
+static cardano_error_t
+get_plutus_languages_used(
+  cardano_builder_state_t* state,
+  cardano_transaction_t*   tx,
+  bool*                    has_plutus_v1,
+  bool*                    has_plutus_v2,
+  bool*                    has_plutus_v3,
+  bool*                    has_plutus_v4)
+{
+  cardano_utxo_list_t* spent_utxos = NULL;
+
+  cardano_error_t result = get_spent_utxos(state, tx, &spent_utxos);
+
+  if (result != CARDANO_SUCCESS)
+  {
+    return result;
+  }
+
+  cardano_transaction_body_t* body = cardano_transaction_get_body(tx);
+  cardano_transaction_body_unref(&body);
+
+  cardano_blake2b_hash_set_t* needed_scripts = NULL;
+
+  result = _cardano_get_script_hashes_needed(body, NULL, &needed_scripts);
+
+  if (result == CARDANO_SUCCESS)
+  {
+    result = add_spent_script_hashes(needed_scripts, spent_utxos);
+  }
+
+  if (result != CARDANO_SUCCESS)
+  {
+    cardano_blake2b_hash_set_unref(&needed_scripts);
+    cardano_utxo_list_unref(&spent_utxos);
+
+    return result;
+  }
+
+  cardano_utxo_list_t* sub_transaction_utxos = cardano_utxo_list_concat(state->sub_transaction_inputs, state->sub_transaction_reference_inputs);
+
+  if (sub_transaction_utxos == NULL)
+  {
+    result = CARDANO_ERROR_MEMORY_ALLOCATION_FAILED;
+  }
+  else
+  {
+    bool has_missing_scripts = false;
+
+    result = _cardano_get_plutus_languages_used(
+      tx,
+      needed_scripts,
+      state->reference_inputs,
+      spent_utxos,
+      NULL,
+      sub_transaction_utxos,
+      has_plutus_v1,
+      has_plutus_v2,
+      has_plutus_v3,
+      has_plutus_v4,
+      &has_missing_scripts);
+  }
+
+  cardano_utxo_list_unref(&sub_transaction_utxos);
+  cardano_blake2b_hash_set_unref(&needed_scripts);
+  cardano_utxo_list_unref(&spent_utxos);
+
+  return result;
+}
+
+/**
+ * \brief Retrieves the cost models of the Plutus languages a transaction uses.
+ *
+ * The script data hash carries the language view of each Plutus language of the scripts the
+ * transaction needs, so the cost model of every such language is copied from the protocol parameters.
+ *
+ * \param[in] state A pointer to the \ref cardano_builder_state_t holding the protocol parameters and
+ *                  the resolved UTXOs of the transaction.
+ * \param[in] tx A pointer to the \ref cardano_transaction_t whose languages are retrieved.
+ * \param[out] costmdls A pointer to an initialized \ref cardano_costmdls_t object where the cost models will be stored.
+ *                      This parameter must not be NULL.
+ *
+ * \return \ref cardano_error_t indicating the result of the operation. Returns \ref CARDANO_SUCCESS if the cost models
+ *         were successfully retrieved and stored, or an appropriate error code if an error occurs during retrieval.
+ */
+static cardano_error_t
+get_cost_models(cardano_builder_state_t* state, cardano_transaction_t* tx, cardano_costmdls_t* costmdls)
+{
+  bool has_plutus_v1 = false;
+  bool has_plutus_v2 = false;
+  bool has_plutus_v3 = false;
+  bool has_plutus_v4 = false;
+
+  cardano_error_t result = get_plutus_languages_used(state, tx, &has_plutus_v1, &has_plutus_v2, &has_plutus_v3, &has_plutus_v4);
+
+  if (result != CARDANO_SUCCESS)
+  {
+    return result;
+  }
+
+  cardano_costmdls_t* pparams_costmdls = cardano_protocol_parameters_get_cost_models(state->params);
+  cardano_costmdls_unref(&pparams_costmdls);
+
+  if (has_plutus_v1)
+  {
+    result = get_cost_model_for_version(pparams_costmdls, costmdls, CARDANO_PLUTUS_LANGUAGE_VERSION_V1);
+
+    if (result != CARDANO_SUCCESS)
+    {
+      return result;
+    }
+  }
+
+  if (has_plutus_v2)
+  {
+    result = get_cost_model_for_version(pparams_costmdls, costmdls, CARDANO_PLUTUS_LANGUAGE_VERSION_V2);
+
+    if (result != CARDANO_SUCCESS)
+    {
+      return result;
+    }
+  }
+
+  if (has_plutus_v3)
+  {
+    result = get_cost_model_for_version(pparams_costmdls, costmdls, CARDANO_PLUTUS_LANGUAGE_VERSION_V3);
+
+    if (result != CARDANO_SUCCESS)
+    {
+      return result;
+    }
+  }
+
+  if (has_plutus_v4)
+  {
+    result = get_cost_model_for_version(pparams_costmdls, costmdls, CARDANO_PLUTUS_LANGUAGE_VERSION_V4);
+
+    if (result != CARDANO_SUCCESS)
+    {
+      return result;
+    }
+  }
+
+  return result;
+}
+
 /* IMPLEMENTATION ************************************************************/
 
 cardano_error_t
@@ -634,7 +903,7 @@ cardano_builder_update_script_data_hash(cardano_builder_state_t* state, cardano_
     return result;
   }
 
-  result = get_cost_models(state, costmdls);
+  result = get_cost_models(state, tx, costmdls);
 
   if (result != CARDANO_SUCCESS)
   {

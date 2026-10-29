@@ -88,15 +88,22 @@ cardano_builder_set_dummy_script_data_hash(cardano_transaction_t* tx);
  * \brief Computes and sets the script data hash of a transaction that carries script data.
  *
  * The hash covers the redeemers and datums of the transaction witness set and the cost models of
- * the Plutus languages flagged in \p state. A transaction without script data is left unchanged.
+ * the Plutus languages of the scripts the transaction needs. Like the ledger, a script counts only
+ * when the body needs it, through a spent input, the mint, a withdrawal, a certificate, a vote, a
+ * proposal guardrail or a guard, and its language is found among the scripts provided to the batch:
+ * the witness sets of the transaction and of its sub transactions, and the reference scripts of the
+ * reference inputs, the spent inputs and the UTXOs the sub transactions spend or reference. A
+ * provided script that the body does not need adds no language view. A transaction without script
+ * data is left unchanged.
  *
  * \param[in] state A pointer to the \ref cardano_builder_state_t holding the protocol parameters and
- *                  the Plutus language flags. This parameter must not be NULL.
+ *                  the resolved UTXOs of the transaction. This parameter must not be NULL.
  * \param[in,out] tx A pointer to the \ref cardano_transaction_t whose script data hash is set. This
  *                   parameter must not be NULL.
  *
- * \return \ref CARDANO_SUCCESS if the hash was set or the transaction carries no script data, or an
- *         appropriate error code indicating the failure reason.
+ * \return \ref CARDANO_SUCCESS if the hash was set or the transaction carries no script data,
+ *         \ref CARDANO_ERROR_ELEMENT_NOT_FOUND if an input of the transaction is not among the UTXOs of
+ *         \p state, or an appropriate error code indicating the failure reason.
  */
 cardano_error_t
 cardano_builder_update_script_data_hash(cardano_builder_state_t* state, cardano_transaction_t* tx);
