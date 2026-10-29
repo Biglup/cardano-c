@@ -422,7 +422,8 @@ cardano_sub_tx_builder_mint_token(
   cardano_sub_tx_builder_t* builder,
   cardano_blake2b_hash_t*   policy_id,
   cardano_asset_name_t*     name,
-  const int64_t             amount)
+  const int64_t             amount,
+  cardano_plutus_data_t*    redeemer)
 {
   if ((builder == NULL) || (builder->last_error != CARDANO_SUCCESS))
   {
@@ -431,7 +432,7 @@ cardano_sub_tx_builder_mint_token(
 
   const char* error_message = NULL;
 
-  const cardano_error_t result = cardano_builder_mint_token(&builder->state, policy_id, name, amount, NULL, &error_message);
+  const cardano_error_t result = cardano_builder_mint_token(&builder->state, policy_id, name, amount, redeemer, &error_message);
 
   track_builder_result(builder, result, error_message);
 }
@@ -443,7 +444,8 @@ cardano_sub_tx_builder_mint_token_ex(
   size_t                    policy_id_size,
   const char*               name_hex,
   size_t                    name_size,
-  const int64_t             amount)
+  const int64_t             amount,
+  cardano_plutus_data_t*    redeemer)
 {
   if ((builder == NULL) || (builder->last_error != CARDANO_SUCCESS))
   {
@@ -452,7 +454,7 @@ cardano_sub_tx_builder_mint_token_ex(
 
   const char* error_message = NULL;
 
-  const cardano_error_t result = cardano_builder_mint_token_ex(&builder->state, policy_id_hex, policy_id_size, name_hex, name_size, amount, NULL, &error_message);
+  const cardano_error_t result = cardano_builder_mint_token_ex(&builder->state, policy_id_hex, policy_id_size, name_hex, name_size, amount, redeemer, &error_message);
 
   track_builder_result(builder, result, error_message);
 }
@@ -461,7 +463,8 @@ void
 cardano_sub_tx_builder_mint_token_with_id(
   cardano_sub_tx_builder_t* builder,
   cardano_asset_id_t*       asset_id,
-  const int64_t             amount)
+  const int64_t             amount,
+  cardano_plutus_data_t*    redeemer)
 {
   if ((builder == NULL) || (builder->last_error != CARDANO_SUCCESS))
   {
@@ -470,7 +473,7 @@ cardano_sub_tx_builder_mint_token_with_id(
 
   const char* error_message = NULL;
 
-  const cardano_error_t result = cardano_builder_mint_token_with_id(&builder->state, asset_id, amount, NULL, &error_message);
+  const cardano_error_t result = cardano_builder_mint_token_with_id(&builder->state, asset_id, amount, redeemer, &error_message);
 
   track_builder_result(builder, result, error_message);
 }
@@ -480,7 +483,8 @@ cardano_sub_tx_builder_mint_token_with_id_ex(
   cardano_sub_tx_builder_t* builder,
   const char*               asset_id_hex,
   size_t                    hex_size,
-  int64_t                   amount)
+  int64_t                   amount,
+  cardano_plutus_data_t*    redeemer)
 {
   if ((builder == NULL) || (builder->last_error != CARDANO_SUCCESS))
   {
@@ -489,7 +493,7 @@ cardano_sub_tx_builder_mint_token_with_id_ex(
 
   const char* error_message = NULL;
 
-  const cardano_error_t result = cardano_builder_mint_token_with_id_ex(&builder->state, asset_id_hex, hex_size, amount, NULL, &error_message);
+  const cardano_error_t result = cardano_builder_mint_token_with_id_ex(&builder->state, asset_id_hex, hex_size, amount, redeemer, &error_message);
 
   track_builder_result(builder, result, error_message);
 }
@@ -716,7 +720,8 @@ void
 cardano_sub_tx_builder_withdraw_rewards(
   cardano_sub_tx_builder_t* builder,
   cardano_reward_address_t* address,
-  const int64_t             amount)
+  const int64_t             amount,
+  cardano_plutus_data_t*    redeemer)
 {
   if ((builder == NULL) || (builder->last_error != CARDANO_SUCCESS))
   {
@@ -725,7 +730,7 @@ cardano_sub_tx_builder_withdraw_rewards(
 
   const char* error_message = NULL;
 
-  const cardano_error_t result = cardano_builder_withdraw_rewards(&builder->state, address, amount, NULL, &error_message);
+  const cardano_error_t result = cardano_builder_withdraw_rewards(&builder->state, address, amount, redeemer, &error_message);
 
   track_builder_result(builder, result, error_message);
 }
@@ -735,7 +740,8 @@ cardano_sub_tx_builder_withdraw_rewards_ex(
   cardano_sub_tx_builder_t* builder,
   const char*               reward_address,
   size_t                    address_size,
-  const int64_t             amount)
+  const int64_t             amount,
+  cardano_plutus_data_t*    redeemer)
 {
   if ((builder == NULL) || (builder->last_error != CARDANO_SUCCESS))
   {
@@ -744,7 +750,7 @@ cardano_sub_tx_builder_withdraw_rewards_ex(
 
   const char* error_message = NULL;
 
-  const cardano_error_t result = cardano_builder_withdraw_rewards_ex(&builder->state, reward_address, address_size, amount, NULL, &error_message);
+  const cardano_error_t result = cardano_builder_withdraw_rewards_ex(&builder->state, reward_address, address_size, amount, redeemer, &error_message);
 
   track_builder_result(builder, result, error_message);
 }
@@ -752,7 +758,8 @@ cardano_sub_tx_builder_withdraw_rewards_ex(
 void
 cardano_sub_tx_builder_register_reward_address(
   cardano_sub_tx_builder_t* builder,
-  cardano_reward_address_t* address)
+  cardano_reward_address_t* address,
+  cardano_plutus_data_t*    redeemer)
 {
   if ((builder == NULL) || (builder->last_error != CARDANO_SUCCESS))
   {
@@ -761,7 +768,7 @@ cardano_sub_tx_builder_register_reward_address(
 
   const char* error_message = NULL;
 
-  const cardano_error_t result = cardano_builder_register_reward_address(&builder->state, address, NULL, &error_message);
+  const cardano_error_t result = cardano_builder_register_reward_address(&builder->state, address, redeemer, &error_message);
 
   track_builder_result(builder, result, error_message);
 }
@@ -770,7 +777,8 @@ void
 cardano_sub_tx_builder_register_reward_address_ex(
   cardano_sub_tx_builder_t* builder,
   const char*               reward_address,
-  size_t                    address_size)
+  size_t                    address_size,
+  cardano_plutus_data_t*    redeemer)
 {
   if ((builder == NULL) || (builder->last_error != CARDANO_SUCCESS))
   {
@@ -779,7 +787,7 @@ cardano_sub_tx_builder_register_reward_address_ex(
 
   const char* error_message = NULL;
 
-  const cardano_error_t result = cardano_builder_register_reward_address_ex(&builder->state, reward_address, address_size, NULL, &error_message);
+  const cardano_error_t result = cardano_builder_register_reward_address_ex(&builder->state, reward_address, address_size, redeemer, &error_message);
 
   track_builder_result(builder, result, error_message);
 }
@@ -787,7 +795,8 @@ cardano_sub_tx_builder_register_reward_address_ex(
 void
 cardano_sub_tx_builder_deregister_reward_address(
   cardano_sub_tx_builder_t* builder,
-  cardano_reward_address_t* address)
+  cardano_reward_address_t* address,
+  cardano_plutus_data_t*    redeemer)
 {
   if ((builder == NULL) || (builder->last_error != CARDANO_SUCCESS))
   {
@@ -796,7 +805,7 @@ cardano_sub_tx_builder_deregister_reward_address(
 
   const char* error_message = NULL;
 
-  const cardano_error_t result = cardano_builder_deregister_reward_address(&builder->state, address, NULL, &error_message);
+  const cardano_error_t result = cardano_builder_deregister_reward_address(&builder->state, address, redeemer, &error_message);
 
   track_builder_result(builder, result, error_message);
 }
@@ -805,7 +814,8 @@ void
 cardano_sub_tx_builder_deregister_reward_address_ex(
   cardano_sub_tx_builder_t* builder,
   const char*               reward_address,
-  size_t                    address_size)
+  size_t                    address_size,
+  cardano_plutus_data_t*    redeemer)
 {
   if ((builder == NULL) || (builder->last_error != CARDANO_SUCCESS))
   {
@@ -814,7 +824,7 @@ cardano_sub_tx_builder_deregister_reward_address_ex(
 
   const char* error_message = NULL;
 
-  const cardano_error_t result = cardano_builder_deregister_reward_address_ex(&builder->state, reward_address, address_size, NULL, &error_message);
+  const cardano_error_t result = cardano_builder_deregister_reward_address_ex(&builder->state, reward_address, address_size, redeemer, &error_message);
 
   track_builder_result(builder, result, error_message);
 }
@@ -823,7 +833,8 @@ void
 cardano_sub_tx_builder_delegate_stake(
   cardano_sub_tx_builder_t* builder,
   cardano_reward_address_t* address,
-  cardano_blake2b_hash_t*   pool_id)
+  cardano_blake2b_hash_t*   pool_id,
+  cardano_plutus_data_t*    redeemer)
 {
   if ((builder == NULL) || (builder->last_error != CARDANO_SUCCESS))
   {
@@ -832,7 +843,7 @@ cardano_sub_tx_builder_delegate_stake(
 
   const char* error_message = NULL;
 
-  const cardano_error_t result = cardano_builder_delegate_stake(&builder->state, address, pool_id, NULL, &error_message);
+  const cardano_error_t result = cardano_builder_delegate_stake(&builder->state, address, pool_id, redeemer, &error_message);
 
   track_builder_result(builder, result, error_message);
 }
@@ -843,7 +854,8 @@ cardano_sub_tx_builder_delegate_stake_ex(
   const char*               reward_address,
   size_t                    address_size,
   const char*               pool_id,
-  size_t                    pool_id_size)
+  size_t                    pool_id_size,
+  cardano_plutus_data_t*    redeemer)
 {
   if ((builder == NULL) || (builder->last_error != CARDANO_SUCCESS))
   {
@@ -852,7 +864,7 @@ cardano_sub_tx_builder_delegate_stake_ex(
 
   const char* error_message = NULL;
 
-  const cardano_error_t result = cardano_builder_delegate_stake_ex(&builder->state, reward_address, address_size, pool_id, pool_id_size, NULL, &error_message);
+  const cardano_error_t result = cardano_builder_delegate_stake_ex(&builder->state, reward_address, address_size, pool_id, pool_id_size, redeemer, &error_message);
 
   track_builder_result(builder, result, error_message);
 }
@@ -861,7 +873,8 @@ void
 cardano_sub_tx_builder_delegate_voting_power(
   cardano_sub_tx_builder_t* builder,
   cardano_reward_address_t* address,
-  cardano_drep_t*           drep)
+  cardano_drep_t*           drep,
+  cardano_plutus_data_t*    redeemer)
 {
   if ((builder == NULL) || (builder->last_error != CARDANO_SUCCESS))
   {
@@ -870,7 +883,7 @@ cardano_sub_tx_builder_delegate_voting_power(
 
   const char* error_message = NULL;
 
-  const cardano_error_t result = cardano_builder_delegate_voting_power(&builder->state, address, drep, NULL, &error_message);
+  const cardano_error_t result = cardano_builder_delegate_voting_power(&builder->state, address, drep, redeemer, &error_message);
 
   track_builder_result(builder, result, error_message);
 }
@@ -881,7 +894,8 @@ cardano_sub_tx_builder_delegate_voting_power_ex(
   const char*               reward_address,
   size_t                    address_size,
   const char*               drep_id,
-  size_t                    drep_id_size)
+  size_t                    drep_id_size,
+  cardano_plutus_data_t*    redeemer)
 {
   if ((builder == NULL) || (builder->last_error != CARDANO_SUCCESS))
   {
@@ -890,7 +904,7 @@ cardano_sub_tx_builder_delegate_voting_power_ex(
 
   const char* error_message = NULL;
 
-  const cardano_error_t result = cardano_builder_delegate_voting_power_ex(&builder->state, reward_address, address_size, drep_id, drep_id_size, NULL, &error_message);
+  const cardano_error_t result = cardano_builder_delegate_voting_power_ex(&builder->state, reward_address, address_size, drep_id, drep_id_size, redeemer, &error_message);
 
   track_builder_result(builder, result, error_message);
 }
@@ -899,7 +913,8 @@ void
 cardano_sub_tx_builder_register_drep(
   cardano_sub_tx_builder_t* builder,
   cardano_drep_t*           drep,
-  cardano_anchor_t*         anchor)
+  cardano_anchor_t*         anchor,
+  cardano_plutus_data_t*    redeemer)
 {
   if ((builder == NULL) || (builder->last_error != CARDANO_SUCCESS))
   {
@@ -908,7 +923,7 @@ cardano_sub_tx_builder_register_drep(
 
   const char* error_message = NULL;
 
-  const cardano_error_t result = cardano_builder_register_drep(&builder->state, drep, anchor, NULL, &error_message);
+  const cardano_error_t result = cardano_builder_register_drep(&builder->state, drep, anchor, redeemer, &error_message);
 
   track_builder_result(builder, result, error_message);
 }
@@ -921,7 +936,8 @@ cardano_sub_tx_builder_register_drep_ex(
   const char*               metadata_url,
   const size_t              metadata_url_size,
   const char*               metadata_hash_hex,
-  const size_t              metadata_hash_hex_size)
+  const size_t              metadata_hash_hex_size,
+  cardano_plutus_data_t*    redeemer)
 {
   if ((builder == NULL) || (builder->last_error != CARDANO_SUCCESS))
   {
@@ -930,7 +946,7 @@ cardano_sub_tx_builder_register_drep_ex(
 
   const char* error_message = NULL;
 
-  const cardano_error_t result = cardano_builder_register_drep_ex(&builder->state, drep_id, drep_id_size, metadata_url, metadata_url_size, metadata_hash_hex, metadata_hash_hex_size, NULL, &error_message);
+  const cardano_error_t result = cardano_builder_register_drep_ex(&builder->state, drep_id, drep_id_size, metadata_url, metadata_url_size, metadata_hash_hex, metadata_hash_hex_size, redeemer, &error_message);
 
   track_builder_result(builder, result, error_message);
 }
@@ -939,7 +955,8 @@ void
 cardano_sub_tx_builder_update_drep(
   cardano_sub_tx_builder_t* builder,
   cardano_drep_t*           drep,
-  cardano_anchor_t*         anchor)
+  cardano_anchor_t*         anchor,
+  cardano_plutus_data_t*    redeemer)
 {
   if ((builder == NULL) || (builder->last_error != CARDANO_SUCCESS))
   {
@@ -948,7 +965,7 @@ cardano_sub_tx_builder_update_drep(
 
   const char* error_message = NULL;
 
-  const cardano_error_t result = cardano_builder_update_drep(&builder->state, drep, anchor, NULL, &error_message);
+  const cardano_error_t result = cardano_builder_update_drep(&builder->state, drep, anchor, redeemer, &error_message);
 
   track_builder_result(builder, result, error_message);
 }
@@ -961,7 +978,8 @@ cardano_sub_tx_builder_update_drep_ex(
   const char*               metadata_url,
   const size_t              metadata_url_size,
   const char*               metadata_hash_hex,
-  const size_t              metadata_hash_hex_size)
+  const size_t              metadata_hash_hex_size,
+  cardano_plutus_data_t*    redeemer)
 {
   if ((builder == NULL) || (builder->last_error != CARDANO_SUCCESS))
   {
@@ -970,7 +988,7 @@ cardano_sub_tx_builder_update_drep_ex(
 
   const char* error_message = NULL;
 
-  const cardano_error_t result = cardano_builder_update_drep_ex(&builder->state, drep_id, drep_id_size, metadata_url, metadata_url_size, metadata_hash_hex, metadata_hash_hex_size, NULL, &error_message);
+  const cardano_error_t result = cardano_builder_update_drep_ex(&builder->state, drep_id, drep_id_size, metadata_url, metadata_url_size, metadata_hash_hex, metadata_hash_hex_size, redeemer, &error_message);
 
   track_builder_result(builder, result, error_message);
 }
@@ -978,7 +996,8 @@ cardano_sub_tx_builder_update_drep_ex(
 void
 cardano_sub_tx_builder_deregister_drep(
   cardano_sub_tx_builder_t* builder,
-  cardano_drep_t*           drep)
+  cardano_drep_t*           drep,
+  cardano_plutus_data_t*    redeemer)
 {
   if ((builder == NULL) || (builder->last_error != CARDANO_SUCCESS))
   {
@@ -987,7 +1006,7 @@ cardano_sub_tx_builder_deregister_drep(
 
   const char* error_message = NULL;
 
-  const cardano_error_t result = cardano_builder_deregister_drep(&builder->state, drep, NULL, &error_message);
+  const cardano_error_t result = cardano_builder_deregister_drep(&builder->state, drep, redeemer, &error_message);
 
   track_builder_result(builder, result, error_message);
 }
@@ -996,7 +1015,8 @@ void
 cardano_sub_tx_builder_deregister_drep_ex(
   cardano_sub_tx_builder_t* builder,
   const char*               drep_id,
-  size_t                    drep_id_size)
+  size_t                    drep_id_size,
+  cardano_plutus_data_t*    redeemer)
 {
   if ((builder == NULL) || (builder->last_error != CARDANO_SUCCESS))
   {
@@ -1005,7 +1025,7 @@ cardano_sub_tx_builder_deregister_drep_ex(
 
   const char* error_message = NULL;
 
-  const cardano_error_t result = cardano_builder_deregister_drep_ex(&builder->state, drep_id, drep_id_size, NULL, &error_message);
+  const cardano_error_t result = cardano_builder_deregister_drep_ex(&builder->state, drep_id, drep_id_size, redeemer, &error_message);
 
   track_builder_result(builder, result, error_message);
 }
@@ -1015,7 +1035,8 @@ cardano_sub_tx_builder_vote(
   cardano_sub_tx_builder_t*       builder,
   cardano_voter_t*                voter,
   cardano_governance_action_id_t* action_id,
-  cardano_voting_procedure_t*     vote)
+  cardano_voting_procedure_t*     vote,
+  cardano_plutus_data_t*          redeemer)
 {
   if ((builder == NULL) || (builder->last_error != CARDANO_SUCCESS))
   {
@@ -1024,7 +1045,7 @@ cardano_sub_tx_builder_vote(
 
   const char* error_message = NULL;
 
-  const cardano_error_t result = cardano_builder_vote(&builder->state, voter, action_id, vote, NULL, &error_message);
+  const cardano_error_t result = cardano_builder_vote(&builder->state, voter, action_id, vote, redeemer, &error_message);
 
   track_builder_result(builder, result, error_message);
 }
@@ -1032,7 +1053,8 @@ cardano_sub_tx_builder_vote(
 void
 cardano_sub_tx_builder_add_certificate(
   cardano_sub_tx_builder_t* builder,
-  cardano_certificate_t*    certificate)
+  cardano_certificate_t*    certificate,
+  cardano_plutus_data_t*    redeemer)
 {
   if ((builder == NULL) || (builder->last_error != CARDANO_SUCCESS))
   {
@@ -1041,7 +1063,7 @@ cardano_sub_tx_builder_add_certificate(
 
   const char* error_message = NULL;
 
-  const cardano_error_t result = cardano_builder_add_certificate(&builder->state, certificate, NULL, &error_message);
+  const cardano_error_t result = cardano_builder_add_certificate(&builder->state, certificate, redeemer, &error_message);
 
   track_builder_result(builder, result, error_message);
 }

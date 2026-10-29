@@ -1341,8 +1341,8 @@ TEST(cardano_batch_settlement, settlesAnIntentHandedOverAsBytesThatDepositsRegis
   cardano_sub_tx_builder_t* intent_builder = new_intent_builder(params, staker, batcher, amounts_t(90000000, 0));
 
   cardano_sub_tx_builder_add_direct_deposit(intent_builder, reward_address, 3000000U);
-  cardano_sub_tx_builder_register_reward_address(intent_builder, reward_address);
-  cardano_sub_tx_builder_withdraw_rewards(intent_builder, reward_address, 1200000);
+  cardano_sub_tx_builder_register_reward_address(intent_builder, reward_address, NULL);
+  cardano_sub_tx_builder_withdraw_rewards(intent_builder, reward_address, 1200000, NULL);
   cardano_sub_tx_builder_add_account_balance_interval(intent_builder, reward_address, interval);
 
   cardano_sub_transaction_t* signed_sub_tx = sign_intent(intent_builder, staker);

@@ -83,11 +83,12 @@ extern "C" {
  *   top level transaction, so this builder has no functions for them.
  * - **Native Scripts, PlutusV4 Scripts and Key Witnesses**: PlutusV1, PlutusV2 and PlutusV3 scripts can not run
  *   inside a sub transaction and are rejected. PlutusV4 scripts are accepted: an input locked by a PlutusV4 script
- *   can be spent with a spend redeemer, and a script hash guard can be satisfied by a guarding redeemer. The
- *   builder computes the execution units of those redeemers with the native evaluator when the sub transaction is
- *   built, before the parties sign it. The other functions of this builder take no redeemer, so the governance
- *   proposals that are validated by the guardrails script have no functions on this builder: parameter change and
- *   treasury withdrawals proposals belong in a top level transaction.
+ *   can be spent, a PlutusV4 policy can mint, a PlutusV4 script account can withdraw, a PlutusV4 script credential
+ *   can publish certificates or vote, and a script hash guard can be satisfied, each with a redeemer. The builder
+ *   computes the execution units of those redeemers with the native evaluator when the sub transaction is built,
+ *   before the parties sign it. The governance proposals that are validated by the guardrails script have no
+ *   functions on this builder: parameter change and treasury withdrawals proposals belong in a top level
+ *   transaction.
  */
 typedef struct cardano_sub_tx_builder_t cardano_sub_tx_builder_t;
 
@@ -520,12 +521,14 @@ CARDANO_EXPORT void cardano_sub_tx_builder_set_metadata_ex(
  *
  * This function allows the user to specify a token minting operation within a sub transaction, including
  * the policy ID, asset name and amount. This enables minting (positive amount) or burning (negative amount) of
- * tokens. The minting policy must be a native script, since the minting functions of this builder take no redeemer.
+ * tokens. A native script policy takes no redeemer. A PlutusV4 policy is run with the redeemer, which is evaluated
+ * natively when the sub transaction is built.
  *
  * \param[in] builder A pointer to the \ref cardano_sub_tx_builder_t instance for building the sub transaction.
  * \param[in] policy_id A pointer to a \ref cardano_blake2b_hash_t representing the unique minting policy ID.
  * \param[in] name A pointer to a \ref cardano_asset_name_t defining the name of the asset being minted or burned.
  * \param[in] amount The number of tokens to mint or burn; positive values indicate minting, and negative values indicate burning.
+ * \param[in] redeemer A pointer to the \ref cardano_plutus_data_t structure representing the redeemer for the PlutusV4 script (optional; can be NULL).
  *
  * Usage Example:
  * \code{.c}
@@ -533,8 +536,9 @@ CARDANO_EXPORT void cardano_sub_tx_builder_set_metadata_ex(
  * cardano_blake2b_hash_t* policy_id = ...;         // Policy ID for the token
  * cardano_asset_name_t* asset_name = ...;          // Asset name for the token
  * int64_t mint_amount = 100;                       // Amount to mint
+ * cardano_plutus_data_t* redeemer = ...;           // Optional redeemer for the PlutusV4 script
  *
- * cardano_sub_tx_builder_mint_token(sub_tx_builder, policy_id, asset_name, mint_amount);
+ * cardano_sub_tx_builder_mint_token(sub_tx_builder, policy_id, asset_name, mint_amount, redeemer);
  * \endcode
  *
  * \note Errors related to this operation will be deferred until `cardano_sub_tx_builder_build` is called.
@@ -543,13 +547,15 @@ CARDANO_EXPORT void cardano_sub_tx_builder_mint_token(
   cardano_sub_tx_builder_t* builder,
   cardano_blake2b_hash_t*   policy_id,
   cardano_asset_name_t*     name,
-  int64_t                   amount);
+  int64_t                   amount,
+  cardano_plutus_data_t*    redeemer);
 
 /**
  * \brief Adds a token minting operation to the sub transaction builder using policy ID and asset name in hexadecimal format.
  *
  * This function allows the sub transaction builder to mint or burn tokens associated with a specific policy ID and asset name.
- * The minting policy must be a native script, since the minting functions of this builder take no redeemer.
+ * A native script policy takes no redeemer. A PlutusV4 policy is run with the redeemer, which is evaluated natively
+ * when the sub transaction is built.
  *
  * \param[in] builder A pointer to the \ref cardano_sub_tx_builder_t instance used for sub transaction construction.
  * \param[in] policy_id_hex A string in hexadecimal format representing the policy ID of the token to mint or burn.
@@ -557,6 +563,7 @@ CARDANO_EXPORT void cardano_sub_tx_builder_mint_token(
  * \param[in] name_hex A string in hexadecimal format representing the asset name within the policy ID.
  * \param[in] name_size The size of the `name_hex` string.
  * \param[in] amount The amount of tokens to mint (positive) or burn (negative).
+ * \param[in] redeemer A pointer to the \ref cardano_plutus_data_t structure representing the redeemer for the PlutusV4 script (optional; can be NULL).
  *
  * Usage Example:
  * \code{.c}
@@ -566,8 +573,9 @@ CARDANO_EXPORT void cardano_sub_tx_builder_mint_token(
  * const char* name_hex = "74657374";               // Asset name in hexadecimal ("test" in hex)
  * size_t name_size = strlen(name_hex);             // Size of asset name
  * int64_t mint_amount = 100;                       // Amount to mint (positive for minting, negative for burning)
+ * cardano_plutus_data_t* redeemer = ...;           // Optional redeemer for the PlutusV4 script
  *
- * cardano_sub_tx_builder_mint_token_ex(sub_tx_builder, policy_id_hex, policy_id_size, name_hex, name_size, mint_amount);
+ * cardano_sub_tx_builder_mint_token_ex(sub_tx_builder, policy_id_hex, policy_id_size, name_hex, name_size, mint_amount, redeemer);
  * \endcode
  *
  * \note Any errors related to this operation will only be reported when `cardano_sub_tx_builder_build` is called.
@@ -578,25 +586,29 @@ CARDANO_EXPORT void cardano_sub_tx_builder_mint_token_ex(
   size_t                    policy_id_size,
   const char*               name_hex,
   size_t                    name_size,
-  int64_t                   amount);
+  int64_t                   amount,
+  cardano_plutus_data_t*    redeemer);
 
 /**
  * \brief Adds a token minting operation to the sub transaction builder using a predefined asset ID.
  *
  * This function allows minting or burning of tokens within a sub transaction by specifying an asset ID along with the amount.
- * The minting policy must be a native script, since the minting functions of this builder take no redeemer.
+ * A native script policy takes no redeemer. A PlutusV4 policy is run with the redeemer, which is evaluated natively
+ * when the sub transaction is built.
  *
  * \param[in] builder A pointer to the \ref cardano_sub_tx_builder_t instance used to build the sub transaction.
  * \param[in] asset_id A pointer to a \ref cardano_asset_id_t structure representing the asset to mint or burn.
  * \param[in] amount The amount of tokens to mint (positive) or burn (negative).
+ * \param[in] redeemer A pointer to the \ref cardano_plutus_data_t structure representing the redeemer for the PlutusV4 script (optional; can be NULL).
  *
  * Usage Example:
  * \code{.c}
  * cardano_sub_tx_builder_t* sub_tx_builder = ...;  // Initialized sub transaction builder
  * cardano_asset_id_t* asset_id = ...;              // Predefined asset ID for the token
  * int64_t mint_amount = 50;                        // Amount to mint (positive for minting, negative for burning)
+ * cardano_plutus_data_t* redeemer = ...;           // Optional redeemer for the PlutusV4 script
  *
- * cardano_sub_tx_builder_mint_token_with_id(sub_tx_builder, asset_id, mint_amount);
+ * cardano_sub_tx_builder_mint_token_with_id(sub_tx_builder, asset_id, mint_amount, redeemer);
  * \endcode
  *
  * \note Any errors related to this operation are deferred until `cardano_sub_tx_builder_build` is called.
@@ -604,18 +616,21 @@ CARDANO_EXPORT void cardano_sub_tx_builder_mint_token_ex(
 CARDANO_EXPORT void cardano_sub_tx_builder_mint_token_with_id(
   cardano_sub_tx_builder_t* builder,
   cardano_asset_id_t*       asset_id,
-  int64_t                   amount);
+  int64_t                   amount,
+  cardano_plutus_data_t*    redeemer);
 
 /**
  * \brief Adds a token minting operation to the sub transaction builder using an asset ID in hexadecimal format.
  *
  * This function enables minting or burning tokens for a specific asset identified by its unique `asset_id` in hexadecimal format.
- * The minting policy must be a native script, since the minting functions of this builder take no redeemer.
+ * A native script policy takes no redeemer. A PlutusV4 policy is run with the redeemer, which is evaluated natively
+ * when the sub transaction is built.
  *
  * \param[in] builder A pointer to the \ref cardano_sub_tx_builder_t instance used for sub transaction construction.
  * \param[in] asset_id_hex A string in hexadecimal format representing the unique asset ID.
  * \param[in] hex_size The size of the `asset_id_hex` string.
  * \param[in] amount The amount of tokens to mint (positive) or burn (negative).
+ * \param[in] redeemer A pointer to the \ref cardano_plutus_data_t structure representing the redeemer for the PlutusV4 script (optional; can be NULL).
  *
  * Usage Example:
  * \code{.c}
@@ -623,8 +638,9 @@ CARDANO_EXPORT void cardano_sub_tx_builder_mint_token_with_id(
  * const char* asset_id_hex = "abcdef1234567890";   // Example asset ID in hexadecimal format
  * size_t hex_size = strlen(asset_id_hex);          // Size of asset ID
  * int64_t mint_amount = 100;                       // Amount to mint (positive for minting, negative for burning)
+ * cardano_plutus_data_t* redeemer = ...;           // Optional redeemer for the PlutusV4 script
  *
- * cardano_sub_tx_builder_mint_token_with_id_ex(sub_tx_builder, asset_id_hex, hex_size, mint_amount);
+ * cardano_sub_tx_builder_mint_token_with_id_ex(sub_tx_builder, asset_id_hex, hex_size, mint_amount, redeemer);
  * \endcode
  *
  * \note Any errors will only be reported when `cardano_sub_tx_builder_build` is called.
@@ -633,16 +649,18 @@ CARDANO_EXPORT void cardano_sub_tx_builder_mint_token_with_id_ex(
   cardano_sub_tx_builder_t* builder,
   const char*               asset_id_hex,
   size_t                    hex_size,
-  int64_t                   amount);
+  int64_t                   amount,
+  cardano_plutus_data_t*    redeemer);
 
 /**
  * \brief Adds a script to the sub transaction builder.
  *
  * This function allows the addition of a native or PlutusV4 script (`cardano_script_t`) to the witness set of the sub
  * transaction. Native scripts define the conditions under which outputs can be unlocked and tokens can be minted,
- * and a PlutusV4 script can unlock an input added with a redeemer through `cardano_sub_tx_builder_add_input` or satisfy
- * a script hash guard added with `cardano_sub_tx_builder_add_guard_with_redeemer`. PlutusV1, PlutusV2 and PlutusV3 scripts can not run inside a sub transaction, so adding one of them is reported as
- * an error.
+ * and a PlutusV4 script can run for any purpose of the sub transaction that takes a redeemer: spending an input,
+ * minting, withdrawing, certifying, voting or satisfying a script hash guard added with
+ * `cardano_sub_tx_builder_add_guard_with_redeemer`. PlutusV1, PlutusV2 and PlutusV3 scripts can not run inside a sub
+ * transaction, so adding one of them is reported as an error.
  *
  * \param[in] builder A pointer to the \ref cardano_sub_tx_builder_t instance managing the sub transaction details.
  * \param[in] script A pointer to the \ref cardano_script_t structure representing the native or PlutusV4 script to
@@ -1032,18 +1050,23 @@ CARDANO_EXPORT void cardano_sub_tx_builder_add_account_balance_interval_ex(
  * account an earlier sub transaction of the batch unregisters. The builder has no view of account state, so it
  * does not check this.
  *
+ * An account controlled by a key or by a native script is withdrawn from without a redeemer. An account controlled by
+ * a PlutusV4 script needs a redeemer, evaluated natively when the sub transaction is built, and its script provided
+ * with `cardano_sub_tx_builder_add_script` or through a reference input.
+ *
  * \param[in] builder A pointer to the \ref cardano_sub_tx_builder_t instance used for constructing the sub transaction.
  * \param[in] address A pointer to the \ref cardano_reward_address_t representing the reward account address
- *                    from which rewards should be withdrawn. The account must be controlled by a key or by a
- *                    native script.
+ *                    from which rewards should be withdrawn.
  * \param[in] amount  The amount of rewards to withdraw from the account, in lovelace.
+ * \param[in] redeemer A pointer to the \ref cardano_plutus_data_t structure representing the redeemer for the PlutusV4 script (optional; can be NULL).
  *
  * Usage Example:
  * \code{.c}
  * cardano_sub_tx_builder_t* sub_tx_builder = ...;   // Initialized sub transaction builder
  * cardano_reward_address_t* reward_address = ...;   // Initialized reward address
+ * cardano_plutus_data_t* redeemer = ...;            // Optional redeemer for the PlutusV4 script
  *
- * cardano_sub_tx_builder_withdraw_rewards(sub_tx_builder, reward_address, 2532145);
+ * cardano_sub_tx_builder_withdraw_rewards(sub_tx_builder, reward_address, 2532145, redeemer);
  * \endcode
  *
  * \note Errors related to reward withdrawal will be deferred until `cardano_sub_tx_builder_build` is called.
@@ -1051,7 +1074,8 @@ CARDANO_EXPORT void cardano_sub_tx_builder_add_account_balance_interval_ex(
 CARDANO_EXPORT void cardano_sub_tx_builder_withdraw_rewards(
   cardano_sub_tx_builder_t* builder,
   cardano_reward_address_t* address,
-  int64_t                   amount);
+  int64_t                   amount,
+  cardano_plutus_data_t*    redeemer);
 
 /**
  * \brief Withdraws rewards from a specified reward account using a string address in the sub transaction builder.
@@ -1064,14 +1088,16 @@ CARDANO_EXPORT void cardano_sub_tx_builder_withdraw_rewards(
  * \param[in] reward_address A string representing the reward account address from which rewards are to be withdrawn.
  * \param[in] address_size The size of the reward address string in bytes.
  * \param[in] amount  The amount of rewards to withdraw from the account, in lovelace.
+ * \param[in] redeemer A pointer to the \ref cardano_plutus_data_t structure representing the redeemer for the PlutusV4 script (optional; can be NULL).
  *
  * Usage Example:
  * \code{.c}
  * cardano_sub_tx_builder_t* sub_tx_builder = ...;  // Initialized sub transaction builder
  * const char* reward_addr = "stake1u9...";         // Reward address in string format
  * size_t address_size = strlen(reward_addr);       // Length of the reward address string
+ * cardano_plutus_data_t* redeemer = ...;           // Optional redeemer for the PlutusV4 script
  *
- * cardano_sub_tx_builder_withdraw_rewards_ex(sub_tx_builder, reward_addr, address_size, 966584122);
+ * cardano_sub_tx_builder_withdraw_rewards_ex(sub_tx_builder, reward_addr, address_size, 966584122, redeemer);
  * \endcode
  *
  * \note Errors related to reward withdrawal will be deferred until `cardano_sub_tx_builder_build` is called.
@@ -1080,7 +1106,8 @@ CARDANO_EXPORT void cardano_sub_tx_builder_withdraw_rewards_ex(
   cardano_sub_tx_builder_t* builder,
   const char*               reward_address,
   size_t                    address_size,
-  int64_t                   amount);
+  int64_t                   amount,
+  cardano_plutus_data_t*    redeemer);
 
 /**
  * \brief Registers a staking reward address.
@@ -1091,20 +1118,23 @@ CARDANO_EXPORT void cardano_sub_tx_builder_withdraw_rewards_ex(
  *
  * \param[in] builder A pointer to the \ref cardano_sub_tx_builder_t instance used for constructing the sub transaction.
  * \param[in] address A pointer to the \ref cardano_reward_address_t representing the reward account to be registered.
+ * \param[in] redeemer A pointer to the \ref cardano_plutus_data_t structure representing the redeemer for the PlutusV4 script (optional; can be NULL).
  *
  * Usage Example:
  * \code{.c}
  * cardano_sub_tx_builder_t* sub_tx_builder = ...;  // Initialized sub transaction builder
  * cardano_reward_address_t* reward_addr = ...;     // Reward address to register
+ * cardano_plutus_data_t* redeemer = ...;           // Optional redeemer for the PlutusV4 script
  *
- * cardano_sub_tx_builder_register_reward_address(sub_tx_builder, reward_addr);
+ * cardano_sub_tx_builder_register_reward_address(sub_tx_builder, reward_addr, redeemer);
  * \endcode
  *
  * \note Any errors related to reward address registration will be reported when `cardano_sub_tx_builder_build` is called.
  */
 CARDANO_EXPORT void cardano_sub_tx_builder_register_reward_address(
   cardano_sub_tx_builder_t* builder,
-  cardano_reward_address_t* address);
+  cardano_reward_address_t* address,
+  cardano_plutus_data_t*    redeemer);
 
 /**
  * \brief Registers a staking reward address using a Bech32 address string.
@@ -1115,14 +1145,16 @@ CARDANO_EXPORT void cardano_sub_tx_builder_register_reward_address(
  * \param[in] builder A pointer to the \ref cardano_sub_tx_builder_t instance managing the sub transaction construction.
  * \param[in] reward_address A pointer to a bech32 string representing the reward address.
  * \param[in] address_size The size of the `reward_address` string.
+ * \param[in] redeemer A pointer to the \ref cardano_plutus_data_t structure representing the redeemer for the PlutusV4 script (optional; can be NULL).
  *
  * Usage Example:
  * \code{.c}
  * cardano_sub_tx_builder_t* sub_tx_builder = ...;  // Initialized sub transaction builder
  * const char* reward_address = "stake1uxxx...";
  * size_t address_size = strlen(reward_address);
+ * cardano_plutus_data_t* redeemer = ...;           // Optional redeemer for the PlutusV4 script
  *
- * cardano_sub_tx_builder_register_reward_address_ex(sub_tx_builder, reward_address, address_size);
+ * cardano_sub_tx_builder_register_reward_address_ex(sub_tx_builder, reward_address, address_size, redeemer);
  * \endcode
  *
  * \note Errors related to the reward address registration will be reported only when `cardano_sub_tx_builder_build` is called.
@@ -1130,7 +1162,8 @@ CARDANO_EXPORT void cardano_sub_tx_builder_register_reward_address(
 CARDANO_EXPORT void cardano_sub_tx_builder_register_reward_address_ex(
   cardano_sub_tx_builder_t* builder,
   const char*               reward_address,
-  size_t                    address_size);
+  size_t                    address_size,
+  cardano_plutus_data_t*    redeemer);
 
 /**
  * \brief Deregisters a staking reward address.
@@ -1141,20 +1174,23 @@ CARDANO_EXPORT void cardano_sub_tx_builder_register_reward_address_ex(
  *
  * \param[in] builder A pointer to the \ref cardano_sub_tx_builder_t instance managing the sub transaction.
  * \param[in] address A pointer to the \ref cardano_reward_address_t structure representing the reward address to deregister.
+ * \param[in] redeemer A pointer to the \ref cardano_plutus_data_t structure representing the redeemer for the PlutusV4 script (optional; can be NULL).
  *
  * Usage Example:
  * \code{.c}
  * cardano_sub_tx_builder_t* sub_tx_builder = ...;  // Initialized sub transaction builder
  * cardano_reward_address_t* reward_address = ...;  // Reward address to be deregistered
+ * cardano_plutus_data_t* redeemer = ...;           // Optional redeemer for the PlutusV4 script
  *
- * cardano_sub_tx_builder_deregister_reward_address(sub_tx_builder, reward_address);
+ * cardano_sub_tx_builder_deregister_reward_address(sub_tx_builder, reward_address, redeemer);
  * \endcode
  *
  * \note Errors related to the deregistration process are deferred until `cardano_sub_tx_builder_build` is called.
  */
 CARDANO_EXPORT void cardano_sub_tx_builder_deregister_reward_address(
   cardano_sub_tx_builder_t* builder,
-  cardano_reward_address_t* address);
+  cardano_reward_address_t* address,
+  cardano_plutus_data_t*    redeemer);
 
 /**
  * \brief Deregisters a staking reward address using a Bech32 address string.
@@ -1165,14 +1201,16 @@ CARDANO_EXPORT void cardano_sub_tx_builder_deregister_reward_address(
  * \param[in] builder A pointer to the \ref cardano_sub_tx_builder_t instance managing the sub transaction.
  * \param[in] reward_address A pointer to a bech32 string containing the reward address to be deregistered.
  * \param[in] address_size The length of the reward address string.
+ * \param[in] redeemer A pointer to the \ref cardano_plutus_data_t structure representing the redeemer for the PlutusV4 script (optional; can be NULL).
  *
  * Usage Example:
  * \code{.c}
  * cardano_sub_tx_builder_t* sub_tx_builder = ...;  // Initialized sub transaction builder
  * const char* reward_address = "stake1uxxx...";    // Reward address in string format
  * size_t address_size = strlen(reward_address);
+ * cardano_plutus_data_t* redeemer = ...;           // Optional redeemer for the PlutusV4 script
  *
- * cardano_sub_tx_builder_deregister_reward_address_ex(sub_tx_builder, reward_address, address_size);
+ * cardano_sub_tx_builder_deregister_reward_address_ex(sub_tx_builder, reward_address, address_size, redeemer);
  * \endcode
  *
  * \note Errors related to the deregistration process are deferred until `cardano_sub_tx_builder_build` is called.
@@ -1180,7 +1218,8 @@ CARDANO_EXPORT void cardano_sub_tx_builder_deregister_reward_address(
 CARDANO_EXPORT void cardano_sub_tx_builder_deregister_reward_address_ex(
   cardano_sub_tx_builder_t* builder,
   const char*               reward_address,
-  size_t                    address_size);
+  size_t                    address_size,
+  cardano_plutus_data_t*    redeemer);
 
 /**
  * \brief Delegates stake from a specified staking reward address to a staking pool.
@@ -1191,14 +1230,16 @@ CARDANO_EXPORT void cardano_sub_tx_builder_deregister_reward_address_ex(
  * \param[in] builder A pointer to the \ref cardano_sub_tx_builder_t instance managing the sub transaction.
  * \param[in] address A pointer to the \ref cardano_reward_address_t representing the staking reward address to delegate.
  * \param[in] pool_id A pointer to the \ref cardano_blake2b_hash_t representing the hash ID of the pool to delegate to.
+ * \param[in] redeemer A pointer to the \ref cardano_plutus_data_t structure representing the redeemer for the PlutusV4 script (optional; can be NULL).
  *
  * Usage Example:
  * \code{.c}
  * cardano_sub_tx_builder_t* sub_tx_builder = ...;  // Initialized sub transaction builder
  * cardano_reward_address_t* reward_address = ...;  // Reward address for staking
  * cardano_blake2b_hash_t* pool_id = ...;           // Pool ID to delegate stake to
+ * cardano_plutus_data_t* redeemer = ...;           // Optional redeemer for the PlutusV4 script
  *
- * cardano_sub_tx_builder_delegate_stake(sub_tx_builder, reward_address, pool_id);
+ * cardano_sub_tx_builder_delegate_stake(sub_tx_builder, reward_address, pool_id, redeemer);
  * \endcode
  *
  * \note Any errors associated with this delegation action will be deferred until `cardano_sub_tx_builder_build` is called.
@@ -1206,7 +1247,8 @@ CARDANO_EXPORT void cardano_sub_tx_builder_deregister_reward_address_ex(
 CARDANO_EXPORT void cardano_sub_tx_builder_delegate_stake(
   cardano_sub_tx_builder_t* builder,
   cardano_reward_address_t* address,
-  cardano_blake2b_hash_t*   pool_id);
+  cardano_blake2b_hash_t*   pool_id,
+  cardano_plutus_data_t*    redeemer);
 
 /**
  * \brief Delegates stake from a specified staking reward address to a staking pool using string identifiers.
@@ -1219,6 +1261,7 @@ CARDANO_EXPORT void cardano_sub_tx_builder_delegate_stake(
  * \param[in] address_size The size of the `reward_address` string.
  * \param[in] pool_id A bech32 string representing the pool ID to which stake is delegated.
  * \param[in] pool_id_size The size of the `pool_id` string.
+ * \param[in] redeemer A pointer to the \ref cardano_plutus_data_t structure representing the redeemer for the PlutusV4 script (optional; can be NULL).
  *
  * Usage Example:
  * \code{.c}
@@ -1227,8 +1270,9 @@ CARDANO_EXPORT void cardano_sub_tx_builder_delegate_stake(
  * size_t reward_address_size = strlen(reward_address);
  * const char* pool_id = "pool1xy...";
  * size_t pool_id_size = strlen(pool_id);
+ * cardano_plutus_data_t* redeemer = ...;           // Optional redeemer for the PlutusV4 script
  *
- * cardano_sub_tx_builder_delegate_stake_ex(sub_tx_builder, reward_address, reward_address_size, pool_id, pool_id_size);
+ * cardano_sub_tx_builder_delegate_stake_ex(sub_tx_builder, reward_address, reward_address_size, pool_id, pool_id_size, redeemer);
  * \endcode
  *
  * \note Errors related to this action will be deferred until `cardano_sub_tx_builder_build` is called.
@@ -1238,7 +1282,8 @@ CARDANO_EXPORT void cardano_sub_tx_builder_delegate_stake_ex(
   const char*               reward_address,
   size_t                    address_size,
   const char*               pool_id,
-  size_t                    pool_id_size);
+  size_t                    pool_id_size,
+  cardano_plutus_data_t*    redeemer);
 
 /**
  * \brief Adds a voting power delegation to a DRep for governance purposes.
@@ -1248,14 +1293,16 @@ CARDANO_EXPORT void cardano_sub_tx_builder_delegate_stake_ex(
  * \param[in] builder A pointer to the \ref cardano_sub_tx_builder_t instance managing the sub transaction.
  * \param[in] address A pointer to the \ref cardano_reward_address_t representing the staking reward address that is delegating voting power.
  * \param[in] drep A pointer to the \ref cardano_drep_t structure that identifies the decentralized representative receiving the delegated voting power.
+ * \param[in] redeemer A pointer to the \ref cardano_plutus_data_t structure representing the redeemer for the PlutusV4 script (optional; can be NULL).
  *
  * Usage Example:
  * \code{.c}
  * cardano_sub_tx_builder_t* sub_tx_builder = ...;  // Initialized sub transaction builder
  * cardano_reward_address_t* reward_address = ...;  // Reward address delegating voting power
  * cardano_drep_t* drep = ...;                      // DRep receiving the delegated voting power
+ * cardano_plutus_data_t* redeemer = ...;           // Optional redeemer for the PlutusV4 script
  *
- * cardano_sub_tx_builder_delegate_voting_power(sub_tx_builder, reward_address, drep);
+ * cardano_sub_tx_builder_delegate_voting_power(sub_tx_builder, reward_address, drep, redeemer);
  * \endcode
  *
  * \note Errors associated with this delegation will be deferred until `cardano_sub_tx_builder_build` is called.
@@ -1263,7 +1310,8 @@ CARDANO_EXPORT void cardano_sub_tx_builder_delegate_stake_ex(
 CARDANO_EXPORT void cardano_sub_tx_builder_delegate_voting_power(
   cardano_sub_tx_builder_t* builder,
   cardano_reward_address_t* address,
-  cardano_drep_t*           drep);
+  cardano_drep_t*           drep,
+  cardano_plutus_data_t*    redeemer);
 
 /**
  * \brief Delegates voting power to a DRep using string identifiers.
@@ -1277,6 +1325,7 @@ CARDANO_EXPORT void cardano_sub_tx_builder_delegate_voting_power(
  * \param[in] drep_id A string representing the ID of the decentralized representative (DRep) receiving the voting power.
  *                     The DRep ID can be in CIP-105 or CIP-129 format.
  * \param[in] drep_id_size The length of the `drep_id` string.
+ * \param[in] redeemer A pointer to the \ref cardano_plutus_data_t structure representing the redeemer for the PlutusV4 script (optional; can be NULL).
  *
  * Usage Example:
  * \code{.c}
@@ -1285,8 +1334,9 @@ CARDANO_EXPORT void cardano_sub_tx_builder_delegate_voting_power(
  * size_t address_size = strlen(reward_address);
  * const char* drep_id = "drep1q...";               // DRep ID in CIP-129 format
  * size_t drep_id_size = strlen(drep_id);
+ * cardano_plutus_data_t* redeemer = ...;           // Optional redeemer for the PlutusV4 script
  *
- * cardano_sub_tx_builder_delegate_voting_power_ex(sub_tx_builder, reward_address, address_size, drep_id, drep_id_size);
+ * cardano_sub_tx_builder_delegate_voting_power_ex(sub_tx_builder, reward_address, address_size, drep_id, drep_id_size, redeemer);
  * \endcode
  *
  * \note The DRep ID must conform to either CIP-105 or CIP-129 format.
@@ -1297,7 +1347,8 @@ CARDANO_EXPORT void cardano_sub_tx_builder_delegate_voting_power_ex(
   const char*               reward_address,
   size_t                    address_size,
   const char*               drep_id,
-  size_t                    drep_id_size);
+  size_t                    drep_id_size,
+  cardano_plutus_data_t*    redeemer);
 
 /**
  * \brief Registers a DRep in the sub transaction.
@@ -1309,14 +1360,16 @@ CARDANO_EXPORT void cardano_sub_tx_builder_delegate_voting_power_ex(
  * \param[in] builder A pointer to the \ref cardano_sub_tx_builder_t instance managing the sub transaction.
  * \param[in] drep A pointer to the \ref cardano_drep_t instance representing the decentralized representative to be registered.
  * \param[in] anchor An optional pointer to a \ref cardano_anchor_t instance pointing to the metadata of the DRep.
+ * \param[in] redeemer A pointer to the \ref cardano_plutus_data_t structure representing the redeemer for the PlutusV4 script (optional; can be NULL).
  *
  * Usage Example:
  * \code{.c}
  * cardano_sub_tx_builder_t* sub_tx_builder = ...;  // Initialized sub transaction builder
  * cardano_drep_t* drep = ...;                      // DRep to register
  * cardano_anchor_t* anchor = ...;                  // Optional governance anchor
+ * cardano_plutus_data_t* redeemer = ...;           // Optional redeemer for the PlutusV4 script
  *
- * cardano_sub_tx_builder_register_drep(sub_tx_builder, drep, anchor);
+ * cardano_sub_tx_builder_register_drep(sub_tx_builder, drep, anchor, redeemer);
  * \endcode
  *
  * \note Errors related to this registration will be deferred until `cardano_sub_tx_builder_build` is called.
@@ -1324,7 +1377,8 @@ CARDANO_EXPORT void cardano_sub_tx_builder_delegate_voting_power_ex(
 CARDANO_EXPORT void cardano_sub_tx_builder_register_drep(
   cardano_sub_tx_builder_t* builder,
   cardano_drep_t*           drep,
-  cardano_anchor_t*         anchor);
+  cardano_anchor_t*         anchor,
+  cardano_plutus_data_t*    redeemer);
 
 /**
  * \brief Registers a DRep by ID in the sub transaction.
@@ -1339,6 +1393,7 @@ CARDANO_EXPORT void cardano_sub_tx_builder_register_drep(
  * \param[in] metadata_url_size The size of the `metadata_url` string.
  * \param[in] metadata_hash_hex The hash of the DRep metadata file in hexadecimal format.
  * \param[in] metadata_hash_hex_size The size of the `metadata_hash_hex` string.
+ * \param[in] redeemer A pointer to the \ref cardano_plutus_data_t structure representing the redeemer for the PlutusV4 script (optional; can be NULL).
  *
  * Usage Example:
  * \code{.c}
@@ -1349,6 +1404,7 @@ CARDANO_EXPORT void cardano_sub_tx_builder_register_drep(
  * size_t metadata_url_size = strlen(metadata_url);
  * const char* metadata_hash_hex = "abcdef123456...";  // Hex-encoded hash of metadata file
  * size_t metadata_hash_hex_size = strlen(metadata_hash_hex);
+ * cardano_plutus_data_t* redeemer = ...;              // Optional redeemer for the PlutusV4 script
  *
  * cardano_sub_tx_builder_register_drep_ex(
  *   sub_tx_builder,
@@ -1370,7 +1426,8 @@ CARDANO_EXPORT void cardano_sub_tx_builder_register_drep_ex(
   const char*               metadata_url,
   size_t                    metadata_url_size,
   const char*               metadata_hash_hex,
-  size_t                    metadata_hash_hex_size);
+  size_t                    metadata_hash_hex_size,
+  cardano_plutus_data_t*    redeemer);
 
 /**
  * \brief Updates an existing DRep in the sub transaction.
@@ -1381,14 +1438,16 @@ CARDANO_EXPORT void cardano_sub_tx_builder_register_drep_ex(
  * \param[in] builder A pointer to the \ref cardano_sub_tx_builder_t instance managing the sub transaction.
  * \param[in] drep A pointer to the \ref cardano_drep_t instance representing the DRep to be updated.
  * \param[in] anchor An optional pointer to a \ref cardano_anchor_t instance pointing to the metadata of the DRep.
+ * \param[in] redeemer A pointer to the \ref cardano_plutus_data_t structure representing the redeemer for the PlutusV4 script (optional; can be NULL).
  *
  * Usage Example:
  * \code{.c}
  * cardano_sub_tx_builder_t* sub_tx_builder = ...;  // Initialized sub transaction builder
  * cardano_drep_t* drep = ...;                      // DRep object to update
  * cardano_anchor_t* anchor = ...;                  // Optional anchor
+ * cardano_plutus_data_t* redeemer = ...;           // Optional redeemer for the PlutusV4 script
  *
- * cardano_sub_tx_builder_update_drep(sub_tx_builder, drep, anchor);
+ * cardano_sub_tx_builder_update_drep(sub_tx_builder, drep, anchor, redeemer);
  * \endcode
  *
  * \note Any errors related to updating the DRep will be deferred until `cardano_sub_tx_builder_build` is called.
@@ -1396,7 +1455,8 @@ CARDANO_EXPORT void cardano_sub_tx_builder_register_drep_ex(
 CARDANO_EXPORT void cardano_sub_tx_builder_update_drep(
   cardano_sub_tx_builder_t* builder,
   cardano_drep_t*           drep,
-  cardano_anchor_t*         anchor);
+  cardano_anchor_t*         anchor,
+  cardano_plutus_data_t*    redeemer);
 
 /**
  * \brief Updates an existing DRep in the sub transaction by ID.
@@ -1411,6 +1471,7 @@ CARDANO_EXPORT void cardano_sub_tx_builder_update_drep(
  * \param[in] metadata_url_size The size of the `metadata_url` string.
  * \param[in] metadata_hash_hex The hash of the DRep metadata file in hexadecimal format.
  * \param[in] metadata_hash_hex_size The size of the `metadata_hash_hex` string.
+ * \param[in] redeemer A pointer to the \ref cardano_plutus_data_t structure representing the redeemer for the PlutusV4 script (optional; can be NULL).
  *
  * Usage Example:
  * \code{.c}
@@ -1421,6 +1482,7 @@ CARDANO_EXPORT void cardano_sub_tx_builder_update_drep(
  * size_t metadata_url_size = strlen(metadata_url);
  * const char* metadata_hash_hex = "abcdef123456...";  // Hex-encoded hash of metadata file
  * size_t metadata_hash_hex_size = strlen(metadata_hash_hex);
+ * cardano_plutus_data_t* redeemer = ...;              // Optional redeemer for the PlutusV4 script
  *
  * cardano_sub_tx_builder_update_drep_ex(
  *   sub_tx_builder,
@@ -1442,7 +1504,8 @@ CARDANO_EXPORT void cardano_sub_tx_builder_update_drep_ex(
   const char*               metadata_url,
   size_t                    metadata_url_size,
   const char*               metadata_hash_hex,
-  size_t                    metadata_hash_hex_size);
+  size_t                    metadata_hash_hex_size,
+  cardano_plutus_data_t*    redeemer);
 
 /**
  * \brief Deregisters an existing DRep.
@@ -1452,20 +1515,23 @@ CARDANO_EXPORT void cardano_sub_tx_builder_update_drep_ex(
  *
  * \param[in] builder A pointer to the \ref cardano_sub_tx_builder_t instance managing the sub transaction.
  * \param[in] drep A pointer to the \ref cardano_drep_t instance representing the DRep to deregister.
+ * \param[in] redeemer A pointer to the \ref cardano_plutus_data_t structure representing the redeemer for the PlutusV4 script (optional; can be NULL).
  *
  * Usage Example:
  * \code{.c}
  * cardano_sub_tx_builder_t* sub_tx_builder = ...;  // Initialized sub transaction builder
  * cardano_drep_t* drep = ...;                      // DRep to deregister
+ * cardano_plutus_data_t* redeemer = ...;           // Optional redeemer for the PlutusV4 script
  *
- * cardano_sub_tx_builder_deregister_drep(sub_tx_builder, drep);
+ * cardano_sub_tx_builder_deregister_drep(sub_tx_builder, drep, redeemer);
  * \endcode
  *
  * \note Errors related to deregistering the DRep will be deferred until `cardano_sub_tx_builder_build` is called.
  */
 CARDANO_EXPORT void cardano_sub_tx_builder_deregister_drep(
   cardano_sub_tx_builder_t* builder,
-  cardano_drep_t*           drep);
+  cardano_drep_t*           drep,
+  cardano_plutus_data_t*    redeemer);
 
 /**
  * \brief Deregisters an existing DRep by ID.
@@ -1476,14 +1542,16 @@ CARDANO_EXPORT void cardano_sub_tx_builder_deregister_drep(
  * \param[in] builder A pointer to the \ref cardano_sub_tx_builder_t instance managing the sub transaction.
  * \param[in] drep_id A pointer to a character array containing the DRep ID in bech32 format (either CIP-105 or CIP-129).
  * \param[in] drep_id_size The size of the `drep_id` string.
+ * \param[in] redeemer A pointer to the \ref cardano_plutus_data_t structure representing the redeemer for the PlutusV4 script (optional; can be NULL).
  *
  * Usage Example:
  * \code{.c}
  * cardano_sub_tx_builder_t* sub_tx_builder = ...;  // Initialized sub transaction builder
  * const char* drep_id = "drep1q...";               // DRep ID in CIP-105 format
  * size_t drep_id_size = strlen(drep_id);
+ * cardano_plutus_data_t* redeemer = ...;           // Optional redeemer for the PlutusV4 script
  *
- * cardano_sub_tx_builder_deregister_drep_ex(sub_tx_builder, drep_id, drep_id_size);
+ * cardano_sub_tx_builder_deregister_drep_ex(sub_tx_builder, drep_id, drep_id_size, redeemer);
  * \endcode
  *
  * \note The `drep_id` must be in bech32 format as specified by either CIP-105 or CIP-129, which differ in their internal binary encoding.
@@ -1492,18 +1560,21 @@ CARDANO_EXPORT void cardano_sub_tx_builder_deregister_drep(
 CARDANO_EXPORT void cardano_sub_tx_builder_deregister_drep_ex(
   cardano_sub_tx_builder_t* builder,
   const char*               drep_id,
-  size_t                    drep_id_size);
+  size_t                    drep_id_size,
+  cardano_plutus_data_t*    redeemer);
 
 /**
  * \brief Registers a vote for a specified governance action within the sub transaction.
  *
- * This function allows a voter to submit their vote for a given governance action. The voter must be identified by
- * a key or by a native script, since the vote functions of this builder take no redeemer.
+ * This function allows a voter to submit their vote for a given governance action. A voter identified by a key or by
+ * a native script needs no redeemer. A voter identified by a PlutusV4 script needs a redeemer, evaluated natively
+ * when the sub transaction is built.
  *
  * \param[in] builder A pointer to the \ref cardano_sub_tx_builder_t instance managing the sub transaction.
  * \param[in] voter A pointer to a \ref cardano_voter_t structure representing the voter participating in the governance action.
  * \param[in] action_id A pointer to a \ref cardano_governance_action_id_t identifying the governance action being voted on.
  * \param[in] vote A pointer to a \ref cardano_voting_procedure_t defining the voting procedure and choice.
+ * \param[in] redeemer A pointer to the \ref cardano_plutus_data_t structure representing the redeemer for the PlutusV4 script (optional; can be NULL).
  *
  * Usage Example:
  * \code{.c}
@@ -1511,8 +1582,9 @@ CARDANO_EXPORT void cardano_sub_tx_builder_deregister_drep_ex(
  * cardano_voter_t* voter = ...;                         // Voter information
  * cardano_governance_action_id_t* action_id = ...;      // Governance action ID
  * cardano_voting_procedure_t* vote = ...;               // Voting procedure with choice
+ * cardano_plutus_data_t* redeemer = ...;                // Optional redeemer for the PlutusV4 script
  *
- * cardano_sub_tx_builder_vote(sub_tx_builder, voter, action_id, vote);
+ * cardano_sub_tx_builder_vote(sub_tx_builder, voter, action_id, vote, redeemer);
  * \endcode
  *
  * \note Errors related to the voting operation will be deferred until `cardano_sub_tx_builder_build` is called.
@@ -1521,32 +1593,36 @@ CARDANO_EXPORT void cardano_sub_tx_builder_vote(
   cardano_sub_tx_builder_t*       builder,
   cardano_voter_t*                voter,
   cardano_governance_action_id_t* action_id,
-  cardano_voting_procedure_t*     vote);
+  cardano_voting_procedure_t*     vote,
+  cardano_plutus_data_t*          redeemer);
 
 /**
  * \brief Adds a certificate to the sub transaction.
  *
  * This function adds a specified certificate to the sub transaction being constructed. Certificates are used to perform
- * various actions on the blockchain, such as staking, delegating, or registering/deregistering entities. The
- * credential the certificate acts on must be a key or a native script, since the certificate functions of this
- * builder take no redeemer.
+ * various actions on the blockchain, such as staking, delegating, or registering/deregistering entities. A
+ * certificate whose credential is a key or a native script needs no redeemer. One whose credential is a PlutusV4
+ * script needs a redeemer, evaluated natively when the sub transaction is built.
  *
  * \param[in] builder A pointer to the \ref cardano_sub_tx_builder_t instance managing the sub transaction.
  * \param[in] certificate A pointer to a \ref cardano_certificate_t structure representing the certificate to add.
+ * \param[in] redeemer A pointer to the \ref cardano_plutus_data_t structure representing the redeemer for the PlutusV4 script (optional; can be NULL).
  *
  * Usage Example:
  * \code{.c}
  * cardano_sub_tx_builder_t* sub_tx_builder = ...;  // Initialized sub transaction builder
  * cardano_certificate_t* certificate = ...;        // Certificate to add
+ * cardano_plutus_data_t* redeemer = ...;           // Optional redeemer for the PlutusV4 script
  *
- * cardano_sub_tx_builder_add_certificate(sub_tx_builder, certificate);
+ * cardano_sub_tx_builder_add_certificate(sub_tx_builder, certificate, redeemer);
  * \endcode
  *
  * \note Errors related to the certificate addition will be deferred until `cardano_sub_tx_builder_build` is called.
  */
 CARDANO_EXPORT void cardano_sub_tx_builder_add_certificate(
   cardano_sub_tx_builder_t* builder,
-  cardano_certificate_t*    certificate);
+  cardano_certificate_t*    certificate,
+  cardano_plutus_data_t*    redeemer);
 
 /**
  * \brief Proposes a hard fork within a sub transaction.
@@ -1989,16 +2065,21 @@ CARDANO_EXPORT void cardano_sub_tx_builder_propose_info_ex(
  * the outputs that were added, and the difference is the intent a batcher matches against the rest of the batch.
  * If any of the previous operations failed, this function reports the first error that was recorded.
  *
- * When the sub transaction carries spend or guarding redeemers, this function sets the index of every spend redeemer
- * to the position of its input in the sorted inputs, evaluates the redeemers natively against the UTXOs added as
- * inputs and reference inputs, writes the computed execution units into the redeemers and sets the script data hash
- * of the sub transaction. Building fails with \ref CARDANO_ERROR_ELEMENT_NOT_FOUND when no Plutus script with the
- * hash of a guard or of the payment credential of a spent input is added with `cardano_sub_tx_builder_add_script`
- * or carried as a reference script by one of those UTXOs, with \ref CARDANO_ERROR_INVALID_SCRIPT_LANGUAGE when that
- * script is a PlutusV1, PlutusV2 or PlutusV3 script, with \ref CARDANO_ERROR_DECODING when a script cannot be deserialized, and with
+ * When the sub transaction carries redeemers, this function sets the index of every spend redeemer to the position
+ * of its input in the sorted inputs, evaluates the redeemers natively against the UTXOs added as inputs and
+ * reference inputs, writes the computed execution units into the redeemers and sets the script data hash of the sub
+ * transaction. The indices of the mint, withdrawal, certificate, vote and guard redeemers are local to the sub
+ * transaction body. Building fails with \ref CARDANO_ERROR_ELEMENT_NOT_FOUND when no Plutus script with the hash of
+ * a guard, of the payment credential of a spent input, of a minting policy, of a withdrawing account, of a
+ * certificate credential or of a voter is added with `cardano_sub_tx_builder_add_script` or carried as a reference
+ * script by one of those UTXOs, with \ref CARDANO_ERROR_INVALID_SCRIPT_LANGUAGE when that script is a PlutusV1,
+ * PlutusV2 or PlutusV3 script, with \ref CARDANO_ERROR_DECODING when a script cannot be deserialized, and with
  * \ref CARDANO_ERROR_SCRIPT_EVALUATION_FAILURE when a script fails phase-2 validation. The message of the failure is
  * available through \ref cardano_sub_tx_builder_get_last_error.
-
+ *
+ * An input locked by a datum hash whose datum was not provided to `cardano_sub_tx_builder_add_input` makes this
+ * function fail with \ref CARDANO_ERROR_ELEMENT_NOT_FOUND.
+ *
  * \param[in] builder A pointer to the \ref cardano_sub_tx_builder_t instance that manages the sub transaction details.
  * \param[out] sub_transaction A pointer to a \ref cardano_sub_transaction_t pointer where the created sub transaction
  *                             will be stored upon success.

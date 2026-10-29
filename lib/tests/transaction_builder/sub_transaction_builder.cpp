@@ -28,6 +28,7 @@
 #include "../../src/transaction_builder/internals/builder_state.h"
 #include <allocators.h>
 #include <cardano/address/enterprise_address.h>
+#include <cardano/certs/unregistration_cert.h>
 #include <cardano/common/datum.h>
 #include <cardano/proposal_procedures/hard_fork_initiation_action.h>
 #include <cardano/transaction_body/account_balance_intervals_map.h>
@@ -2112,7 +2113,7 @@ TEST(cardano_sub_tx_builder_set_metadata_ex, canSetMetadata)
 
 TEST(cardano_sub_tx_builder_mint_token, doesntCrashIfGivenNull)
 {
-  cardano_sub_tx_builder_mint_token(nullptr, nullptr, nullptr, 0);
+  cardano_sub_tx_builder_mint_token(nullptr, nullptr, nullptr, 0, nullptr);
 }
 
 TEST(cardano_sub_tx_builder_mint_token, returnsErrorIfPolicyIdOrNameIsNull)
@@ -2128,8 +2129,8 @@ TEST(cardano_sub_tx_builder_mint_token, returnsErrorIfPolicyIdOrNameIsNull)
   EXPECT_EQ(cardano_blake2b_hash_from_hex(HASH_HEX, strlen(HASH_HEX), &policy_id), CARDANO_SUCCESS);
 
   // Act
-  cardano_sub_tx_builder_mint_token(policy_builder, nullptr, asset_name, 4);
-  cardano_sub_tx_builder_mint_token(name_builder, policy_id, nullptr, 4);
+  cardano_sub_tx_builder_mint_token(policy_builder, nullptr, asset_name, 4, nullptr);
+  cardano_sub_tx_builder_mint_token(name_builder, policy_id, nullptr, 4, nullptr);
 
   // Assert
   EXPECT_EQ(policy_builder->last_error, CARDANO_ERROR_POINTER_IS_NULL);
@@ -2155,7 +2156,7 @@ TEST(cardano_sub_tx_builder_mint_token, canMintToken)
   EXPECT_EQ(cardano_blake2b_hash_from_hex(HASH_HEX, strlen(HASH_HEX), &policy_id), CARDANO_SUCCESS);
 
   // Act
-  cardano_sub_tx_builder_mint_token(builder, policy_id, asset_name, 4);
+  cardano_sub_tx_builder_mint_token(builder, policy_id, asset_name, 4, nullptr);
 
   cardano_sub_transaction_t* sub_tx   = build_sub_transaction(builder);
   char*                      body_hex = encode_body(sub_tx);
@@ -2207,7 +2208,7 @@ TEST(cardano_sub_tx_builder_mint_token, returnsErrorIfMemoryAllocationFails)
     set_malloc_limit(i);
     cardano_set_allocators(fail_malloc_at_limit, realloc, free);
 
-    cardano_sub_tx_builder_mint_token(builder, policy_id, asset_name, 4);
+    cardano_sub_tx_builder_mint_token(builder, policy_id, asset_name, 4, nullptr);
 
     reset_allocators_run_count();
     reset_limited_malloc();
@@ -2231,7 +2232,7 @@ TEST(cardano_sub_tx_builder_mint_token, returnsErrorIfMemoryAllocationFails)
 
 TEST(cardano_sub_tx_builder_mint_token_ex, doesntCrashIfGivenNull)
 {
-  cardano_sub_tx_builder_mint_token_ex(nullptr, nullptr, 0, nullptr, 0, 0);
+  cardano_sub_tx_builder_mint_token_ex(nullptr, nullptr, 0, nullptr, 0, 0, nullptr);
 }
 
 TEST(cardano_sub_tx_builder_mint_token_ex, reportsInvalidPolicyIdWhenBuilding)
@@ -2242,7 +2243,7 @@ TEST(cardano_sub_tx_builder_mint_token_ex, reportsInvalidPolicyIdWhenBuilding)
   cardano_sub_transaction_t*     sub_tx  = nullptr;
 
   // Act
-  cardano_sub_tx_builder_mint_token_ex(builder, "abc", 3, ASSET_NAME_HEX, strlen(ASSET_NAME_HEX), 4);
+  cardano_sub_tx_builder_mint_token_ex(builder, "abc", 3, ASSET_NAME_HEX, strlen(ASSET_NAME_HEX), 4, nullptr);
 
   const cardano_error_t result = cardano_sub_tx_builder_build(builder, &sub_tx);
 
@@ -2262,7 +2263,7 @@ TEST(cardano_sub_tx_builder_mint_token_ex, canMintToken)
   cardano_sub_tx_builder_t*      builder = cardano_sub_tx_builder_new(params, &CARDANO_MAINNET_SLOT_CONFIG);
 
   // Act
-  cardano_sub_tx_builder_mint_token_ex(builder, HASH_HEX, strlen(HASH_HEX), ASSET_NAME_HEX, strlen(ASSET_NAME_HEX), 4);
+  cardano_sub_tx_builder_mint_token_ex(builder, HASH_HEX, strlen(HASH_HEX), ASSET_NAME_HEX, strlen(ASSET_NAME_HEX), 4, nullptr);
 
   char* body_hex = build_and_encode_body(builder);
 
@@ -2277,7 +2278,7 @@ TEST(cardano_sub_tx_builder_mint_token_ex, canMintToken)
 
 TEST(cardano_sub_tx_builder_mint_token_with_id, doesntCrashIfGivenNull)
 {
-  cardano_sub_tx_builder_mint_token_with_id(nullptr, nullptr, 0);
+  cardano_sub_tx_builder_mint_token_with_id(nullptr, nullptr, 0, nullptr);
 }
 
 TEST(cardano_sub_tx_builder_mint_token_with_id, returnsErrorIfAssetIdIsNull)
@@ -2287,7 +2288,7 @@ TEST(cardano_sub_tx_builder_mint_token_with_id, returnsErrorIfAssetIdIsNull)
   cardano_sub_tx_builder_t*      builder = cardano_sub_tx_builder_new(params, &CARDANO_MAINNET_SLOT_CONFIG);
 
   // Act
-  cardano_sub_tx_builder_mint_token_with_id(builder, nullptr, 4);
+  cardano_sub_tx_builder_mint_token_with_id(builder, nullptr, 4, nullptr);
 
   // Assert
   EXPECT_EQ(builder->last_error, CARDANO_ERROR_POINTER_IS_NULL);
@@ -2307,7 +2308,7 @@ TEST(cardano_sub_tx_builder_mint_token_with_id, canMintToken)
   EXPECT_EQ(cardano_asset_id_from_hex(ASSET_ID_HEX, strlen(ASSET_ID_HEX), &asset_id), CARDANO_SUCCESS);
 
   // Act
-  cardano_sub_tx_builder_mint_token_with_id(builder, asset_id, 4);
+  cardano_sub_tx_builder_mint_token_with_id(builder, asset_id, 4, nullptr);
 
   char* body_hex = build_and_encode_body(builder);
 
@@ -2323,7 +2324,7 @@ TEST(cardano_sub_tx_builder_mint_token_with_id, canMintToken)
 
 TEST(cardano_sub_tx_builder_mint_token_with_id_ex, doesntCrashIfGivenNull)
 {
-  cardano_sub_tx_builder_mint_token_with_id_ex(nullptr, nullptr, 0, 0);
+  cardano_sub_tx_builder_mint_token_with_id_ex(nullptr, nullptr, 0, 0, nullptr);
 }
 
 TEST(cardano_sub_tx_builder_mint_token_with_id_ex, reportsInvalidAssetIdWhenBuilding)
@@ -2334,7 +2335,7 @@ TEST(cardano_sub_tx_builder_mint_token_with_id_ex, reportsInvalidAssetIdWhenBuil
   cardano_sub_transaction_t*     sub_tx  = nullptr;
 
   // Act
-  cardano_sub_tx_builder_mint_token_with_id_ex(builder, "abc", 3, 4);
+  cardano_sub_tx_builder_mint_token_with_id_ex(builder, "abc", 3, 4, nullptr);
 
   const cardano_error_t result = cardano_sub_tx_builder_build(builder, &sub_tx);
 
@@ -2354,7 +2355,7 @@ TEST(cardano_sub_tx_builder_mint_token_with_id_ex, canMintToken)
   cardano_sub_tx_builder_t*      builder = cardano_sub_tx_builder_new(params, &CARDANO_MAINNET_SLOT_CONFIG);
 
   // Act
-  cardano_sub_tx_builder_mint_token_with_id_ex(builder, ASSET_ID_HEX, strlen(ASSET_ID_HEX), 4);
+  cardano_sub_tx_builder_mint_token_with_id_ex(builder, ASSET_ID_HEX, strlen(ASSET_ID_HEX), 4, nullptr);
 
   char* body_hex = build_and_encode_body(builder);
 
@@ -3761,7 +3762,7 @@ TEST(cardano_sub_tx_builder_add_account_balance_interval_ex, canAddAccountBalanc
 
 TEST(cardano_sub_tx_builder_withdraw_rewards, doesntCrashIfGivenNull)
 {
-  cardano_sub_tx_builder_withdraw_rewards(nullptr, nullptr, 0);
+  cardano_sub_tx_builder_withdraw_rewards(nullptr, nullptr, 0, nullptr);
 }
 
 TEST(cardano_sub_tx_builder_withdraw_rewards, returnsErrorIfAddressIsNull)
@@ -3771,7 +3772,7 @@ TEST(cardano_sub_tx_builder_withdraw_rewards, returnsErrorIfAddressIsNull)
   cardano_sub_tx_builder_t*      builder = cardano_sub_tx_builder_new(params, &CARDANO_MAINNET_SLOT_CONFIG);
 
   // Act
-  cardano_sub_tx_builder_withdraw_rewards(builder, nullptr, 2532145);
+  cardano_sub_tx_builder_withdraw_rewards(builder, nullptr, 2532145, nullptr);
 
   // Assert
   EXPECT_EQ(builder->last_error, CARDANO_ERROR_POINTER_IS_NULL);
@@ -3789,7 +3790,7 @@ TEST(cardano_sub_tx_builder_withdraw_rewards, returnsErrorIfAmountIsNegative)
   cardano_reward_address_t*      reward_address = create_reward_address(REWARD_ADDRESS);
 
   // Act
-  cardano_sub_tx_builder_withdraw_rewards(builder, reward_address, -1);
+  cardano_sub_tx_builder_withdraw_rewards(builder, reward_address, -1, nullptr);
 
   // Assert
   EXPECT_EQ(builder->last_error, CARDANO_ERROR_INVALID_ARGUMENT);
@@ -3808,7 +3809,7 @@ TEST(cardano_sub_tx_builder_withdraw_rewards, canWithdrawRewards)
   cardano_reward_address_t*      reward_address = create_reward_address(REWARD_ADDRESS);
 
   // Act
-  cardano_sub_tx_builder_withdraw_rewards(builder, reward_address, 2532145);
+  cardano_sub_tx_builder_withdraw_rewards(builder, reward_address, 2532145, nullptr);
 
   cardano_sub_transaction_t* sub_tx   = build_sub_transaction(builder);
   char*                      body_hex = encode_body(sub_tx);
@@ -3846,7 +3847,7 @@ TEST(cardano_sub_tx_builder_withdraw_rewards, keepsTheFirstErrorIfBuilderIsInErr
   record_first_error(builder);
 
   // Act
-  cardano_sub_tx_builder_withdraw_rewards(builder, reward_address, 2532145);
+  cardano_sub_tx_builder_withdraw_rewards(builder, reward_address, 2532145, nullptr);
 
   const cardano_error_t result = cardano_sub_tx_builder_build(builder, &sub_tx);
 
@@ -3879,7 +3880,7 @@ TEST(cardano_sub_tx_builder_withdraw_rewards, returnsErrorIfMemoryAllocationFail
     set_malloc_limit(i);
     cardano_set_allocators(fail_malloc_at_limit, realloc, free);
 
-    cardano_sub_tx_builder_withdraw_rewards(builder, reward_address, 2532145);
+    cardano_sub_tx_builder_withdraw_rewards(builder, reward_address, 2532145, nullptr);
 
     reset_allocators_run_count();
     reset_limited_malloc();
@@ -3906,7 +3907,7 @@ TEST(cardano_sub_tx_builder_withdraw_rewards, returnsErrorIfMemoryAllocationFail
 
 TEST(cardano_sub_tx_builder_withdraw_rewards_ex, doesntCrashIfGivenNull)
 {
-  cardano_sub_tx_builder_withdraw_rewards_ex(nullptr, nullptr, 0, 0);
+  cardano_sub_tx_builder_withdraw_rewards_ex(nullptr, nullptr, 0, 0, nullptr);
 }
 
 TEST(cardano_sub_tx_builder_withdraw_rewards_ex, returnsErrorIfRewardAddressIsNull)
@@ -3916,7 +3917,7 @@ TEST(cardano_sub_tx_builder_withdraw_rewards_ex, returnsErrorIfRewardAddressIsNu
   cardano_sub_tx_builder_t*      builder = cardano_sub_tx_builder_new(params, &CARDANO_MAINNET_SLOT_CONFIG);
 
   // Act
-  cardano_sub_tx_builder_withdraw_rewards_ex(builder, nullptr, 0, 2532145);
+  cardano_sub_tx_builder_withdraw_rewards_ex(builder, nullptr, 0, 2532145, nullptr);
 
   // Assert
   EXPECT_EQ(builder->last_error, CARDANO_ERROR_POINTER_IS_NULL);
@@ -3933,7 +3934,7 @@ TEST(cardano_sub_tx_builder_withdraw_rewards_ex, canWithdrawRewards)
   cardano_sub_tx_builder_t*      builder = cardano_sub_tx_builder_new(params, &CARDANO_MAINNET_SLOT_CONFIG);
 
   // Act
-  cardano_sub_tx_builder_withdraw_rewards_ex(builder, REWARD_ADDRESS, strlen(REWARD_ADDRESS), 2532145);
+  cardano_sub_tx_builder_withdraw_rewards_ex(builder, REWARD_ADDRESS, strlen(REWARD_ADDRESS), 2532145, nullptr);
 
   cardano_sub_transaction_t* sub_tx   = build_sub_transaction(builder);
   char*                      body_hex = encode_body(sub_tx);
@@ -3969,7 +3970,7 @@ TEST(cardano_sub_tx_builder_withdraw_rewards_ex, keepsTheFirstErrorIfBuilderIsIn
   record_first_error(builder);
 
   // Act
-  cardano_sub_tx_builder_withdraw_rewards_ex(builder, REWARD_ADDRESS, strlen(REWARD_ADDRESS), 2532145);
+  cardano_sub_tx_builder_withdraw_rewards_ex(builder, REWARD_ADDRESS, strlen(REWARD_ADDRESS), 2532145, nullptr);
 
   const cardano_error_t result = cardano_sub_tx_builder_build(builder, &sub_tx);
 
@@ -3992,7 +3993,7 @@ TEST(cardano_sub_tx_builder_withdraw_rewards_ex, reportsInvalidRewardAddressWhen
   cardano_sub_transaction_t*     sub_tx  = nullptr;
 
   // Act
-  cardano_sub_tx_builder_withdraw_rewards_ex(builder, "invalid", strlen("invalid"), 2532145);
+  cardano_sub_tx_builder_withdraw_rewards_ex(builder, "invalid", strlen("invalid"), 2532145, nullptr);
 
   const cardano_error_t result = cardano_sub_tx_builder_build(builder, &sub_tx);
 
@@ -4022,7 +4023,7 @@ TEST(cardano_sub_tx_builder_withdraw_rewards_ex, returnsErrorIfMemoryAllocationF
     set_malloc_limit(i);
     cardano_set_allocators(fail_malloc_at_limit, realloc, free);
 
-    cardano_sub_tx_builder_withdraw_rewards_ex(builder, REWARD_ADDRESS, strlen(REWARD_ADDRESS), 2532145);
+    cardano_sub_tx_builder_withdraw_rewards_ex(builder, REWARD_ADDRESS, strlen(REWARD_ADDRESS), 2532145, nullptr);
 
     reset_allocators_run_count();
     reset_limited_malloc();
@@ -4044,7 +4045,7 @@ TEST(cardano_sub_tx_builder_withdraw_rewards_ex, returnsErrorIfMemoryAllocationF
 
 TEST(cardano_sub_tx_builder_register_reward_address, doesntCrashIfGivenNull)
 {
-  cardano_sub_tx_builder_register_reward_address(nullptr, nullptr);
+  cardano_sub_tx_builder_register_reward_address(nullptr, nullptr, nullptr);
 }
 
 TEST(cardano_sub_tx_builder_register_reward_address, returnsErrorIfAddressIsNull)
@@ -4054,7 +4055,7 @@ TEST(cardano_sub_tx_builder_register_reward_address, returnsErrorIfAddressIsNull
   cardano_sub_tx_builder_t*      builder = cardano_sub_tx_builder_new(params, &CARDANO_MAINNET_SLOT_CONFIG);
 
   // Act
-  cardano_sub_tx_builder_register_reward_address(builder, nullptr);
+  cardano_sub_tx_builder_register_reward_address(builder, nullptr, nullptr);
 
   // Assert
   EXPECT_EQ(builder->last_error, CARDANO_ERROR_POINTER_IS_NULL);
@@ -4072,7 +4073,7 @@ TEST(cardano_sub_tx_builder_register_reward_address, canRegisterRewardAddress)
   cardano_reward_address_t*      reward_address = create_reward_address(REWARD_ADDRESS);
 
   // Act
-  cardano_sub_tx_builder_register_reward_address(builder, reward_address);
+  cardano_sub_tx_builder_register_reward_address(builder, reward_address, nullptr);
 
   cardano_sub_transaction_t* sub_tx   = build_sub_transaction(builder);
   char*                      body_hex = encode_body(sub_tx);
@@ -4104,7 +4105,7 @@ TEST(cardano_sub_tx_builder_register_reward_address, keepsTheFirstErrorIfBuilder
   record_first_error(builder);
 
   // Act
-  cardano_sub_tx_builder_register_reward_address(builder, reward_address);
+  cardano_sub_tx_builder_register_reward_address(builder, reward_address, nullptr);
 
   const cardano_error_t result = cardano_sub_tx_builder_build(builder, &sub_tx);
 
@@ -4137,7 +4138,7 @@ TEST(cardano_sub_tx_builder_register_reward_address, returnsErrorIfMemoryAllocat
     set_malloc_limit(i);
     cardano_set_allocators(fail_malloc_at_limit, realloc, free);
 
-    cardano_sub_tx_builder_register_reward_address(builder, reward_address);
+    cardano_sub_tx_builder_register_reward_address(builder, reward_address, nullptr);
 
     reset_allocators_run_count();
     reset_limited_malloc();
@@ -4164,7 +4165,7 @@ TEST(cardano_sub_tx_builder_register_reward_address, returnsErrorIfMemoryAllocat
 
 TEST(cardano_sub_tx_builder_register_reward_address_ex, doesntCrashIfGivenNull)
 {
-  cardano_sub_tx_builder_register_reward_address_ex(nullptr, nullptr, 0);
+  cardano_sub_tx_builder_register_reward_address_ex(nullptr, nullptr, 0, nullptr);
 }
 
 TEST(cardano_sub_tx_builder_register_reward_address_ex, returnsErrorIfRewardAddressIsNull)
@@ -4174,7 +4175,7 @@ TEST(cardano_sub_tx_builder_register_reward_address_ex, returnsErrorIfRewardAddr
   cardano_sub_tx_builder_t*      builder = cardano_sub_tx_builder_new(params, &CARDANO_MAINNET_SLOT_CONFIG);
 
   // Act
-  cardano_sub_tx_builder_register_reward_address_ex(builder, nullptr, 0);
+  cardano_sub_tx_builder_register_reward_address_ex(builder, nullptr, 0, nullptr);
 
   // Assert
   EXPECT_EQ(builder->last_error, CARDANO_ERROR_POINTER_IS_NULL);
@@ -4191,7 +4192,7 @@ TEST(cardano_sub_tx_builder_register_reward_address_ex, canRegisterRewardAddress
   cardano_sub_tx_builder_t*      builder = cardano_sub_tx_builder_new(params, &CARDANO_MAINNET_SLOT_CONFIG);
 
   // Act
-  cardano_sub_tx_builder_register_reward_address_ex(builder, REWARD_ADDRESS, strlen(REWARD_ADDRESS));
+  cardano_sub_tx_builder_register_reward_address_ex(builder, REWARD_ADDRESS, strlen(REWARD_ADDRESS), nullptr);
 
   cardano_sub_transaction_t* sub_tx   = build_sub_transaction(builder);
   char*                      body_hex = encode_body(sub_tx);
@@ -4221,7 +4222,7 @@ TEST(cardano_sub_tx_builder_register_reward_address_ex, keepsTheFirstErrorIfBuil
   record_first_error(builder);
 
   // Act
-  cardano_sub_tx_builder_register_reward_address_ex(builder, REWARD_ADDRESS, strlen(REWARD_ADDRESS));
+  cardano_sub_tx_builder_register_reward_address_ex(builder, REWARD_ADDRESS, strlen(REWARD_ADDRESS), nullptr);
 
   const cardano_error_t result = cardano_sub_tx_builder_build(builder, &sub_tx);
 
@@ -4244,7 +4245,7 @@ TEST(cardano_sub_tx_builder_register_reward_address_ex, reportsInvalidRewardAddr
   cardano_sub_transaction_t*     sub_tx  = nullptr;
 
   // Act
-  cardano_sub_tx_builder_register_reward_address_ex(builder, "invalid", strlen("invalid"));
+  cardano_sub_tx_builder_register_reward_address_ex(builder, "invalid", strlen("invalid"), nullptr);
 
   const cardano_error_t result = cardano_sub_tx_builder_build(builder, &sub_tx);
 
@@ -4274,7 +4275,7 @@ TEST(cardano_sub_tx_builder_register_reward_address_ex, returnsErrorIfMemoryAllo
     set_malloc_limit(i);
     cardano_set_allocators(fail_malloc_at_limit, realloc, free);
 
-    cardano_sub_tx_builder_register_reward_address_ex(builder, REWARD_ADDRESS, strlen(REWARD_ADDRESS));
+    cardano_sub_tx_builder_register_reward_address_ex(builder, REWARD_ADDRESS, strlen(REWARD_ADDRESS), nullptr);
 
     reset_allocators_run_count();
     reset_limited_malloc();
@@ -4296,7 +4297,7 @@ TEST(cardano_sub_tx_builder_register_reward_address_ex, returnsErrorIfMemoryAllo
 
 TEST(cardano_sub_tx_builder_deregister_reward_address, doesntCrashIfGivenNull)
 {
-  cardano_sub_tx_builder_deregister_reward_address(nullptr, nullptr);
+  cardano_sub_tx_builder_deregister_reward_address(nullptr, nullptr, nullptr);
 }
 
 TEST(cardano_sub_tx_builder_deregister_reward_address, returnsErrorIfAddressIsNull)
@@ -4306,7 +4307,7 @@ TEST(cardano_sub_tx_builder_deregister_reward_address, returnsErrorIfAddressIsNu
   cardano_sub_tx_builder_t*      builder = cardano_sub_tx_builder_new(params, &CARDANO_MAINNET_SLOT_CONFIG);
 
   // Act
-  cardano_sub_tx_builder_deregister_reward_address(builder, nullptr);
+  cardano_sub_tx_builder_deregister_reward_address(builder, nullptr, nullptr);
 
   // Assert
   EXPECT_EQ(builder->last_error, CARDANO_ERROR_POINTER_IS_NULL);
@@ -4324,7 +4325,7 @@ TEST(cardano_sub_tx_builder_deregister_reward_address, canDeregisterRewardAddres
   cardano_reward_address_t*      reward_address = create_reward_address(REWARD_ADDRESS);
 
   // Act
-  cardano_sub_tx_builder_deregister_reward_address(builder, reward_address);
+  cardano_sub_tx_builder_deregister_reward_address(builder, reward_address, nullptr);
 
   cardano_sub_transaction_t* sub_tx   = build_sub_transaction(builder);
   char*                      body_hex = encode_body(sub_tx);
@@ -4356,7 +4357,7 @@ TEST(cardano_sub_tx_builder_deregister_reward_address, keepsTheFirstErrorIfBuild
   record_first_error(builder);
 
   // Act
-  cardano_sub_tx_builder_deregister_reward_address(builder, reward_address);
+  cardano_sub_tx_builder_deregister_reward_address(builder, reward_address, nullptr);
 
   const cardano_error_t result = cardano_sub_tx_builder_build(builder, &sub_tx);
 
@@ -4389,7 +4390,7 @@ TEST(cardano_sub_tx_builder_deregister_reward_address, returnsErrorIfMemoryAlloc
     set_malloc_limit(i);
     cardano_set_allocators(fail_malloc_at_limit, realloc, free);
 
-    cardano_sub_tx_builder_deregister_reward_address(builder, reward_address);
+    cardano_sub_tx_builder_deregister_reward_address(builder, reward_address, nullptr);
 
     reset_allocators_run_count();
     reset_limited_malloc();
@@ -4416,7 +4417,7 @@ TEST(cardano_sub_tx_builder_deregister_reward_address, returnsErrorIfMemoryAlloc
 
 TEST(cardano_sub_tx_builder_deregister_reward_address_ex, doesntCrashIfGivenNull)
 {
-  cardano_sub_tx_builder_deregister_reward_address_ex(nullptr, nullptr, 0);
+  cardano_sub_tx_builder_deregister_reward_address_ex(nullptr, nullptr, 0, nullptr);
 }
 
 TEST(cardano_sub_tx_builder_deregister_reward_address_ex, returnsErrorIfRewardAddressIsNull)
@@ -4426,7 +4427,7 @@ TEST(cardano_sub_tx_builder_deregister_reward_address_ex, returnsErrorIfRewardAd
   cardano_sub_tx_builder_t*      builder = cardano_sub_tx_builder_new(params, &CARDANO_MAINNET_SLOT_CONFIG);
 
   // Act
-  cardano_sub_tx_builder_deregister_reward_address_ex(builder, nullptr, 0);
+  cardano_sub_tx_builder_deregister_reward_address_ex(builder, nullptr, 0, nullptr);
 
   // Assert
   EXPECT_EQ(builder->last_error, CARDANO_ERROR_POINTER_IS_NULL);
@@ -4443,7 +4444,7 @@ TEST(cardano_sub_tx_builder_deregister_reward_address_ex, canDeregisterRewardAdd
   cardano_sub_tx_builder_t*      builder = cardano_sub_tx_builder_new(params, &CARDANO_MAINNET_SLOT_CONFIG);
 
   // Act
-  cardano_sub_tx_builder_deregister_reward_address_ex(builder, REWARD_ADDRESS, strlen(REWARD_ADDRESS));
+  cardano_sub_tx_builder_deregister_reward_address_ex(builder, REWARD_ADDRESS, strlen(REWARD_ADDRESS), nullptr);
 
   cardano_sub_transaction_t* sub_tx   = build_sub_transaction(builder);
   char*                      body_hex = encode_body(sub_tx);
@@ -4473,7 +4474,7 @@ TEST(cardano_sub_tx_builder_deregister_reward_address_ex, keepsTheFirstErrorIfBu
   record_first_error(builder);
 
   // Act
-  cardano_sub_tx_builder_deregister_reward_address_ex(builder, REWARD_ADDRESS, strlen(REWARD_ADDRESS));
+  cardano_sub_tx_builder_deregister_reward_address_ex(builder, REWARD_ADDRESS, strlen(REWARD_ADDRESS), nullptr);
 
   const cardano_error_t result = cardano_sub_tx_builder_build(builder, &sub_tx);
 
@@ -4496,7 +4497,7 @@ TEST(cardano_sub_tx_builder_deregister_reward_address_ex, reportsInvalidRewardAd
   cardano_sub_transaction_t*     sub_tx  = nullptr;
 
   // Act
-  cardano_sub_tx_builder_deregister_reward_address_ex(builder, "invalid", strlen("invalid"));
+  cardano_sub_tx_builder_deregister_reward_address_ex(builder, "invalid", strlen("invalid"), nullptr);
 
   const cardano_error_t result = cardano_sub_tx_builder_build(builder, &sub_tx);
 
@@ -4526,7 +4527,7 @@ TEST(cardano_sub_tx_builder_deregister_reward_address_ex, returnsErrorIfMemoryAl
     set_malloc_limit(i);
     cardano_set_allocators(fail_malloc_at_limit, realloc, free);
 
-    cardano_sub_tx_builder_deregister_reward_address_ex(builder, REWARD_ADDRESS, strlen(REWARD_ADDRESS));
+    cardano_sub_tx_builder_deregister_reward_address_ex(builder, REWARD_ADDRESS, strlen(REWARD_ADDRESS), nullptr);
 
     reset_allocators_run_count();
     reset_limited_malloc();
@@ -4548,7 +4549,7 @@ TEST(cardano_sub_tx_builder_deregister_reward_address_ex, returnsErrorIfMemoryAl
 
 TEST(cardano_sub_tx_builder_delegate_stake, doesntCrashIfGivenNull)
 {
-  cardano_sub_tx_builder_delegate_stake(nullptr, nullptr, nullptr);
+  cardano_sub_tx_builder_delegate_stake(nullptr, nullptr, nullptr, nullptr);
 }
 
 TEST(cardano_sub_tx_builder_delegate_stake, returnsErrorIfAddressOrPoolIdIsNull)
@@ -4561,8 +4562,8 @@ TEST(cardano_sub_tx_builder_delegate_stake, returnsErrorIfAddressOrPoolIdIsNull)
   cardano_blake2b_hash_t*        pool_id         = create_hash(POOL_ID_HEX);
 
   // Act
-  cardano_sub_tx_builder_delegate_stake(address_builder, nullptr, pool_id);
-  cardano_sub_tx_builder_delegate_stake(pool_id_builder, reward_address, nullptr);
+  cardano_sub_tx_builder_delegate_stake(address_builder, nullptr, pool_id, nullptr);
+  cardano_sub_tx_builder_delegate_stake(pool_id_builder, reward_address, nullptr, nullptr);
 
   // Assert
   EXPECT_EQ(address_builder->last_error, CARDANO_ERROR_POINTER_IS_NULL);
@@ -4585,7 +4586,7 @@ TEST(cardano_sub_tx_builder_delegate_stake, canDelegateStake)
   cardano_blake2b_hash_t*        pool_id        = create_hash(POOL_ID_HEX);
 
   // Act
-  cardano_sub_tx_builder_delegate_stake(builder, reward_address, pool_id);
+  cardano_sub_tx_builder_delegate_stake(builder, reward_address, pool_id, nullptr);
 
   cardano_sub_transaction_t* sub_tx   = build_sub_transaction(builder);
   char*                      body_hex = encode_body(sub_tx);
@@ -4619,7 +4620,7 @@ TEST(cardano_sub_tx_builder_delegate_stake, keepsTheFirstErrorIfBuilderIsInError
   record_first_error(builder);
 
   // Act
-  cardano_sub_tx_builder_delegate_stake(builder, reward_address, pool_id);
+  cardano_sub_tx_builder_delegate_stake(builder, reward_address, pool_id, nullptr);
 
   const cardano_error_t result = cardano_sub_tx_builder_build(builder, &sub_tx);
 
@@ -4654,7 +4655,7 @@ TEST(cardano_sub_tx_builder_delegate_stake, returnsErrorIfMemoryAllocationFails)
     set_malloc_limit(i);
     cardano_set_allocators(fail_malloc_at_limit, realloc, free);
 
-    cardano_sub_tx_builder_delegate_stake(builder, reward_address, pool_id);
+    cardano_sub_tx_builder_delegate_stake(builder, reward_address, pool_id, nullptr);
 
     reset_allocators_run_count();
     reset_limited_malloc();
@@ -4682,7 +4683,7 @@ TEST(cardano_sub_tx_builder_delegate_stake, returnsErrorIfMemoryAllocationFails)
 
 TEST(cardano_sub_tx_builder_delegate_stake_ex, doesntCrashIfGivenNull)
 {
-  cardano_sub_tx_builder_delegate_stake_ex(nullptr, nullptr, 0, nullptr, 0);
+  cardano_sub_tx_builder_delegate_stake_ex(nullptr, nullptr, 0, nullptr, 0, nullptr);
 }
 
 TEST(cardano_sub_tx_builder_delegate_stake_ex, returnsErrorIfRewardAddressOrPoolIdIsNull)
@@ -4693,8 +4694,8 @@ TEST(cardano_sub_tx_builder_delegate_stake_ex, returnsErrorIfRewardAddressOrPool
   cardano_sub_tx_builder_t*      pool_id_builder = cardano_sub_tx_builder_new(params, &CARDANO_MAINNET_SLOT_CONFIG);
 
   // Act
-  cardano_sub_tx_builder_delegate_stake_ex(address_builder, nullptr, 0, POOL_ID, strlen(POOL_ID));
-  cardano_sub_tx_builder_delegate_stake_ex(pool_id_builder, REWARD_ADDRESS, strlen(REWARD_ADDRESS), nullptr, 0);
+  cardano_sub_tx_builder_delegate_stake_ex(address_builder, nullptr, 0, POOL_ID, strlen(POOL_ID), nullptr);
+  cardano_sub_tx_builder_delegate_stake_ex(pool_id_builder, REWARD_ADDRESS, strlen(REWARD_ADDRESS), nullptr, 0, nullptr);
 
   // Assert
   EXPECT_EQ(address_builder->last_error, CARDANO_ERROR_POINTER_IS_NULL);
@@ -4713,7 +4714,7 @@ TEST(cardano_sub_tx_builder_delegate_stake_ex, canDelegateStake)
   cardano_sub_tx_builder_t*      builder = cardano_sub_tx_builder_new(params, &CARDANO_MAINNET_SLOT_CONFIG);
 
   // Act
-  cardano_sub_tx_builder_delegate_stake_ex(builder, REWARD_ADDRESS, strlen(REWARD_ADDRESS), POOL_ID, strlen(POOL_ID));
+  cardano_sub_tx_builder_delegate_stake_ex(builder, REWARD_ADDRESS, strlen(REWARD_ADDRESS), POOL_ID, strlen(POOL_ID), nullptr);
 
   cardano_sub_transaction_t* sub_tx   = build_sub_transaction(builder);
   char*                      body_hex = encode_body(sub_tx);
@@ -4743,7 +4744,7 @@ TEST(cardano_sub_tx_builder_delegate_stake_ex, keepsTheFirstErrorIfBuilderIsInEr
   record_first_error(builder);
 
   // Act
-  cardano_sub_tx_builder_delegate_stake_ex(builder, REWARD_ADDRESS, strlen(REWARD_ADDRESS), POOL_ID, strlen(POOL_ID));
+  cardano_sub_tx_builder_delegate_stake_ex(builder, REWARD_ADDRESS, strlen(REWARD_ADDRESS), POOL_ID, strlen(POOL_ID), nullptr);
 
   const cardano_error_t result = cardano_sub_tx_builder_build(builder, &sub_tx);
 
@@ -4766,7 +4767,7 @@ TEST(cardano_sub_tx_builder_delegate_stake_ex, reportsInvalidRewardAddressWhenBu
   cardano_sub_transaction_t*     sub_tx  = nullptr;
 
   // Act
-  cardano_sub_tx_builder_delegate_stake_ex(builder, "invalid", strlen("invalid"), POOL_ID, strlen(POOL_ID));
+  cardano_sub_tx_builder_delegate_stake_ex(builder, "invalid", strlen("invalid"), POOL_ID, strlen(POOL_ID), nullptr);
 
   const cardano_error_t result = cardano_sub_tx_builder_build(builder, &sub_tx);
 
@@ -4788,7 +4789,7 @@ TEST(cardano_sub_tx_builder_delegate_stake_ex, reportsInvalidPoolIdWhenBuilding)
   cardano_sub_transaction_t*     sub_tx  = nullptr;
 
   // Act
-  cardano_sub_tx_builder_delegate_stake_ex(builder, REWARD_ADDRESS, strlen(REWARD_ADDRESS), "invalid", strlen("invalid"));
+  cardano_sub_tx_builder_delegate_stake_ex(builder, REWARD_ADDRESS, strlen(REWARD_ADDRESS), "invalid", strlen("invalid"), nullptr);
 
   const cardano_error_t result = cardano_sub_tx_builder_build(builder, &sub_tx);
 
@@ -4818,7 +4819,7 @@ TEST(cardano_sub_tx_builder_delegate_stake_ex, returnsErrorIfMemoryAllocationFai
     set_malloc_limit(i);
     cardano_set_allocators(fail_malloc_at_limit, realloc, free);
 
-    cardano_sub_tx_builder_delegate_stake_ex(builder, REWARD_ADDRESS, strlen(REWARD_ADDRESS), POOL_ID, strlen(POOL_ID));
+    cardano_sub_tx_builder_delegate_stake_ex(builder, REWARD_ADDRESS, strlen(REWARD_ADDRESS), POOL_ID, strlen(POOL_ID), nullptr);
 
     reset_allocators_run_count();
     reset_limited_malloc();
@@ -4840,7 +4841,7 @@ TEST(cardano_sub_tx_builder_delegate_stake_ex, returnsErrorIfMemoryAllocationFai
 
 TEST(cardano_sub_tx_builder_delegate_voting_power, doesntCrashIfGivenNull)
 {
-  cardano_sub_tx_builder_delegate_voting_power(nullptr, nullptr, nullptr);
+  cardano_sub_tx_builder_delegate_voting_power(nullptr, nullptr, nullptr, nullptr);
 }
 
 TEST(cardano_sub_tx_builder_delegate_voting_power, returnsErrorIfAddressOrDrepIsNull)
@@ -4853,8 +4854,8 @@ TEST(cardano_sub_tx_builder_delegate_voting_power, returnsErrorIfAddressOrDrepIs
   cardano_drep_t*                drep            = create_drep(DREP_ID);
 
   // Act
-  cardano_sub_tx_builder_delegate_voting_power(address_builder, nullptr, drep);
-  cardano_sub_tx_builder_delegate_voting_power(drep_builder, reward_address, nullptr);
+  cardano_sub_tx_builder_delegate_voting_power(address_builder, nullptr, drep, nullptr);
+  cardano_sub_tx_builder_delegate_voting_power(drep_builder, reward_address, nullptr, nullptr);
 
   // Assert
   EXPECT_EQ(address_builder->last_error, CARDANO_ERROR_POINTER_IS_NULL);
@@ -4877,7 +4878,7 @@ TEST(cardano_sub_tx_builder_delegate_voting_power, canDelegateVotingPower)
   cardano_drep_t*                drep           = create_drep(DREP_ID);
 
   // Act
-  cardano_sub_tx_builder_delegate_voting_power(builder, reward_address, drep);
+  cardano_sub_tx_builder_delegate_voting_power(builder, reward_address, drep, nullptr);
 
   cardano_sub_transaction_t* sub_tx   = build_sub_transaction(builder);
   char*                      body_hex = encode_body(sub_tx);
@@ -4911,7 +4912,7 @@ TEST(cardano_sub_tx_builder_delegate_voting_power, keepsTheFirstErrorIfBuilderIs
   record_first_error(builder);
 
   // Act
-  cardano_sub_tx_builder_delegate_voting_power(builder, reward_address, drep);
+  cardano_sub_tx_builder_delegate_voting_power(builder, reward_address, drep, nullptr);
 
   const cardano_error_t result = cardano_sub_tx_builder_build(builder, &sub_tx);
 
@@ -4946,7 +4947,7 @@ TEST(cardano_sub_tx_builder_delegate_voting_power, returnsErrorIfMemoryAllocatio
     set_malloc_limit(i);
     cardano_set_allocators(fail_malloc_at_limit, realloc, free);
 
-    cardano_sub_tx_builder_delegate_voting_power(builder, reward_address, drep);
+    cardano_sub_tx_builder_delegate_voting_power(builder, reward_address, drep, nullptr);
 
     reset_allocators_run_count();
     reset_limited_malloc();
@@ -4974,7 +4975,7 @@ TEST(cardano_sub_tx_builder_delegate_voting_power, returnsErrorIfMemoryAllocatio
 
 TEST(cardano_sub_tx_builder_delegate_voting_power_ex, doesntCrashIfGivenNull)
 {
-  cardano_sub_tx_builder_delegate_voting_power_ex(nullptr, nullptr, 0, nullptr, 0);
+  cardano_sub_tx_builder_delegate_voting_power_ex(nullptr, nullptr, 0, nullptr, 0, nullptr);
 }
 
 TEST(cardano_sub_tx_builder_delegate_voting_power_ex, returnsErrorIfRewardAddressOrDrepIdIsNull)
@@ -4985,8 +4986,8 @@ TEST(cardano_sub_tx_builder_delegate_voting_power_ex, returnsErrorIfRewardAddres
   cardano_sub_tx_builder_t*      drep_builder    = cardano_sub_tx_builder_new(params, &CARDANO_MAINNET_SLOT_CONFIG);
 
   // Act
-  cardano_sub_tx_builder_delegate_voting_power_ex(address_builder, nullptr, 0, DREP_ID, strlen(DREP_ID));
-  cardano_sub_tx_builder_delegate_voting_power_ex(drep_builder, REWARD_ADDRESS, strlen(REWARD_ADDRESS), nullptr, 0);
+  cardano_sub_tx_builder_delegate_voting_power_ex(address_builder, nullptr, 0, DREP_ID, strlen(DREP_ID), nullptr);
+  cardano_sub_tx_builder_delegate_voting_power_ex(drep_builder, REWARD_ADDRESS, strlen(REWARD_ADDRESS), nullptr, 0, nullptr);
 
   // Assert
   EXPECT_EQ(address_builder->last_error, CARDANO_ERROR_POINTER_IS_NULL);
@@ -5005,7 +5006,7 @@ TEST(cardano_sub_tx_builder_delegate_voting_power_ex, canDelegateVotingPower)
   cardano_sub_tx_builder_t*      builder = cardano_sub_tx_builder_new(params, &CARDANO_MAINNET_SLOT_CONFIG);
 
   // Act
-  cardano_sub_tx_builder_delegate_voting_power_ex(builder, REWARD_ADDRESS, strlen(REWARD_ADDRESS), DREP_ID, strlen(DREP_ID));
+  cardano_sub_tx_builder_delegate_voting_power_ex(builder, REWARD_ADDRESS, strlen(REWARD_ADDRESS), DREP_ID, strlen(DREP_ID), nullptr);
 
   cardano_sub_transaction_t* sub_tx   = build_sub_transaction(builder);
   char*                      body_hex = encode_body(sub_tx);
@@ -5035,7 +5036,7 @@ TEST(cardano_sub_tx_builder_delegate_voting_power_ex, keepsTheFirstErrorIfBuilde
   record_first_error(builder);
 
   // Act
-  cardano_sub_tx_builder_delegate_voting_power_ex(builder, REWARD_ADDRESS, strlen(REWARD_ADDRESS), DREP_ID, strlen(DREP_ID));
+  cardano_sub_tx_builder_delegate_voting_power_ex(builder, REWARD_ADDRESS, strlen(REWARD_ADDRESS), DREP_ID, strlen(DREP_ID), nullptr);
 
   const cardano_error_t result = cardano_sub_tx_builder_build(builder, &sub_tx);
 
@@ -5058,7 +5059,7 @@ TEST(cardano_sub_tx_builder_delegate_voting_power_ex, reportsInvalidRewardAddres
   cardano_sub_transaction_t*     sub_tx  = nullptr;
 
   // Act
-  cardano_sub_tx_builder_delegate_voting_power_ex(builder, "invalid", strlen("invalid"), DREP_ID, strlen(DREP_ID));
+  cardano_sub_tx_builder_delegate_voting_power_ex(builder, "invalid", strlen("invalid"), DREP_ID, strlen(DREP_ID), nullptr);
 
   const cardano_error_t result = cardano_sub_tx_builder_build(builder, &sub_tx);
 
@@ -5080,7 +5081,7 @@ TEST(cardano_sub_tx_builder_delegate_voting_power_ex, reportsInvalidDrepIdWhenBu
   cardano_sub_transaction_t*     sub_tx  = nullptr;
 
   // Act
-  cardano_sub_tx_builder_delegate_voting_power_ex(builder, REWARD_ADDRESS, strlen(REWARD_ADDRESS), "invalid", strlen("invalid"));
+  cardano_sub_tx_builder_delegate_voting_power_ex(builder, REWARD_ADDRESS, strlen(REWARD_ADDRESS), "invalid", strlen("invalid"), nullptr);
 
   const cardano_error_t result = cardano_sub_tx_builder_build(builder, &sub_tx);
 
@@ -5110,7 +5111,7 @@ TEST(cardano_sub_tx_builder_delegate_voting_power_ex, returnsErrorIfMemoryAlloca
     set_malloc_limit(i);
     cardano_set_allocators(fail_malloc_at_limit, realloc, free);
 
-    cardano_sub_tx_builder_delegate_voting_power_ex(builder, REWARD_ADDRESS, strlen(REWARD_ADDRESS), DREP_ID, strlen(DREP_ID));
+    cardano_sub_tx_builder_delegate_voting_power_ex(builder, REWARD_ADDRESS, strlen(REWARD_ADDRESS), DREP_ID, strlen(DREP_ID), nullptr);
 
     reset_allocators_run_count();
     reset_limited_malloc();
@@ -5132,7 +5133,7 @@ TEST(cardano_sub_tx_builder_delegate_voting_power_ex, returnsErrorIfMemoryAlloca
 
 TEST(cardano_sub_tx_builder_register_drep, doesntCrashIfGivenNull)
 {
-  cardano_sub_tx_builder_register_drep(nullptr, nullptr, nullptr);
+  cardano_sub_tx_builder_register_drep(nullptr, nullptr, nullptr, nullptr);
 }
 
 TEST(cardano_sub_tx_builder_register_drep, returnsErrorIfDrepIsNull)
@@ -5143,7 +5144,7 @@ TEST(cardano_sub_tx_builder_register_drep, returnsErrorIfDrepIsNull)
   cardano_anchor_t*              anchor  = create_anchor();
 
   // Act
-  cardano_sub_tx_builder_register_drep(builder, nullptr, anchor);
+  cardano_sub_tx_builder_register_drep(builder, nullptr, anchor, nullptr);
 
   // Assert
   EXPECT_EQ(builder->last_error, CARDANO_ERROR_POINTER_IS_NULL);
@@ -5163,7 +5164,7 @@ TEST(cardano_sub_tx_builder_register_drep, canRegisterDrep)
   cardano_anchor_t*              anchor  = create_anchor();
 
   // Act
-  cardano_sub_tx_builder_register_drep(builder, drep, anchor);
+  cardano_sub_tx_builder_register_drep(builder, drep, anchor, nullptr);
 
   cardano_sub_transaction_t* sub_tx   = build_sub_transaction(builder);
   char*                      body_hex = encode_body(sub_tx);
@@ -5197,7 +5198,7 @@ TEST(cardano_sub_tx_builder_register_drep, keepsTheFirstErrorIfBuilderIsInErrorS
   record_first_error(builder);
 
   // Act
-  cardano_sub_tx_builder_register_drep(builder, drep, anchor);
+  cardano_sub_tx_builder_register_drep(builder, drep, anchor, nullptr);
 
   const cardano_error_t result = cardano_sub_tx_builder_build(builder, &sub_tx);
 
@@ -5232,7 +5233,7 @@ TEST(cardano_sub_tx_builder_register_drep, returnsErrorIfMemoryAllocationFails)
     set_malloc_limit(i);
     cardano_set_allocators(fail_malloc_at_limit, realloc, free);
 
-    cardano_sub_tx_builder_register_drep(builder, drep, anchor);
+    cardano_sub_tx_builder_register_drep(builder, drep, anchor, nullptr);
 
     reset_allocators_run_count();
     reset_limited_malloc();
@@ -5260,7 +5261,7 @@ TEST(cardano_sub_tx_builder_register_drep, returnsErrorIfMemoryAllocationFails)
 
 TEST(cardano_sub_tx_builder_register_drep_ex, doesntCrashIfGivenNull)
 {
-  cardano_sub_tx_builder_register_drep_ex(nullptr, nullptr, 0, nullptr, 0, nullptr, 0);
+  cardano_sub_tx_builder_register_drep_ex(nullptr, nullptr, 0, nullptr, 0, nullptr, 0, nullptr);
 }
 
 TEST(cardano_sub_tx_builder_register_drep_ex, returnsErrorIfDrepIdOrAnchorIsNull)
@@ -5272,9 +5273,9 @@ TEST(cardano_sub_tx_builder_register_drep_ex, returnsErrorIfDrepIdOrAnchorIsNull
   cardano_sub_tx_builder_t*      hash_builder = cardano_sub_tx_builder_new(params, &CARDANO_MAINNET_SLOT_CONFIG);
 
   // Act
-  cardano_sub_tx_builder_register_drep_ex(drep_builder, nullptr, 0, ANCHOR_URL, strlen(ANCHOR_URL), ANCHOR_HASH, strlen(ANCHOR_HASH));
-  cardano_sub_tx_builder_register_drep_ex(url_builder, DREP_ID, strlen(DREP_ID), nullptr, 0, ANCHOR_HASH, strlen(ANCHOR_HASH));
-  cardano_sub_tx_builder_register_drep_ex(hash_builder, DREP_ID, strlen(DREP_ID), ANCHOR_URL, strlen(ANCHOR_URL), nullptr, 0);
+  cardano_sub_tx_builder_register_drep_ex(drep_builder, nullptr, 0, ANCHOR_URL, strlen(ANCHOR_URL), ANCHOR_HASH, strlen(ANCHOR_HASH), nullptr);
+  cardano_sub_tx_builder_register_drep_ex(url_builder, DREP_ID, strlen(DREP_ID), nullptr, 0, ANCHOR_HASH, strlen(ANCHOR_HASH), nullptr);
+  cardano_sub_tx_builder_register_drep_ex(hash_builder, DREP_ID, strlen(DREP_ID), ANCHOR_URL, strlen(ANCHOR_URL), nullptr, 0, nullptr);
 
   // Assert
   EXPECT_EQ(drep_builder->last_error, CARDANO_ERROR_POINTER_IS_NULL);
@@ -5295,7 +5296,7 @@ TEST(cardano_sub_tx_builder_register_drep_ex, canRegisterDrep)
   cardano_sub_tx_builder_t*      builder = cardano_sub_tx_builder_new(params, &CARDANO_MAINNET_SLOT_CONFIG);
 
   // Act
-  cardano_sub_tx_builder_register_drep_ex(builder, DREP_ID, strlen(DREP_ID), ANCHOR_URL, strlen(ANCHOR_URL), ANCHOR_HASH, strlen(ANCHOR_HASH));
+  cardano_sub_tx_builder_register_drep_ex(builder, DREP_ID, strlen(DREP_ID), ANCHOR_URL, strlen(ANCHOR_URL), ANCHOR_HASH, strlen(ANCHOR_HASH), nullptr);
 
   cardano_sub_transaction_t* sub_tx   = build_sub_transaction(builder);
   char*                      body_hex = encode_body(sub_tx);
@@ -5325,7 +5326,7 @@ TEST(cardano_sub_tx_builder_register_drep_ex, keepsTheFirstErrorIfBuilderIsInErr
   record_first_error(builder);
 
   // Act
-  cardano_sub_tx_builder_register_drep_ex(builder, DREP_ID, strlen(DREP_ID), ANCHOR_URL, strlen(ANCHOR_URL), ANCHOR_HASH, strlen(ANCHOR_HASH));
+  cardano_sub_tx_builder_register_drep_ex(builder, DREP_ID, strlen(DREP_ID), ANCHOR_URL, strlen(ANCHOR_URL), ANCHOR_HASH, strlen(ANCHOR_HASH), nullptr);
 
   const cardano_error_t result = cardano_sub_tx_builder_build(builder, &sub_tx);
 
@@ -5348,7 +5349,7 @@ TEST(cardano_sub_tx_builder_register_drep_ex, reportsInvalidDrepIdWhenBuilding)
   cardano_sub_transaction_t*     sub_tx  = nullptr;
 
   // Act
-  cardano_sub_tx_builder_register_drep_ex(builder, "invalid", strlen("invalid"), ANCHOR_URL, strlen(ANCHOR_URL), ANCHOR_HASH, strlen(ANCHOR_HASH));
+  cardano_sub_tx_builder_register_drep_ex(builder, "invalid", strlen("invalid"), ANCHOR_URL, strlen(ANCHOR_URL), ANCHOR_HASH, strlen(ANCHOR_HASH), nullptr);
 
   const cardano_error_t result = cardano_sub_tx_builder_build(builder, &sub_tx);
 
@@ -5370,7 +5371,7 @@ TEST(cardano_sub_tx_builder_register_drep_ex, reportsInvalidMetadataHashWhenBuil
   cardano_sub_transaction_t*     sub_tx  = nullptr;
 
   // Act
-  cardano_sub_tx_builder_register_drep_ex(builder, DREP_ID, strlen(DREP_ID), ANCHOR_URL, strlen(ANCHOR_URL), "invalid", strlen("invalid"));
+  cardano_sub_tx_builder_register_drep_ex(builder, DREP_ID, strlen(DREP_ID), ANCHOR_URL, strlen(ANCHOR_URL), "invalid", strlen("invalid"), nullptr);
 
   const cardano_error_t result = cardano_sub_tx_builder_build(builder, &sub_tx);
 
@@ -5400,7 +5401,7 @@ TEST(cardano_sub_tx_builder_register_drep_ex, returnsErrorIfMemoryAllocationFail
     set_malloc_limit(i);
     cardano_set_allocators(fail_malloc_at_limit, realloc, free);
 
-    cardano_sub_tx_builder_register_drep_ex(builder, DREP_ID, strlen(DREP_ID), ANCHOR_URL, strlen(ANCHOR_URL), ANCHOR_HASH, strlen(ANCHOR_HASH));
+    cardano_sub_tx_builder_register_drep_ex(builder, DREP_ID, strlen(DREP_ID), ANCHOR_URL, strlen(ANCHOR_URL), ANCHOR_HASH, strlen(ANCHOR_HASH), nullptr);
 
     reset_allocators_run_count();
     reset_limited_malloc();
@@ -5422,7 +5423,7 @@ TEST(cardano_sub_tx_builder_register_drep_ex, returnsErrorIfMemoryAllocationFail
 
 TEST(cardano_sub_tx_builder_update_drep, doesntCrashIfGivenNull)
 {
-  cardano_sub_tx_builder_update_drep(nullptr, nullptr, nullptr);
+  cardano_sub_tx_builder_update_drep(nullptr, nullptr, nullptr, nullptr);
 }
 
 TEST(cardano_sub_tx_builder_update_drep, returnsErrorIfDrepIsNull)
@@ -5433,7 +5434,7 @@ TEST(cardano_sub_tx_builder_update_drep, returnsErrorIfDrepIsNull)
   cardano_anchor_t*              anchor  = create_anchor();
 
   // Act
-  cardano_sub_tx_builder_update_drep(builder, nullptr, anchor);
+  cardano_sub_tx_builder_update_drep(builder, nullptr, anchor, nullptr);
 
   // Assert
   EXPECT_EQ(builder->last_error, CARDANO_ERROR_POINTER_IS_NULL);
@@ -5453,7 +5454,7 @@ TEST(cardano_sub_tx_builder_update_drep, canUpdateDrep)
   cardano_anchor_t*              anchor  = create_anchor();
 
   // Act
-  cardano_sub_tx_builder_update_drep(builder, drep, anchor);
+  cardano_sub_tx_builder_update_drep(builder, drep, anchor, nullptr);
 
   cardano_sub_transaction_t* sub_tx   = build_sub_transaction(builder);
   char*                      body_hex = encode_body(sub_tx);
@@ -5487,7 +5488,7 @@ TEST(cardano_sub_tx_builder_update_drep, keepsTheFirstErrorIfBuilderIsInErrorSta
   record_first_error(builder);
 
   // Act
-  cardano_sub_tx_builder_update_drep(builder, drep, anchor);
+  cardano_sub_tx_builder_update_drep(builder, drep, anchor, nullptr);
 
   const cardano_error_t result = cardano_sub_tx_builder_build(builder, &sub_tx);
 
@@ -5522,7 +5523,7 @@ TEST(cardano_sub_tx_builder_update_drep, returnsErrorIfMemoryAllocationFails)
     set_malloc_limit(i);
     cardano_set_allocators(fail_malloc_at_limit, realloc, free);
 
-    cardano_sub_tx_builder_update_drep(builder, drep, anchor);
+    cardano_sub_tx_builder_update_drep(builder, drep, anchor, nullptr);
 
     reset_allocators_run_count();
     reset_limited_malloc();
@@ -5550,7 +5551,7 @@ TEST(cardano_sub_tx_builder_update_drep, returnsErrorIfMemoryAllocationFails)
 
 TEST(cardano_sub_tx_builder_update_drep_ex, doesntCrashIfGivenNull)
 {
-  cardano_sub_tx_builder_update_drep_ex(nullptr, nullptr, 0, nullptr, 0, nullptr, 0);
+  cardano_sub_tx_builder_update_drep_ex(nullptr, nullptr, 0, nullptr, 0, nullptr, 0, nullptr);
 }
 
 TEST(cardano_sub_tx_builder_update_drep_ex, returnsErrorIfDrepIdOrAnchorIsNull)
@@ -5562,9 +5563,9 @@ TEST(cardano_sub_tx_builder_update_drep_ex, returnsErrorIfDrepIdOrAnchorIsNull)
   cardano_sub_tx_builder_t*      hash_builder = cardano_sub_tx_builder_new(params, &CARDANO_MAINNET_SLOT_CONFIG);
 
   // Act
-  cardano_sub_tx_builder_update_drep_ex(drep_builder, nullptr, 0, ANCHOR_URL, strlen(ANCHOR_URL), ANCHOR_HASH, strlen(ANCHOR_HASH));
-  cardano_sub_tx_builder_update_drep_ex(url_builder, DREP_ID, strlen(DREP_ID), nullptr, 0, ANCHOR_HASH, strlen(ANCHOR_HASH));
-  cardano_sub_tx_builder_update_drep_ex(hash_builder, DREP_ID, strlen(DREP_ID), ANCHOR_URL, strlen(ANCHOR_URL), nullptr, 0);
+  cardano_sub_tx_builder_update_drep_ex(drep_builder, nullptr, 0, ANCHOR_URL, strlen(ANCHOR_URL), ANCHOR_HASH, strlen(ANCHOR_HASH), nullptr);
+  cardano_sub_tx_builder_update_drep_ex(url_builder, DREP_ID, strlen(DREP_ID), nullptr, 0, ANCHOR_HASH, strlen(ANCHOR_HASH), nullptr);
+  cardano_sub_tx_builder_update_drep_ex(hash_builder, DREP_ID, strlen(DREP_ID), ANCHOR_URL, strlen(ANCHOR_URL), nullptr, 0, nullptr);
 
   // Assert
   EXPECT_EQ(drep_builder->last_error, CARDANO_ERROR_POINTER_IS_NULL);
@@ -5585,7 +5586,7 @@ TEST(cardano_sub_tx_builder_update_drep_ex, canUpdateDrep)
   cardano_sub_tx_builder_t*      builder = cardano_sub_tx_builder_new(params, &CARDANO_MAINNET_SLOT_CONFIG);
 
   // Act
-  cardano_sub_tx_builder_update_drep_ex(builder, DREP_ID, strlen(DREP_ID), ANCHOR_URL, strlen(ANCHOR_URL), ANCHOR_HASH, strlen(ANCHOR_HASH));
+  cardano_sub_tx_builder_update_drep_ex(builder, DREP_ID, strlen(DREP_ID), ANCHOR_URL, strlen(ANCHOR_URL), ANCHOR_HASH, strlen(ANCHOR_HASH), nullptr);
 
   cardano_sub_transaction_t* sub_tx   = build_sub_transaction(builder);
   char*                      body_hex = encode_body(sub_tx);
@@ -5615,7 +5616,7 @@ TEST(cardano_sub_tx_builder_update_drep_ex, keepsTheFirstErrorIfBuilderIsInError
   record_first_error(builder);
 
   // Act
-  cardano_sub_tx_builder_update_drep_ex(builder, DREP_ID, strlen(DREP_ID), ANCHOR_URL, strlen(ANCHOR_URL), ANCHOR_HASH, strlen(ANCHOR_HASH));
+  cardano_sub_tx_builder_update_drep_ex(builder, DREP_ID, strlen(DREP_ID), ANCHOR_URL, strlen(ANCHOR_URL), ANCHOR_HASH, strlen(ANCHOR_HASH), nullptr);
 
   const cardano_error_t result = cardano_sub_tx_builder_build(builder, &sub_tx);
 
@@ -5638,7 +5639,7 @@ TEST(cardano_sub_tx_builder_update_drep_ex, reportsInvalidDrepIdWhenBuilding)
   cardano_sub_transaction_t*     sub_tx  = nullptr;
 
   // Act
-  cardano_sub_tx_builder_update_drep_ex(builder, "invalid", strlen("invalid"), ANCHOR_URL, strlen(ANCHOR_URL), ANCHOR_HASH, strlen(ANCHOR_HASH));
+  cardano_sub_tx_builder_update_drep_ex(builder, "invalid", strlen("invalid"), ANCHOR_URL, strlen(ANCHOR_URL), ANCHOR_HASH, strlen(ANCHOR_HASH), nullptr);
 
   const cardano_error_t result = cardano_sub_tx_builder_build(builder, &sub_tx);
 
@@ -5660,7 +5661,7 @@ TEST(cardano_sub_tx_builder_update_drep_ex, reportsInvalidMetadataHashWhenBuildi
   cardano_sub_transaction_t*     sub_tx  = nullptr;
 
   // Act
-  cardano_sub_tx_builder_update_drep_ex(builder, DREP_ID, strlen(DREP_ID), ANCHOR_URL, strlen(ANCHOR_URL), "invalid", strlen("invalid"));
+  cardano_sub_tx_builder_update_drep_ex(builder, DREP_ID, strlen(DREP_ID), ANCHOR_URL, strlen(ANCHOR_URL), "invalid", strlen("invalid"), nullptr);
 
   const cardano_error_t result = cardano_sub_tx_builder_build(builder, &sub_tx);
 
@@ -5690,7 +5691,7 @@ TEST(cardano_sub_tx_builder_update_drep_ex, returnsErrorIfMemoryAllocationFails)
     set_malloc_limit(i);
     cardano_set_allocators(fail_malloc_at_limit, realloc, free);
 
-    cardano_sub_tx_builder_update_drep_ex(builder, DREP_ID, strlen(DREP_ID), ANCHOR_URL, strlen(ANCHOR_URL), ANCHOR_HASH, strlen(ANCHOR_HASH));
+    cardano_sub_tx_builder_update_drep_ex(builder, DREP_ID, strlen(DREP_ID), ANCHOR_URL, strlen(ANCHOR_URL), ANCHOR_HASH, strlen(ANCHOR_HASH), nullptr);
 
     reset_allocators_run_count();
     reset_limited_malloc();
@@ -5712,7 +5713,7 @@ TEST(cardano_sub_tx_builder_update_drep_ex, returnsErrorIfMemoryAllocationFails)
 
 TEST(cardano_sub_tx_builder_deregister_drep, doesntCrashIfGivenNull)
 {
-  cardano_sub_tx_builder_deregister_drep(nullptr, nullptr);
+  cardano_sub_tx_builder_deregister_drep(nullptr, nullptr, nullptr);
 }
 
 TEST(cardano_sub_tx_builder_deregister_drep, returnsErrorIfDrepIsNull)
@@ -5722,7 +5723,7 @@ TEST(cardano_sub_tx_builder_deregister_drep, returnsErrorIfDrepIsNull)
   cardano_sub_tx_builder_t*      builder = cardano_sub_tx_builder_new(params, &CARDANO_MAINNET_SLOT_CONFIG);
 
   // Act
-  cardano_sub_tx_builder_deregister_drep(builder, nullptr);
+  cardano_sub_tx_builder_deregister_drep(builder, nullptr, nullptr);
 
   // Assert
   EXPECT_EQ(builder->last_error, CARDANO_ERROR_POINTER_IS_NULL);
@@ -5740,7 +5741,7 @@ TEST(cardano_sub_tx_builder_deregister_drep, canDeregisterDrep)
   cardano_drep_t*                drep    = create_drep(DREP_ID);
 
   // Act
-  cardano_sub_tx_builder_deregister_drep(builder, drep);
+  cardano_sub_tx_builder_deregister_drep(builder, drep, nullptr);
 
   cardano_sub_transaction_t* sub_tx   = build_sub_transaction(builder);
   char*                      body_hex = encode_body(sub_tx);
@@ -5772,7 +5773,7 @@ TEST(cardano_sub_tx_builder_deregister_drep, keepsTheFirstErrorIfBuilderIsInErro
   record_first_error(builder);
 
   // Act
-  cardano_sub_tx_builder_deregister_drep(builder, drep);
+  cardano_sub_tx_builder_deregister_drep(builder, drep, nullptr);
 
   const cardano_error_t result = cardano_sub_tx_builder_build(builder, &sub_tx);
 
@@ -5805,7 +5806,7 @@ TEST(cardano_sub_tx_builder_deregister_drep, returnsErrorIfMemoryAllocationFails
     set_malloc_limit(i);
     cardano_set_allocators(fail_malloc_at_limit, realloc, free);
 
-    cardano_sub_tx_builder_deregister_drep(builder, drep);
+    cardano_sub_tx_builder_deregister_drep(builder, drep, nullptr);
 
     reset_allocators_run_count();
     reset_limited_malloc();
@@ -5832,7 +5833,7 @@ TEST(cardano_sub_tx_builder_deregister_drep, returnsErrorIfMemoryAllocationFails
 
 TEST(cardano_sub_tx_builder_deregister_drep_ex, doesntCrashIfGivenNull)
 {
-  cardano_sub_tx_builder_deregister_drep_ex(nullptr, nullptr, 0);
+  cardano_sub_tx_builder_deregister_drep_ex(nullptr, nullptr, 0, nullptr);
 }
 
 TEST(cardano_sub_tx_builder_deregister_drep_ex, returnsErrorIfDrepIdIsNull)
@@ -5842,7 +5843,7 @@ TEST(cardano_sub_tx_builder_deregister_drep_ex, returnsErrorIfDrepIdIsNull)
   cardano_sub_tx_builder_t*      builder = cardano_sub_tx_builder_new(params, &CARDANO_MAINNET_SLOT_CONFIG);
 
   // Act
-  cardano_sub_tx_builder_deregister_drep_ex(builder, nullptr, 0);
+  cardano_sub_tx_builder_deregister_drep_ex(builder, nullptr, 0, nullptr);
 
   // Assert
   EXPECT_EQ(builder->last_error, CARDANO_ERROR_POINTER_IS_NULL);
@@ -5859,7 +5860,7 @@ TEST(cardano_sub_tx_builder_deregister_drep_ex, canDeregisterDrep)
   cardano_sub_tx_builder_t*      builder = cardano_sub_tx_builder_new(params, &CARDANO_MAINNET_SLOT_CONFIG);
 
   // Act
-  cardano_sub_tx_builder_deregister_drep_ex(builder, DREP_ID, strlen(DREP_ID));
+  cardano_sub_tx_builder_deregister_drep_ex(builder, DREP_ID, strlen(DREP_ID), nullptr);
 
   cardano_sub_transaction_t* sub_tx   = build_sub_transaction(builder);
   char*                      body_hex = encode_body(sub_tx);
@@ -5889,7 +5890,7 @@ TEST(cardano_sub_tx_builder_deregister_drep_ex, keepsTheFirstErrorIfBuilderIsInE
   record_first_error(builder);
 
   // Act
-  cardano_sub_tx_builder_deregister_drep_ex(builder, DREP_ID, strlen(DREP_ID));
+  cardano_sub_tx_builder_deregister_drep_ex(builder, DREP_ID, strlen(DREP_ID), nullptr);
 
   const cardano_error_t result = cardano_sub_tx_builder_build(builder, &sub_tx);
 
@@ -5912,7 +5913,7 @@ TEST(cardano_sub_tx_builder_deregister_drep_ex, reportsInvalidDrepIdWhenBuilding
   cardano_sub_transaction_t*     sub_tx  = nullptr;
 
   // Act
-  cardano_sub_tx_builder_deregister_drep_ex(builder, "invalid", strlen("invalid"));
+  cardano_sub_tx_builder_deregister_drep_ex(builder, "invalid", strlen("invalid"), nullptr);
 
   const cardano_error_t result = cardano_sub_tx_builder_build(builder, &sub_tx);
 
@@ -5942,7 +5943,7 @@ TEST(cardano_sub_tx_builder_deregister_drep_ex, returnsErrorIfMemoryAllocationFa
     set_malloc_limit(i);
     cardano_set_allocators(fail_malloc_at_limit, realloc, free);
 
-    cardano_sub_tx_builder_deregister_drep_ex(builder, DREP_ID, strlen(DREP_ID));
+    cardano_sub_tx_builder_deregister_drep_ex(builder, DREP_ID, strlen(DREP_ID), nullptr);
 
     reset_allocators_run_count();
     reset_limited_malloc();
@@ -5964,7 +5965,7 @@ TEST(cardano_sub_tx_builder_deregister_drep_ex, returnsErrorIfMemoryAllocationFa
 
 TEST(cardano_sub_tx_builder_vote, doesntCrashIfGivenNull)
 {
-  cardano_sub_tx_builder_vote(nullptr, nullptr, nullptr, nullptr);
+  cardano_sub_tx_builder_vote(nullptr, nullptr, nullptr, nullptr, nullptr);
 }
 
 TEST(cardano_sub_tx_builder_vote, returnsErrorIfVoterActionIdOrVoteIsNull)
@@ -5979,9 +5980,9 @@ TEST(cardano_sub_tx_builder_vote, returnsErrorIfVoterActionIdOrVoteIsNull)
   cardano_voting_procedure_t*     vote              = create_voting_procedure(VOTING_PROCEDURE_CBOR);
 
   // Act
-  cardano_sub_tx_builder_vote(voter_builder, nullptr, action_id, vote);
-  cardano_sub_tx_builder_vote(action_id_builder, voter, nullptr, vote);
-  cardano_sub_tx_builder_vote(vote_builder, voter, action_id, nullptr);
+  cardano_sub_tx_builder_vote(voter_builder, nullptr, action_id, vote, nullptr);
+  cardano_sub_tx_builder_vote(action_id_builder, voter, nullptr, vote, nullptr);
+  cardano_sub_tx_builder_vote(vote_builder, voter, action_id, nullptr, nullptr);
 
   // Assert
   EXPECT_EQ(voter_builder->last_error, CARDANO_ERROR_POINTER_IS_NULL);
@@ -6008,7 +6009,7 @@ TEST(cardano_sub_tx_builder_vote, canVote)
   cardano_voting_procedure_t*     vote      = create_voting_procedure(VOTING_PROCEDURE_CBOR);
 
   // Act
-  cardano_sub_tx_builder_vote(builder, voter, action_id, vote);
+  cardano_sub_tx_builder_vote(builder, voter, action_id, vote, nullptr);
 
   cardano_sub_transaction_t* sub_tx   = build_sub_transaction(builder);
   char*                      body_hex = encode_body(sub_tx);
@@ -6052,7 +6053,7 @@ TEST(cardano_sub_tx_builder_vote, keepsTheFirstErrorIfBuilderIsInErrorState)
   record_first_error(builder);
 
   // Act
-  cardano_sub_tx_builder_vote(builder, voter, action_id, vote);
+  cardano_sub_tx_builder_vote(builder, voter, action_id, vote, nullptr);
 
   const cardano_error_t result = cardano_sub_tx_builder_build(builder, &sub_tx);
 
@@ -6089,7 +6090,7 @@ TEST(cardano_sub_tx_builder_vote, returnsErrorIfMemoryAllocationFails)
     set_malloc_limit(i);
     cardano_set_allocators(fail_malloc_at_limit, realloc, free);
 
-    cardano_sub_tx_builder_vote(builder, voter, action_id, vote);
+    cardano_sub_tx_builder_vote(builder, voter, action_id, vote, nullptr);
 
     reset_allocators_run_count();
     reset_limited_malloc();
@@ -6118,7 +6119,7 @@ TEST(cardano_sub_tx_builder_vote, returnsErrorIfMemoryAllocationFails)
 
 TEST(cardano_sub_tx_builder_add_certificate, doesntCrashIfGivenNull)
 {
-  cardano_sub_tx_builder_add_certificate(nullptr, nullptr);
+  cardano_sub_tx_builder_add_certificate(nullptr, nullptr, nullptr);
 }
 
 TEST(cardano_sub_tx_builder_add_certificate, returnsErrorIfCertificateIsNull)
@@ -6128,7 +6129,7 @@ TEST(cardano_sub_tx_builder_add_certificate, returnsErrorIfCertificateIsNull)
   cardano_sub_tx_builder_t*      builder = cardano_sub_tx_builder_new(params, &CARDANO_MAINNET_SLOT_CONFIG);
 
   // Act
-  cardano_sub_tx_builder_add_certificate(builder, nullptr);
+  cardano_sub_tx_builder_add_certificate(builder, nullptr, nullptr);
 
   // Assert
   EXPECT_EQ(builder->last_error, CARDANO_ERROR_POINTER_IS_NULL);
@@ -6146,7 +6147,7 @@ TEST(cardano_sub_tx_builder_add_certificate, canAddCertificate)
   cardano_certificate_t*         certificate = create_certificate(CERTIFICATE_CBOR);
 
   // Act
-  cardano_sub_tx_builder_add_certificate(builder, certificate);
+  cardano_sub_tx_builder_add_certificate(builder, certificate, nullptr);
 
   cardano_sub_transaction_t* sub_tx   = build_sub_transaction(builder);
   char*                      body_hex = encode_body(sub_tx);
@@ -6178,7 +6179,7 @@ TEST(cardano_sub_tx_builder_add_certificate, keepsTheFirstErrorIfBuilderIsInErro
   record_first_error(builder);
 
   // Act
-  cardano_sub_tx_builder_add_certificate(builder, certificate);
+  cardano_sub_tx_builder_add_certificate(builder, certificate, nullptr);
 
   const cardano_error_t result = cardano_sub_tx_builder_build(builder, &sub_tx);
 
@@ -6211,7 +6212,7 @@ TEST(cardano_sub_tx_builder_add_certificate, returnsErrorIfMemoryAllocationFails
     set_malloc_limit(i);
     cardano_set_allocators(fail_malloc_at_limit, realloc, free);
 
-    cardano_sub_tx_builder_add_certificate(builder, certificate);
+    cardano_sub_tx_builder_add_certificate(builder, certificate, nullptr);
 
     reset_allocators_run_count();
     reset_limited_malloc();
@@ -8102,7 +8103,7 @@ TEST(cardano_sub_tx_builder_build, builtSubTransactionRoundTripsByteExact)
   cardano_sub_tx_builder_add_input(builder, utxo, nullptr, nullptr);
   cardano_sub_tx_builder_add_reference_input(builder, reference_utxo);
   cardano_sub_tx_builder_send_lovelace_ex(builder, ADDRESS, strlen(ADDRESS), 2000000);
-  cardano_sub_tx_builder_mint_token_with_id_ex(builder, ASSET_ID_HEX, strlen(ASSET_ID_HEX), 4);
+  cardano_sub_tx_builder_mint_token_with_id_ex(builder, ASSET_ID_HEX, strlen(ASSET_ID_HEX), 4, nullptr);
   cardano_sub_tx_builder_set_metadata_ex(builder, 674, METADATA_JSON, strlen(METADATA_JSON));
   cardano_sub_tx_builder_add_script(builder, script);
   cardano_sub_tx_builder_add_guard_ex(builder, HASH_HEX, strlen(HASH_HEX), CARDANO_CREDENTIAL_TYPE_KEY_HASH);
@@ -8232,10 +8233,10 @@ TEST(cardano_sub_tx_builder_build, certificatesWithdrawalsVotesAndProposalsRound
   cardano_governance_action_id_t* action_id = create_governance_action_id();
   cardano_voting_procedure_t*     vote      = create_voting_procedure(VOTING_PROCEDURE_CBOR);
 
-  cardano_sub_tx_builder_withdraw_rewards_ex(builder, REWARD_ADDRESS, strlen(REWARD_ADDRESS), 2532145);
-  cardano_sub_tx_builder_register_reward_address_ex(builder, REWARD_ADDRESS, strlen(REWARD_ADDRESS));
-  cardano_sub_tx_builder_delegate_stake_ex(builder, REWARD_ADDRESS, strlen(REWARD_ADDRESS), POOL_ID, strlen(POOL_ID));
-  cardano_sub_tx_builder_vote(builder, voter, action_id, vote);
+  cardano_sub_tx_builder_withdraw_rewards_ex(builder, REWARD_ADDRESS, strlen(REWARD_ADDRESS), 2532145, nullptr);
+  cardano_sub_tx_builder_register_reward_address_ex(builder, REWARD_ADDRESS, strlen(REWARD_ADDRESS), nullptr);
+  cardano_sub_tx_builder_delegate_stake_ex(builder, REWARD_ADDRESS, strlen(REWARD_ADDRESS), POOL_ID, strlen(POOL_ID), nullptr);
+  cardano_sub_tx_builder_vote(builder, voter, action_id, vote, nullptr);
   cardano_sub_tx_builder_propose_info_ex(builder, REWARD_ADDRESS, strlen(REWARD_ADDRESS), ANCHOR_URL, strlen(ANCHOR_URL), ANCHOR_HASH, strlen(ANCHOR_HASH));
 
   cardano_sub_transaction_t* sub_tx     = build_sub_transaction(builder);
@@ -8288,8 +8289,8 @@ TEST(cardano_sub_tx_builder_build, imbalanceReflectsWithdrawals)
 
   EXPECT_EQ(cardano_utxo_list_new(&resolved_inputs), CARDANO_SUCCESS);
 
-  cardano_sub_tx_builder_withdraw_rewards_ex(builder, REWARD_ADDRESS, strlen(REWARD_ADDRESS), 2532145);
-  cardano_sub_tx_builder_withdraw_rewards_ex(builder, REWARD_ADDRESS2, strlen(REWARD_ADDRESS2), 1000000);
+  cardano_sub_tx_builder_withdraw_rewards_ex(builder, REWARD_ADDRESS, strlen(REWARD_ADDRESS), 2532145, nullptr);
+  cardano_sub_tx_builder_withdraw_rewards_ex(builder, REWARD_ADDRESS2, strlen(REWARD_ADDRESS2), 1000000, nullptr);
 
   cardano_sub_transaction_t* sub_tx = build_sub_transaction(builder);
 
@@ -8318,9 +8319,9 @@ TEST(cardano_sub_tx_builder_build, imbalanceReflectsCertificateDeposits)
 
   EXPECT_EQ(cardano_utxo_list_new(&resolved_inputs), CARDANO_SUCCESS);
 
-  cardano_sub_tx_builder_register_reward_address_ex(builder, REWARD_ADDRESS, strlen(REWARD_ADDRESS));
-  cardano_sub_tx_builder_register_drep_ex(builder, DREP_ID, strlen(DREP_ID), ANCHOR_URL, strlen(ANCHOR_URL), ANCHOR_HASH, strlen(ANCHOR_HASH));
-  cardano_sub_tx_builder_delegate_stake_ex(builder, REWARD_ADDRESS, strlen(REWARD_ADDRESS), POOL_ID, strlen(POOL_ID));
+  cardano_sub_tx_builder_register_reward_address_ex(builder, REWARD_ADDRESS, strlen(REWARD_ADDRESS), nullptr);
+  cardano_sub_tx_builder_register_drep_ex(builder, DREP_ID, strlen(DREP_ID), ANCHOR_URL, strlen(ANCHOR_URL), ANCHOR_HASH, strlen(ANCHOR_HASH), nullptr);
+  cardano_sub_tx_builder_delegate_stake_ex(builder, REWARD_ADDRESS, strlen(REWARD_ADDRESS), POOL_ID, strlen(POOL_ID), nullptr);
 
   cardano_sub_transaction_t* sub_tx = build_sub_transaction(builder);
 
@@ -8349,8 +8350,8 @@ TEST(cardano_sub_tx_builder_build, imbalanceReflectsCertificateRefunds)
 
   EXPECT_EQ(cardano_utxo_list_new(&resolved_inputs), CARDANO_SUCCESS);
 
-  cardano_sub_tx_builder_deregister_reward_address_ex(builder, REWARD_ADDRESS, strlen(REWARD_ADDRESS));
-  cardano_sub_tx_builder_deregister_drep_ex(builder, DREP_ID, strlen(DREP_ID));
+  cardano_sub_tx_builder_deregister_reward_address_ex(builder, REWARD_ADDRESS, strlen(REWARD_ADDRESS), nullptr);
+  cardano_sub_tx_builder_deregister_drep_ex(builder, DREP_ID, strlen(DREP_ID), nullptr);
 
   cardano_sub_transaction_t* sub_tx = build_sub_transaction(builder);
 
@@ -8382,7 +8383,7 @@ TEST(cardano_sub_tx_builder_build, imbalanceIsNotChangedByVotes)
 
   EXPECT_EQ(cardano_utxo_list_new(&resolved_inputs), CARDANO_SUCCESS);
 
-  cardano_sub_tx_builder_vote(builder, voter, action_id, vote);
+  cardano_sub_tx_builder_vote(builder, voter, action_id, vote, nullptr);
 
   cardano_sub_transaction_t* sub_tx = build_sub_transaction(builder);
 
@@ -9288,6 +9289,1321 @@ TEST(cardano_sub_tx_builder_add_input, returnsErrorIfMemoryAllocationFailsWhileB
   cardano_plutus_data_unref(&high_redeemer);
   cardano_utxo_unref(&low_utxo);
   cardano_utxo_unref(&high_utxo);
+  cardano_script_unref(&script);
+  cardano_protocol_parameters_unref(&params);
+}
+
+/* SCRIPT PURPOSE REDEEMERS **************************************************/
+
+static const char* OTHER_ALWAYS_SUCCEEDS_V4_CBOR = "820446450101002499";
+
+/**
+ * Creates a reward address whose stake credential is the hash of a script.
+ * \param script The script.
+ * \return A new instance of the reward address.
+ */
+static cardano_reward_address_t*
+create_script_reward_address(cardano_script_t* script)
+{
+  cardano_credential_t*     credential     = create_script_credential(script);
+  cardano_reward_address_t* reward_address = NULL;
+
+  EXPECT_EQ(cardano_reward_address_from_credentials(CARDANO_NETWORK_ID_TEST_NET, credential, &reward_address), CARDANO_SUCCESS);
+
+  cardano_credential_unref(&credential);
+
+  return reward_address;
+}
+
+/**
+ * Creates a DRep voter whose credential is the hash of a script.
+ * \param script The script.
+ * \return A new instance of the voter.
+ */
+static cardano_voter_t*
+create_script_voter(cardano_script_t* script)
+{
+  cardano_credential_t* credential = create_script_credential(script);
+  cardano_voter_t*      voter      = NULL;
+
+  EXPECT_EQ(cardano_voter_new(CARDANO_VOTER_TYPE_DREP_SCRIPT_HASH, credential, &voter), CARDANO_SUCCESS);
+
+  cardano_credential_unref(&credential);
+
+  return voter;
+}
+
+/**
+ * Creates the id of a native asset minted under a script policy.
+ * \param script The script that is the minting policy.
+ * \return A new instance of the asset id.
+ */
+static cardano_asset_id_t*
+create_script_asset_id(cardano_script_t* script)
+{
+  cardano_blake2b_hash_t* policy_id  = cardano_script_get_hash(script);
+  cardano_asset_name_t*   asset_name = NULL;
+  cardano_asset_id_t*     asset_id   = NULL;
+
+  EXPECT_EQ(cardano_asset_name_from_hex(ASSET_NAME_HEX, strlen(ASSET_NAME_HEX), &asset_name), CARDANO_SUCCESS);
+  EXPECT_EQ(cardano_asset_id_new(policy_id, asset_name, &asset_id), CARDANO_SUCCESS);
+
+  cardano_asset_name_unref(&asset_name);
+  cardano_blake2b_hash_unref(&policy_id);
+
+  return asset_id;
+}
+
+/**
+ * Expects a sub transaction to carry a redeemer with a given payload, tag and index and non zero execution units.
+ * \param sub_tx The sub transaction.
+ * \param data The plutus data carried by the redeemer.
+ * \param tag The expected tag.
+ * \param index The expected index.
+ */
+static void
+expect_sub_tx_redeemer(cardano_sub_transaction_t* sub_tx, cardano_plutus_data_t* data, const cardano_redeemer_tag_t tag, const uint64_t index)
+{
+  cardano_redeemer_t* redeemer = find_sub_tx_redeemer(sub_tx, data);
+
+  ASSERT_NE(redeemer, nullptr);
+
+  cardano_ex_units_t* units = cardano_redeemer_get_ex_units(redeemer);
+
+  EXPECT_EQ(cardano_redeemer_get_tag(redeemer), tag);
+  EXPECT_EQ(cardano_redeemer_get_index(redeemer), index);
+  EXPECT_NE(cardano_ex_units_get_cpu_steps(units), 0U);
+  EXPECT_NE(cardano_ex_units_get_memory(units), 0U);
+
+  cardano_ex_units_unref(&units);
+  cardano_redeemer_unref(&redeemer);
+}
+
+/**
+ * Gets the number of redeemers of a sub transaction.
+ * \param sub_tx The sub transaction.
+ * \return The number of redeemers.
+ */
+static size_t
+get_sub_tx_redeemer_count(cardano_sub_transaction_t* sub_tx)
+{
+  cardano_witness_set_t*   witness_set = cardano_sub_transaction_get_witness_set(sub_tx);
+  cardano_redeemer_list_t* redeemers   = cardano_witness_set_get_redeemers(witness_set);
+  const size_t             count       = cardano_redeemer_list_get_length(redeemers);
+
+  cardano_redeemer_list_unref(&redeemers);
+  cardano_witness_set_unref(&witness_set);
+
+  return count;
+}
+
+TEST(cardano_sub_tx_builder_mint_token, mintsWithAPlutusV4PolicyAndEvaluatesItsRedeemer)
+{
+  // Arrange
+  cardano_protocol_parameters_t* params     = init_dijkstra_protocol_parameters();
+  cardano_sub_tx_builder_t*      builder    = cardano_sub_tx_builder_new(params, &CARDANO_MAINNET_SLOT_CONFIG);
+  cardano_script_t*              script     = create_script(ALWAYS_SUCCEEDS_V4_CBOR);
+  cardano_blake2b_hash_t*        policy_id  = cardano_script_get_hash(script);
+  cardano_asset_name_t*          asset_name = NULL;
+  cardano_plutus_data_t*         redeemer   = create_plutus_data(PLUTUS_DATA_CBOR);
+
+  EXPECT_EQ(cardano_asset_name_from_hex(ASSET_NAME_HEX, strlen(ASSET_NAME_HEX), &asset_name), CARDANO_SUCCESS);
+
+  // Act
+  cardano_sub_tx_builder_add_script(builder, script);
+  cardano_sub_tx_builder_mint_token(builder, policy_id, asset_name, 10, redeemer);
+
+  cardano_sub_transaction_t* sub_tx = build_sub_transaction(builder);
+  cardano_blake2b_hash_t*    hash   = cardano_sub_transaction_body_get_script_data_hash(get_body(sub_tx));
+
+  // Assert
+  EXPECT_EQ(get_sub_tx_redeemer_count(sub_tx), 1U);
+  expect_sub_tx_redeemer(sub_tx, redeemer, CARDANO_REDEEMER_TAG_MINT, 0U);
+  EXPECT_NE(hash, nullptr);
+
+  // Cleanup
+  cardano_blake2b_hash_unref(&hash);
+  cardano_sub_transaction_unref(&sub_tx);
+  cardano_plutus_data_unref(&redeemer);
+  cardano_asset_name_unref(&asset_name);
+  cardano_blake2b_hash_unref(&policy_id);
+  cardano_script_unref(&script);
+  cardano_sub_tx_builder_unref(&builder);
+  cardano_protocol_parameters_unref(&params);
+}
+
+TEST(cardano_sub_tx_builder_mint_token_ex, mintsWithAPlutusV4PolicyAndEvaluatesItsRedeemer)
+{
+  // Arrange
+  cardano_protocol_parameters_t* params    = init_dijkstra_protocol_parameters();
+  cardano_sub_tx_builder_t*      builder   = cardano_sub_tx_builder_new(params, &CARDANO_MAINNET_SLOT_CONFIG);
+  cardano_script_t*              script    = create_script(ALWAYS_SUCCEEDS_V4_CBOR);
+  cardano_blake2b_hash_t*        policy_id = cardano_script_get_hash(script);
+  cardano_plutus_data_t*         redeemer  = create_plutus_data(PLUTUS_DATA_CBOR);
+  char                           hex[57]   = { 0 };
+
+  EXPECT_EQ(cardano_blake2b_hash_to_hex(policy_id, hex, sizeof(hex)), CARDANO_SUCCESS);
+
+  // Act
+  cardano_sub_tx_builder_add_script(builder, script);
+  cardano_sub_tx_builder_mint_token_ex(builder, hex, strlen(hex), ASSET_NAME_HEX, strlen(ASSET_NAME_HEX), -5, redeemer);
+
+  cardano_sub_transaction_t* sub_tx = build_sub_transaction(builder);
+
+  // Assert
+  expect_sub_tx_redeemer(sub_tx, redeemer, CARDANO_REDEEMER_TAG_MINT, 0U);
+
+  // Cleanup
+  cardano_sub_transaction_unref(&sub_tx);
+  cardano_plutus_data_unref(&redeemer);
+  cardano_blake2b_hash_unref(&policy_id);
+  cardano_script_unref(&script);
+  cardano_sub_tx_builder_unref(&builder);
+  cardano_protocol_parameters_unref(&params);
+}
+
+TEST(cardano_sub_tx_builder_mint_token_with_id, mintsWithAPlutusV4PolicyAndEvaluatesItsRedeemer)
+{
+  // Arrange
+  cardano_protocol_parameters_t* params   = init_dijkstra_protocol_parameters();
+  cardano_sub_tx_builder_t*      builder  = cardano_sub_tx_builder_new(params, &CARDANO_MAINNET_SLOT_CONFIG);
+  cardano_script_t*              script   = create_script(ALWAYS_SUCCEEDS_V4_CBOR);
+  cardano_asset_id_t*            asset_id = create_script_asset_id(script);
+  cardano_plutus_data_t*         redeemer = create_plutus_data(PLUTUS_DATA_CBOR);
+
+  // Act
+  cardano_sub_tx_builder_add_script(builder, script);
+  cardano_sub_tx_builder_mint_token_with_id(builder, asset_id, 7, redeemer);
+
+  cardano_sub_transaction_t* sub_tx = build_sub_transaction(builder);
+
+  // Assert
+  expect_sub_tx_redeemer(sub_tx, redeemer, CARDANO_REDEEMER_TAG_MINT, 0U);
+
+  // Cleanup
+  cardano_sub_transaction_unref(&sub_tx);
+  cardano_plutus_data_unref(&redeemer);
+  cardano_asset_id_unref(&asset_id);
+  cardano_script_unref(&script);
+  cardano_sub_tx_builder_unref(&builder);
+  cardano_protocol_parameters_unref(&params);
+}
+
+TEST(cardano_sub_tx_builder_mint_token_with_id_ex, mintsWithAPlutusV4PolicyAndEvaluatesItsRedeemer)
+{
+  // Arrange
+  cardano_protocol_parameters_t* params   = init_dijkstra_protocol_parameters();
+  cardano_sub_tx_builder_t*      builder  = cardano_sub_tx_builder_new(params, &CARDANO_MAINNET_SLOT_CONFIG);
+  cardano_script_t*              script   = create_script(ALWAYS_SUCCEEDS_V4_CBOR);
+  cardano_asset_id_t*            asset_id = create_script_asset_id(script);
+  cardano_plutus_data_t*         redeemer = create_plutus_data(PLUTUS_DATA_CBOR);
+  const char*                    hex      = cardano_asset_id_get_hex(asset_id);
+
+  // Act
+  cardano_sub_tx_builder_add_script(builder, script);
+  cardano_sub_tx_builder_mint_token_with_id_ex(builder, hex, strlen(hex), 7, redeemer);
+
+  cardano_sub_transaction_t* sub_tx = build_sub_transaction(builder);
+
+  // Assert
+  expect_sub_tx_redeemer(sub_tx, redeemer, CARDANO_REDEEMER_TAG_MINT, 0U);
+
+  // Cleanup
+  cardano_sub_transaction_unref(&sub_tx);
+  cardano_plutus_data_unref(&redeemer);
+  cardano_asset_id_unref(&asset_id);
+  cardano_script_unref(&script);
+  cardano_sub_tx_builder_unref(&builder);
+  cardano_protocol_parameters_unref(&params);
+}
+
+TEST(cardano_sub_tx_builder_mint_token, indexesPlutusV4PoliciesByPolicyIdWhateverTheOrderTheyWereAdded)
+{
+  // Arrange
+  cardano_protocol_parameters_t* params          = init_dijkstra_protocol_parameters();
+  cardano_sub_tx_builder_t*      builder         = cardano_sub_tx_builder_new(params, &CARDANO_MAINNET_SLOT_CONFIG);
+  cardano_script_t*              script          = create_script(ALWAYS_SUCCEEDS_V4_CBOR);
+  cardano_script_t*              other_script    = create_script(OTHER_ALWAYS_SUCCEEDS_V4_CBOR);
+  cardano_asset_id_t*            asset_id        = create_script_asset_id(script);
+  cardano_asset_id_t*            other_asset_id  = create_script_asset_id(other_script);
+  cardano_blake2b_hash_t*        policy_id       = cardano_script_get_hash(script);
+  cardano_blake2b_hash_t*        other_policy_id = cardano_script_get_hash(other_script);
+  cardano_plutus_data_t*         redeemer        = create_plutus_data(PLUTUS_DATA_CBOR);
+  cardano_plutus_data_t*         other_redeemer  = create_plutus_data(OTHER_PLUTUS_DATA_CBOR);
+  const bool                     script_is_first = cardano_blake2b_hash_compare(policy_id, other_policy_id) < 0;
+  cardano_asset_id_t*            low_asset_id    = script_is_first ? asset_id : other_asset_id;
+  cardano_asset_id_t*            high_asset_id   = script_is_first ? other_asset_id : asset_id;
+  cardano_plutus_data_t*         low_redeemer    = script_is_first ? redeemer : other_redeemer;
+  cardano_plutus_data_t*         high_redeemer   = script_is_first ? other_redeemer : redeemer;
+
+  // Act
+  cardano_sub_tx_builder_add_script(builder, script);
+  cardano_sub_tx_builder_add_script(builder, other_script);
+  cardano_sub_tx_builder_mint_token_with_id(builder, high_asset_id, 1, high_redeemer);
+  cardano_sub_tx_builder_mint_token_with_id(builder, low_asset_id, 1, low_redeemer);
+
+  cardano_sub_transaction_t* sub_tx = build_sub_transaction(builder);
+
+  // Assert
+  EXPECT_EQ(get_sub_tx_redeemer_count(sub_tx), 2U);
+  expect_sub_tx_redeemer(sub_tx, low_redeemer, CARDANO_REDEEMER_TAG_MINT, 0U);
+  expect_sub_tx_redeemer(sub_tx, high_redeemer, CARDANO_REDEEMER_TAG_MINT, 1U);
+
+  // Cleanup
+  cardano_sub_transaction_unref(&sub_tx);
+  cardano_plutus_data_unref(&other_redeemer);
+  cardano_plutus_data_unref(&redeemer);
+  cardano_blake2b_hash_unref(&other_policy_id);
+  cardano_blake2b_hash_unref(&policy_id);
+  cardano_asset_id_unref(&other_asset_id);
+  cardano_asset_id_unref(&asset_id);
+  cardano_script_unref(&other_script);
+  cardano_script_unref(&script);
+  cardano_sub_tx_builder_unref(&builder);
+  cardano_protocol_parameters_unref(&params);
+}
+
+TEST(cardano_sub_tx_builder_mint_token, reportsAPlutusV3PolicyWhenBuilding)
+{
+  // Arrange
+  cardano_protocol_parameters_t* params         = init_dijkstra_protocol_parameters();
+  cardano_sub_tx_builder_t*      builder        = cardano_sub_tx_builder_new(params, &CARDANO_MAINNET_SLOT_CONFIG);
+  cardano_script_t*              script         = create_script(ALWAYS_SUCCEEDS_V3_CBOR);
+  cardano_asset_id_t*            asset_id       = create_script_asset_id(script);
+  cardano_utxo_t*                reference_utxo = create_reference_script_utxo(REFERENCE_TX_ID, script);
+  cardano_plutus_data_t*         redeemer       = create_plutus_data(PLUTUS_DATA_CBOR);
+  cardano_sub_transaction_t*     sub_tx         = nullptr;
+
+  // Act
+  cardano_sub_tx_builder_add_reference_input(builder, reference_utxo);
+  cardano_sub_tx_builder_mint_token_with_id(builder, asset_id, 1, redeemer);
+
+  const cardano_error_t result = cardano_sub_tx_builder_build(builder, &sub_tx);
+
+  // Assert
+  EXPECT_EQ(result, CARDANO_ERROR_INVALID_SCRIPT_LANGUAGE);
+  EXPECT_EQ(sub_tx, nullptr);
+
+  // Cleanup
+  cardano_plutus_data_unref(&redeemer);
+  cardano_utxo_unref(&reference_utxo);
+  cardano_asset_id_unref(&asset_id);
+  cardano_script_unref(&script);
+  cardano_sub_tx_builder_unref(&builder);
+  cardano_protocol_parameters_unref(&params);
+}
+
+TEST(cardano_sub_tx_builder_mint_token, mintsWithoutARedeemerForANativeScriptPolicy)
+{
+  // Arrange
+  cardano_protocol_parameters_t* params   = init_dijkstra_protocol_parameters();
+  cardano_sub_tx_builder_t*      builder  = cardano_sub_tx_builder_new(params, &CARDANO_MAINNET_SLOT_CONFIG);
+  cardano_script_t*              script   = create_script(NATIVE_SCRIPT_CBOR);
+  cardano_asset_id_t*            asset_id = create_script_asset_id(script);
+
+  // Act
+  cardano_sub_tx_builder_add_script(builder, script);
+  cardano_sub_tx_builder_mint_token_with_id(builder, asset_id, 1, nullptr);
+
+  cardano_sub_transaction_t* sub_tx = build_sub_transaction(builder);
+  cardano_blake2b_hash_t*    hash   = cardano_sub_transaction_body_get_script_data_hash(get_body(sub_tx));
+
+  // Assert
+  EXPECT_EQ(get_sub_tx_redeemer_count(sub_tx), 0U);
+  EXPECT_EQ(hash, nullptr);
+
+  // Cleanup
+  cardano_blake2b_hash_unref(&hash);
+  cardano_sub_transaction_unref(&sub_tx);
+  cardano_asset_id_unref(&asset_id);
+  cardano_script_unref(&script);
+  cardano_sub_tx_builder_unref(&builder);
+  cardano_protocol_parameters_unref(&params);
+}
+
+TEST(cardano_sub_tx_builder_mint_token, returnsErrorIfMemoryAllocationFailsWhileBuildingWithMintRedeemers)
+{
+  // Arrange
+  cardano_protocol_parameters_t* params   = init_dijkstra_protocol_parameters();
+  cardano_script_t*              script   = create_script(ALWAYS_SUCCEEDS_V4_CBOR);
+  cardano_asset_id_t*            asset_id = create_script_asset_id(script);
+  cardano_plutus_data_t*         redeemer = create_plutus_data(PLUTUS_DATA_CBOR);
+  bool                           built    = false;
+
+  for (int i = 0; (i < 100000) && !built; ++i)
+  {
+    cardano_sub_tx_builder_t*  builder = cardano_sub_tx_builder_new(params, &CARDANO_MAINNET_SLOT_CONFIG);
+    cardano_sub_transaction_t* sub_tx  = nullptr;
+
+    cardano_sub_tx_builder_add_script(builder, script);
+    cardano_sub_tx_builder_mint_token_with_id(builder, asset_id, 1, redeemer);
+
+    reset_allocators_run_count();
+    reset_limited_malloc();
+    set_malloc_limit(i);
+    cardano_set_allocators(fail_malloc_at_limit, realloc, free);
+
+    // Act
+    const cardano_error_t result = cardano_sub_tx_builder_build(builder, &sub_tx);
+
+    cardano_set_allocators(malloc, realloc, free);
+
+    // Assert
+    built = (result == CARDANO_SUCCESS);
+
+    if (!built)
+    {
+      EXPECT_EQ(sub_tx, nullptr);
+    }
+
+    cardano_sub_transaction_unref(&sub_tx);
+    cardano_sub_tx_builder_unref(&builder);
+  }
+
+  EXPECT_TRUE(built);
+
+  // Cleanup
+  reset_allocators_run_count();
+  reset_limited_malloc();
+  cardano_plutus_data_unref(&redeemer);
+  cardano_asset_id_unref(&asset_id);
+  cardano_script_unref(&script);
+  cardano_protocol_parameters_unref(&params);
+}
+
+TEST(cardano_sub_tx_builder_withdraw_rewards, withdrawsFromAPlutusV4ScriptAccountAndEvaluatesItsRedeemer)
+{
+  // Arrange
+  cardano_protocol_parameters_t* params         = init_dijkstra_protocol_parameters();
+  cardano_sub_tx_builder_t*      builder        = cardano_sub_tx_builder_new(params, &CARDANO_MAINNET_SLOT_CONFIG);
+  cardano_script_t*              script         = create_script(ALWAYS_SUCCEEDS_V4_CBOR);
+  cardano_reward_address_t*      reward_address = create_script_reward_address(script);
+  cardano_plutus_data_t*         redeemer       = create_plutus_data(PLUTUS_DATA_CBOR);
+
+  // Act
+  cardano_sub_tx_builder_add_script(builder, script);
+  cardano_sub_tx_builder_withdraw_rewards(builder, reward_address, 1000000, redeemer);
+
+  cardano_sub_transaction_t* sub_tx = build_sub_transaction(builder);
+  cardano_blake2b_hash_t*    hash   = cardano_sub_transaction_body_get_script_data_hash(get_body(sub_tx));
+
+  // Assert
+  EXPECT_EQ(get_sub_tx_redeemer_count(sub_tx), 1U);
+  expect_sub_tx_redeemer(sub_tx, redeemer, CARDANO_REDEEMER_TAG_REWARD, 0U);
+  EXPECT_NE(hash, nullptr);
+
+  // Cleanup
+  cardano_blake2b_hash_unref(&hash);
+  cardano_sub_transaction_unref(&sub_tx);
+  cardano_plutus_data_unref(&redeemer);
+  cardano_reward_address_unref(&reward_address);
+  cardano_script_unref(&script);
+  cardano_sub_tx_builder_unref(&builder);
+  cardano_protocol_parameters_unref(&params);
+}
+
+TEST(cardano_sub_tx_builder_withdraw_rewards_ex, withdrawsFromAPlutusV4ScriptAccountAndEvaluatesItsRedeemer)
+{
+  // Arrange
+  cardano_protocol_parameters_t* params         = init_dijkstra_protocol_parameters();
+  cardano_sub_tx_builder_t*      builder        = cardano_sub_tx_builder_new(params, &CARDANO_MAINNET_SLOT_CONFIG);
+  cardano_script_t*              script         = create_script(ALWAYS_SUCCEEDS_V4_CBOR);
+  cardano_reward_address_t*      reward_address = create_script_reward_address(script);
+  cardano_plutus_data_t*         redeemer       = create_plutus_data(PLUTUS_DATA_CBOR);
+  const char*                    bech32         = cardano_reward_address_get_string(reward_address);
+
+  // Act
+  cardano_sub_tx_builder_add_script(builder, script);
+  cardano_sub_tx_builder_withdraw_rewards_ex(builder, bech32, strlen(bech32), 1000000, redeemer);
+
+  cardano_sub_transaction_t* sub_tx = build_sub_transaction(builder);
+
+  // Assert
+  expect_sub_tx_redeemer(sub_tx, redeemer, CARDANO_REDEEMER_TAG_REWARD, 0U);
+
+  // Cleanup
+  cardano_sub_transaction_unref(&sub_tx);
+  cardano_plutus_data_unref(&redeemer);
+  cardano_reward_address_unref(&reward_address);
+  cardano_script_unref(&script);
+  cardano_sub_tx_builder_unref(&builder);
+  cardano_protocol_parameters_unref(&params);
+}
+
+TEST(cardano_sub_tx_builder_withdraw_rewards, indexesScriptWithdrawalsInLedgerOrderBeforeAKeyWithdrawal)
+{
+  // Arrange
+  cardano_protocol_parameters_t* params               = init_dijkstra_protocol_parameters();
+  cardano_sub_tx_builder_t*      builder              = cardano_sub_tx_builder_new(params, &CARDANO_MAINNET_SLOT_CONFIG);
+  cardano_script_t*              script               = create_script(ALWAYS_SUCCEEDS_V4_CBOR);
+  cardano_script_t*              other_script         = create_script(OTHER_ALWAYS_SUCCEEDS_V4_CBOR);
+  cardano_reward_address_t*      key_address          = create_reward_address(REWARD_ADDRESS);
+  cardano_reward_address_t*      script_address       = create_script_reward_address(script);
+  cardano_reward_address_t*      other_script_address = create_script_reward_address(other_script);
+  cardano_blake2b_hash_t*        script_hash          = cardano_script_get_hash(script);
+  cardano_blake2b_hash_t*        other_script_hash    = cardano_script_get_hash(other_script);
+  cardano_plutus_data_t*         redeemer             = create_plutus_data(PLUTUS_DATA_CBOR);
+  cardano_plutus_data_t*         other_redeemer       = create_plutus_data(OTHER_PLUTUS_DATA_CBOR);
+  const bool                     script_is_first      = cardano_blake2b_hash_compare(script_hash, other_script_hash) < 0;
+  cardano_plutus_data_t*         low_redeemer         = script_is_first ? redeemer : other_redeemer;
+  cardano_plutus_data_t*         high_redeemer        = script_is_first ? other_redeemer : redeemer;
+
+  // Act
+  cardano_sub_tx_builder_add_script(builder, script);
+  cardano_sub_tx_builder_add_script(builder, other_script);
+  cardano_sub_tx_builder_withdraw_rewards(builder, key_address, 1000000, nullptr);
+  cardano_sub_tx_builder_withdraw_rewards(builder, other_script_address, 1000000, other_redeemer);
+  cardano_sub_tx_builder_withdraw_rewards(builder, script_address, 1000000, redeemer);
+
+  cardano_sub_transaction_t* sub_tx = build_sub_transaction(builder);
+
+  // Assert
+  EXPECT_EQ(get_sub_tx_redeemer_count(sub_tx), 2U);
+  expect_sub_tx_redeemer(sub_tx, low_redeemer, CARDANO_REDEEMER_TAG_REWARD, 0U);
+  expect_sub_tx_redeemer(sub_tx, high_redeemer, CARDANO_REDEEMER_TAG_REWARD, 1U);
+
+  // Cleanup
+  cardano_sub_transaction_unref(&sub_tx);
+  cardano_plutus_data_unref(&other_redeemer);
+  cardano_plutus_data_unref(&redeemer);
+  cardano_blake2b_hash_unref(&other_script_hash);
+  cardano_blake2b_hash_unref(&script_hash);
+  cardano_reward_address_unref(&other_script_address);
+  cardano_reward_address_unref(&script_address);
+  cardano_reward_address_unref(&key_address);
+  cardano_script_unref(&other_script);
+  cardano_script_unref(&script);
+  cardano_sub_tx_builder_unref(&builder);
+  cardano_protocol_parameters_unref(&params);
+}
+
+TEST(cardano_sub_tx_builder_withdraw_rewards, reportsAPlutusV3ScriptAccountWhenBuilding)
+{
+  // Arrange
+  cardano_protocol_parameters_t* params         = init_dijkstra_protocol_parameters();
+  cardano_sub_tx_builder_t*      builder        = cardano_sub_tx_builder_new(params, &CARDANO_MAINNET_SLOT_CONFIG);
+  cardano_script_t*              script         = create_script(ALWAYS_SUCCEEDS_V3_CBOR);
+  cardano_reward_address_t*      reward_address = create_script_reward_address(script);
+  cardano_utxo_t*                reference_utxo = create_reference_script_utxo(REFERENCE_TX_ID, script);
+  cardano_plutus_data_t*         redeemer       = create_plutus_data(PLUTUS_DATA_CBOR);
+  cardano_sub_transaction_t*     sub_tx         = nullptr;
+
+  // Act
+  cardano_sub_tx_builder_add_reference_input(builder, reference_utxo);
+  cardano_sub_tx_builder_withdraw_rewards(builder, reward_address, 1000000, redeemer);
+
+  const cardano_error_t result = cardano_sub_tx_builder_build(builder, &sub_tx);
+
+  // Assert
+  EXPECT_EQ(result, CARDANO_ERROR_INVALID_SCRIPT_LANGUAGE);
+  EXPECT_EQ(sub_tx, nullptr);
+
+  // Cleanup
+  cardano_plutus_data_unref(&redeemer);
+  cardano_utxo_unref(&reference_utxo);
+  cardano_reward_address_unref(&reward_address);
+  cardano_script_unref(&script);
+  cardano_sub_tx_builder_unref(&builder);
+  cardano_protocol_parameters_unref(&params);
+}
+
+TEST(cardano_sub_tx_builder_withdraw_rewards, returnsErrorIfMemoryAllocationFailsWhileBuildingWithRewardRedeemers)
+{
+  // Arrange
+  cardano_protocol_parameters_t* params         = init_dijkstra_protocol_parameters();
+  cardano_script_t*              script         = create_script(ALWAYS_SUCCEEDS_V4_CBOR);
+  cardano_reward_address_t*      reward_address = create_script_reward_address(script);
+  cardano_plutus_data_t*         redeemer       = create_plutus_data(PLUTUS_DATA_CBOR);
+  bool                           built          = false;
+
+  for (int i = 0; (i < 100000) && !built; ++i)
+  {
+    cardano_sub_tx_builder_t*  builder = cardano_sub_tx_builder_new(params, &CARDANO_MAINNET_SLOT_CONFIG);
+    cardano_sub_transaction_t* sub_tx  = nullptr;
+
+    cardano_sub_tx_builder_add_script(builder, script);
+    cardano_sub_tx_builder_withdraw_rewards(builder, reward_address, 1000000, redeemer);
+
+    reset_allocators_run_count();
+    reset_limited_malloc();
+    set_malloc_limit(i);
+    cardano_set_allocators(fail_malloc_at_limit, realloc, free);
+
+    // Act
+    const cardano_error_t result = cardano_sub_tx_builder_build(builder, &sub_tx);
+
+    cardano_set_allocators(malloc, realloc, free);
+
+    // Assert
+    built = (result == CARDANO_SUCCESS);
+
+    if (!built)
+    {
+      EXPECT_EQ(sub_tx, nullptr);
+    }
+
+    cardano_sub_transaction_unref(&sub_tx);
+    cardano_sub_tx_builder_unref(&builder);
+  }
+
+  EXPECT_TRUE(built);
+
+  // Cleanup
+  reset_allocators_run_count();
+  reset_limited_malloc();
+  cardano_plutus_data_unref(&redeemer);
+  cardano_reward_address_unref(&reward_address);
+  cardano_script_unref(&script);
+  cardano_protocol_parameters_unref(&params);
+}
+
+TEST(cardano_sub_tx_builder_register_reward_address, registersAPlutusV4ScriptAccountAndEvaluatesItsRedeemer)
+{
+  // Arrange
+  cardano_protocol_parameters_t* params         = init_dijkstra_protocol_parameters();
+  cardano_sub_tx_builder_t*      builder        = cardano_sub_tx_builder_new(params, &CARDANO_MAINNET_SLOT_CONFIG);
+  cardano_script_t*              script         = create_script(ALWAYS_SUCCEEDS_V4_CBOR);
+  cardano_reward_address_t*      reward_address = create_script_reward_address(script);
+  cardano_plutus_data_t*         redeemer       = create_plutus_data(PLUTUS_DATA_CBOR);
+
+  // Act
+  cardano_sub_tx_builder_add_script(builder, script);
+  cardano_sub_tx_builder_register_reward_address(builder, reward_address, redeemer);
+
+  cardano_sub_transaction_t* sub_tx = build_sub_transaction(builder);
+
+  // Assert
+  EXPECT_EQ(get_sub_tx_redeemer_count(sub_tx), 1U);
+  expect_sub_tx_redeemer(sub_tx, redeemer, CARDANO_REDEEMER_TAG_CERTIFYING, 0U);
+
+  // Cleanup
+  cardano_sub_transaction_unref(&sub_tx);
+  cardano_plutus_data_unref(&redeemer);
+  cardano_reward_address_unref(&reward_address);
+  cardano_script_unref(&script);
+  cardano_sub_tx_builder_unref(&builder);
+  cardano_protocol_parameters_unref(&params);
+}
+
+TEST(cardano_sub_tx_builder_register_reward_address_ex, registersAPlutusV4ScriptAccountAndEvaluatesItsRedeemer)
+{
+  // Arrange
+  cardano_protocol_parameters_t* params         = init_dijkstra_protocol_parameters();
+  cardano_sub_tx_builder_t*      builder        = cardano_sub_tx_builder_new(params, &CARDANO_MAINNET_SLOT_CONFIG);
+  cardano_script_t*              script         = create_script(ALWAYS_SUCCEEDS_V4_CBOR);
+  cardano_reward_address_t*      reward_address = create_script_reward_address(script);
+  cardano_plutus_data_t*         redeemer       = create_plutus_data(PLUTUS_DATA_CBOR);
+  const char*                    bech32         = cardano_reward_address_get_string(reward_address);
+
+  // Act
+  cardano_sub_tx_builder_add_script(builder, script);
+  cardano_sub_tx_builder_register_reward_address_ex(builder, bech32, strlen(bech32), redeemer);
+
+  cardano_sub_transaction_t* sub_tx = build_sub_transaction(builder);
+
+  // Assert
+  expect_sub_tx_redeemer(sub_tx, redeemer, CARDANO_REDEEMER_TAG_CERTIFYING, 0U);
+
+  // Cleanup
+  cardano_sub_transaction_unref(&sub_tx);
+  cardano_plutus_data_unref(&redeemer);
+  cardano_reward_address_unref(&reward_address);
+  cardano_script_unref(&script);
+  cardano_sub_tx_builder_unref(&builder);
+  cardano_protocol_parameters_unref(&params);
+}
+
+TEST(cardano_sub_tx_builder_deregister_reward_address, deregistersAPlutusV4ScriptAccountAndEvaluatesItsRedeemer)
+{
+  // Arrange
+  cardano_protocol_parameters_t* params         = init_dijkstra_protocol_parameters();
+  cardano_sub_tx_builder_t*      builder        = cardano_sub_tx_builder_new(params, &CARDANO_MAINNET_SLOT_CONFIG);
+  cardano_script_t*              script         = create_script(ALWAYS_SUCCEEDS_V4_CBOR);
+  cardano_reward_address_t*      reward_address = create_script_reward_address(script);
+  cardano_plutus_data_t*         redeemer       = create_plutus_data(PLUTUS_DATA_CBOR);
+
+  // Act
+  cardano_sub_tx_builder_add_script(builder, script);
+  cardano_sub_tx_builder_deregister_reward_address(builder, reward_address, redeemer);
+
+  cardano_sub_transaction_t* sub_tx = build_sub_transaction(builder);
+
+  // Assert
+  expect_sub_tx_redeemer(sub_tx, redeemer, CARDANO_REDEEMER_TAG_CERTIFYING, 0U);
+
+  // Cleanup
+  cardano_sub_transaction_unref(&sub_tx);
+  cardano_plutus_data_unref(&redeemer);
+  cardano_reward_address_unref(&reward_address);
+  cardano_script_unref(&script);
+  cardano_sub_tx_builder_unref(&builder);
+  cardano_protocol_parameters_unref(&params);
+}
+
+TEST(cardano_sub_tx_builder_deregister_reward_address_ex, deregistersAPlutusV4ScriptAccountAndEvaluatesItsRedeemer)
+{
+  // Arrange
+  cardano_protocol_parameters_t* params         = init_dijkstra_protocol_parameters();
+  cardano_sub_tx_builder_t*      builder        = cardano_sub_tx_builder_new(params, &CARDANO_MAINNET_SLOT_CONFIG);
+  cardano_script_t*              script         = create_script(ALWAYS_SUCCEEDS_V4_CBOR);
+  cardano_reward_address_t*      reward_address = create_script_reward_address(script);
+  cardano_plutus_data_t*         redeemer       = create_plutus_data(PLUTUS_DATA_CBOR);
+  const char*                    bech32         = cardano_reward_address_get_string(reward_address);
+
+  // Act
+  cardano_sub_tx_builder_add_script(builder, script);
+  cardano_sub_tx_builder_deregister_reward_address_ex(builder, bech32, strlen(bech32), redeemer);
+
+  cardano_sub_transaction_t* sub_tx = build_sub_transaction(builder);
+
+  // Assert
+  expect_sub_tx_redeemer(sub_tx, redeemer, CARDANO_REDEEMER_TAG_CERTIFYING, 0U);
+
+  // Cleanup
+  cardano_sub_transaction_unref(&sub_tx);
+  cardano_plutus_data_unref(&redeemer);
+  cardano_reward_address_unref(&reward_address);
+  cardano_script_unref(&script);
+  cardano_sub_tx_builder_unref(&builder);
+  cardano_protocol_parameters_unref(&params);
+}
+
+TEST(cardano_sub_tx_builder_delegate_stake, delegatesAPlutusV4ScriptAccountAndEvaluatesItsRedeemer)
+{
+  // Arrange
+  cardano_protocol_parameters_t* params         = init_dijkstra_protocol_parameters();
+  cardano_sub_tx_builder_t*      builder        = cardano_sub_tx_builder_new(params, &CARDANO_MAINNET_SLOT_CONFIG);
+  cardano_script_t*              script         = create_script(ALWAYS_SUCCEEDS_V4_CBOR);
+  cardano_reward_address_t*      reward_address = create_script_reward_address(script);
+  cardano_blake2b_hash_t*        pool_id        = create_hash(POOL_ID_HEX);
+  cardano_plutus_data_t*         redeemer       = create_plutus_data(PLUTUS_DATA_CBOR);
+
+  // Act
+  cardano_sub_tx_builder_add_script(builder, script);
+  cardano_sub_tx_builder_delegate_stake(builder, reward_address, pool_id, redeemer);
+
+  cardano_sub_transaction_t* sub_tx = build_sub_transaction(builder);
+
+  // Assert
+  expect_sub_tx_redeemer(sub_tx, redeemer, CARDANO_REDEEMER_TAG_CERTIFYING, 0U);
+
+  // Cleanup
+  cardano_sub_transaction_unref(&sub_tx);
+  cardano_plutus_data_unref(&redeemer);
+  cardano_blake2b_hash_unref(&pool_id);
+  cardano_reward_address_unref(&reward_address);
+  cardano_script_unref(&script);
+  cardano_sub_tx_builder_unref(&builder);
+  cardano_protocol_parameters_unref(&params);
+}
+
+TEST(cardano_sub_tx_builder_delegate_stake_ex, delegatesAPlutusV4ScriptAccountAndEvaluatesItsRedeemer)
+{
+  // Arrange
+  cardano_protocol_parameters_t* params         = init_dijkstra_protocol_parameters();
+  cardano_sub_tx_builder_t*      builder        = cardano_sub_tx_builder_new(params, &CARDANO_MAINNET_SLOT_CONFIG);
+  cardano_script_t*              script         = create_script(ALWAYS_SUCCEEDS_V4_CBOR);
+  cardano_reward_address_t*      reward_address = create_script_reward_address(script);
+  cardano_plutus_data_t*         redeemer       = create_plutus_data(PLUTUS_DATA_CBOR);
+  const char*                    bech32         = cardano_reward_address_get_string(reward_address);
+
+  // Act
+  cardano_sub_tx_builder_add_script(builder, script);
+  cardano_sub_tx_builder_delegate_stake_ex(builder, bech32, strlen(bech32), POOL_ID, strlen(POOL_ID), redeemer);
+
+  cardano_sub_transaction_t* sub_tx = build_sub_transaction(builder);
+
+  // Assert
+  expect_sub_tx_redeemer(sub_tx, redeemer, CARDANO_REDEEMER_TAG_CERTIFYING, 0U);
+
+  // Cleanup
+  cardano_sub_transaction_unref(&sub_tx);
+  cardano_plutus_data_unref(&redeemer);
+  cardano_reward_address_unref(&reward_address);
+  cardano_script_unref(&script);
+  cardano_sub_tx_builder_unref(&builder);
+  cardano_protocol_parameters_unref(&params);
+}
+
+TEST(cardano_sub_tx_builder_delegate_voting_power, delegatesAPlutusV4ScriptAccountAndEvaluatesItsRedeemer)
+{
+  // Arrange
+  cardano_protocol_parameters_t* params         = init_dijkstra_protocol_parameters();
+  cardano_sub_tx_builder_t*      builder        = cardano_sub_tx_builder_new(params, &CARDANO_MAINNET_SLOT_CONFIG);
+  cardano_script_t*              script         = create_script(ALWAYS_SUCCEEDS_V4_CBOR);
+  cardano_reward_address_t*      reward_address = create_script_reward_address(script);
+  cardano_drep_t*                drep           = create_drep(DREP_ID);
+  cardano_plutus_data_t*         redeemer       = create_plutus_data(PLUTUS_DATA_CBOR);
+
+  // Act
+  cardano_sub_tx_builder_add_script(builder, script);
+  cardano_sub_tx_builder_delegate_voting_power(builder, reward_address, drep, redeemer);
+
+  cardano_sub_transaction_t* sub_tx = build_sub_transaction(builder);
+
+  // Assert
+  expect_sub_tx_redeemer(sub_tx, redeemer, CARDANO_REDEEMER_TAG_CERTIFYING, 0U);
+
+  // Cleanup
+  cardano_sub_transaction_unref(&sub_tx);
+  cardano_plutus_data_unref(&redeemer);
+  cardano_drep_unref(&drep);
+  cardano_reward_address_unref(&reward_address);
+  cardano_script_unref(&script);
+  cardano_sub_tx_builder_unref(&builder);
+  cardano_protocol_parameters_unref(&params);
+}
+
+TEST(cardano_sub_tx_builder_delegate_voting_power_ex, delegatesAPlutusV4ScriptAccountAndEvaluatesItsRedeemer)
+{
+  // Arrange
+  cardano_protocol_parameters_t* params         = init_dijkstra_protocol_parameters();
+  cardano_sub_tx_builder_t*      builder        = cardano_sub_tx_builder_new(params, &CARDANO_MAINNET_SLOT_CONFIG);
+  cardano_script_t*              script         = create_script(ALWAYS_SUCCEEDS_V4_CBOR);
+  cardano_reward_address_t*      reward_address = create_script_reward_address(script);
+  cardano_plutus_data_t*         redeemer       = create_plutus_data(PLUTUS_DATA_CBOR);
+  const char*                    bech32         = cardano_reward_address_get_string(reward_address);
+
+  // Act
+  cardano_sub_tx_builder_add_script(builder, script);
+  cardano_sub_tx_builder_delegate_voting_power_ex(builder, bech32, strlen(bech32), DREP_ID, strlen(DREP_ID), redeemer);
+
+  cardano_sub_transaction_t* sub_tx = build_sub_transaction(builder);
+
+  // Assert
+  expect_sub_tx_redeemer(sub_tx, redeemer, CARDANO_REDEEMER_TAG_CERTIFYING, 0U);
+
+  // Cleanup
+  cardano_sub_transaction_unref(&sub_tx);
+  cardano_plutus_data_unref(&redeemer);
+  cardano_reward_address_unref(&reward_address);
+  cardano_script_unref(&script);
+  cardano_sub_tx_builder_unref(&builder);
+  cardano_protocol_parameters_unref(&params);
+}
+
+TEST(cardano_sub_tx_builder_register_drep, registersAPlutusV4ScriptDRepAndEvaluatesItsRedeemer)
+{
+  // Arrange
+  cardano_protocol_parameters_t* params     = init_dijkstra_protocol_parameters();
+  cardano_sub_tx_builder_t*      builder    = cardano_sub_tx_builder_new(params, &CARDANO_MAINNET_SLOT_CONFIG);
+  cardano_script_t*              script     = create_script(ALWAYS_SUCCEEDS_V4_CBOR);
+  cardano_credential_t*          credential = create_script_credential(script);
+  cardano_drep_t*                drep       = NULL;
+  cardano_anchor_t*              anchor     = create_anchor();
+  cardano_plutus_data_t*         redeemer   = create_plutus_data(PLUTUS_DATA_CBOR);
+
+  EXPECT_EQ(cardano_drep_new(CARDANO_DREP_TYPE_SCRIPT_HASH, credential, &drep), CARDANO_SUCCESS);
+
+  // Act
+  cardano_sub_tx_builder_add_script(builder, script);
+  cardano_sub_tx_builder_register_drep(builder, drep, anchor, redeemer);
+
+  cardano_sub_transaction_t* sub_tx = build_sub_transaction(builder);
+
+  // Assert
+  expect_sub_tx_redeemer(sub_tx, redeemer, CARDANO_REDEEMER_TAG_CERTIFYING, 0U);
+
+  // Cleanup
+  cardano_sub_transaction_unref(&sub_tx);
+  cardano_plutus_data_unref(&redeemer);
+  cardano_anchor_unref(&anchor);
+  cardano_drep_unref(&drep);
+  cardano_credential_unref(&credential);
+  cardano_script_unref(&script);
+  cardano_sub_tx_builder_unref(&builder);
+  cardano_protocol_parameters_unref(&params);
+}
+
+TEST(cardano_sub_tx_builder_update_drep, updatesAPlutusV4ScriptDRepAndEvaluatesItsRedeemer)
+{
+  // Arrange
+  cardano_protocol_parameters_t* params     = init_dijkstra_protocol_parameters();
+  cardano_sub_tx_builder_t*      builder    = cardano_sub_tx_builder_new(params, &CARDANO_MAINNET_SLOT_CONFIG);
+  cardano_script_t*              script     = create_script(ALWAYS_SUCCEEDS_V4_CBOR);
+  cardano_credential_t*          credential = create_script_credential(script);
+  cardano_drep_t*                drep       = NULL;
+  cardano_anchor_t*              anchor     = create_anchor();
+  cardano_plutus_data_t*         redeemer   = create_plutus_data(PLUTUS_DATA_CBOR);
+
+  EXPECT_EQ(cardano_drep_new(CARDANO_DREP_TYPE_SCRIPT_HASH, credential, &drep), CARDANO_SUCCESS);
+
+  // Act
+  cardano_sub_tx_builder_add_script(builder, script);
+  cardano_sub_tx_builder_update_drep(builder, drep, anchor, redeemer);
+
+  cardano_sub_transaction_t* sub_tx = build_sub_transaction(builder);
+
+  // Assert
+  expect_sub_tx_redeemer(sub_tx, redeemer, CARDANO_REDEEMER_TAG_CERTIFYING, 0U);
+
+  // Cleanup
+  cardano_sub_transaction_unref(&sub_tx);
+  cardano_plutus_data_unref(&redeemer);
+  cardano_anchor_unref(&anchor);
+  cardano_drep_unref(&drep);
+  cardano_credential_unref(&credential);
+  cardano_script_unref(&script);
+  cardano_sub_tx_builder_unref(&builder);
+  cardano_protocol_parameters_unref(&params);
+}
+
+TEST(cardano_sub_tx_builder_deregister_drep, deregistersAPlutusV4ScriptDRepAndEvaluatesItsRedeemer)
+{
+  // Arrange
+  cardano_protocol_parameters_t* params     = init_dijkstra_protocol_parameters();
+  cardano_sub_tx_builder_t*      builder    = cardano_sub_tx_builder_new(params, &CARDANO_MAINNET_SLOT_CONFIG);
+  cardano_script_t*              script     = create_script(ALWAYS_SUCCEEDS_V4_CBOR);
+  cardano_credential_t*          credential = create_script_credential(script);
+  cardano_drep_t*                drep       = NULL;
+  cardano_plutus_data_t*         redeemer   = create_plutus_data(PLUTUS_DATA_CBOR);
+
+  EXPECT_EQ(cardano_drep_new(CARDANO_DREP_TYPE_SCRIPT_HASH, credential, &drep), CARDANO_SUCCESS);
+
+  // Act
+  cardano_sub_tx_builder_add_script(builder, script);
+  cardano_sub_tx_builder_deregister_drep(builder, drep, redeemer);
+
+  cardano_sub_transaction_t* sub_tx = build_sub_transaction(builder);
+
+  // Assert
+  expect_sub_tx_redeemer(sub_tx, redeemer, CARDANO_REDEEMER_TAG_CERTIFYING, 0U);
+
+  // Cleanup
+  cardano_sub_transaction_unref(&sub_tx);
+  cardano_plutus_data_unref(&redeemer);
+  cardano_drep_unref(&drep);
+  cardano_credential_unref(&credential);
+  cardano_script_unref(&script);
+  cardano_sub_tx_builder_unref(&builder);
+  cardano_protocol_parameters_unref(&params);
+}
+
+TEST(cardano_sub_tx_builder_register_drep_ex, registersAPlutusV4ScriptDRepAndEvaluatesItsRedeemer)
+{
+  // Arrange
+  cardano_protocol_parameters_t* params       = init_dijkstra_protocol_parameters();
+  cardano_sub_tx_builder_t*      builder      = cardano_sub_tx_builder_new(params, &CARDANO_MAINNET_SLOT_CONFIG);
+  cardano_script_t*              script       = create_script(ALWAYS_SUCCEEDS_V4_CBOR);
+  cardano_credential_t*          credential   = create_script_credential(script);
+  cardano_drep_t*                drep         = NULL;
+  cardano_plutus_data_t*         redeemer     = create_plutus_data(PLUTUS_DATA_CBOR);
+  char                           drep_id[128] = { 0 };
+
+  EXPECT_EQ(cardano_drep_new(CARDANO_DREP_TYPE_SCRIPT_HASH, credential, &drep), CARDANO_SUCCESS);
+  EXPECT_EQ(cardano_drep_to_string(drep, drep_id, sizeof(drep_id)), CARDANO_SUCCESS);
+
+  // Act
+  cardano_sub_tx_builder_add_script(builder, script);
+  cardano_sub_tx_builder_register_drep_ex(builder, drep_id, strlen(drep_id), ANCHOR_URL, strlen(ANCHOR_URL), ANCHOR_HASH, strlen(ANCHOR_HASH), redeemer);
+
+  cardano_sub_transaction_t* sub_tx = build_sub_transaction(builder);
+
+  // Assert
+  expect_sub_tx_redeemer(sub_tx, redeemer, CARDANO_REDEEMER_TAG_CERTIFYING, 0U);
+
+  // Cleanup
+  cardano_sub_transaction_unref(&sub_tx);
+  cardano_plutus_data_unref(&redeemer);
+  cardano_drep_unref(&drep);
+  cardano_credential_unref(&credential);
+  cardano_script_unref(&script);
+  cardano_sub_tx_builder_unref(&builder);
+  cardano_protocol_parameters_unref(&params);
+}
+
+TEST(cardano_sub_tx_builder_update_drep_ex, updatesAPlutusV4ScriptDRepAndEvaluatesItsRedeemer)
+{
+  // Arrange
+  cardano_protocol_parameters_t* params       = init_dijkstra_protocol_parameters();
+  cardano_sub_tx_builder_t*      builder      = cardano_sub_tx_builder_new(params, &CARDANO_MAINNET_SLOT_CONFIG);
+  cardano_script_t*              script       = create_script(ALWAYS_SUCCEEDS_V4_CBOR);
+  cardano_credential_t*          credential   = create_script_credential(script);
+  cardano_drep_t*                drep         = NULL;
+  cardano_plutus_data_t*         redeemer     = create_plutus_data(PLUTUS_DATA_CBOR);
+  char                           drep_id[128] = { 0 };
+
+  EXPECT_EQ(cardano_drep_new(CARDANO_DREP_TYPE_SCRIPT_HASH, credential, &drep), CARDANO_SUCCESS);
+  EXPECT_EQ(cardano_drep_to_string(drep, drep_id, sizeof(drep_id)), CARDANO_SUCCESS);
+
+  // Act
+  cardano_sub_tx_builder_add_script(builder, script);
+  cardano_sub_tx_builder_update_drep_ex(builder, drep_id, strlen(drep_id), ANCHOR_URL, strlen(ANCHOR_URL), ANCHOR_HASH, strlen(ANCHOR_HASH), redeemer);
+
+  cardano_sub_transaction_t* sub_tx = build_sub_transaction(builder);
+
+  // Assert
+  expect_sub_tx_redeemer(sub_tx, redeemer, CARDANO_REDEEMER_TAG_CERTIFYING, 0U);
+
+  // Cleanup
+  cardano_sub_transaction_unref(&sub_tx);
+  cardano_plutus_data_unref(&redeemer);
+  cardano_drep_unref(&drep);
+  cardano_credential_unref(&credential);
+  cardano_script_unref(&script);
+  cardano_sub_tx_builder_unref(&builder);
+  cardano_protocol_parameters_unref(&params);
+}
+
+TEST(cardano_sub_tx_builder_deregister_drep_ex, deregistersAPlutusV4ScriptDRepAndEvaluatesItsRedeemer)
+{
+  // Arrange
+  cardano_protocol_parameters_t* params       = init_dijkstra_protocol_parameters();
+  cardano_sub_tx_builder_t*      builder      = cardano_sub_tx_builder_new(params, &CARDANO_MAINNET_SLOT_CONFIG);
+  cardano_script_t*              script       = create_script(ALWAYS_SUCCEEDS_V4_CBOR);
+  cardano_credential_t*          credential   = create_script_credential(script);
+  cardano_drep_t*                drep         = NULL;
+  cardano_plutus_data_t*         redeemer     = create_plutus_data(PLUTUS_DATA_CBOR);
+  char                           drep_id[128] = { 0 };
+
+  EXPECT_EQ(cardano_drep_new(CARDANO_DREP_TYPE_SCRIPT_HASH, credential, &drep), CARDANO_SUCCESS);
+  EXPECT_EQ(cardano_drep_to_string(drep, drep_id, sizeof(drep_id)), CARDANO_SUCCESS);
+
+  // Act
+  cardano_sub_tx_builder_add_script(builder, script);
+  cardano_sub_tx_builder_deregister_drep_ex(builder, drep_id, strlen(drep_id), redeemer);
+
+  cardano_sub_transaction_t* sub_tx = build_sub_transaction(builder);
+
+  // Assert
+  expect_sub_tx_redeemer(sub_tx, redeemer, CARDANO_REDEEMER_TAG_CERTIFYING, 0U);
+
+  // Cleanup
+  cardano_sub_transaction_unref(&sub_tx);
+  cardano_plutus_data_unref(&redeemer);
+  cardano_drep_unref(&drep);
+  cardano_credential_unref(&credential);
+  cardano_script_unref(&script);
+  cardano_sub_tx_builder_unref(&builder);
+  cardano_protocol_parameters_unref(&params);
+}
+
+TEST(cardano_sub_tx_builder_add_certificate, indexesCertificateRedeemersByTheirPositionInTheSubTransaction)
+{
+  // Arrange
+  cardano_protocol_parameters_t* params         = init_dijkstra_protocol_parameters();
+  cardano_sub_tx_builder_t*      builder        = cardano_sub_tx_builder_new(params, &CARDANO_MAINNET_SLOT_CONFIG);
+  cardano_script_t*              script         = create_script(ALWAYS_SUCCEEDS_V4_CBOR);
+  cardano_script_t*              other_script   = create_script(OTHER_ALWAYS_SUCCEEDS_V4_CBOR);
+  cardano_reward_address_t*      key_address    = create_reward_address(REWARD_ADDRESS);
+  cardano_reward_address_t*      address        = create_script_reward_address(script);
+  cardano_reward_address_t*      other_address  = create_script_reward_address(other_script);
+  cardano_certificate_t*         certificate    = create_certificate(CERTIFICATE_CBOR);
+  cardano_plutus_data_t*         redeemer       = create_plutus_data(PLUTUS_DATA_CBOR);
+  cardano_plutus_data_t*         other_redeemer = create_plutus_data(OTHER_PLUTUS_DATA_CBOR);
+
+  // Act
+  cardano_sub_tx_builder_add_script(builder, script);
+  cardano_sub_tx_builder_add_script(builder, other_script);
+  cardano_sub_tx_builder_register_reward_address(builder, key_address, nullptr);
+  cardano_sub_tx_builder_add_certificate(builder, certificate, nullptr);
+  cardano_sub_tx_builder_register_reward_address(builder, other_address, other_redeemer);
+  cardano_sub_tx_builder_register_reward_address(builder, address, redeemer);
+
+  cardano_sub_transaction_t* sub_tx = build_sub_transaction(builder);
+
+  // Assert
+  EXPECT_EQ(get_sub_tx_redeemer_count(sub_tx), 2U);
+  expect_sub_tx_redeemer(sub_tx, other_redeemer, CARDANO_REDEEMER_TAG_CERTIFYING, 2U);
+  expect_sub_tx_redeemer(sub_tx, redeemer, CARDANO_REDEEMER_TAG_CERTIFYING, 3U);
+
+  // Cleanup
+  cardano_sub_transaction_unref(&sub_tx);
+  cardano_plutus_data_unref(&other_redeemer);
+  cardano_plutus_data_unref(&redeemer);
+  cardano_certificate_unref(&certificate);
+  cardano_reward_address_unref(&other_address);
+  cardano_reward_address_unref(&address);
+  cardano_reward_address_unref(&key_address);
+  cardano_script_unref(&other_script);
+  cardano_script_unref(&script);
+  cardano_sub_tx_builder_unref(&builder);
+  cardano_protocol_parameters_unref(&params);
+}
+
+TEST(cardano_sub_tx_builder_add_certificate, evaluatesTheRedeemerOfACertificateOfAPlutusV4Script)
+{
+  // Arrange
+  cardano_protocol_parameters_t* params         = init_dijkstra_protocol_parameters();
+  cardano_sub_tx_builder_t*      builder        = cardano_sub_tx_builder_new(params, &CARDANO_MAINNET_SLOT_CONFIG);
+  cardano_script_t*              script         = create_script(ALWAYS_SUCCEEDS_V4_CBOR);
+  cardano_credential_t*          credential     = create_script_credential(script);
+  cardano_unregistration_cert_t* unregistration = NULL;
+  cardano_certificate_t*         certificate    = NULL;
+  cardano_plutus_data_t*         redeemer       = create_plutus_data(PLUTUS_DATA_CBOR);
+
+  EXPECT_EQ(cardano_unregistration_cert_new(credential, KEY_DEPOSIT, &unregistration), CARDANO_SUCCESS);
+  EXPECT_EQ(cardano_certificate_new_unregistration(unregistration, &certificate), CARDANO_SUCCESS);
+
+  // Act
+  cardano_sub_tx_builder_add_script(builder, script);
+  cardano_sub_tx_builder_add_certificate(builder, certificate, redeemer);
+
+  cardano_sub_transaction_t* sub_tx = build_sub_transaction(builder);
+
+  // Assert
+  expect_sub_tx_redeemer(sub_tx, redeemer, CARDANO_REDEEMER_TAG_CERTIFYING, 0U);
+
+  // Cleanup
+  cardano_sub_transaction_unref(&sub_tx);
+  cardano_plutus_data_unref(&redeemer);
+  cardano_certificate_unref(&certificate);
+  cardano_unregistration_cert_unref(&unregistration);
+  cardano_credential_unref(&credential);
+  cardano_script_unref(&script);
+  cardano_sub_tx_builder_unref(&builder);
+  cardano_protocol_parameters_unref(&params);
+}
+
+TEST(cardano_sub_tx_builder_register_reward_address, reportsAPlutusV3ScriptAccountWhenBuilding)
+{
+  // Arrange
+  cardano_protocol_parameters_t* params         = init_dijkstra_protocol_parameters();
+  cardano_sub_tx_builder_t*      builder        = cardano_sub_tx_builder_new(params, &CARDANO_MAINNET_SLOT_CONFIG);
+  cardano_script_t*              script         = create_script(ALWAYS_SUCCEEDS_V3_CBOR);
+  cardano_reward_address_t*      reward_address = create_script_reward_address(script);
+  cardano_utxo_t*                reference_utxo = create_reference_script_utxo(REFERENCE_TX_ID, script);
+  cardano_plutus_data_t*         redeemer       = create_plutus_data(PLUTUS_DATA_CBOR);
+  cardano_sub_transaction_t*     sub_tx         = nullptr;
+
+  // Act
+  cardano_sub_tx_builder_add_reference_input(builder, reference_utxo);
+  cardano_sub_tx_builder_register_reward_address(builder, reward_address, redeemer);
+
+  const cardano_error_t result = cardano_sub_tx_builder_build(builder, &sub_tx);
+
+  // Assert
+  EXPECT_EQ(result, CARDANO_ERROR_INVALID_SCRIPT_LANGUAGE);
+  EXPECT_EQ(sub_tx, nullptr);
+
+  // Cleanup
+  cardano_plutus_data_unref(&redeemer);
+  cardano_utxo_unref(&reference_utxo);
+  cardano_reward_address_unref(&reward_address);
+  cardano_script_unref(&script);
+  cardano_sub_tx_builder_unref(&builder);
+  cardano_protocol_parameters_unref(&params);
+}
+
+TEST(cardano_sub_tx_builder_register_reward_address, returnsErrorIfMemoryAllocationFailsWhileBuildingWithCertificateRedeemers)
+{
+  // Arrange
+  cardano_protocol_parameters_t* params         = init_dijkstra_protocol_parameters();
+  cardano_script_t*              script         = create_script(ALWAYS_SUCCEEDS_V4_CBOR);
+  cardano_reward_address_t*      reward_address = create_script_reward_address(script);
+  cardano_plutus_data_t*         redeemer       = create_plutus_data(PLUTUS_DATA_CBOR);
+  bool                           built          = false;
+
+  for (int i = 0; (i < 100000) && !built; ++i)
+  {
+    cardano_sub_tx_builder_t*  builder = cardano_sub_tx_builder_new(params, &CARDANO_MAINNET_SLOT_CONFIG);
+    cardano_sub_transaction_t* sub_tx  = nullptr;
+
+    cardano_sub_tx_builder_add_script(builder, script);
+    cardano_sub_tx_builder_register_reward_address(builder, reward_address, redeemer);
+
+    reset_allocators_run_count();
+    reset_limited_malloc();
+    set_malloc_limit(i);
+    cardano_set_allocators(fail_malloc_at_limit, realloc, free);
+
+    // Act
+    const cardano_error_t result = cardano_sub_tx_builder_build(builder, &sub_tx);
+
+    cardano_set_allocators(malloc, realloc, free);
+
+    // Assert
+    built = (result == CARDANO_SUCCESS);
+
+    if (!built)
+    {
+      EXPECT_EQ(sub_tx, nullptr);
+    }
+
+    cardano_sub_transaction_unref(&sub_tx);
+    cardano_sub_tx_builder_unref(&builder);
+  }
+
+  EXPECT_TRUE(built);
+
+  // Cleanup
+  reset_allocators_run_count();
+  reset_limited_malloc();
+  cardano_plutus_data_unref(&redeemer);
+  cardano_reward_address_unref(&reward_address);
+  cardano_script_unref(&script);
+  cardano_protocol_parameters_unref(&params);
+}
+
+TEST(cardano_sub_tx_builder_vote, votesAsAPlutusV4ScriptVoterAndEvaluatesItsRedeemer)
+{
+  // Arrange
+  cardano_protocol_parameters_t*  params    = init_dijkstra_protocol_parameters();
+  cardano_sub_tx_builder_t*       builder   = cardano_sub_tx_builder_new(params, &CARDANO_MAINNET_SLOT_CONFIG);
+  cardano_script_t*               script    = create_script(ALWAYS_SUCCEEDS_V4_CBOR);
+  cardano_voter_t*                voter     = create_script_voter(script);
+  cardano_governance_action_id_t* action_id = create_governance_action_id();
+  cardano_voting_procedure_t*     vote      = create_voting_procedure(VOTING_PROCEDURE_CBOR);
+  cardano_plutus_data_t*          redeemer  = create_plutus_data(PLUTUS_DATA_CBOR);
+
+  // Act
+  cardano_sub_tx_builder_add_script(builder, script);
+  cardano_sub_tx_builder_vote(builder, voter, action_id, vote, redeemer);
+
+  cardano_sub_transaction_t* sub_tx = build_sub_transaction(builder);
+  cardano_blake2b_hash_t*    hash   = cardano_sub_transaction_body_get_script_data_hash(get_body(sub_tx));
+
+  // Assert
+  EXPECT_EQ(get_sub_tx_redeemer_count(sub_tx), 1U);
+  expect_sub_tx_redeemer(sub_tx, redeemer, CARDANO_REDEEMER_TAG_VOTING, 0U);
+  EXPECT_NE(hash, nullptr);
+
+  // Cleanup
+  cardano_blake2b_hash_unref(&hash);
+  cardano_sub_transaction_unref(&sub_tx);
+  cardano_plutus_data_unref(&redeemer);
+  cardano_voting_procedure_unref(&vote);
+  cardano_governance_action_id_unref(&action_id);
+  cardano_voter_unref(&voter);
+  cardano_script_unref(&script);
+  cardano_sub_tx_builder_unref(&builder);
+  cardano_protocol_parameters_unref(&params);
+}
+
+TEST(cardano_sub_tx_builder_vote, indexesPlutusV4ScriptVotersByVoterOrder)
+{
+  // Arrange
+  cardano_protocol_parameters_t*  params          = init_dijkstra_protocol_parameters();
+  cardano_sub_tx_builder_t*       builder         = cardano_sub_tx_builder_new(params, &CARDANO_MAINNET_SLOT_CONFIG);
+  cardano_script_t*               script          = create_script(ALWAYS_SUCCEEDS_V4_CBOR);
+  cardano_script_t*               other_script    = create_script(OTHER_ALWAYS_SUCCEEDS_V4_CBOR);
+  cardano_voter_t*                voter           = create_script_voter(script);
+  cardano_voter_t*                other_voter     = create_script_voter(other_script);
+  cardano_blake2b_hash_t*         script_hash     = cardano_script_get_hash(script);
+  cardano_blake2b_hash_t*         other_hash      = cardano_script_get_hash(other_script);
+  cardano_governance_action_id_t* action_id       = create_governance_action_id();
+  cardano_voting_procedure_t*     vote            = create_voting_procedure(VOTING_PROCEDURE_CBOR);
+  cardano_plutus_data_t*          redeemer        = create_plutus_data(PLUTUS_DATA_CBOR);
+  cardano_plutus_data_t*          other_redeemer  = create_plutus_data(OTHER_PLUTUS_DATA_CBOR);
+  const bool                      script_is_first = cardano_blake2b_hash_compare(script_hash, other_hash) < 0;
+  cardano_voter_t*                low_voter       = script_is_first ? voter : other_voter;
+  cardano_voter_t*                high_voter      = script_is_first ? other_voter : voter;
+  cardano_plutus_data_t*          low_redeemer    = script_is_first ? redeemer : other_redeemer;
+  cardano_plutus_data_t*          high_redeemer   = script_is_first ? other_redeemer : redeemer;
+
+  // Act
+  cardano_sub_tx_builder_add_script(builder, script);
+  cardano_sub_tx_builder_add_script(builder, other_script);
+  cardano_sub_tx_builder_vote(builder, high_voter, action_id, vote, high_redeemer);
+  cardano_sub_tx_builder_vote(builder, low_voter, action_id, vote, low_redeemer);
+
+  cardano_sub_transaction_t* sub_tx = build_sub_transaction(builder);
+
+  // Assert
+  EXPECT_EQ(get_sub_tx_redeemer_count(sub_tx), 2U);
+  expect_sub_tx_redeemer(sub_tx, low_redeemer, CARDANO_REDEEMER_TAG_VOTING, 0U);
+  expect_sub_tx_redeemer(sub_tx, high_redeemer, CARDANO_REDEEMER_TAG_VOTING, 1U);
+
+  // Cleanup
+  cardano_sub_transaction_unref(&sub_tx);
+  cardano_plutus_data_unref(&other_redeemer);
+  cardano_plutus_data_unref(&redeemer);
+  cardano_voting_procedure_unref(&vote);
+  cardano_governance_action_id_unref(&action_id);
+  cardano_blake2b_hash_unref(&other_hash);
+  cardano_blake2b_hash_unref(&script_hash);
+  cardano_voter_unref(&other_voter);
+  cardano_voter_unref(&voter);
+  cardano_script_unref(&other_script);
+  cardano_script_unref(&script);
+  cardano_sub_tx_builder_unref(&builder);
+  cardano_protocol_parameters_unref(&params);
+}
+
+TEST(cardano_sub_tx_builder_vote, reportsAPlutusV3ScriptVoterWhenBuilding)
+{
+  // Arrange
+  cardano_protocol_parameters_t*  params         = init_dijkstra_protocol_parameters();
+  cardano_sub_tx_builder_t*       builder        = cardano_sub_tx_builder_new(params, &CARDANO_MAINNET_SLOT_CONFIG);
+  cardano_script_t*               script         = create_script(ALWAYS_SUCCEEDS_V3_CBOR);
+  cardano_voter_t*                voter          = create_script_voter(script);
+  cardano_governance_action_id_t* action_id      = create_governance_action_id();
+  cardano_voting_procedure_t*     vote           = create_voting_procedure(VOTING_PROCEDURE_CBOR);
+  cardano_utxo_t*                 reference_utxo = create_reference_script_utxo(REFERENCE_TX_ID, script);
+  cardano_plutus_data_t*          redeemer       = create_plutus_data(PLUTUS_DATA_CBOR);
+  cardano_sub_transaction_t*      sub_tx         = nullptr;
+
+  // Act
+  cardano_sub_tx_builder_add_reference_input(builder, reference_utxo);
+  cardano_sub_tx_builder_vote(builder, voter, action_id, vote, redeemer);
+
+  const cardano_error_t result = cardano_sub_tx_builder_build(builder, &sub_tx);
+
+  // Assert
+  EXPECT_EQ(result, CARDANO_ERROR_INVALID_SCRIPT_LANGUAGE);
+  EXPECT_EQ(sub_tx, nullptr);
+
+  // Cleanup
+  cardano_plutus_data_unref(&redeemer);
+  cardano_utxo_unref(&reference_utxo);
+  cardano_voting_procedure_unref(&vote);
+  cardano_governance_action_id_unref(&action_id);
+  cardano_voter_unref(&voter);
+  cardano_script_unref(&script);
+  cardano_sub_tx_builder_unref(&builder);
+  cardano_protocol_parameters_unref(&params);
+}
+
+TEST(cardano_sub_tx_builder_vote, returnsErrorIfMemoryAllocationFailsWhileBuildingWithVotingRedeemers)
+{
+  // Arrange
+  cardano_protocol_parameters_t*  params    = init_dijkstra_protocol_parameters();
+  cardano_script_t*               script    = create_script(ALWAYS_SUCCEEDS_V4_CBOR);
+  cardano_voter_t*                voter     = create_script_voter(script);
+  cardano_governance_action_id_t* action_id = create_governance_action_id();
+  cardano_voting_procedure_t*     vote      = create_voting_procedure(VOTING_PROCEDURE_CBOR);
+  cardano_plutus_data_t*          redeemer  = create_plutus_data(PLUTUS_DATA_CBOR);
+  bool                            built     = false;
+
+  for (int i = 0; (i < 100000) && !built; ++i)
+  {
+    cardano_sub_tx_builder_t*  builder = cardano_sub_tx_builder_new(params, &CARDANO_MAINNET_SLOT_CONFIG);
+    cardano_sub_transaction_t* sub_tx  = nullptr;
+
+    cardano_sub_tx_builder_add_script(builder, script);
+    cardano_sub_tx_builder_vote(builder, voter, action_id, vote, redeemer);
+
+    reset_allocators_run_count();
+    reset_limited_malloc();
+    set_malloc_limit(i);
+    cardano_set_allocators(fail_malloc_at_limit, realloc, free);
+
+    // Act
+    const cardano_error_t result = cardano_sub_tx_builder_build(builder, &sub_tx);
+
+    cardano_set_allocators(malloc, realloc, free);
+
+    // Assert
+    built = (result == CARDANO_SUCCESS);
+
+    if (!built)
+    {
+      EXPECT_EQ(sub_tx, nullptr);
+    }
+
+    cardano_sub_transaction_unref(&sub_tx);
+    cardano_sub_tx_builder_unref(&builder);
+  }
+
+  EXPECT_TRUE(built);
+
+  // Cleanup
+  reset_allocators_run_count();
+  reset_limited_malloc();
+  cardano_plutus_data_unref(&redeemer);
+  cardano_voting_procedure_unref(&vote);
+  cardano_governance_action_id_unref(&action_id);
+  cardano_voter_unref(&voter);
   cardano_script_unref(&script);
   cardano_protocol_parameters_unref(&params);
 }
