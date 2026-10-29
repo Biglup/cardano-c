@@ -71,16 +71,19 @@ extern "C" {
  * present: a script is needed when the transaction spends an input it locks, mints under its policy, withdraws from a
  * reward account it controls, carries a certificate it must authorize, votes with it as the voter, carries a parameter
  * change or treasury withdrawals proposal it guards as the guardrails script or lists it among its guards, and its
- * language is taken from whatever source provides it: the witness set or a reference script of a resolved reference
- * input, of a pre selected input or of an input chosen by coin selection. A script that is only present and that the
- * transaction does not need never triggers this rule, and a needed native or PlutusV4 script does not either. The check
- * is made on every balancing iteration, with the inputs of that iteration. When the rule applies the sub transactions
- * must balance between themselves, otherwise the function fails with \ref CARDANO_ERROR_UNBALANCED_SUB_TRANSACTIONS and
- * the fix is to add a balancing sub transaction, since top level change can not absorb the imbalance. In that mode the
- * witness datums of the top level transaction are also checked with the sub transactions removed: each of them must be
- * needed by a script input the transaction spends, pre selected or coin selected, or match the datum hash of one of its
- * outputs or of the output behind one of \p reference_inputs, otherwise the function fails with
- * \ref CARDANO_ERROR_NOT_ALLOWED_SUPPLEMENTAL_DATUMS.
+ * language is taken from whatever source provides it, pooled over the whole batch: the witness sets of the transaction
+ * and of its sub transactions, or a reference script of a resolved reference input, of a pre selected input or of an
+ * input chosen by coin selection of the transaction, or of an input or a reference input of a sub transaction. A
+ * reference input of a sub transaction that none of \p available_utxo, \p reference_inputs and \p pre_selected_utxo
+ * resolves is not seen. A script that is only present and that the transaction does not need never triggers this rule,
+ * and a needed native or PlutusV4 script does not either. The check is made on every balancing iteration, with the
+ * inputs of that iteration. When the rule applies the sub transactions must balance between themselves, otherwise the
+ * function fails with \ref CARDANO_ERROR_UNBALANCED_SUB_TRANSACTIONS and the fix is to add a balancing sub
+ * transaction, since top level change can not absorb the imbalance. In that mode the witness datums of the top level
+ * transaction are also checked with the sub transactions removed: each of them must be needed by an input the
+ * transaction spends, pre selected or coin selected, that is locked by a Plutus script among the pooled scripts, or
+ * match the datum hash of one of its outputs or of the output behind one of \p reference_inputs, otherwise the
+ * function fails with \ref CARDANO_ERROR_NOT_ALLOWED_SUPPLEMENTAL_DATUMS.
  *
  * The fee always includes the reference scripts the ledger charges for, whatever their language and whether or not the
  * transaction has redeemers: every reference script found on the UTXOs of \p reference_inputs and on the UTXOs the

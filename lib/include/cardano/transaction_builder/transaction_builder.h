@@ -1551,15 +1551,21 @@ CARDANO_EXPORT void cardano_tx_builder_add_starting_account_balance_interval_ex(
  * when the transaction spends an input it locks, mints under its policy, withdraws from a reward account it controls,
  * carries a certificate it must authorize, votes with it as the voter, carries a parameter change or treasury
  * withdrawals proposal it guards as the guardrails script or lists it among its guards. Its language is taken from
- * whatever source provides it: the witness set, a reference input or a spent input, including the inputs chosen by coin
- * selection. A script that is only present and that the transaction does not need does not trigger this rule.
+ * whatever source provides it, pooled over the whole batch: the witness sets of the transaction and of its sub
+ * transactions, and the reference scripts of the reference inputs and of the inputs of the transaction, including the
+ * inputs chosen by coin selection, and of the inputs and reference inputs of its sub transactions. A reference input
+ * of a sub transaction that neither the resolved UTXOs given to `cardano_tx_builder_add_sub_transaction` nor the
+ * available UTXOs, reference inputs or inputs of the transaction resolve is not seen. A script that is only present
+ * and that the transaction does not need does not trigger this rule.
  *
  * In that same legacy mode the ledger checks the witness datums of the transaction with its sub transactions removed:
- * each datum the transaction carries must be needed by a script input it spends, or match the datum hash of one of its
- * own outputs or of the output behind one of its own reference inputs. A datum whose hash only an output or a reference
- * input of a sub transaction carries makes building fail with \ref CARDANO_ERROR_NOT_ALLOWED_SUPPLEMENTAL_DATUMS, and
- * the fix is to leave that datum to the sub transaction. Whatever the mode, the datums needed by the inputs a level
- * spends must be in the witness set of that same level, while the scripts of every level are shared by the whole batch.
+ * each datum the transaction carries must be needed by a spent input locked by a Plutus script among the pooled
+ * scripts, or match the datum hash of one of its own outputs or of the output behind one of its own reference inputs.
+ * A datum whose hash only an output or a reference input of a sub transaction carries makes building fail with
+ * \ref CARDANO_ERROR_NOT_ALLOWED_SUPPLEMENTAL_DATUMS, and the fix is to leave that datum to the sub transaction, or to
+ * drop it from the transaction, since an output that carries a datum hash does not need the datum in the witness set.
+ * Whatever the mode, the datums needed by the inputs a level spends must be in the witness set of that same level,
+ * while the scripts of every level are shared by the whole batch.
  *
  * The fee of the transaction pays for the whole batch: the size of the sub transactions, the execution units of their
  * redeemers and their reference scripts, the ones carried by the UTXOs they spend and the ones of their resolved

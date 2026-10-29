@@ -50,13 +50,13 @@ extern "C" {
  * \ref cardano_transaction_find_input_index family of functions can be used to look up canonical
  * positions.
  *
- * For a sub transaction the callback runs once, when the sub transaction is built, with a draft
- * transaction carrying the body of the sub transaction and its inputs in sorted order, so the
- * indices it computes are local to the sub transaction body.
- *
  * \warning Callbacks are invoked on EVERY balancing iteration and MUST be pure, deterministic
  * functions of their arguments: no captured mutable state, no side effects, no randomness. A
  * callback that violates this contract can prevent the balancing loop from converging.
+ *
+ * When used with the sub transaction builder, the callback runs once, when the sub transaction is
+ * built, with a draft transaction carrying the body of the sub transaction and its inputs in sorted
+ * order, so the indices it computes are local to the sub transaction body.
  *
  * \param[in]  user_context    The opaque pointer given at registration time.
  * \param[in]  draft_tx        The balanced draft transaction. Borrowed; must not be modified.
