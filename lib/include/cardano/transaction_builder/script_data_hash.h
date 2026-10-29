@@ -45,16 +45,25 @@ extern "C" {
  * 32-byte hash that represents the script data for a transaction. The data is encoded in CBOR
  * (Concise Binary Object Representation) format and hashed using the Blake2b hashing algorithm.
  *
+ * When the transaction carries datums but no redeemers, the hash is computed from an empty redeemers map,
+ * the datums and an empty language views map. No Plutus script is executed in that case, so the cost models
+ * are not used and may be empty.
+ *
+ * When there are neither redeemers nor datums, or there are redeemers but the cost models are empty, no hash
+ * is computed and `data_hash` is set to NULL.
+ *
  * \param[in] costmdls A pointer to \ref cardano_costmdls_t representing the cost models for script execution.
+ *                     It must not be NULL, but it may be empty.
  * \param[in] redeemers A pointer to \ref cardano_redeemer_list_t containing the transaction's redeemers.
- *                      If this parameter is NULL or empty, the function may return undefined behavior.
+ *                      This parameter can be NULL or empty.
  * \param[in] datums A pointer to \ref cardano_plutus_data_set_t representing the datums included in the transaction.
+ *                   This parameter can be NULL or empty.
  * \param[out] data_hash On successful computation, this will point to a \ref cardano_blake2b_hash_t containing
- *                       the computed 32-byte hash for the script data.
+ *                       the computed 32-byte hash for the script data, or NULL when no hash is computed.
  *
  * \return \ref cardano_error_t indicating the outcome of the operation. Returns \ref CARDANO_SUCCESS if the
- *         script data hash was successfully computed, or an appropriate error code if a failure occurred.
- *         If no redeemers are provided, the function may return an undefined result.
+ *         script data hash was successfully computed or no hash was needed, or an appropriate error code if a
+ *         failure occurred.
  *
  * Usage Example:
  * \code{.c}

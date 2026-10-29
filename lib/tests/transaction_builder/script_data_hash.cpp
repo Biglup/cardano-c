@@ -229,6 +229,36 @@ TEST(cardano_compute_script_data_hash, canComputeHashWithOnlyDatum)
   cardano_blake2b_hash_unref(&data_hash);
 }
 
+TEST(cardano_compute_script_data_hash, canComputeHashWithOnlyDatumAndEmptyCostModels)
+{
+  cardano_costmdls_t*        costmdls = NULL;
+  cardano_plutus_data_t*     data     = NULL;
+  cardano_plutus_data_set_t* datums   = NULL;
+
+  EXPECT_EQ(cardano_costmdls_new(&costmdls), CARDANO_SUCCESS);
+
+  EXPECT_EQ(cardano_plutus_data_new_integer_from_string("1234567890123456789012345678901234567890", strlen("1234567890123456789012345678901234567890"), 10, &data), CARDANO_SUCCESS);
+  EXPECT_EQ(cardano_plutus_data_set_new(&datums), CARDANO_SUCCESS);
+  EXPECT_EQ(cardano_plutus_data_set_add(datums, data), CARDANO_SUCCESS);
+
+  cardano_blake2b_hash_t* data_hash = NULL;
+  EXPECT_EQ(cardano_compute_script_data_hash(costmdls, NULL, datums, &data_hash), CARDANO_SUCCESS);
+  ASSERT_NE(data_hash, nullptr);
+
+  const size_t hash_size = cardano_blake2b_hash_get_hex_size(data_hash);
+  char*        hash      = (char*)malloc(hash_size);
+
+  EXPECT_EQ(cardano_blake2b_hash_to_hex(data_hash, hash, hash_size), CARDANO_SUCCESS);
+
+  EXPECT_STREQ(hash, "bf148471e341d2a0d6ae9ccec8f7c75b5f155348b8af39c9fb86b95575ac9c3c");
+
+  free(hash);
+  cardano_plutus_data_unref(&data);
+  cardano_plutus_data_set_unref(&datums);
+  cardano_costmdls_unref(&costmdls);
+  cardano_blake2b_hash_unref(&data_hash);
+}
+
 TEST(cardano_compute_script_data_hash, canComputeHashWithOnlyRedeemer)
 {
   cardano_cost_model_t*    plutusV2_costs = build_cost_model(&localNetworkPlutusV2CostModel[0], sizeof(localNetworkPlutusV2CostModel) / sizeof(localNetworkPlutusV2CostModel[0]), CARDANO_PLUTUS_LANGUAGE_VERSION_V2);
@@ -369,4 +399,39 @@ TEST(cardano_compute_script_data_hash, doesntCrashOnMemoryAllocError)
   cardano_transaction_body_unref(&body);
   cardano_redeemer_list_unref(&redeemers);
   cardano_plutus_data_set_unref(&datums);
+}
+
+TEST(cardano_compute_script_data_hash, doesntCrashOnMemoryAllocErrorWithOnlyDatum)
+{
+  cardano_costmdls_t*        costmdls = NULL;
+  cardano_plutus_data_t*     data     = NULL;
+  cardano_plutus_data_set_t* datums   = NULL;
+
+  EXPECT_EQ(cardano_costmdls_new(&costmdls), CARDANO_SUCCESS);
+
+  EXPECT_EQ(cardano_plutus_data_new_integer_from_string("1234567890123456789012345678901234567890", strlen("1234567890123456789012345678901234567890"), 10, &data), CARDANO_SUCCESS);
+  EXPECT_EQ(cardano_plutus_data_set_new(&datums), CARDANO_SUCCESS);
+  EXPECT_EQ(cardano_plutus_data_set_add(datums, data), CARDANO_SUCCESS);
+
+  for (int i = 0; i < 10; ++i)
+  {
+    reset_allocators_run_count();
+    set_malloc_limit(i);
+    cardano_set_allocators(fail_malloc_at_limit, realloc, free);
+
+    cardano_blake2b_hash_t* data_hash = NULL;
+    const cardano_error_t   result    = cardano_compute_script_data_hash(costmdls, NULL, datums, &data_hash);
+
+    cardano_set_allocators(malloc, realloc, free);
+
+    EXPECT_EQ(result, CARDANO_ERROR_MEMORY_ALLOCATION_FAILED);
+    cardano_blake2b_hash_unref(&data_hash);
+  }
+
+  reset_allocators_run_count();
+  reset_limited_malloc();
+
+  cardano_plutus_data_unref(&data);
+  cardano_plutus_data_set_unref(&datums);
+  cardano_costmdls_unref(&costmdls);
 }
