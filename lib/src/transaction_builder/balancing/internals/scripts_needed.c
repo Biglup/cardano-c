@@ -49,6 +49,17 @@ typedef struct plutus_languages_t
     bool has_plutus_v4;
 } plutus_languages_t;
 
+/**
+ * \brief The outcome of looking the needed script hashes up among the scripts a transaction is provided with.
+ */
+typedef struct script_lookup_t
+{
+    cardano_blake2b_hash_set_t* needed_scripts;
+    cardano_blake2b_hash_set_t* matched_scripts;
+    cardano_blake2b_hash_set_t* plutus_scripts;
+    plutus_languages_t          languages;
+} script_lookup_t;
+
 /* STATIC FUNCTIONS **********************************************************/
 
 /**
@@ -565,80 +576,80 @@ add_proposal_scripts(cardano_blake2b_hash_set_t* set, cardano_proposal_procedure
 /**
  * \brief Records the language of a provided script if the script is needed.
  *
- * \param[in] needed_scripts The needed script hashes.
- * \param[in,out] matched_scripts The needed script hashes matched so far.
+ * \param[in,out] lookup The lookup that holds the needed script hashes and receives the match.
  * \param[in] hash The hash of the provided script.
  * \param[in] language The language of the provided script.
- * \param[in,out] languages The languages of the needed scripts matched so far.
  *
  * \return \ref CARDANO_SUCCESS if the script was recorded or is not needed, or an appropriate error code.
  */
 static cardano_error_t
 record_provided_script(
-  cardano_blake2b_hash_set_t* needed_scripts,
-  cardano_blake2b_hash_set_t* matched_scripts,
-  cardano_blake2b_hash_t*     hash,
-  cardano_script_language_t   language,
-  plutus_languages_t*         languages)
+  script_lookup_t*          lookup,
+  cardano_blake2b_hash_t*   hash,
+  cardano_script_language_t language)
 {
   if (hash == NULL)
   {
     return CARDANO_ERROR_POINTER_IS_NULL;
   }
 
-  if (!_cardano_blake2b_hash_set_has(needed_scripts, hash))
+  if (!_cardano_blake2b_hash_set_has(lookup->needed_scripts, hash))
   {
     return CARDANO_SUCCESS;
   }
+
+  bool is_plutus = true;
 
   switch (language)
   {
     case CARDANO_SCRIPT_LANGUAGE_PLUTUS_V1:
     {
-      languages->has_plutus_v1 = true;
+      lookup->languages.has_plutus_v1 = true;
       break;
     }
     case CARDANO_SCRIPT_LANGUAGE_PLUTUS_V2:
     {
-      languages->has_plutus_v2 = true;
+      lookup->languages.has_plutus_v2 = true;
       break;
     }
     case CARDANO_SCRIPT_LANGUAGE_PLUTUS_V3:
     {
-      languages->has_plutus_v3 = true;
+      lookup->languages.has_plutus_v3 = true;
       break;
     }
     case CARDANO_SCRIPT_LANGUAGE_PLUTUS_V4:
     {
-      languages->has_plutus_v4 = true;
+      lookup->languages.has_plutus_v4 = true;
       break;
     }
     case CARDANO_SCRIPT_LANGUAGE_NATIVE:
     default:
     {
+      is_plutus = false;
       break;
     }
   }
 
-  return add_unique_hash(matched_scripts, hash);
+  cardano_error_t result = add_unique_hash(lookup->matched_scripts, hash);
+
+  if ((result == CARDANO_SUCCESS) && is_plutus)
+  {
+    result = add_unique_hash(lookup->plutus_scripts, hash);
+  }
+
+  return result;
 }
 
 /**
  * \brief Records the languages of the needed scripts among the scripts of a witness set.
  *
  * \param[in] witnesses The witness set that provides the scripts.
- * \param[in] needed_scripts The needed script hashes.
- * \param[in,out] matched_scripts The needed script hashes matched so far.
- * \param[in,out] languages The languages of the needed scripts matched so far.
+ * \param[in,out] lookup The lookup that holds the needed script hashes and receives the matches.
  *
  * \return \ref CARDANO_SUCCESS if the scripts were inspected, or an appropriate error code.
  */
 static cardano_error_t
-record_witness_set_scripts(
-  cardano_witness_set_t*      witnesses,
-  cardano_blake2b_hash_set_t* needed_scripts,
-  cardano_blake2b_hash_set_t* matched_scripts,
-  plutus_languages_t*         languages)
+record_witness_set_scripts(cardano_witness_set_t* witnesses, script_lookup_t* lookup)
 {
   cardano_error_t result = CARDANO_SUCCESS;
 
@@ -655,7 +666,7 @@ record_witness_set_scripts(
     {
       cardano_blake2b_hash_t* hash = cardano_native_script_get_hash(script);
 
-      result = record_provided_script(needed_scripts, matched_scripts, hash, CARDANO_SCRIPT_LANGUAGE_NATIVE, languages);
+      result = record_provided_script(lookup, hash, CARDANO_SCRIPT_LANGUAGE_NATIVE);
 
       cardano_blake2b_hash_unref(&hash);
     }
@@ -676,7 +687,7 @@ record_witness_set_scripts(
     {
       cardano_blake2b_hash_t* hash = cardano_plutus_v1_script_get_hash(script);
 
-      result = record_provided_script(needed_scripts, matched_scripts, hash, CARDANO_SCRIPT_LANGUAGE_PLUTUS_V1, languages);
+      result = record_provided_script(lookup, hash, CARDANO_SCRIPT_LANGUAGE_PLUTUS_V1);
 
       cardano_blake2b_hash_unref(&hash);
     }
@@ -697,7 +708,7 @@ record_witness_set_scripts(
     {
       cardano_blake2b_hash_t* hash = cardano_plutus_v2_script_get_hash(script);
 
-      result = record_provided_script(needed_scripts, matched_scripts, hash, CARDANO_SCRIPT_LANGUAGE_PLUTUS_V2, languages);
+      result = record_provided_script(lookup, hash, CARDANO_SCRIPT_LANGUAGE_PLUTUS_V2);
 
       cardano_blake2b_hash_unref(&hash);
     }
@@ -718,7 +729,7 @@ record_witness_set_scripts(
     {
       cardano_blake2b_hash_t* hash = cardano_plutus_v3_script_get_hash(script);
 
-      result = record_provided_script(needed_scripts, matched_scripts, hash, CARDANO_SCRIPT_LANGUAGE_PLUTUS_V3, languages);
+      result = record_provided_script(lookup, hash, CARDANO_SCRIPT_LANGUAGE_PLUTUS_V3);
 
       cardano_blake2b_hash_unref(&hash);
     }
@@ -739,7 +750,7 @@ record_witness_set_scripts(
     {
       cardano_blake2b_hash_t* hash = cardano_plutus_v4_script_get_hash(script);
 
-      result = record_provided_script(needed_scripts, matched_scripts, hash, CARDANO_SCRIPT_LANGUAGE_PLUTUS_V4, languages);
+      result = record_provided_script(lookup, hash, CARDANO_SCRIPT_LANGUAGE_PLUTUS_V4);
 
       cardano_blake2b_hash_unref(&hash);
     }
@@ -754,18 +765,12 @@ record_witness_set_scripts(
  * \brief Records the languages of the needed scripts among the reference scripts of a list of resolved UTXOs.
  *
  * \param[in] utxos The resolved UTXOs whose reference scripts are provided, or NULL when there are none.
- * \param[in] needed_scripts The needed script hashes.
- * \param[in,out] matched_scripts The needed script hashes matched so far.
- * \param[in,out] languages The languages of the needed scripts matched so far.
+ * \param[in,out] lookup The lookup that holds the needed script hashes and receives the matches.
  *
  * \return \ref CARDANO_SUCCESS if the reference scripts were inspected, or an appropriate error code.
  */
 static cardano_error_t
-record_reference_scripts(
-  cardano_utxo_list_t*        utxos,
-  cardano_blake2b_hash_set_t* needed_scripts,
-  cardano_blake2b_hash_set_t* matched_scripts,
-  plutus_languages_t*         languages)
+record_reference_scripts(cardano_utxo_list_t* utxos, script_lookup_t* lookup)
 {
   const size_t size = cardano_utxo_list_get_length(utxos);
 
@@ -802,7 +807,7 @@ record_reference_scripts(
 
     cardano_blake2b_hash_t* hash = cardano_script_get_hash(script);
 
-    result = record_provided_script(needed_scripts, matched_scripts, hash, language, languages);
+    result = record_provided_script(lookup, hash, language);
 
     cardano_blake2b_hash_unref(&hash);
 
@@ -813,6 +818,127 @@ record_reference_scripts(
   }
 
   return CARDANO_SUCCESS;
+}
+
+/**
+ * \brief Records the languages of the needed scripts among the scripts of the witness sets of the sub transactions.
+ *
+ * \param[in] tx The transaction whose sub transactions provide the scripts.
+ * \param[in,out] lookup The lookup that holds the needed script hashes and receives the matches.
+ *
+ * \return \ref CARDANO_SUCCESS if the scripts were inspected, or an appropriate error code.
+ */
+static cardano_error_t
+record_sub_transaction_scripts(cardano_transaction_t* tx, script_lookup_t* lookup)
+{
+  cardano_transaction_body_t* body = cardano_transaction_get_body(tx);
+  cardano_transaction_body_unref(&body);
+
+  cardano_sub_transaction_set_t* sub_transactions = cardano_transaction_body_get_sub_transactions(body);
+  cardano_sub_transaction_set_unref(&sub_transactions);
+
+  cardano_error_t result = CARDANO_SUCCESS;
+
+  for (size_t i = 0U; (i < cardano_sub_transaction_set_get_length(sub_transactions)) && (result == CARDANO_SUCCESS); ++i)
+  {
+    cardano_sub_transaction_t* sub_tx = NULL;
+
+    result = cardano_sub_transaction_set_get(sub_transactions, i, &sub_tx);
+    cardano_sub_transaction_unref(&sub_tx);
+
+    if (result == CARDANO_SUCCESS)
+    {
+      cardano_witness_set_t* witnesses = cardano_sub_transaction_get_witness_set(sub_tx);
+      cardano_witness_set_unref(&witnesses);
+
+      result = record_witness_set_scripts(witnesses, lookup);
+    }
+  }
+
+  return result;
+}
+
+/**
+ * \brief Looks the needed script hashes up among the scripts a transaction is provided with.
+ *
+ * The provided scripts are pooled over the whole batch, as the ledger does for a top level transaction: the scripts of
+ * its witness set and of the witness sets of its sub transactions, and the reference scripts of the resolved UTXOs.
+ *
+ * \param[in] tx The transaction whose witness sets provide scripts.
+ * \param[in] needed_scripts The needed script hashes.
+ * \param[in] reference_inputs The resolved reference inputs whose reference scripts are provided, or NULL.
+ * \param[in] pre_selected_utxo The pre selected UTXOs whose reference scripts are provided, or NULL.
+ * \param[in] selection The UTXOs chosen by coin selection whose reference scripts are provided, or NULL.
+ * \param[in] sub_transaction_utxos The resolved UTXOs of the sub transactions whose reference scripts are provided, or NULL.
+ * \param[out] lookup On success, the needed script hashes that were matched and the ones matched by a Plutus script,
+ *                    which the caller must release with \ref cardano_blake2b_hash_set_unref, and their languages.
+ *
+ * \return \ref CARDANO_SUCCESS if the provided scripts were inspected, or an appropriate error code.
+ */
+static cardano_error_t
+lookup_provided_scripts(
+  cardano_transaction_t*      tx,
+  cardano_blake2b_hash_set_t* needed_scripts,
+  cardano_utxo_list_t*        reference_inputs,
+  cardano_utxo_list_t*        pre_selected_utxo,
+  cardano_utxo_list_t*        selection,
+  cardano_utxo_list_t*        sub_transaction_utxos,
+  script_lookup_t*            lookup)
+{
+  const plutus_languages_t no_languages = { false, false, false, false };
+
+  lookup->needed_scripts  = needed_scripts;
+  lookup->matched_scripts = NULL;
+  lookup->plutus_scripts  = NULL;
+  lookup->languages       = no_languages;
+
+  cardano_error_t result = cardano_blake2b_hash_set_new(&lookup->matched_scripts);
+
+  if (result == CARDANO_SUCCESS)
+  {
+    result = cardano_blake2b_hash_set_new(&lookup->plutus_scripts);
+  }
+
+  if (result == CARDANO_SUCCESS)
+  {
+    cardano_witness_set_t* witnesses = cardano_transaction_get_witness_set(tx);
+    cardano_witness_set_unref(&witnesses);
+
+    result = record_witness_set_scripts(witnesses, lookup);
+  }
+
+  if (result == CARDANO_SUCCESS)
+  {
+    result = record_sub_transaction_scripts(tx, lookup);
+  }
+
+  if (result == CARDANO_SUCCESS)
+  {
+    result = record_reference_scripts(reference_inputs, lookup);
+  }
+
+  if (result == CARDANO_SUCCESS)
+  {
+    result = record_reference_scripts(pre_selected_utxo, lookup);
+  }
+
+  if (result == CARDANO_SUCCESS)
+  {
+    result = record_reference_scripts(selection, lookup);
+  }
+
+  if (result == CARDANO_SUCCESS)
+  {
+    result = record_reference_scripts(sub_transaction_utxos, lookup);
+  }
+
+  if (result != CARDANO_SUCCESS)
+  {
+    cardano_blake2b_hash_set_unref(&lookup->matched_scripts);
+    cardano_blake2b_hash_set_unref(&lookup->plutus_scripts);
+  }
+
+  return result;
 }
 
 /* IMPLEMENTATION ************************************************************/
@@ -992,6 +1118,7 @@ _cardano_get_plutus_languages_used(
   cardano_utxo_list_t*        reference_inputs,
   cardano_utxo_list_t*        pre_selected_utxo,
   cardano_utxo_list_t*        selection,
+  cardano_utxo_list_t*        sub_transaction_utxos,
   bool*                       has_plutus_v1,
   bool*                       has_plutus_v2,
   bool*                       has_plutus_v3,
@@ -1003,34 +1130,13 @@ _cardano_get_plutus_languages_used(
     return CARDANO_ERROR_POINTER_IS_NULL;
   }
 
-  plutus_languages_t languages = { false, false, false, false };
+  script_lookup_t lookup = { NULL, NULL, NULL, { false, false, false, false } };
 
-  cardano_blake2b_hash_set_t* matched_scripts = NULL;
-  cardano_error_t             result          = cardano_blake2b_hash_set_new(&matched_scripts);
+  cardano_error_t result = lookup_provided_scripts(tx, needed_scripts, reference_inputs, pre_selected_utxo, selection, sub_transaction_utxos, &lookup);
 
   if (result != CARDANO_SUCCESS)
   {
     return result;
-  }
-
-  cardano_witness_set_t* witnesses = cardano_transaction_get_witness_set(tx);
-  cardano_witness_set_unref(&witnesses);
-
-  result = record_witness_set_scripts(witnesses, needed_scripts, matched_scripts, &languages);
-
-  if (result == CARDANO_SUCCESS)
-  {
-    result = record_reference_scripts(reference_inputs, needed_scripts, matched_scripts, &languages);
-  }
-
-  if (result == CARDANO_SUCCESS)
-  {
-    result = record_reference_scripts(pre_selected_utxo, needed_scripts, matched_scripts, &languages);
-  }
-
-  if (result == CARDANO_SUCCESS)
-  {
-    result = record_reference_scripts(selection, needed_scripts, matched_scripts, &languages);
   }
 
   bool is_missing = false;
@@ -1045,24 +1151,56 @@ _cardano_get_plutus_languages_used(
 
     if (result == CARDANO_SUCCESS)
     {
-      is_missing = !_cardano_blake2b_hash_set_has(matched_scripts, hash);
+      is_missing = !_cardano_blake2b_hash_set_has(lookup.matched_scripts, hash);
     }
 
     cardano_blake2b_hash_unref(&hash);
   }
 
-  cardano_blake2b_hash_set_unref(&matched_scripts);
+  cardano_blake2b_hash_set_unref(&lookup.matched_scripts);
+  cardano_blake2b_hash_set_unref(&lookup.plutus_scripts);
 
   if (result != CARDANO_SUCCESS)
   {
     return result;
   }
 
-  *has_plutus_v1       = languages.has_plutus_v1;
-  *has_plutus_v2       = languages.has_plutus_v2;
-  *has_plutus_v3       = languages.has_plutus_v3;
-  *has_plutus_v4       = languages.has_plutus_v4;
+  *has_plutus_v1       = lookup.languages.has_plutus_v1;
+  *has_plutus_v2       = lookup.languages.has_plutus_v2;
+  *has_plutus_v3       = lookup.languages.has_plutus_v3;
+  *has_plutus_v4       = lookup.languages.has_plutus_v4;
   *has_missing_scripts = is_missing;
+
+  return CARDANO_SUCCESS;
+}
+
+cardano_error_t
+_cardano_get_plutus_scripts_provided(
+  cardano_transaction_t*       tx,
+  cardano_blake2b_hash_set_t*  script_hashes,
+  cardano_utxo_list_t*         reference_inputs,
+  cardano_utxo_list_t*         pre_selected_utxo,
+  cardano_utxo_list_t*         selection,
+  cardano_utxo_list_t*         sub_transaction_utxos,
+  cardano_blake2b_hash_set_t** plutus_scripts)
+{
+  if ((tx == NULL) || (script_hashes == NULL) || (plutus_scripts == NULL))
+  {
+    return CARDANO_ERROR_POINTER_IS_NULL;
+  }
+
+  script_lookup_t lookup = { NULL, NULL, NULL, { false, false, false, false } };
+
+  const cardano_error_t result = lookup_provided_scripts(tx, script_hashes, reference_inputs, pre_selected_utxo, selection, sub_transaction_utxos, &lookup);
+
+  if (result != CARDANO_SUCCESS)
+  {
+    return result;
+  }
+
+  cardano_blake2b_hash_set_unref(&lookup.matched_scripts);
+
+  *plutus_scripts = lookup.plutus_scripts;
 
   return CARDANO_SUCCESS;
 }

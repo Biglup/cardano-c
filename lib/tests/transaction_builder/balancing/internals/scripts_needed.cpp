@@ -27,6 +27,7 @@
 
 extern "C" {
 #include "../../../../src/transaction_builder/balancing/internals/scripts_needed.h"
+#include "../../../../src/transaction_builder/balancing/internals/unique_signers.h"
 }
 
 #include <allocators.h>
@@ -612,15 +613,14 @@ count_proposal_scripts(const char* cbor)
 }
 
 /**
- * Adds a script to the witness set of a transaction.
- * \param tx the transaction.
- * \param script the script, a native, PlutusV1, PlutusV2 or PlutusV3 script.
+ * Adds a script to a witness set.
+ * \param witnesses the witness set.
+ * \param script the script, a native, PlutusV1, PlutusV2, PlutusV3 or PlutusV4 script.
  */
 static void
-add_witness_script(cardano_transaction_t* tx, cardano_script_t* script)
+add_script_to_witness_set(cardano_witness_set_t* witnesses, cardano_script_t* script)
 {
-  cardano_witness_set_t*    witnesses = cardano_transaction_get_witness_set(tx);
-  cardano_script_language_t language  = CARDANO_SCRIPT_LANGUAGE_NATIVE;
+  cardano_script_language_t language = CARDANO_SCRIPT_LANGUAGE_NATIVE;
 
   EXPECT_EQ(cardano_script_get_language(script, &language), CARDANO_SUCCESS);
 
@@ -689,8 +689,58 @@ add_witness_script(cardano_transaction_t* tx, cardano_script_t* script)
     cardano_plutus_v3_script_set_unref(&set);
     cardano_plutus_v3_script_unref(&plutus);
   }
+}
+
+/**
+ * Adds a script to the witness set of a transaction.
+ * \param tx the transaction.
+ * \param script the script, a native, PlutusV1, PlutusV2, PlutusV3 or PlutusV4 script.
+ */
+static void
+add_witness_script(cardano_transaction_t* tx, cardano_script_t* script)
+{
+  cardano_witness_set_t* witnesses = cardano_transaction_get_witness_set(tx);
+
+  add_script_to_witness_set(witnesses, script);
 
   cardano_witness_set_unref(&witnesses);
+}
+
+/**
+ * Adds to a transaction a sub transaction that spends and pays nothing and whose witness set provides a script.
+ * \param tx the transaction.
+ * \param script the script the witness set of the sub transaction provides.
+ */
+static void
+add_sub_transaction_script(cardano_transaction_t* tx, cardano_script_t* script)
+{
+  cardano_transaction_input_set_t*   inputs           = nullptr;
+  cardano_transaction_output_list_t* outputs          = nullptr;
+  cardano_sub_transaction_body_t*    sub_body         = nullptr;
+  cardano_witness_set_t*             witnesses        = nullptr;
+  cardano_sub_transaction_t*         sub_tx           = nullptr;
+  cardano_sub_transaction_set_t*     sub_transactions = nullptr;
+  cardano_transaction_body_t*        body             = cardano_transaction_get_body(tx);
+
+  EXPECT_EQ(cardano_transaction_input_set_new(&inputs), CARDANO_SUCCESS);
+  EXPECT_EQ(cardano_transaction_output_list_new(&outputs), CARDANO_SUCCESS);
+  EXPECT_EQ(cardano_sub_transaction_body_new(inputs, outputs, nullptr, &sub_body), CARDANO_SUCCESS);
+  EXPECT_EQ(cardano_witness_set_new(&witnesses), CARDANO_SUCCESS);
+
+  add_script_to_witness_set(witnesses, script);
+
+  EXPECT_EQ(cardano_sub_transaction_new(sub_body, witnesses, nullptr, &sub_tx), CARDANO_SUCCESS);
+  EXPECT_EQ(cardano_sub_transaction_set_new(&sub_transactions), CARDANO_SUCCESS);
+  EXPECT_EQ(cardano_sub_transaction_set_add(sub_transactions, sub_tx), CARDANO_SUCCESS);
+  EXPECT_EQ(cardano_transaction_body_set_sub_transactions(body, sub_transactions), CARDANO_SUCCESS);
+
+  cardano_transaction_body_unref(&body);
+  cardano_sub_transaction_set_unref(&sub_transactions);
+  cardano_sub_transaction_unref(&sub_tx);
+  cardano_witness_set_unref(&witnesses);
+  cardano_sub_transaction_body_unref(&sub_body);
+  cardano_transaction_output_list_unref(&outputs);
+  cardano_transaction_input_set_unref(&inputs);
 }
 
 /**
@@ -711,6 +761,7 @@ typedef struct languages_t
  * \param reference_inputs the resolved reference inputs, or NULL.
  * \param pre_selected_utxo the pre selected UTXOs, or NULL.
  * \param selection the UTXOs chosen by coin selection, or NULL.
+ * \param sub_transaction_utxos the resolved UTXOs of the sub transactions, or NULL.
  * \return The languages found.
  */
 static languages_t
@@ -718,7 +769,8 @@ get_languages(
   cardano_transaction_t* tx,
   cardano_utxo_list_t*   reference_inputs,
   cardano_utxo_list_t*   pre_selected_utxo,
-  cardano_utxo_list_t*   selection)
+  cardano_utxo_list_t*   selection,
+  cardano_utxo_list_t*   sub_transaction_utxos)
 {
   languages_t                 languages = { true, true, true, true, true };
   cardano_blake2b_hash_set_t* needed    = get_needed(tx, nullptr);
@@ -730,6 +782,7 @@ get_languages(
       reference_inputs,
       pre_selected_utxo,
       selection,
+      sub_transaction_utxos,
       &languages.v1,
       &languages.v2,
       &languages.v3,
@@ -1339,13 +1392,13 @@ TEST(_cardano_get_plutus_languages_used, returnsErrorIfGivenNull)
   bool                        flag   = false;
 
   // Act & Assert
-  EXPECT_EQ(_cardano_get_plutus_languages_used(nullptr, needed, nullptr, nullptr, nullptr, &flag, &flag, &flag, &flag, &flag), CARDANO_ERROR_POINTER_IS_NULL);
-  EXPECT_EQ(_cardano_get_plutus_languages_used(tx, nullptr, nullptr, nullptr, nullptr, &flag, &flag, &flag, &flag, &flag), CARDANO_ERROR_POINTER_IS_NULL);
-  EXPECT_EQ(_cardano_get_plutus_languages_used(tx, needed, nullptr, nullptr, nullptr, nullptr, &flag, &flag, &flag, &flag), CARDANO_ERROR_POINTER_IS_NULL);
-  EXPECT_EQ(_cardano_get_plutus_languages_used(tx, needed, nullptr, nullptr, nullptr, &flag, nullptr, &flag, &flag, &flag), CARDANO_ERROR_POINTER_IS_NULL);
-  EXPECT_EQ(_cardano_get_plutus_languages_used(tx, needed, nullptr, nullptr, nullptr, &flag, &flag, nullptr, &flag, &flag), CARDANO_ERROR_POINTER_IS_NULL);
-  EXPECT_EQ(_cardano_get_plutus_languages_used(tx, needed, nullptr, nullptr, nullptr, &flag, &flag, &flag, nullptr, &flag), CARDANO_ERROR_POINTER_IS_NULL);
-  EXPECT_EQ(_cardano_get_plutus_languages_used(tx, needed, nullptr, nullptr, nullptr, &flag, &flag, &flag, &flag, nullptr), CARDANO_ERROR_POINTER_IS_NULL);
+  EXPECT_EQ(_cardano_get_plutus_languages_used(nullptr, needed, nullptr, nullptr, nullptr, nullptr, &flag, &flag, &flag, &flag, &flag), CARDANO_ERROR_POINTER_IS_NULL);
+  EXPECT_EQ(_cardano_get_plutus_languages_used(tx, nullptr, nullptr, nullptr, nullptr, nullptr, &flag, &flag, &flag, &flag, &flag), CARDANO_ERROR_POINTER_IS_NULL);
+  EXPECT_EQ(_cardano_get_plutus_languages_used(tx, needed, nullptr, nullptr, nullptr, nullptr, nullptr, &flag, &flag, &flag, &flag), CARDANO_ERROR_POINTER_IS_NULL);
+  EXPECT_EQ(_cardano_get_plutus_languages_used(tx, needed, nullptr, nullptr, nullptr, nullptr, &flag, nullptr, &flag, &flag, &flag), CARDANO_ERROR_POINTER_IS_NULL);
+  EXPECT_EQ(_cardano_get_plutus_languages_used(tx, needed, nullptr, nullptr, nullptr, nullptr, &flag, &flag, nullptr, &flag, &flag), CARDANO_ERROR_POINTER_IS_NULL);
+  EXPECT_EQ(_cardano_get_plutus_languages_used(tx, needed, nullptr, nullptr, nullptr, nullptr, &flag, &flag, &flag, nullptr, &flag), CARDANO_ERROR_POINTER_IS_NULL);
+  EXPECT_EQ(_cardano_get_plutus_languages_used(tx, needed, nullptr, nullptr, nullptr, nullptr, &flag, &flag, &flag, &flag, nullptr), CARDANO_ERROR_POINTER_IS_NULL);
 
   // Cleanup
   cardano_blake2b_hash_set_unref(&needed);
@@ -1364,7 +1417,7 @@ TEST(_cardano_get_plutus_languages_used, reportsNothingIfNoScriptIsNeeded)
   add_witness_script(tx, script);
 
   // Act
-  const languages_t languages = get_languages(tx, list, list, list);
+  const languages_t languages = get_languages(tx, list, list, list, list);
 
   // Assert
   EXPECT_FALSE(languages.v1);
@@ -1395,7 +1448,7 @@ TEST(_cardano_get_plutus_languages_used, findsANeededScriptOfTheWitnessSet)
     set_script_guard(tx, script);
 
     // Act
-    const languages_t languages = get_languages(tx, nullptr, nullptr, nullptr);
+    const languages_t languages = get_languages(tx, nullptr, nullptr, nullptr, nullptr);
 
     // Assert
     EXPECT_EQ(languages.v1, i == 0U);
@@ -1412,7 +1465,7 @@ TEST(_cardano_get_plutus_languages_used, findsANeededScriptOfTheWitnessSet)
 
 TEST(_cardano_get_plutus_languages_used, findsANeededReferenceScriptOnEachKindOfResolvedUtxo)
 {
-  for (int source = 0; source < 3; ++source)
+  for (int source = 0; source < 4; ++source)
   {
     // Arrange
     cardano_transaction_t* tx     = new_empty_transaction();
@@ -1428,7 +1481,8 @@ TEST(_cardano_get_plutus_languages_used, findsANeededReferenceScriptOnEachKindOf
       tx,
       (source == 0) ? list : nullptr,
       (source == 1) ? list : nullptr,
-      (source == 2) ? list : nullptr);
+      (source == 2) ? list : nullptr,
+      (source == 3) ? list : nullptr);
 
     // Assert
     EXPECT_FALSE(languages.v1);
@@ -1458,7 +1512,7 @@ TEST(_cardano_get_plutus_languages_used, findsANeededPlutusV4ReferenceScript)
   set_script_guard(tx, script);
 
   // Act
-  const languages_t languages = get_languages(tx, list, nullptr, nullptr);
+  const languages_t languages = get_languages(tx, list, nullptr, nullptr, nullptr);
 
   // Assert
   EXPECT_FALSE(languages.v1);
@@ -1488,7 +1542,7 @@ TEST(_cardano_get_plutus_languages_used, reportsNoLanguageForANeededNativeScript
   set_script_guard(tx, script);
 
   // Act
-  const languages_t languages = get_languages(tx, list, nullptr, nullptr);
+  const languages_t languages = get_languages(tx, list, nullptr, nullptr, nullptr);
 
   // Assert
   EXPECT_FALSE(languages.v1);
@@ -1519,7 +1573,7 @@ TEST(_cardano_get_plutus_languages_used, reportsANeededScriptThatIsNotProvided)
   set_script_guard(tx, script);
 
   // Act
-  const languages_t languages = get_languages(tx, list, list, list);
+  const languages_t languages = get_languages(tx, list, list, list, list);
 
   // Assert
   EXPECT_FALSE(languages.v1);
@@ -1558,7 +1612,7 @@ TEST(_cardano_get_plutus_languages_used, findsTheScriptOfASpentScriptInputOnItsO
   bool missing = true;
 
   // Act
-  cardano_error_t result = _cardano_get_plutus_languages_used(tx, needed, nullptr, nullptr, selection, &v1, &v2, &v3, &v4, &missing);
+  cardano_error_t result = _cardano_get_plutus_languages_used(tx, needed, nullptr, nullptr, selection, nullptr, &v1, &v2, &v3, &v4, &missing);
 
   // Assert
   EXPECT_EQ(result, CARDANO_SUCCESS);
@@ -1613,7 +1667,7 @@ TEST(_cardano_get_plutus_languages_used, returnsErrorIfMemoryAllocationFails)
     cardano_set_allocators(fail_malloc_at_limit, realloc, free);
 
     // Act
-    cardano_error_t result = _cardano_get_plutus_languages_used(tx, needed, list, list, list, &has_v1, &has_v2, &has_v3, &has_v4, &has_missing);
+    cardano_error_t result = _cardano_get_plutus_languages_used(tx, needed, list, list, list, nullptr, &has_v1, &has_v2, &has_v3, &has_v4, &has_missing);
 
     cardano_set_allocators(malloc, realloc, free);
     reset_limited_malloc();
@@ -1639,6 +1693,255 @@ TEST(_cardano_get_plutus_languages_used, returnsErrorIfMemoryAllocationFails)
   cardano_script_unref(&v1);
   cardano_script_unref(&v2);
   cardano_script_unref(&v3);
+  cardano_script_unref(&v4);
+  cardano_transaction_unref(&tx);
+}
+
+TEST(_cardano_get_plutus_languages_used, findsANeededScriptOfTheWitnessSetOfASubTransaction)
+{
+  // Arrange
+  cardano_transaction_t* tx     = new_empty_transaction();
+  cardano_script_t*      script = new_script(PLUTUS_V2_SCRIPT_CBOR);
+
+  add_sub_transaction_script(tx, script);
+  set_script_guard(tx, script);
+
+  // Act
+  const languages_t languages = get_languages(tx, nullptr, nullptr, nullptr, nullptr);
+
+  // Assert
+  EXPECT_FALSE(languages.v1);
+  EXPECT_TRUE(languages.v2);
+  EXPECT_FALSE(languages.v3);
+  EXPECT_FALSE(languages.v4);
+  EXPECT_FALSE(languages.missing);
+
+  // Cleanup
+  cardano_script_unref(&script);
+  cardano_transaction_unref(&tx);
+}
+
+TEST(_cardano_get_plutus_scripts_provided, returnsErrorIfGivenNull)
+{
+  // Arrange
+  cardano_transaction_t*      tx     = new_empty_transaction();
+  cardano_blake2b_hash_set_t* hashes = get_needed(tx, nullptr);
+  cardano_blake2b_hash_set_t* plutus = nullptr;
+
+  // Act & Assert
+  EXPECT_EQ(_cardano_get_plutus_scripts_provided(nullptr, hashes, nullptr, nullptr, nullptr, nullptr, &plutus), CARDANO_ERROR_POINTER_IS_NULL);
+  EXPECT_EQ(_cardano_get_plutus_scripts_provided(tx, nullptr, nullptr, nullptr, nullptr, nullptr, &plutus), CARDANO_ERROR_POINTER_IS_NULL);
+  EXPECT_EQ(_cardano_get_plutus_scripts_provided(tx, hashes, nullptr, nullptr, nullptr, nullptr, nullptr), CARDANO_ERROR_POINTER_IS_NULL);
+  EXPECT_EQ(plutus, nullptr);
+
+  // Cleanup
+  cardano_blake2b_hash_set_unref(&hashes);
+  cardano_transaction_unref(&tx);
+}
+
+TEST(_cardano_get_plutus_scripts_provided, keepsOnlyTheHashesThatResolveToAPlutusScript)
+{
+  // Arrange
+  cardano_transaction_t*      tx       = new_empty_transaction();
+  cardano_script_t*           native   = new_script(NATIVE_SCRIPT_CBOR);
+  cardano_script_t*           v1       = new_script(PLUTUS_V1_SCRIPT_CBOR);
+  cardano_script_t*           v3       = new_script(PLUTUS_V3_SCRIPT_CBOR);
+  cardano_script_t*           missing  = new_script(PLUTUS_V2_SCRIPT_CBOR);
+  cardano_address_t*          owner    = new_address(enterpriseKey);
+  cardano_utxo_t*             utxo     = new_utxo(1U, owner, v3);
+  cardano_utxo_list_t*        list     = new_utxo_list(utxo, nullptr);
+  cardano_blake2b_hash_set_t* hashes   = nullptr;
+  cardano_blake2b_hash_set_t* plutus   = nullptr;
+  cardano_blake2b_hash_t*     v1_hash  = cardano_script_get_hash(v1);
+  cardano_blake2b_hash_t*     v3_hash  = cardano_script_get_hash(v3);
+  cardano_script_t*           needed[] = { native, v1, v3, missing };
+
+  add_witness_script(tx, native);
+  add_witness_script(tx, v1);
+
+  EXPECT_EQ(cardano_blake2b_hash_set_new(&hashes), CARDANO_SUCCESS);
+
+  for (cardano_script_t* script: needed)
+  {
+    cardano_blake2b_hash_t* hash = cardano_script_get_hash(script);
+
+    EXPECT_EQ(cardano_blake2b_hash_set_add(hashes, hash), CARDANO_SUCCESS);
+
+    cardano_blake2b_hash_unref(&hash);
+  }
+
+  // Act
+  cardano_error_t result = _cardano_get_plutus_scripts_provided(tx, hashes, list, nullptr, nullptr, nullptr, &plutus);
+
+  // Assert
+  EXPECT_EQ(result, CARDANO_SUCCESS);
+  EXPECT_EQ(cardano_blake2b_hash_set_get_length(plutus), 2U);
+  EXPECT_TRUE(_cardano_blake2b_hash_set_has(plutus, v1_hash));
+  EXPECT_TRUE(_cardano_blake2b_hash_set_has(plutus, v3_hash));
+
+  // Cleanup
+  cardano_blake2b_hash_set_unref(&plutus);
+  cardano_blake2b_hash_set_unref(&hashes);
+  cardano_blake2b_hash_unref(&v1_hash);
+  cardano_blake2b_hash_unref(&v3_hash);
+  cardano_utxo_list_unref(&list);
+  cardano_utxo_unref(&utxo);
+  cardano_address_unref(&owner);
+  cardano_script_unref(&native);
+  cardano_script_unref(&v1);
+  cardano_script_unref(&v3);
+  cardano_script_unref(&missing);
+  cardano_transaction_unref(&tx);
+}
+
+TEST(_cardano_get_plutus_scripts_provided, leavesOutAHashMatchedOnlyByANativeScript)
+{
+  // Arrange
+  cardano_transaction_t*      tx     = new_empty_transaction();
+  cardano_script_t*           script = new_script(NATIVE_SCRIPT_CBOR);
+  cardano_address_t*          owner  = new_address(enterpriseKey);
+  cardano_utxo_t*             utxo   = new_utxo(1U, owner, script);
+  cardano_utxo_list_t*        list   = new_utxo_list(utxo, nullptr);
+  cardano_blake2b_hash_set_t* plutus = nullptr;
+
+  add_witness_script(tx, script);
+  add_sub_transaction_script(tx, script);
+  set_script_guard(tx, script);
+
+  cardano_blake2b_hash_set_t* hashes = get_needed(tx, nullptr);
+
+  // Act
+  cardano_error_t result = _cardano_get_plutus_scripts_provided(tx, hashes, list, list, list, list, &plutus);
+
+  // Assert
+  EXPECT_EQ(result, CARDANO_SUCCESS);
+  EXPECT_EQ(cardano_blake2b_hash_set_get_length(hashes), 1U);
+  EXPECT_EQ(cardano_blake2b_hash_set_get_length(plutus), 0U);
+
+  // Cleanup
+  cardano_blake2b_hash_set_unref(&plutus);
+  cardano_blake2b_hash_set_unref(&hashes);
+  cardano_utxo_list_unref(&list);
+  cardano_utxo_unref(&utxo);
+  cardano_address_unref(&owner);
+  cardano_script_unref(&script);
+  cardano_transaction_unref(&tx);
+}
+
+TEST(_cardano_get_plutus_scripts_provided, findsAPlutusScriptOfTheWitnessSetOfASubTransaction)
+{
+  // Arrange
+  cardano_transaction_t*      tx     = new_empty_transaction();
+  cardano_script_t*           script = new_script(PLUTUS_V3_SCRIPT_CBOR);
+  cardano_blake2b_hash_set_t* plutus = nullptr;
+
+  add_sub_transaction_script(tx, script);
+  set_script_guard(tx, script);
+
+  cardano_blake2b_hash_set_t* hashes = get_needed(tx, nullptr);
+
+  // Act
+  cardano_error_t result = _cardano_get_plutus_scripts_provided(tx, hashes, nullptr, nullptr, nullptr, nullptr, &plutus);
+
+  // Assert
+  EXPECT_EQ(result, CARDANO_SUCCESS);
+  EXPECT_TRUE(holds_only_script(plutus, script));
+
+  // Cleanup
+  cardano_blake2b_hash_set_unref(&plutus);
+  cardano_blake2b_hash_set_unref(&hashes);
+  cardano_script_unref(&script);
+  cardano_transaction_unref(&tx);
+}
+
+TEST(_cardano_get_plutus_scripts_provided, findsAPlutusReferenceScriptOnTheUtxosOfTheSubTransactions)
+{
+  // Arrange
+  cardano_transaction_t*      tx     = new_empty_transaction();
+  cardano_script_t*           script = new_script(PLUTUS_V4_SCRIPT_CBOR);
+  cardano_address_t*          owner  = new_address(enterpriseKey);
+  cardano_utxo_t*             utxo   = new_utxo(1U, owner, script);
+  cardano_utxo_list_t*        list   = new_utxo_list(utxo, nullptr);
+  cardano_blake2b_hash_set_t* plutus = nullptr;
+
+  set_script_guard(tx, script);
+
+  cardano_blake2b_hash_set_t* hashes = get_needed(tx, nullptr);
+
+  // Act
+  cardano_error_t result = _cardano_get_plutus_scripts_provided(tx, hashes, nullptr, nullptr, nullptr, list, &plutus);
+
+  // Assert
+  EXPECT_EQ(result, CARDANO_SUCCESS);
+  EXPECT_TRUE(holds_only_script(plutus, script));
+
+  // Cleanup
+  cardano_blake2b_hash_set_unref(&plutus);
+  cardano_blake2b_hash_set_unref(&hashes);
+  cardano_utxo_list_unref(&list);
+  cardano_utxo_unref(&utxo);
+  cardano_address_unref(&owner);
+  cardano_script_unref(&script);
+  cardano_transaction_unref(&tx);
+}
+
+TEST(_cardano_get_plutus_scripts_provided, returnsErrorIfMemoryAllocationFails)
+{
+  // Arrange
+  cardano_transaction_t* tx     = new_empty_transaction();
+  cardano_script_t*      native = new_script(NATIVE_SCRIPT_CBOR);
+  cardano_script_t*      v2     = new_script(PLUTUS_V2_SCRIPT_CBOR);
+  cardano_script_t*      v4     = new_script(PLUTUS_V4_SCRIPT_CBOR);
+  cardano_address_t*     owner  = new_address(enterpriseKey);
+  cardano_utxo_t*        utxo   = new_utxo(1U, owner, v4);
+  cardano_utxo_list_t*   list   = new_utxo_list(utxo, nullptr);
+
+  add_witness_script(tx, native);
+  add_sub_transaction_script(tx, v2);
+  set_script_guard(tx, v4);
+
+  cardano_blake2b_hash_set_t* hashes = get_needed(tx, nullptr);
+
+  bool has_succeeded = false;
+
+  for (int i = 0; (i < 200) && !has_succeeded; ++i)
+  {
+    cardano_blake2b_hash_set_t* plutus = nullptr;
+
+    reset_allocators_run_count();
+    set_malloc_limit(i);
+    cardano_set_allocators(fail_malloc_at_limit, realloc, free);
+
+    // Act
+    cardano_error_t result = _cardano_get_plutus_scripts_provided(tx, hashes, list, list, list, list, &plutus);
+
+    cardano_set_allocators(malloc, realloc, free);
+    reset_limited_malloc();
+
+    // Assert
+    has_succeeded = result == CARDANO_SUCCESS;
+
+    if (has_succeeded)
+    {
+      EXPECT_TRUE(holds_only_script(plutus, v4));
+    }
+    else
+    {
+      EXPECT_EQ(plutus, nullptr);
+    }
+
+    cardano_blake2b_hash_set_unref(&plutus);
+  }
+
+  EXPECT_TRUE(has_succeeded);
+
+  // Cleanup
+  cardano_blake2b_hash_set_unref(&hashes);
+  cardano_utxo_list_unref(&list);
+  cardano_utxo_unref(&utxo);
+  cardano_address_unref(&owner);
+  cardano_script_unref(&native);
+  cardano_script_unref(&v2);
   cardano_script_unref(&v4);
   cardano_transaction_unref(&tx);
 }

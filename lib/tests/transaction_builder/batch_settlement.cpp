@@ -134,6 +134,11 @@ static const char* ALWAYS_SUCCEEDS_V4_CBOR = "820446450100002499";
  */
 static const char* ALWAYS_SUCCEEDS_V3_CBOR = "820346450100002499";
 
+/**
+ * \brief A native script that requires nothing, so it always validates.
+ */
+static const char* ALWAYS_SUCCEEDS_NATIVE_CBOR = "8200820180";
+
 static const size_t TOKEN           = 0U;
 static const size_t ASSET_POOL_SIZE = 3U;
 
@@ -173,7 +178,34 @@ enum top_level_datum_t
   /**
    * \brief The batcher adds another datum, whose hash no output, reference input or script input of the batch carries.
    */
-  TOP_LEVEL_DATUM_NOTHING_ALLOWS
+  TOP_LEVEL_DATUM_NOTHING_ALLOWS,
+
+  /**
+   * \brief The batcher adds the datum and spends an input locked by a native script that carries its hash, which the
+   * native script never needs.
+   */
+  TOP_LEVEL_DATUM_HELD_BY_A_NATIVE_SCRIPT_INPUT
+};
+
+/**
+ * \brief Where the batch provides the Plutus V3 script that locks the script input the batcher spends.
+ */
+enum plutus_script_source_t
+{
+  /**
+   * \brief The witness set of the top level transaction.
+   */
+  PLUTUS_SCRIPT_IN_TOP_LEVEL_WITNESS_SET,
+
+  /**
+   * \brief The reference script of a UTXO the top level transaction references.
+   */
+  PLUTUS_SCRIPT_ON_A_TOP_LEVEL_REFERENCE_INPUT,
+
+  /**
+   * \brief The reference script of a UTXO the sub transaction references.
+   */
+  PLUTUS_SCRIPT_ON_A_SUB_TRANSACTION_REFERENCE_INPUT
 };
 
 /**
@@ -1372,6 +1404,26 @@ new_output_with_datum_hash(cardano_address_t* address, const uint64_t coin, card
 }
 
 /**
+ * Creates a UTXO of 2000000 lovelace owned by an address that carries a script as its reference script.
+ * \param ordinal a number that makes the transaction id of the UTXO unique.
+ * \param address the address that owns the UTXO.
+ * \param script the reference script of the UTXO.
+ * \return A new instance of the UTXO.
+ */
+static cardano_utxo_t*
+new_reference_script_utxo(const uint64_t ordinal, cardano_address_t* address, cardano_script_t* script)
+{
+  cardano_utxo_t*               utxo   = new_utxo(ordinal, address, amounts_t(2000000, 0));
+  cardano_transaction_output_t* output = cardano_utxo_get_output(utxo);
+
+  EXPECT_EQ(cardano_transaction_output_set_script_ref(output, script), CARDANO_SUCCESS);
+
+  cardano_transaction_output_unref(&output);
+
+  return utxo;
+}
+
+/**
  * Creates a UTXO of 10000000 lovelace held at the enterprise address of a script.
  * \param ordinal a number that makes the transaction id of the UTXO unique.
  * \param script the script that locks the UTXO.
@@ -1418,6 +1470,8 @@ new_script_utxo(const uint64_t ordinal, cardano_script_t* script, cardano_plutus
  * \param party the party that expresses the intent.
  * \param batcher the batcher the intent is pinned to.
  * \param datum the datum whose hash the output of the party carries.
+ * \param script a script the witness set of the sub transaction provides, or NULL when it provides none.
+ * \param reference_utxo a UTXO the sub transaction references, or NULL when it references none.
  * \return A new instance of the signed sub transaction.
  */
 static cardano_sub_transaction_t*
@@ -1425,13 +1479,25 @@ build_signed_intent_with_datum_hash(
   cardano_protocol_parameters_t* params,
   const party_t&                 party,
   const party_t&                 batcher,
-  cardano_plutus_data_t*         datum)
+  cardano_plutus_data_t*         datum,
+  cardano_script_t*              script,
+  cardano_utxo_t*                reference_utxo)
 {
   cardano_sub_tx_builder_t*     builder = new_intent_builder(params, party, batcher, amounts_t(90000000, 0));
   cardano_transaction_output_t* output  = new_output_with_datum_hash(party.address, 10000000U, datum);
 
   cardano_sub_tx_builder_add_output(builder, output);
   cardano_transaction_output_unref(&output);
+
+  if (script != NULL)
+  {
+    cardano_sub_tx_builder_add_script(builder, script);
+  }
+
+  if (reference_utxo != NULL)
+  {
+    cardano_sub_tx_builder_add_reference_input(builder, reference_utxo);
+  }
 
   return sign_intent(builder, party);
 }
@@ -1443,11 +1509,14 @@ build_signed_intent_with_datum_hash(
  * \param params the protocol parameters.
  * \param batcher the batcher, which funds the batch and posts its collateral.
  * \param sub_transaction the signed intent of the party.
- * \param party the party, whose UTXOs resolve the intent.
+ * \param sub_transaction_utxos the UTXOs that resolve the inputs and reference inputs of the intent.
  * \param script_utxo the UTXO locked by the Plutus V3 script, or NULL to build the batch in normal mode.
+ * \param native_script_utxo the UTXO locked by a native script the batcher spends, or NULL when it spends none.
  * \param datum the datum the output of the party carries, which the top level transaction carries as well unless
  * how is TOP_LEVEL_DATUM_NOTHING_ALLOWS.
  * \param how which witness datum the top level transaction carries, and what allows it.
+ * \param source where the batch provides the Plutus V3 script. Only the sources of the top level transaction are added
+ * here, the sub transaction already provides the others.
  * \return A new instance of the transaction builder, ready to build.
  */
 static cardano_tx_builder_t*
@@ -1455,10 +1524,12 @@ new_batch_builder_carrying_datum(
   cardano_protocol_parameters_t* params,
   const party_t&                 batcher,
   cardano_sub_transaction_t*     sub_transaction,
-  const party_t&                 party,
+  cardano_utxo_list_t*           sub_transaction_utxos,
   cardano_utxo_t*                script_utxo,
+  cardano_utxo_t*                native_script_utxo,
   cardano_plutus_data_t*         datum,
-  const top_level_datum_t        how)
+  const top_level_datum_t        how,
+  const plutus_script_source_t   source)
 {
   cardano_tx_builder_t* tx_builder = cardano_tx_builder_new(params, &CARDANO_MAINNET_SLOT_CONFIG);
 
@@ -1466,7 +1537,7 @@ new_batch_builder_carrying_datum(
   cardano_tx_builder_set_utxos(tx_builder, batcher.utxos);
   cardano_tx_builder_set_collateral_change_address(tx_builder, batcher.address);
   cardano_tx_builder_set_collateral_utxos(tx_builder, batcher.utxos);
-  cardano_tx_builder_add_sub_transaction(tx_builder, sub_transaction, party.utxos);
+  cardano_tx_builder_add_sub_transaction(tx_builder, sub_transaction, sub_transaction_utxos);
   cardano_tx_builder_add_guard(tx_builder, batcher.credential);
 
   if (script_utxo != NULL)
@@ -1476,10 +1547,31 @@ new_batch_builder_carrying_datum(
 
     EXPECT_EQ(cardano_plutus_data_new_integer_from_int(42, &redeemer), CARDANO_SUCCESS);
 
-    cardano_tx_builder_add_script(tx_builder, script);
+    if (source == PLUTUS_SCRIPT_IN_TOP_LEVEL_WITNESS_SET)
+    {
+      cardano_tx_builder_add_script(tx_builder, script);
+    }
+    else if (source == PLUTUS_SCRIPT_ON_A_TOP_LEVEL_REFERENCE_INPUT)
+    {
+      cardano_utxo_t* reference_utxo = new_reference_script_utxo(5U, batcher.address, script);
+
+      cardano_tx_builder_add_reference_input(tx_builder, reference_utxo);
+      cardano_utxo_unref(&reference_utxo);
+    }
+
     cardano_tx_builder_add_input(tx_builder, script_utxo, redeemer, (how == TOP_LEVEL_DATUM_NEEDED_BY_A_TOP_LEVEL_INPUT) ? datum : NULL);
 
     cardano_plutus_data_unref(&redeemer);
+    cardano_script_unref(&script);
+  }
+
+  if (native_script_utxo != NULL)
+  {
+    cardano_script_t* script = new_script(ALWAYS_SUCCEEDS_NATIVE_CBOR);
+
+    cardano_tx_builder_add_script(tx_builder, script);
+    cardano_tx_builder_add_input(tx_builder, native_script_utxo, NULL, NULL);
+
     cardano_script_unref(&script);
   }
 
@@ -1529,18 +1621,26 @@ new_batch_builder_carrying_datum(
  * transaction carries a witness datum, and expects the outcome of the build.
  * \param legacy_mode whether the top level transaction runs a Plutus V3 script, which validates it in legacy mode.
  * \param how which witness datum the top level transaction carries, and what allows it.
+ * \param source where the batch provides the Plutus V3 script.
  * \param expected the result the build is expected to return.
  */
 static void
-expect_batch_carrying_datum(const bool legacy_mode, const top_level_datum_t how, const cardano_error_t expected)
+expect_batch_carrying_datum(
+  const bool                   legacy_mode,
+  const top_level_datum_t      how,
+  const plutus_script_source_t source,
+  const cardano_error_t        expected)
 {
   // Arrange
-  cardano_protocol_parameters_t* params      = new_dijkstra_protocol_parameters();
-  party_t                        party       = new_party(BUYER_KEY_HEX);
-  party_t                        batcher     = new_party(BATCHER_KEY_HEX);
-  cardano_plutus_data_t*         datum       = NULL;
-  cardano_script_t*              script      = new_script(ALWAYS_SUCCEEDS_V3_CBOR);
-  cardano_utxo_t*                script_utxo = NULL;
+  cardano_protocol_parameters_t* params             = new_dijkstra_protocol_parameters();
+  party_t                        party              = new_party(BUYER_KEY_HEX);
+  party_t                        batcher            = new_party(BATCHER_KEY_HEX);
+  cardano_plutus_data_t*         datum              = NULL;
+  cardano_script_t*              script             = new_script(ALWAYS_SUCCEEDS_V3_CBOR);
+  cardano_script_t*              native_script      = new_script(ALWAYS_SUCCEEDS_NATIVE_CBOR);
+  cardano_utxo_t*                script_utxo        = NULL;
+  cardano_utxo_t*                native_script_utxo = NULL;
+  cardano_utxo_t*                sub_reference_utxo = NULL;
 
   ASSERT_EQ(cardano_plutus_data_new_integer_from_int(7, &datum), CARDANO_SUCCESS);
 
@@ -1549,16 +1649,38 @@ expect_batch_carrying_datum(const bool legacy_mode, const top_level_datum_t how,
     script_utxo = new_script_utxo(3U, script, (how == TOP_LEVEL_DATUM_NEEDED_BY_A_TOP_LEVEL_INPUT) ? datum : NULL);
   }
 
+  if (how == TOP_LEVEL_DATUM_HELD_BY_A_NATIVE_SCRIPT_INPUT)
+  {
+    native_script_utxo = new_script_utxo(6U, native_script, datum);
+  }
+
   fund_party(party, 1U, amounts_t(100000000, 0));
   fund_party(batcher, 2U, amounts_t(20000000, 0));
 
-  cardano_sub_transaction_t* sub_tx     = build_signed_intent_with_datum_hash(params, party, batcher, datum);
-  cardano_tx_builder_t*      tx_builder = new_batch_builder_carrying_datum(params, batcher, sub_tx, party, script_utxo, datum, how);
-  cardano_utxo_list_t*       all_utxos  = join_utxos({ &party, &batcher });
+  if (source == PLUTUS_SCRIPT_ON_A_SUB_TRANSACTION_REFERENCE_INPUT)
+  {
+    sub_reference_utxo = new_reference_script_utxo(7U, party.address, script);
+  }
+
+  cardano_sub_transaction_t* sub_tx    = build_signed_intent_with_datum_hash(params, party, batcher, datum, NULL, sub_reference_utxo);
+  cardano_utxo_list_t*       sub_utxos = join_utxos({ &party });
+
+  if (sub_reference_utxo != NULL)
+  {
+    EXPECT_EQ(cardano_utxo_list_add(sub_utxos, sub_reference_utxo), CARDANO_SUCCESS);
+  }
+
+  cardano_tx_builder_t* tx_builder = new_batch_builder_carrying_datum(params, batcher, sub_tx, sub_utxos, script_utxo, native_script_utxo, datum, how, source);
+  cardano_utxo_list_t*  all_utxos  = join_utxos({ &party, &batcher });
 
   if (script_utxo != NULL)
   {
     EXPECT_EQ(cardano_utxo_list_add(all_utxos, script_utxo), CARDANO_SUCCESS);
+  }
+
+  if (native_script_utxo != NULL)
+  {
+    EXPECT_EQ(cardano_utxo_list_add(all_utxos, native_script_utxo), CARDANO_SUCCESS);
   }
 
   // Act
@@ -1595,8 +1717,12 @@ expect_batch_carrying_datum(const bool legacy_mode, const top_level_datum_t how,
   cardano_transaction_unref(&tx);
   cardano_tx_builder_unref(&tx_builder);
   cardano_utxo_list_unref(&all_utxos);
+  cardano_utxo_list_unref(&sub_utxos);
   cardano_sub_transaction_unref(&sub_tx);
+  cardano_utxo_unref(&sub_reference_utxo);
+  cardano_utxo_unref(&native_script_utxo);
   cardano_utxo_unref(&script_utxo);
+  cardano_script_unref(&native_script);
   cardano_script_unref(&script);
   cardano_plutus_data_unref(&datum);
   cardano_protocol_parameters_unref(&params);
@@ -1628,12 +1754,12 @@ expect_batch_carrying_datum_under_allocation_failures(const bool legacy_mode, co
   fund_party(party, 1U, amounts_t(100000000, 0));
   fund_party(batcher, 2U, amounts_t(20000000, 0));
 
-  cardano_sub_transaction_t* sub_tx = build_signed_intent_with_datum_hash(params, party, batcher, datum);
+  cardano_sub_transaction_t* sub_tx = build_signed_intent_with_datum_hash(params, party, batcher, datum, NULL, NULL);
 
   // Act & Assert
   for (int i = 0; (i < 100000) && !finished; ++i)
   {
-    cardano_tx_builder_t* tx_builder = new_batch_builder_carrying_datum(params, batcher, sub_tx, party, script_utxo, datum, TOP_LEVEL_DATUM_MATCHING_A_SUB_OUTPUT);
+    cardano_tx_builder_t* tx_builder = new_batch_builder_carrying_datum(params, batcher, sub_tx, party.utxos, script_utxo, NULL, datum, TOP_LEVEL_DATUM_MATCHING_A_SUB_OUTPUT, PLUTUS_SCRIPT_IN_TOP_LEVEL_WITNESS_SET);
 
     reset_allocators_run_count();
     set_malloc_limit(i);
@@ -1969,7 +2095,7 @@ TEST(cardano_batch_settlement, settlesAnIntentThatSpendsAPlutusV4ScriptInput)
  */
 TEST(cardano_batch_settlement, rejectsATopLevelDatumThatOnlyASubTransactionOutputAllowsInLegacyMode)
 {
-  expect_batch_carrying_datum(true, TOP_LEVEL_DATUM_MATCHING_A_SUB_OUTPUT, CARDANO_ERROR_NOT_ALLOWED_SUPPLEMENTAL_DATUMS);
+  expect_batch_carrying_datum(true, TOP_LEVEL_DATUM_MATCHING_A_SUB_OUTPUT, PLUTUS_SCRIPT_IN_TOP_LEVEL_WITNESS_SET, CARDANO_ERROR_NOT_ALLOWED_SUPPLEMENTAL_DATUMS);
 }
 
 /**
@@ -1978,7 +2104,7 @@ TEST(cardano_batch_settlement, rejectsATopLevelDatumThatOnlyASubTransactionOutpu
  */
 TEST(cardano_batch_settlement, rejectsATopLevelDatumThatNothingInTheBatchAllowsInLegacyMode)
 {
-  expect_batch_carrying_datum(true, TOP_LEVEL_DATUM_NOTHING_ALLOWS, CARDANO_ERROR_NOT_ALLOWED_SUPPLEMENTAL_DATUMS);
+  expect_batch_carrying_datum(true, TOP_LEVEL_DATUM_NOTHING_ALLOWS, PLUTUS_SCRIPT_IN_TOP_LEVEL_WITNESS_SET, CARDANO_ERROR_NOT_ALLOWED_SUPPLEMENTAL_DATUMS);
 }
 
 /**
@@ -1987,7 +2113,7 @@ TEST(cardano_batch_settlement, rejectsATopLevelDatumThatNothingInTheBatchAllowsI
  */
 TEST(cardano_batch_settlement, settlesATopLevelDatumThatASubTransactionOutputAllowsInNormalMode)
 {
-  expect_batch_carrying_datum(false, TOP_LEVEL_DATUM_MATCHING_A_SUB_OUTPUT, CARDANO_SUCCESS);
+  expect_batch_carrying_datum(false, TOP_LEVEL_DATUM_MATCHING_A_SUB_OUTPUT, PLUTUS_SCRIPT_IN_TOP_LEVEL_WITNESS_SET, CARDANO_SUCCESS);
 }
 
 /**
@@ -1995,7 +2121,7 @@ TEST(cardano_batch_settlement, settlesATopLevelDatumThatASubTransactionOutputAll
  */
 TEST(cardano_batch_settlement, settlesATopLevelDatumThatATopLevelOutputAllowsInLegacyMode)
 {
-  expect_batch_carrying_datum(true, TOP_LEVEL_DATUM_MATCHING_A_TOP_LEVEL_OUTPUT, CARDANO_SUCCESS);
+  expect_batch_carrying_datum(true, TOP_LEVEL_DATUM_MATCHING_A_TOP_LEVEL_OUTPUT, PLUTUS_SCRIPT_IN_TOP_LEVEL_WITNESS_SET, CARDANO_SUCCESS);
 }
 
 /**
@@ -2004,7 +2130,7 @@ TEST(cardano_batch_settlement, settlesATopLevelDatumThatATopLevelOutputAllowsInL
  */
 TEST(cardano_batch_settlement, settlesATopLevelDatumThatATopLevelReferenceInputAllowsInLegacyMode)
 {
-  expect_batch_carrying_datum(true, TOP_LEVEL_DATUM_MATCHING_A_TOP_LEVEL_REFERENCE_INPUT, CARDANO_SUCCESS);
+  expect_batch_carrying_datum(true, TOP_LEVEL_DATUM_MATCHING_A_TOP_LEVEL_REFERENCE_INPUT, PLUTUS_SCRIPT_IN_TOP_LEVEL_WITNESS_SET, CARDANO_SUCCESS);
 }
 
 /**
@@ -2012,7 +2138,117 @@ TEST(cardano_batch_settlement, settlesATopLevelDatumThatATopLevelReferenceInputA
  */
 TEST(cardano_batch_settlement, settlesATopLevelDatumThatATopLevelScriptInputNeedsInLegacyMode)
 {
-  expect_batch_carrying_datum(true, TOP_LEVEL_DATUM_NEEDED_BY_A_TOP_LEVEL_INPUT, CARDANO_SUCCESS);
+  expect_batch_carrying_datum(true, TOP_LEVEL_DATUM_NEEDED_BY_A_TOP_LEVEL_INPUT, PLUTUS_SCRIPT_IN_TOP_LEVEL_WITNESS_SET, CARDANO_SUCCESS);
+}
+
+/**
+ * The ledger counts the datum of a spent input only when a Plutus script locks it. A native script never needs a
+ * datum, so in legacy mode an input locked by a native script that carries the hash of the datum does not allow it.
+ */
+TEST(cardano_batch_settlement, rejectsATopLevelDatumThatOnlyANativeScriptInputCarriesInLegacyMode)
+{
+  expect_batch_carrying_datum(true, TOP_LEVEL_DATUM_HELD_BY_A_NATIVE_SCRIPT_INPUT, PLUTUS_SCRIPT_IN_TOP_LEVEL_WITNESS_SET, CARDANO_ERROR_NOT_ALLOWED_SUPPLEMENTAL_DATUMS);
+}
+
+/**
+ * In legacy mode the script input still needs its datum when the Plutus script that locks it is provided as the
+ * reference script of a UTXO the top level transaction references.
+ */
+TEST(cardano_batch_settlement, settlesATopLevelDatumThatAnInputLockedByAReferenceScriptNeedsInLegacyMode)
+{
+  expect_batch_carrying_datum(true, TOP_LEVEL_DATUM_NEEDED_BY_A_TOP_LEVEL_INPUT, PLUTUS_SCRIPT_ON_A_TOP_LEVEL_REFERENCE_INPUT, CARDANO_SUCCESS);
+}
+
+/**
+ * The ledger pools the scripts a batch provides, so the Plutus script that locks a top level input may come from the
+ * witness set of a sub transaction. A sub transaction only carries native and Plutus V4 scripts, so the batcher spends
+ * a UTXO locked by a Plutus V4 script that only the sub transaction provides, whose datum hash is the hash of the top
+ * level datum, next to the Plutus V3 script input that validates the top level transaction in legacy mode. The input
+ * still needs its datum, so the top level transaction may carry it although the output of the sub transaction that
+ * also carries its hash takes no part in legacy mode.
+ */
+TEST(cardano_batch_settlement, settlesATopLevelDatumThatAnInputLockedByAScriptOfASubTransactionNeedsInLegacyMode)
+{
+  // Arrange
+  cardano_protocol_parameters_t* params      = new_dijkstra_protocol_parameters();
+  party_t                        party       = new_party(BUYER_KEY_HEX);
+  party_t                        batcher     = new_party(BATCHER_KEY_HEX);
+  cardano_plutus_data_t*         datum       = NULL;
+  cardano_plutus_data_t*         redeemer    = NULL;
+  cardano_script_t*              v3_script   = new_script(ALWAYS_SUCCEEDS_V3_CBOR);
+  cardano_script_t*              v4_script   = new_script(ALWAYS_SUCCEEDS_V4_CBOR);
+  cardano_utxo_t*                legacy_utxo = new_script_utxo(3U, v3_script, NULL);
+
+  ASSERT_EQ(cardano_plutus_data_new_integer_from_int(7, &datum), CARDANO_SUCCESS);
+  ASSERT_EQ(cardano_plutus_data_new_integer_from_int(42, &redeemer), CARDANO_SUCCESS);
+
+  cardano_utxo_t* v4_utxo = new_script_utxo(6U, v4_script, datum);
+
+  fund_party(party, 1U, amounts_t(100000000, 0));
+  fund_party(batcher, 2U, amounts_t(20000000, 0));
+
+  cardano_sub_transaction_t* sub_tx     = build_signed_intent_with_datum_hash(params, party, batcher, datum, v4_script, NULL);
+  cardano_tx_builder_t*      tx_builder = new_batch_builder_carrying_datum(params, batcher, sub_tx, party.utxos, legacy_utxo, NULL, datum, TOP_LEVEL_DATUM_MATCHING_A_SUB_OUTPUT, PLUTUS_SCRIPT_IN_TOP_LEVEL_WITNESS_SET);
+  cardano_utxo_list_t*       all_utxos  = join_utxos({ &party, &batcher });
+
+  cardano_tx_builder_add_input(tx_builder, v4_utxo, redeemer, NULL);
+
+  EXPECT_EQ(cardano_utxo_list_add(all_utxos, legacy_utxo), CARDANO_SUCCESS);
+  EXPECT_EQ(cardano_utxo_list_add(all_utxos, v4_utxo), CARDANO_SUCCESS);
+
+  // Act
+  cardano_transaction_t* tx     = NULL;
+  cardano_error_t        result = cardano_tx_builder_build(tx_builder, &tx);
+
+  // Assert
+  ASSERT_EQ(result, CARDANO_SUCCESS) << cardano_tx_builder_get_last_error(tx_builder);
+
+  bool is_balanced = false;
+
+  EXPECT_EQ(cardano_is_transaction_balanced(tx, all_utxos, params, &is_balanced), CARDANO_SUCCESS);
+  EXPECT_TRUE(is_balanced);
+
+  cardano_witness_set_t* witness_set = cardano_transaction_get_witness_set(tx);
+  cardano_witness_set_unref(&witness_set);
+
+  cardano_plutus_data_set_t* datums = cardano_witness_set_get_plutus_data(witness_set);
+  cardano_plutus_data_set_unref(&datums);
+
+  EXPECT_EQ(cardano_plutus_data_set_get_length(datums), 1U);
+
+  // Cleanup
+  cardano_transaction_unref(&tx);
+  cardano_tx_builder_unref(&tx_builder);
+  cardano_utxo_list_unref(&all_utxos);
+  cardano_sub_transaction_unref(&sub_tx);
+  cardano_utxo_unref(&v4_utxo);
+  cardano_utxo_unref(&legacy_utxo);
+  cardano_script_unref(&v4_script);
+  cardano_script_unref(&v3_script);
+  cardano_plutus_data_unref(&redeemer);
+  cardano_plutus_data_unref(&datum);
+  cardano_protocol_parameters_unref(&params);
+  free_party(party);
+  free_party(batcher);
+}
+
+/**
+ * The Plutus script that locks a top level input may also be the reference script of a UTXO a sub transaction
+ * references, and the input still needs its datum in legacy mode.
+ */
+TEST(cardano_batch_settlement, settlesATopLevelDatumThatAnInputLockedByAReferenceScriptOfASubTransactionNeedsInLegacyMode)
+{
+  expect_batch_carrying_datum(true, TOP_LEVEL_DATUM_NEEDED_BY_A_TOP_LEVEL_INPUT, PLUTUS_SCRIPT_ON_A_SUB_TRANSACTION_REFERENCE_INPUT, CARDANO_SUCCESS);
+}
+
+/**
+ * A Plutus V3 script that only a sub transaction provides, as the reference script of a UTXO it references, still
+ * validates the top level transaction that needs it in legacy mode, so a top level datum that only an output of the
+ * sub transaction allows is rejected.
+ */
+TEST(cardano_batch_settlement, rejectsATopLevelDatumThatOnlyASubTransactionOutputAllowsWhenASubTransactionProvidesTheLegacyScript)
+{
+  expect_batch_carrying_datum(true, TOP_LEVEL_DATUM_MATCHING_A_SUB_OUTPUT, PLUTUS_SCRIPT_ON_A_SUB_TRANSACTION_REFERENCE_INPUT, CARDANO_ERROR_NOT_ALLOWED_SUPPLEMENTAL_DATUMS);
 }
 
 TEST(cardano_batch_settlement, returnsErrorIfMemoryAllocationFailsWhileCheckingTheDatumsOfALegacyBatch)
