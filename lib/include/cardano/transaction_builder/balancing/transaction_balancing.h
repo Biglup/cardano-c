@@ -76,7 +76,11 @@ extern "C" {
  * transaction does not need never triggers this rule, and a needed native or PlutusV4 script does not either. The check
  * is made on every balancing iteration, with the inputs of that iteration. When the rule applies the sub transactions
  * must balance between themselves, otherwise the function fails with \ref CARDANO_ERROR_UNBALANCED_SUB_TRANSACTIONS and
- * the fix is to add a balancing sub transaction, since top level change can not absorb the imbalance.
+ * the fix is to add a balancing sub transaction, since top level change can not absorb the imbalance. In that mode the
+ * witness datums of the top level transaction are also checked with the sub transactions removed: each of them must be
+ * needed by a script input the transaction spends, pre selected or coin selected, or match the datum hash of one of its
+ * outputs or of the output behind one of \p reference_inputs, otherwise the function fails with
+ * \ref CARDANO_ERROR_NOT_ALLOWED_SUPPLEMENTAL_DATUMS.
  *
  * The fee always includes the reference scripts the ledger charges for, whatever their language and whether or not the
  * transaction has redeemers: every reference script found on the UTXOs of \p reference_inputs and on the UTXOs the
@@ -133,7 +137,9 @@ extern "C" {
  * \return \ref CARDANO_SUCCESS if the transaction was balanced successfully, \ref CARDANO_ERROR_ELEMENT_NOT_FOUND if an input spent
  *         by a sub transaction is not resolved, \ref CARDANO_ERROR_DUPLICATED_KEY if a pre selected UTXO is also spent by a sub transaction,
  *         \ref CARDANO_ERROR_UNBALANCED_SUB_TRANSACTIONS if the top level transaction needs a PlutusV1, PlutusV2 or PlutusV3 script and
- *         its sub transactions do not balance between themselves, \ref CARDANO_ERROR_BALANCE_INSUFFICIENT if collateral is required and
+ *         its sub transactions do not balance between themselves, \ref CARDANO_ERROR_NOT_ALLOWED_SUPPLEMENTAL_DATUMS if the top level
+ *         transaction needs a PlutusV1, PlutusV2 or PlutusV3 script and carries a witness datum that only a sub transaction allows,
+ *         \ref CARDANO_ERROR_BALANCE_INSUFFICIENT if collateral is required and
  *         no collateral UTXO is available, \ref CARDANO_ERROR_INTEGER_OVERFLOW if the withdrawals, deposits or reclaimed deposits add up
  *         to more than UINT64_MAX or the direct deposits, the produced coin or the consumed coin exceed INT64_MAX, or an appropriate
  *         error code indicating the type of failure.

@@ -359,6 +359,14 @@ typedef enum
    */
   CARDANO_ERROR_UNBALANCED_SUB_TRANSACTIONS = 1104,
 
+  /**
+   * \brief The top level transaction of a batch carries a witness datum that only a sub transaction allows. A top level
+   * transaction that needs a PlutusV1, PlutusV2 or PlutusV3 script has its datums checked with its sub transactions
+   * removed, so each of its witness datums must be needed by a script input it spends or match a datum hash of its own
+   * outputs or of the outputs behind its own reference inputs.
+   */
+  CARDANO_ERROR_NOT_ALLOWED_SUPPLEMENTAL_DATUMS = 1105,
+
   // TX Evaluation Failures
 
   /**
