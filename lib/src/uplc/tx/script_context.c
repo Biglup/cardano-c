@@ -1579,7 +1579,12 @@ output_datum_v1(cardano_datum_t* datum, cardano_plutus_data_t** out)
       {
         cardano_blake2b_hash_t* hash = cardano_datum_get_data_hash(datum);
         cardano_plutus_data_t*  pd   = NULL;
-        cardano_error_t         res  = hash_bytes(hash, &pd);
+        cardano_error_t         res  = CARDANO_ERROR_MEMORY_ALLOCATION_FAILED;
+
+        if (hash != NULL)
+        {
+          res = hash_bytes(hash, &pd);
+        }
 
         cardano_blake2b_hash_unref(&hash);
 
@@ -1628,7 +1633,12 @@ output_datum_v2(cardano_datum_t* datum, cardano_plutus_data_t** out)
       cardano_blake2b_hash_t* hash = cardano_datum_get_data_hash(datum);
       cardano_plutus_data_t*  pd   = NULL;
 
-      result = hash_bytes(hash, &pd);
+      result = CARDANO_ERROR_MEMORY_ALLOCATION_FAILED;
+
+      if (hash != NULL)
+      {
+        result = hash_bytes(hash, &pd);
+      }
 
       cardano_blake2b_hash_unref(&hash);
 

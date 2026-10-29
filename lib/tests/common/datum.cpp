@@ -748,6 +748,26 @@ TEST(cardano_datum_get_hash, returnsNullIfGivenANullPtr)
   EXPECT_EQ(hash, (cardano_blake2b_hash_t*)nullptr);
 }
 
+TEST(cardano_datum_get_hash, returnsNullIfMemoryAllocationFails)
+{
+  // Arrange
+  cardano_datum_t* datum = nullptr;
+  EXPECT_EQ(cardano_datum_new_data_hash_hex(HASH, strlen(HASH), &datum), CARDANO_SUCCESS);
+
+  reset_allocators_run_count();
+  cardano_set_allocators(fail_right_away_malloc, realloc, free);
+
+  // Act
+  cardano_blake2b_hash_t* hash = cardano_datum_get_data_hash(datum);
+
+  // Assert
+  EXPECT_EQ(hash, (cardano_blake2b_hash_t*)nullptr);
+
+  // Cleanup
+  cardano_set_allocators(malloc, realloc, free);
+  cardano_datum_unref(&datum);
+}
+
 TEST(cardano_datum_get_hash_bytes, returnsNullIfGivenANullPtr)
 {
   // Act

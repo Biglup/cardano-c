@@ -1406,6 +1406,17 @@ static const char* kTxRepeatedDatumCbor =
   "0103010581840000d87980821a000f42401a05f5e100f5f6";
 
 /**
+ * \brief A Conway transaction as kTxCbor but whose output carries a datum hash.
+ *
+ * outputs[ (address 61*29, 1000000, datum hash 0x77*32) ]
+ */
+static const char* kTxDatumHashOutputCbor =
+  "84a4008182582000000000000000000000000000000000000000000000000000000000000000000001818358"
+  "1d61111111111111111111111111111111111111111111111111111111111a000f4240582077777777777777"
+  "77777777777777777777777777777777777777777777777777021a00030d400e81581c020202020202020202"
+  "02020202020202020202020202020202020202a10581840000d87980821a000f42401a05f5e100f5f6";
+
+/**
  * \brief Returns the redeemer at a position of the witness set of a transaction.
  */
 static cardano_redeemer_t*
@@ -1705,4 +1716,11 @@ TEST(uplc_script_context, ledger_order_contexts_free_everything_on_allocation_fa
 
   EXPECT_GT(sweep_context_allocations(kTxGovernanceOrderCbor, 1U, 3), 0);
   EXPECT_GT(sweep_context_allocations(kTxTreasuryOrderCbor, 0U, 3), 0);
+}
+
+TEST(uplc_script_context, output_datum_hash_allocation_failures_are_reported)
+{
+  EXPECT_GT(sweep_context_allocations(kTxDatumHashOutputCbor, 0U, 1), 0);
+  EXPECT_GT(sweep_context_allocations(kTxDatumHashOutputCbor, 0U, 2), 0);
+  EXPECT_GT(sweep_context_allocations(kTxDatumHashOutputCbor, 0U, 3), 0);
 }

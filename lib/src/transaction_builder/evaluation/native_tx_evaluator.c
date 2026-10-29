@@ -698,7 +698,7 @@ resolve_datum(
         cardano_blake2b_hash_t*    target = cardano_datum_get_data_hash(datum);
         cardano_plutus_data_set_t* datums = cardano_witness_set_get_plutus_data(witness_set);
 
-        result = CARDANO_ERROR_ELEMENT_NOT_FOUND;
+        result = (target == NULL) ? CARDANO_ERROR_MEMORY_ALLOCATION_FAILED : CARDANO_ERROR_ELEMENT_NOT_FOUND;
 
         for (size_t i = 0U; (result == CARDANO_ERROR_ELEMENT_NOT_FOUND) && (datums != NULL) && (i < cardano_plutus_data_set_get_length(datums)); ++i)
         {
