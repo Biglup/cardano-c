@@ -35,6 +35,7 @@
 #include "../../src/transaction_builder/internals/builder_state.h"
 #include <allocators.h>
 #include <cardano/address/enterprise_address.h>
+#include <cardano/crypto/blake2b_hash_size.h>
 #include <cardano/crypto/ed25519_private_key.h>
 #include <cardano/crypto/ed25519_signature.h>
 #include <cardano/scripts/native_scripts/script_pubkey.h>
@@ -5652,6 +5653,75 @@ TEST(cardano_tx_builder_add_guard_ex, returnsErrorIfMemoryAllocationFails)
   cardano_set_allocators(malloc, realloc, free);
 }
 
+/**
+ * Computes the blake2b-256 hash of the bytes written so far to a CBOR writer.
+ * \param writer the CBOR writer.
+ * \return A new instance of the hash.
+ */
+static cardano_blake2b_hash_t*
+hash_written_cbor(cardano_cbor_writer_t* writer)
+{
+  cardano_buffer_t*       buffer = NULL;
+  cardano_blake2b_hash_t* hash   = NULL;
+
+  EXPECT_EQ(cardano_cbor_writer_encode_in_buffer(writer, &buffer), CARDANO_SUCCESS);
+  EXPECT_EQ(cardano_blake2b_compute_hash(cardano_buffer_get_data(buffer), cardano_buffer_get_size(buffer), (size_t)CARDANO_BLAKE2B_HASH_SIZE_256, &hash), CARDANO_SUCCESS);
+
+  cardano_buffer_unref(&buffer);
+
+  return hash;
+}
+
+/**
+ * Creates the datum hash an output carries for a datum.
+ * \param data the datum.
+ * \return A new instance of the datum hash.
+ */
+static cardano_datum_t*
+new_datum_hash(cardano_plutus_data_t* data)
+{
+  cardano_cbor_writer_t*  writer = cardano_cbor_writer_new();
+  cardano_blake2b_hash_t* hash   = NULL;
+  cardano_datum_t*        datum  = NULL;
+
+  EXPECT_EQ(cardano_plutus_data_to_cbor(data, writer), CARDANO_SUCCESS);
+
+  hash = hash_written_cbor(writer);
+
+  EXPECT_EQ(cardano_datum_new_data_hash(hash, &datum), CARDANO_SUCCESS);
+
+  cardano_blake2b_hash_unref(&hash);
+  cardano_cbor_writer_unref(&writer);
+
+  return datum;
+}
+
+/**
+ * Computes the script data hash the ledger expects for a transaction that carries datums but no redeemers,
+ * the hash of an empty redeemers map, the datums and an empty language views map.
+ * \param tx the transaction.
+ * \return A new instance of the script data hash.
+ */
+static cardano_blake2b_hash_t*
+compute_datums_only_script_data_hash(cardano_transaction_t* tx)
+{
+  cardano_witness_set_t*     witness_set = cardano_transaction_get_witness_set(tx);
+  cardano_plutus_data_set_t* datums      = cardano_witness_set_get_plutus_data(witness_set);
+  cardano_cbor_writer_t*     writer      = cardano_cbor_writer_new();
+
+  EXPECT_EQ(cardano_cbor_writer_write_start_map(writer, 0), CARDANO_SUCCESS);
+  EXPECT_EQ(cardano_plutus_data_set_to_cbor(datums, writer), CARDANO_SUCCESS);
+  EXPECT_EQ(cardano_cbor_writer_write_start_map(writer, 0), CARDANO_SUCCESS);
+
+  cardano_blake2b_hash_t* hash = hash_written_cbor(writer);
+
+  cardano_cbor_writer_unref(&writer);
+  cardano_plutus_data_set_unref(&datums);
+  cardano_witness_set_unref(&witness_set);
+
+  return hash;
+}
+
 TEST(cardano_tx_builder_add_datum, doesntCrashIfGivenNull)
 {
   cardano_tx_builder_add_datum(nullptr, nullptr);
@@ -5706,6 +5776,59 @@ TEST(cardano_tx_builder_add_datum, canAddDatum)
 
   cardano_plutus_data_unref(&datum);
   cardano_plutus_data_unref(&datum_out);
+}
+
+TEST(cardano_tx_builder_add_datum, computesTheScriptDataHashOfATransactionWithOnlyDatums)
+{
+  // Arrange
+  cardano_protocol_parameters_t* params     = init_protocol_parameters();
+  cardano_utxo_list_t*           utxos      = new_utxo_list();
+  cardano_tx_builder_t*          tx_builder = new_funded_tx_builder(params, utxos);
+  cardano_plutus_data_t*         data       = create_plutus_data(PLUTUS_DATA_CBOR);
+  cardano_datum_t*               datum      = new_datum_hash(data);
+  cardano_address_t*             address    = nullptr;
+  cardano_transaction_t*         tx         = nullptr;
+
+  EXPECT_EQ(cardano_address_from_string(CHANGE_ADDRESS, strlen(CHANGE_ADDRESS), &address), CARDANO_SUCCESS);
+
+  // Act
+  cardano_tx_builder_set_collateral_utxos(tx_builder, utxos);
+  cardano_tx_builder_set_collateral_change_address(tx_builder, address);
+  cardano_tx_builder_lock_lovelace(tx_builder, address, 2000000U, datum);
+  cardano_tx_builder_add_datum(tx_builder, data);
+
+  const cardano_error_t result = cardano_tx_builder_build(tx_builder, &tx);
+
+  // Assert
+  EXPECT_EQ(result, CARDANO_SUCCESS) << cardano_tx_builder_get_last_error(tx_builder);
+  ASSERT_NE(tx, nullptr);
+
+  cardano_witness_set_t*      witness_set = cardano_transaction_get_witness_set(tx);
+  cardano_redeemer_list_t*    redeemers   = cardano_witness_set_get_redeemers(witness_set);
+  cardano_plutus_data_set_t*  datums      = cardano_witness_set_get_plutus_data(witness_set);
+  cardano_transaction_body_t* body        = cardano_transaction_get_body(tx);
+  cardano_blake2b_hash_t*     hash        = cardano_transaction_body_get_script_data_hash(body);
+  cardano_blake2b_hash_t*     expected    = compute_datums_only_script_data_hash(tx);
+
+  EXPECT_EQ(cardano_redeemer_list_get_length(redeemers), 0U);
+  EXPECT_EQ(cardano_plutus_data_set_get_length(datums), 1U);
+  ASSERT_NE(hash, nullptr);
+  EXPECT_TRUE(cardano_blake2b_hash_equals(hash, expected));
+
+  // Cleanup
+  cardano_blake2b_hash_unref(&expected);
+  cardano_blake2b_hash_unref(&hash);
+  cardano_transaction_body_unref(&body);
+  cardano_plutus_data_set_unref(&datums);
+  cardano_redeemer_list_unref(&redeemers);
+  cardano_witness_set_unref(&witness_set);
+  cardano_transaction_unref(&tx);
+  cardano_address_unref(&address);
+  cardano_datum_unref(&datum);
+  cardano_plutus_data_unref(&data);
+  cardano_tx_builder_unref(&tx_builder);
+  cardano_utxo_list_unref(&utxos);
+  cardano_protocol_parameters_unref(&params);
 }
 
 TEST(cardano_tx_builder_add_datum, returnsErrorIfMemoryAllocationFails)

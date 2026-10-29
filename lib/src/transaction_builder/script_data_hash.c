@@ -66,7 +66,17 @@ cardano_compute_script_data_hash(
 
   cardano_error_t result = CARDANO_SUCCESS;
 
-  if (is_costmdls_empty(costmdls))
+  //  These are safe to call, returns 0 if the pointer is NULL
+  const size_t plutus_data_size = cardano_plutus_data_set_get_length(datums);
+  const size_t redeemers_size   = cardano_redeemer_list_get_length(redeemers);
+
+  if ((plutus_data_size == 0U) && (redeemers_size == 0U))
+  {
+    *data_hash = NULL;
+    return result;
+  }
+
+  if ((redeemers_size > 0U) && is_costmdls_empty(costmdls))
   {
     *data_hash = NULL;
     return result;
@@ -79,11 +89,7 @@ cardano_compute_script_data_hash(
     return CARDANO_ERROR_MEMORY_ALLOCATION_FAILED;
   }
 
-  //  These are safe to call, returns 0 if the pointer is NULL
-  const size_t plutus_data_size = cardano_plutus_data_set_get_length(datums);
-  const size_t redeemers_size   = cardano_redeemer_list_get_length(redeemers);
-
-  if ((plutus_data_size > 0U) && (redeemers_size == 0U))
+  if (redeemers_size == 0U)
   {
     result = cardano_cbor_writer_write_start_map(writer, 0);
 
@@ -111,14 +117,6 @@ cardano_compute_script_data_hash(
   }
   else
   {
-    if (redeemers_size == 0U)
-    {
-      *data_hash = NULL;
-      cardano_cbor_writer_unref(&writer);
-
-      return CARDANO_SUCCESS;
-    }
-
     result = cardano_redeemer_list_to_cbor(redeemers, writer);
 
     if (result != CARDANO_SUCCESS)
