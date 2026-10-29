@@ -11589,7 +11589,9 @@ mint_index_callback(void* user_context, cardano_transaction_t* draft_tx, cardano
 
   uint64_t index = 0U;
 
-  return create_index_payload(cardano_transaction_find_mint_policy_index(draft_tx, (cardano_blake2b_hash_t*)user_context, &index), index, redeemer);
+  const cardano_error_t result = cardano_transaction_find_mint_policy_index(draft_tx, (cardano_blake2b_hash_t*)user_context, &index);
+
+  return create_index_payload(result, index, redeemer);
 }
 
 /**
@@ -11602,7 +11604,9 @@ withdrawal_index_callback(void* user_context, cardano_transaction_t* draft_tx, c
 
   uint64_t index = 0U;
 
-  return create_index_payload(cardano_transaction_find_withdrawal_index(draft_tx, (cardano_reward_address_t*)user_context, &index), index, redeemer);
+  const cardano_error_t result = cardano_transaction_find_withdrawal_index(draft_tx, (cardano_reward_address_t*)user_context, &index);
+
+  return create_index_payload(result, index, redeemer);
 }
 
 /**
@@ -11615,7 +11619,9 @@ certificate_index_callback(void* user_context, cardano_transaction_t* draft_tx, 
 
   uint64_t index = 0U;
 
-  return create_index_payload(cardano_transaction_find_certificate_index(draft_tx, (cardano_certificate_t*)user_context, &index), index, redeemer);
+  const cardano_error_t result = cardano_transaction_find_certificate_index(draft_tx, (cardano_certificate_t*)user_context, &index);
+
+  return create_index_payload(result, index, redeemer);
 }
 
 /**
@@ -11628,7 +11634,9 @@ vote_index_callback(void* user_context, cardano_transaction_t* draft_tx, cardano
 
   uint64_t index = 0U;
 
-  return create_index_payload(cardano_transaction_find_vote_index(draft_tx, (cardano_voter_t*)user_context, &index), index, redeemer);
+  const cardano_error_t result = cardano_transaction_find_vote_index(draft_tx, (cardano_voter_t*)user_context, &index);
+
+  return create_index_payload(result, index, redeemer);
 }
 
 /**
