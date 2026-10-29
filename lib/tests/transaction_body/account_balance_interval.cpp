@@ -28,7 +28,11 @@
 #include "../allocators_helpers.h"
 #include "../src/allocators.h"
 
+#include <filesystem>
+#include <fstream>
 #include <gmock/gmock.h>
+#include <string>
+#include <vector>
 
 /* CONSTANTS *****************************************************************/
 
@@ -99,6 +103,52 @@ encode_account_balance_interval(cardano_account_balance_interval_t* account_bala
   cardano_cbor_writer_unref(&writer);
 
   return actual_cbor;
+}
+
+/**
+ * Loads the CBOR hex vectors generated from the Dijkstra CDDL for the given rule.
+ * @return The vectors, one per line of the vector file.
+ */
+static std::vector<std::string>
+load_cddl_vectors(const char* rule)
+{
+  const std::filesystem::path path = std::filesystem::path(__FILE__).parent_path().parent_path() / "vectors" / "dijkstra" / "cddl" / (std::string(rule) + ".txt");
+
+  std::ifstream            stream(path);
+  std::vector<std::string> vectors;
+  std::string              line;
+
+  while (std::getline(stream, line))
+  {
+    if (!line.empty())
+    {
+      vectors.push_back(line);
+    }
+  }
+
+  EXPECT_FALSE(vectors.empty());
+
+  return vectors;
+}
+
+/**
+ * Computes the CBOR an interval vector is expected to re-encode to.
+ *
+ * The CDDL allows the array forms of an interval to use an indefinite length, while cardano-c always
+ * writes the definite two element array. Both encode the same interval, so an indefinite vector is
+ * expected back with its break byte removed and a definite array header.
+ *
+ * @return The expected CBOR hex string.
+ */
+static std::string
+expected_account_balance_interval_cbor(const std::string& vector)
+{
+  if (vector.rfind("9f", 0) == 0)
+  {
+    return "82" + vector.substr(2, vector.size() - 4);
+  }
+
+  return vector;
 }
 
 /* UNIT TESTS ****************************************************************/
@@ -648,6 +698,58 @@ TEST(cardano_account_balance_interval_from_cbor, returnErrorIfMemoryAllocationFa
   // Cleanup
   cardano_set_allocators(malloc, realloc, free);
   cardano_cbor_reader_unref(&reader);
+}
+
+TEST(cardano_account_balance_interval_from_cbor, canDecodeEveryVectorGeneratedFromTheCddl)
+{
+  // Arrange
+  const std::vector<std::string> vectors = load_cddl_vectors("account_balance_interval");
+
+  for (const std::string& vector: vectors)
+  {
+    SCOPED_TRACE(vector);
+
+    // Act
+    cardano_account_balance_interval_t* account_balance_interval = new_default_account_balance_interval(vector.c_str());
+
+    // Assert
+    ASSERT_THAT(account_balance_interval, testing::Not((cardano_account_balance_interval_t*)nullptr));
+
+    const bool      is_array              = (vector.rfind("82", 0) == 0) || (vector.rfind("9f", 0) == 0);
+    const uint64_t* inclusive_lower_bound = cardano_account_balance_interval_get_inclusive_lower_bound(account_balance_interval);
+    const uint64_t* exclusive_upper_bound = cardano_account_balance_interval_get_exclusive_upper_bound(account_balance_interval);
+
+    EXPECT_EQ(cardano_account_balance_interval_is_exact(account_balance_interval), !is_array);
+    EXPECT_EQ(cardano_account_balance_interval_get_exact_balance(account_balance_interval) != nullptr, !is_array);
+    EXPECT_EQ((inclusive_lower_bound != nullptr) || (exclusive_upper_bound != nullptr), is_array);
+
+    // Cleanup
+    cardano_account_balance_interval_unref(&account_balance_interval);
+  }
+}
+
+TEST(cardano_account_balance_interval_to_cbor, canRoundTripEveryVectorGeneratedFromTheCddl)
+{
+  // Arrange
+  const std::vector<std::string> vectors = load_cddl_vectors("account_balance_interval");
+
+  for (const std::string& vector: vectors)
+  {
+    SCOPED_TRACE(vector);
+
+    cardano_account_balance_interval_t* account_balance_interval = new_default_account_balance_interval(vector.c_str());
+    ASSERT_THAT(account_balance_interval, testing::Not((cardano_account_balance_interval_t*)nullptr));
+
+    // Act
+    char* actual_cbor = encode_account_balance_interval(account_balance_interval);
+
+    // Assert
+    EXPECT_STREQ(actual_cbor, expected_account_balance_interval_cbor(vector).c_str());
+
+    // Cleanup
+    cardano_account_balance_interval_unref(&account_balance_interval);
+    free(actual_cbor);
+  }
 }
 
 TEST(cardano_account_balance_interval_to_cbor, canRoundTripIntervalWithBothBounds)
