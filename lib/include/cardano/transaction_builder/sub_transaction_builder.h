@@ -45,6 +45,7 @@
 #include <cardano/proposal_procedures/committee_members_map.h>
 #include <cardano/proposal_procedures/constitution.h>
 #include <cardano/proposal_procedures/credential_set.h>
+#include <cardano/protocol_params/protocol_param_update.h>
 #include <cardano/protocol_params/protocol_parameters.h>
 #include <cardano/scripts/script.h>
 #include <cardano/slot_config.h>
@@ -84,11 +85,10 @@ extern "C" {
  * - **Native Scripts, PlutusV4 Scripts and Key Witnesses**: PlutusV1, PlutusV2 and PlutusV3 scripts can not run
  *   inside a sub transaction and are rejected. PlutusV4 scripts are accepted: an input locked by a PlutusV4 script
  *   can be spent, a PlutusV4 policy can mint, a PlutusV4 script account can withdraw, a PlutusV4 script credential
- *   can publish certificates or vote, and a script hash guard can be satisfied, each with a redeemer. The builder
+ *   can publish certificates or vote, a PlutusV4 guardrails script can validate parameter change and treasury
+ *   withdrawals proposals, and a script hash guard can be satisfied, each with a redeemer. The builder
  *   computes the execution units of those redeemers with the native evaluator when the sub transaction is built,
- *   before the parties sign it. The governance proposals that are validated by the guardrails script have no
- *   functions on this builder: parameter change and treasury withdrawals proposals belong in a top level
- *   transaction.
+ *   before the parties sign it.
  */
 typedef struct cardano_sub_tx_builder_t cardano_sub_tx_builder_t;
 
@@ -1625,6 +1625,116 @@ CARDANO_EXPORT void cardano_sub_tx_builder_add_certificate(
   cardano_plutus_data_t*    redeemer);
 
 /**
+ * \brief Proposes a parameter change within a sub transaction.
+ *
+ * This function adds a parameter change proposal to the sub transaction being built. The proposal specifies
+ * updates to protocol parameters, a governance action ID, and other metadata associated with the proposal. The
+ * governance action deposit of the proposal is value produced by the sub transaction, so it is part of the
+ * imbalance the batch has to cover.
+ *
+ * The proposal is validated by the guardrails script, so it carries a proposing redeemer at the index of the
+ * proposal. The index is local to the body of the sub transaction and the execution units are computed with the
+ * native evaluator when \ref cardano_sub_tx_builder_build is called.
+ *
+ * \param[in, out] builder A pointer to the \ref cardano_sub_tx_builder_t instance used to build the sub transaction.
+ * \param[in] reward_address A pointer to a \ref cardano_reward_address_t where the deposit will be refunded.
+ * \param[in] anchor A pointer to a \ref cardano_anchor_t object representing the anchor for the proposal. This parameter must not be NULL.
+ * \param[in] protocol_param_update A pointer to a \ref cardano_protocol_param_update_t object containing the protocol parameter updates.
+ *                                  This parameter must not be NULL.
+ * \param[in] governance_action_id A pointer to a \ref cardano_governance_action_id_t object referencing the most recent enacted action of the same type.
+ *                                 This parameter can be NULL if no proposals of this type have been enacted on the network.
+ * \param[in] policy_hash A pointer to a \ref cardano_blake2b_hash_t object representing the guardrails script hash (also known as the governance action policy script).
+ *                        This parameter must not be NULL.
+ *
+ * \note The guardrails script must be a PlutusV4 script, and it must be added to the sub transaction with
+ *       \ref cardano_sub_tx_builder_add_script or be available through a reference input. A PlutusV1, PlutusV2 or PlutusV3
+ *       guardrails script can not run inside a sub transaction, so \ref cardano_sub_tx_builder_build returns
+ *       `CARDANO_ERROR_INVALID_SCRIPT_LANGUAGE` in that case.
+ *
+ * \note Any errors encountered during the addition of the parameter change proposal will be deferred until
+ *       \ref cardano_sub_tx_builder_build is called.
+ *
+ * Usage Example:
+ * \code{.c}
+ * cardano_sub_tx_builder_t* sub_tx_builder = ...;         // Initialized sub transaction builder
+ * cardano_reward_address_t* reward_address = ...;         // Reward address for deposit refund
+ * cardano_anchor_t* anchor = ...;                         // Anchor metadata for the proposal
+ * cardano_protocol_param_update_t* param_update = ...;    // Protocol parameter updates
+ * cardano_governance_action_id_t* gov_action_id = ...;    // Optional governance action ID
+ * cardano_blake2b_hash_t* policy_hash = ...;              // Guardrails script hash
+ *
+ * cardano_sub_tx_builder_propose_parameter_change(sub_tx_builder, reward_address, anchor, param_update, gov_action_id, policy_hash);
+ * \endcode
+ */
+CARDANO_EXPORT void cardano_sub_tx_builder_propose_parameter_change(
+  cardano_sub_tx_builder_t*        builder,
+  cardano_reward_address_t*        reward_address,
+  cardano_anchor_t*                anchor,
+  cardano_protocol_param_update_t* protocol_param_update,
+  cardano_governance_action_id_t*  governance_action_id,
+  cardano_blake2b_hash_t*          policy_hash);
+
+/**
+ * \brief Proposes a parameter change within a sub transaction using extended parameters.
+ *
+ * This function behaves like `cardano_sub_tx_builder_propose_parameter_change` but accepts the reward address, the
+ * anchor, the governance action ID and the guardrails script hash as strings.
+ *
+ * \param[in, out] builder A pointer to the \ref cardano_sub_tx_builder_t instance used to build the sub transaction.
+ * \param[in] reward_address A string representation of the reward address where the deposit will be refunded.
+ * \param[in] reward_address_size The size (in bytes) of the `reward_address` string.
+ * \param[in] metadata_url A string containing the URL pointing to additional metadata for the proposal.
+ * \param[in] metadata_url_size The size (in bytes) of the `metadata_url` string.
+ * \param[in] metadata_hash_hex A hexadecimal string representing the hash of the metadata contents.
+ * \param[in] metadata_hash_hex_size The size (in bytes) of the `metadata_hash_hex` string.
+ * \param[in] gov_action_id A CIP-0129 bech32 string representing the governance action ID that references the most recent enacted action of the same type.
+ * \param[in] gov_action_id_size The size (in bytes) of the `gov_action_id` string.
+ * \param[in] policy_hash_hash_hex A hexadecimal string representing the guardrails script hash (also known as the governance action policy script).
+ * \param[in] policy_hash_hash_hex_size The size (in bytes) of the `policy_hash_hash_hex` string.
+ * \param[in] protocol_param_update A pointer to a \ref cardano_protocol_param_update_t object containing the protocol parameter updates.
+ *                                  This parameter must not be NULL.
+ *
+ * \note The guardrails script must be a PlutusV4 script, otherwise \ref cardano_sub_tx_builder_build returns
+ *       `CARDANO_ERROR_INVALID_SCRIPT_LANGUAGE`.
+ *
+ * \note Any errors encountered during the addition of the parameter change proposal will be deferred until
+ *       \ref cardano_sub_tx_builder_build is called.
+ *
+ * Usage Example:
+ * \code{.c}
+ * cardano_sub_tx_builder_t* sub_tx_builder = ...;      // Initialized sub transaction builder
+ * const char* reward_address = "stake1u9hwrj...";      // Reward address in Bech32
+ * const char* metadata_url = "https://example.com/metadata.json";
+ * const char* metadata_hash = "d2a4f89b...";           // Metadata hash in hexadecimal
+ * const char* gov_action_id = "gov_action1...";        // Governance action ID in CIP-129 format
+ * const char* policy_hash = "f4a6b3e...";              // Guardrails script hash in hexadecimal
+ * cardano_protocol_param_update_t* param_update = ...; // Protocol parameter updates
+ *
+ * cardano_sub_tx_builder_propose_parameter_change_ex(
+ *   sub_tx_builder,
+ *   reward_address, strlen(reward_address),
+ *   metadata_url, strlen(metadata_url),
+ *   metadata_hash, strlen(metadata_hash),
+ *   gov_action_id, strlen(gov_action_id),
+ *   policy_hash, strlen(policy_hash),
+ *   param_update);
+ * \endcode
+ */
+CARDANO_EXPORT void cardano_sub_tx_builder_propose_parameter_change_ex(
+  cardano_sub_tx_builder_t*        builder,
+  const char*                      reward_address,
+  size_t                           reward_address_size,
+  const char*                      metadata_url,
+  size_t                           metadata_url_size,
+  const char*                      metadata_hash_hex,
+  size_t                           metadata_hash_hex_size,
+  const char*                      gov_action_id,
+  size_t                           gov_action_id_size,
+  const char*                      policy_hash_hash_hex,
+  size_t                           policy_hash_hash_hex_size,
+  cardano_protocol_param_update_t* protocol_param_update);
+
+/**
  * \brief Proposes a hard fork within a sub transaction.
  *
  * This function adds a proposal to initiate a hard fork in the Cardano network to the sub transaction being built. The hard fork proposal
@@ -1718,6 +1828,99 @@ CARDANO_EXPORT void cardano_sub_tx_builder_propose_hardfork_ex(
   size_t                    gov_action_id_size,
   uint64_t                  minor_protocol_version,
   uint64_t                  major_protocol_version);
+
+/**
+ * \brief Proposes treasury withdrawals within a sub transaction.
+ *
+ * This function prepares a proposal to withdraw funds from the treasury. The governance action deposit of the
+ * proposal is value produced by the sub transaction, so it is part of the imbalance the batch has to cover.
+ *
+ * The proposal is validated by the guardrails script, so it carries a proposing redeemer at the index of the
+ * proposal. The index is local to the body of the sub transaction and the execution units are computed with the
+ * native evaluator when \ref cardano_sub_tx_builder_build is called.
+ *
+ * \param[in,out] builder        A pointer to an initialized \ref cardano_sub_tx_builder_t object used to build the sub transaction.
+ * \param[in]     reward_address A pointer to a \ref cardano_reward_address_t object representing the address that will receive the deposit refund.
+ * \param[in]     anchor         A pointer to an initialized \ref cardano_anchor_t object containing metadata about the proposal.
+ * \param[in]     withdrawals    A pointer to a \ref cardano_withdrawal_map_t object defining the requested treasury withdrawals.
+ * \param[in]     policy_hash    A pointer to a \ref cardano_blake2b_hash_t object representing the guardrails script hash.
+ *                               This parameter must not be NULL.
+ *
+ * \note The guardrails script must be a PlutusV4 script, and it must be added to the sub transaction with
+ *       \ref cardano_sub_tx_builder_add_script or be available through a reference input. A PlutusV1, PlutusV2 or PlutusV3
+ *       guardrails script can not run inside a sub transaction, so \ref cardano_sub_tx_builder_build returns
+ *       `CARDANO_ERROR_INVALID_SCRIPT_LANGUAGE` in that case.
+ *
+ * \note Any errors encountered during the addition of the treasury withdrawals proposal will be deferred until
+ *       \ref cardano_sub_tx_builder_build is called.
+ *
+ * Usage Example:
+ * \code{.c}
+ * cardano_sub_tx_builder_t* sub_tx_builder = ...;   // Initialized sub transaction builder
+ * cardano_reward_address_t* reward_address = ...;   // Reward address for deposit refund
+ * cardano_anchor_t* anchor = ...;                   // Metadata for the proposal
+ * cardano_withdrawal_map_t* withdrawals = ...;      // Treasury withdrawals
+ * cardano_blake2b_hash_t* policy_hash = ...;        // Guardrails script hash
+ *
+ * cardano_sub_tx_builder_propose_treasury_withdrawals(sub_tx_builder, reward_address, anchor, withdrawals, policy_hash);
+ * \endcode
+ */
+CARDANO_EXPORT void cardano_sub_tx_builder_propose_treasury_withdrawals(
+  cardano_sub_tx_builder_t* builder,
+  cardano_reward_address_t* reward_address,
+  cardano_anchor_t*         anchor,
+  cardano_withdrawal_map_t* withdrawals,
+  cardano_blake2b_hash_t*   policy_hash);
+
+/**
+ * \brief Proposes treasury withdrawals within a sub transaction using extended parameters.
+ *
+ * This function behaves like `cardano_sub_tx_builder_propose_treasury_withdrawals` but accepts the reward address, the
+ * anchor and the guardrails script hash as strings.
+ *
+ * \param[in,out] builder                   A pointer to an initialized \ref cardano_sub_tx_builder_t object used to build the sub transaction.
+ * \param[in]     reward_address            A pointer to the reward address string for receiving the deposit refund. Must be a valid Bech32 address.
+ * \param[in]     reward_address_size       The size of the reward address string.
+ * \param[in]     metadata_url              A pointer to the metadata URL string providing additional proposal context.
+ * \param[in]     metadata_url_size         The size of the metadata URL string.
+ * \param[in]     metadata_hash_hex         A pointer to the hexadecimal string representation of the metadata hash.
+ * \param[in]     metadata_hash_hex_size    The size of the metadata hash string.
+ * \param[in]     policy_hash_hash_hex      A pointer to the hexadecimal string representation of the guardrails script hash.
+ * \param[in]     policy_hash_hash_hex_size The size of the guardrails script hash string.
+ * \param[in]     withdrawals               A pointer to a \ref cardano_withdrawal_map_t object defining the requested treasury withdrawals.
+ *
+ * \note The guardrails script must be a PlutusV4 script, otherwise \ref cardano_sub_tx_builder_build returns
+ *       `CARDANO_ERROR_INVALID_SCRIPT_LANGUAGE`.
+ *
+ * \note Any errors encountered during the addition of the treasury withdrawals proposal will be deferred until
+ *       \ref cardano_sub_tx_builder_build is called.
+ *
+ * Usage Example:
+ * \code{.c}
+ * cardano_sub_tx_builder_t* sub_tx_builder = ...;   // Initialized sub transaction builder
+ * const char* reward_address = "stake1u9v8lkxklxyz123";
+ * const char* metadata_url = "https://example.com/metadata";
+ * const char* metadata_hash = "abc123";             // Metadata hash in hex
+ * const char* policy_hash = "def456";               // Guardrails script hash in hex
+ * cardano_withdrawal_map_t* withdrawals = ...;      // Treasury withdrawals
+ *
+ * cardano_sub_tx_builder_propose_treasury_withdrawals_ex(
+ *   sub_tx_builder, reward_address, strlen(reward_address),
+ *   metadata_url, strlen(metadata_url), metadata_hash, strlen(metadata_hash),
+ *   policy_hash, strlen(policy_hash), withdrawals);
+ * \endcode
+ */
+CARDANO_EXPORT void cardano_sub_tx_builder_propose_treasury_withdrawals_ex(
+  cardano_sub_tx_builder_t* builder,
+  const char*               reward_address,
+  size_t                    reward_address_size,
+  const char*               metadata_url,
+  size_t                    metadata_url_size,
+  const char*               metadata_hash_hex,
+  size_t                    metadata_hash_hex_size,
+  const char*               policy_hash_hash_hex,
+  size_t                    policy_hash_hash_hex_size,
+  cardano_withdrawal_map_t* withdrawals);
 
 /**
  * \brief Proposes a no-confidence governance action within a sub transaction.

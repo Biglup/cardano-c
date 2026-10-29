@@ -1069,6 +1069,54 @@ cardano_sub_tx_builder_add_certificate(
 }
 
 void
+cardano_sub_tx_builder_propose_parameter_change(
+  cardano_sub_tx_builder_t*        builder,
+  cardano_reward_address_t*        reward_address,
+  cardano_anchor_t*                anchor,
+  cardano_protocol_param_update_t* protocol_param_update,
+  cardano_governance_action_id_t*  governance_action_id,
+  cardano_blake2b_hash_t*          policy_hash)
+{
+  if ((builder == NULL) || (builder->last_error != CARDANO_SUCCESS))
+  {
+    return;
+  }
+
+  const char* error_message = NULL;
+
+  const cardano_error_t result = cardano_builder_propose_parameter_change(&builder->state, reward_address, anchor, protocol_param_update, governance_action_id, policy_hash, &error_message);
+
+  track_builder_result(builder, result, error_message);
+}
+
+void
+cardano_sub_tx_builder_propose_parameter_change_ex(
+  cardano_sub_tx_builder_t*        builder,
+  const char*                      reward_address,
+  const size_t                     reward_address_size,
+  const char*                      metadata_url,
+  const size_t                     metadata_url_size,
+  const char*                      metadata_hash_hex,
+  const size_t                     metadata_hash_hex_size,
+  const char*                      gov_action_id,
+  const size_t                     gov_action_id_size,
+  const char*                      policy_hash_hash_hex,
+  const size_t                     policy_hash_hash_hex_size,
+  cardano_protocol_param_update_t* protocol_param_update)
+{
+  if ((builder == NULL) || (builder->last_error != CARDANO_SUCCESS))
+  {
+    return;
+  }
+
+  const char* error_message = NULL;
+
+  const cardano_error_t result = cardano_builder_propose_parameter_change_ex(&builder->state, reward_address, reward_address_size, metadata_url, metadata_url_size, metadata_hash_hex, metadata_hash_hex_size, gov_action_id, gov_action_id_size, policy_hash_hash_hex, policy_hash_hash_hex_size, protocol_param_update, &error_message);
+
+  track_builder_result(builder, result, error_message);
+}
+
+void
 cardano_sub_tx_builder_propose_hardfork(
   cardano_sub_tx_builder_t*       builder,
   cardano_reward_address_t*       reward_address,
@@ -1110,6 +1158,51 @@ cardano_sub_tx_builder_propose_hardfork_ex(
   const char* error_message = NULL;
 
   const cardano_error_t result = cardano_builder_propose_hardfork_ex(&builder->state, reward_address, reward_address_size, metadata_url, metadata_url_size, metadata_hash_hex, metadata_hash_hex_size, gov_action_id, gov_action_id_size, minor_protocol_version, major_protocol_version, &error_message);
+
+  track_builder_result(builder, result, error_message);
+}
+
+void
+cardano_sub_tx_builder_propose_treasury_withdrawals(
+  cardano_sub_tx_builder_t* builder,
+  cardano_reward_address_t* reward_address,
+  cardano_anchor_t*         anchor,
+  cardano_withdrawal_map_t* withdrawals,
+  cardano_blake2b_hash_t*   policy_hash)
+{
+  if ((builder == NULL) || (builder->last_error != CARDANO_SUCCESS))
+  {
+    return;
+  }
+
+  const char* error_message = NULL;
+
+  const cardano_error_t result = cardano_builder_propose_treasury_withdrawals(&builder->state, reward_address, anchor, withdrawals, policy_hash, &error_message);
+
+  track_builder_result(builder, result, error_message);
+}
+
+void
+cardano_sub_tx_builder_propose_treasury_withdrawals_ex(
+  cardano_sub_tx_builder_t* builder,
+  const char*               reward_address,
+  const size_t              reward_address_size,
+  const char*               metadata_url,
+  const size_t              metadata_url_size,
+  const char*               metadata_hash_hex,
+  const size_t              metadata_hash_hex_size,
+  const char*               policy_hash_hash_hex,
+  const size_t              policy_hash_hash_hex_size,
+  cardano_withdrawal_map_t* withdrawals)
+{
+  if ((builder == NULL) || (builder->last_error != CARDANO_SUCCESS))
+  {
+    return;
+  }
+
+  const char* error_message = NULL;
+
+  const cardano_error_t result = cardano_builder_propose_treasury_withdrawals_ex(&builder->state, reward_address, reward_address_size, metadata_url, metadata_url_size, metadata_hash_hex, metadata_hash_hex_size, policy_hash_hash_hex, policy_hash_hash_hex_size, withdrawals, &error_message);
 
   track_builder_result(builder, result, error_message);
 }
