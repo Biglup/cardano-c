@@ -974,30 +974,22 @@ exclude_sub_transaction_inputs(
 }
 
 /**
- * \brief Checks whether the ledger validates a transaction in legacy mode.
- *
- * A top level transaction that needs a PlutusV1, PlutusV2 or PlutusV3 script must also conserve value by itself, with
- * its sub transactions removed. The scripts the body needs are collected from the spent inputs, the mint field, the
- * withdrawals, the certificates, the voters, the guardrails scripts of the proposals and the guards, and each one is
- * looked up among the scripts provided by the witness set and by the reference scripts of the resolved reference
- * inputs, the pre selected inputs and the inputs chosen by coin selection. A needed script that none of them provides
- * has an unknown language and does not make the transaction legacy.
+ * \brief Collects the hashes of the scripts the body of the top level transaction needs on the current iteration.
  *
  * \param[in]  tx                The top level transaction, whose inputs are the ones of the current iteration.
- * \param[in]  reference_inputs  The resolved reference inputs of the transaction, or NULL when it has none.
  * \param[in]  pre_selected_utxo The UTXOs that must be included in the transaction inputs, or NULL when there are none.
  * \param[in]  selection         The UTXOs spent by the transaction on this iteration.
- * \param[out] is_legacy_mode    Set to true if the transaction needs a PlutusV1, PlutusV2 or PlutusV3 script.
+ * \param[out] needed_scripts    On success, the needed script hashes. The caller must release them with
+ *                               \ref cardano_blake2b_hash_set_unref.
  *
- * \return \ref CARDANO_SUCCESS if the transaction was inspected, or an appropriate error code.
+ * \return \ref CARDANO_SUCCESS if the hashes were collected, or an appropriate error code.
  */
 static cardano_error_t
-is_legacy_mode_transaction(
-  cardano_transaction_t* tx,
-  cardano_utxo_list_t*   reference_inputs,
-  cardano_utxo_list_t*   pre_selected_utxo,
-  cardano_utxo_list_t*   selection,
-  bool*                  is_legacy_mode)
+get_top_level_needed_scripts(
+  cardano_transaction_t*       tx,
+  cardano_utxo_list_t*         pre_selected_utxo,
+  cardano_utxo_list_t*         selection,
+  cardano_blake2b_hash_set_t** needed_scripts)
 {
   cardano_transaction_body_t* body = cardano_transaction_get_body(tx);
   cardano_transaction_body_unref(&body);
@@ -1016,11 +1008,48 @@ is_legacy_mode_transaction(
     }
   }
 
-  cardano_blake2b_hash_set_t* needed_scripts = NULL;
-
-  cardano_error_t result = _cardano_get_script_hashes_needed(body, spent_utxos, &needed_scripts);
+  const cardano_error_t result = _cardano_get_script_hashes_needed(body, spent_utxos, needed_scripts);
 
   cardano_utxo_list_unref(&spent_utxos);
+
+  return result;
+}
+
+/**
+ * \brief Checks whether the ledger validates a transaction in legacy mode.
+ *
+ * A top level transaction that needs a PlutusV1, PlutusV2 or PlutusV3 script must also conserve value by itself, with
+ * its sub transactions removed. The scripts the body needs are collected from the spent inputs, the mint field, the
+ * withdrawals, the certificates, the voters, the guardrails scripts of the proposals and the guards, and each one is
+ * looked up among the scripts the ledger pools over the whole batch: the ones of the witness set of the transaction and
+ * of the witness sets of its sub transactions, and the reference scripts of the resolved reference inputs, the pre
+ * selected inputs, the inputs chosen by coin selection and the resolved UTXOs the sub transactions spend or reference.
+ * A needed script that none of them provides has an unknown language and does not make the transaction legacy.
+ *
+ * \param[in]  tx                    The top level transaction, whose inputs are the ones of the current iteration.
+ * \param[in]  reference_inputs      The resolved reference inputs of the transaction, or NULL when it has none.
+ * \param[in]  pre_selected_utxo     The UTXOs that must be included in the transaction inputs, or NULL when there are
+ *                                   none.
+ * \param[in]  selection             The UTXOs spent by the transaction on this iteration.
+ * \param[in]  sub_transaction_utxos The resolved UTXOs the sub transactions spend or reference. A reference input of a
+ *                                   sub transaction that the balancer was not given the UTXO of is not among them, so
+ *                                   its reference script is not seen.
+ * \param[out] is_legacy_mode        Set to true if the transaction needs a PlutusV1, PlutusV2 or PlutusV3 script.
+ *
+ * \return \ref CARDANO_SUCCESS if the transaction was inspected, or an appropriate error code.
+ */
+static cardano_error_t
+is_legacy_mode_transaction(
+  cardano_transaction_t* tx,
+  cardano_utxo_list_t*   reference_inputs,
+  cardano_utxo_list_t*   pre_selected_utxo,
+  cardano_utxo_list_t*   selection,
+  cardano_utxo_list_t*   sub_transaction_utxos,
+  bool*                  is_legacy_mode)
+{
+  cardano_blake2b_hash_set_t* needed_scripts = NULL;
+
+  cardano_error_t result = get_top_level_needed_scripts(tx, pre_selected_utxo, selection, &needed_scripts);
 
   if (result != CARDANO_SUCCESS)
   {
@@ -1039,6 +1068,7 @@ is_legacy_mode_transaction(
     reference_inputs,
     pre_selected_utxo,
     selection,
+    sub_transaction_utxos,
     &has_plutus_v1,
     &has_plutus_v2,
     &has_plutus_v3,
@@ -1064,6 +1094,7 @@ is_legacy_mode_transaction(
  * \param[in] pre_selected_utxo          The UTXOs that must be included in the transaction inputs, or NULL when there
  *                                       are none.
  * \param[in] selection                  The UTXOs spent by the transaction on this iteration.
+ * \param[in] sub_transaction_utxos      The resolved UTXOs the sub transactions spend or reference.
  *
  * \return \ref CARDANO_SUCCESS if the iteration may go on, \ref CARDANO_ERROR_UNBALANCED_SUB_TRANSACTIONS if the
  *         transaction is validated in legacy mode and its sub transactions do not balance between themselves, or an
@@ -1075,7 +1106,8 @@ check_legacy_mode_sub_transactions(
   cardano_value_t*       sub_transactions_imbalance,
   cardano_utxo_list_t*   reference_inputs,
   cardano_utxo_list_t*   pre_selected_utxo,
-  cardano_utxo_list_t*   selection)
+  cardano_utxo_list_t*   selection,
+  cardano_utxo_list_t*   sub_transaction_utxos)
 {
   if (cardano_value_is_zero(sub_transactions_imbalance))
   {
@@ -1084,7 +1116,7 @@ check_legacy_mode_sub_transactions(
 
   bool is_legacy_mode = false;
 
-  const cardano_error_t result = is_legacy_mode_transaction(tx, reference_inputs, pre_selected_utxo, selection, &is_legacy_mode);
+  const cardano_error_t result = is_legacy_mode_transaction(tx, reference_inputs, pre_selected_utxo, selection, sub_transaction_utxos, &is_legacy_mode);
 
   if (result != CARDANO_SUCCESS)
   {
@@ -1194,15 +1226,19 @@ add_output_datum_hash(cardano_blake2b_hash_set_t* hashes, cardano_transaction_ou
 /**
  * \brief Adds the datum hashes of the outputs behind a list of UTXOs to a set of hashes.
  *
- * \param[in,out] hashes             The set that receives the datum hashes.
- * \param[in]     utxos              The UTXOs whose datum hashes are added, or NULL when there are none.
- * \param[in]     script_locked_only Whether only the UTXOs held at an address whose payment credential is a script hash
- *                                   are inspected.
+ * A spent input needs its datum only when the script hash of its payment credential resolves to a Plutus script among
+ * the provided scripts. An input locked by a native script may carry a datum hash, but its datum is never needed.
+ *
+ * \param[in,out] hashes         The set that receives the datum hashes.
+ * \param[in]     utxos          The UTXOs whose datum hashes are added, or NULL when there are none.
+ * \param[in]     plutus_scripts The script hashes that resolve to a provided Plutus script. When given, only the UTXOs
+ *                               held at an address whose payment credential is one of them are inspected; when NULL,
+ *                               every UTXO is.
  *
  * \return \ref CARDANO_SUCCESS if the UTXOs were inspected, or an appropriate error code.
  */
 static cardano_error_t
-add_utxo_datum_hashes(cardano_blake2b_hash_set_t* hashes, cardano_utxo_list_t* utxos, const bool script_locked_only)
+add_utxo_datum_hashes(cardano_blake2b_hash_set_t* hashes, cardano_utxo_list_t* utxos, cardano_blake2b_hash_set_t* plutus_scripts)
 {
   const size_t length = cardano_utxo_list_get_length(utxos);
 
@@ -1225,11 +1261,11 @@ add_utxo_datum_hashes(cardano_blake2b_hash_set_t* hashes, cardano_utxo_list_t* u
     cardano_address_unref(&address);
 
     cardano_blake2b_hash_t* script_hash = _cardano_get_payment_script_hash(address);
-    const bool              is_locked   = script_hash != NULL;
+    const bool              is_needed   = (plutus_scripts == NULL) || ((script_hash != NULL) && _cardano_blake2b_hash_set_has(plutus_scripts, script_hash));
 
     cardano_blake2b_hash_unref(&script_hash);
 
-    if (is_locked || !script_locked_only)
+    if (is_needed)
     {
       result = add_output_datum_hash(hashes, output);
     }
@@ -1246,16 +1282,25 @@ add_utxo_datum_hashes(cardano_blake2b_hash_set_t* hashes, cardano_utxo_list_t* u
 /**
  * \brief Collects the datum hashes the top level transaction alone allows its witness datums to have.
  *
- * Those are the datum hashes of the spent outputs held at a script address, which the scripts that lock them need,
- * and the datum hashes of the outputs of the body and of the outputs behind its reference inputs. The outputs and the
- * reference inputs of the sub transactions take no part.
+ * Those are the datum hashes of the spent outputs locked by a Plutus script, which the script needs, and the datum
+ * hashes of the outputs of the body and of the outputs behind its reference inputs. A spent output counts only when the
+ * script hash of its payment credential resolves to a PlutusV1, PlutusV2, PlutusV3 or PlutusV4 script among the scripts
+ * the ledger pools over the whole batch: the ones of the witness set of the transaction and of the witness sets of its
+ * sub transactions, and the reference scripts of the resolved reference inputs, the spent inputs and the resolved UTXOs
+ * the sub transactions spend or reference. A spent output locked by a native script, or by a script that nothing
+ * provides, does not count. The outputs and the reference inputs of the sub transactions allow no datum hash.
  *
- * \param[in]  tx                The top level transaction, whose outputs are the ones of the current iteration.
- * \param[in]  reference_inputs  The resolved reference inputs of the transaction, or NULL when it has none.
- * \param[in]  pre_selected_utxo The UTXOs that must be included in the transaction inputs, or NULL when there are none.
- * \param[in]  selection         The UTXOs spent by the transaction on this iteration.
- * \param[out] allowed_hashes    On success, the allowed datum hashes. The caller must release them with
- *                               \ref cardano_blake2b_hash_set_unref.
+ * \param[in]  tx                    The top level transaction, whose inputs and outputs are the ones of the current
+ *                                   iteration.
+ * \param[in]  reference_inputs      The resolved reference inputs of the transaction, or NULL when it has none.
+ * \param[in]  pre_selected_utxo     The UTXOs that must be included in the transaction inputs, or NULL when there are
+ *                                   none.
+ * \param[in]  selection             The UTXOs spent by the transaction on this iteration.
+ * \param[in]  sub_transaction_utxos The resolved UTXOs the sub transactions spend or reference. A reference input of a
+ *                                   sub transaction that the balancer was not given the UTXO of is not among them, so
+ *                                   its reference script is not seen.
+ * \param[out] allowed_hashes        On success, the allowed datum hashes. The caller must release them with
+ *                                   \ref cardano_blake2b_hash_set_unref.
  *
  * \return \ref CARDANO_SUCCESS if the hashes were collected, or an appropriate error code.
  */
@@ -1265,27 +1310,52 @@ get_top_level_allowed_datum_hashes(
   cardano_utxo_list_t*         reference_inputs,
   cardano_utxo_list_t*         pre_selected_utxo,
   cardano_utxo_list_t*         selection,
+  cardano_utxo_list_t*         sub_transaction_utxos,
   cardano_blake2b_hash_set_t** allowed_hashes)
 {
-  cardano_blake2b_hash_set_t* hashes = NULL;
+  cardano_blake2b_hash_set_t* needed_scripts = NULL;
 
-  cardano_error_t result = cardano_blake2b_hash_set_new(&hashes);
+  cardano_error_t result = get_top_level_needed_scripts(tx, pre_selected_utxo, selection, &needed_scripts);
 
   if (result != CARDANO_SUCCESS)
   {
     return result;
   }
 
-  result = add_utxo_datum_hashes(hashes, pre_selected_utxo, true);
+  cardano_blake2b_hash_set_t* plutus_scripts = NULL;
 
-  if (result == CARDANO_SUCCESS)
+  result = _cardano_get_plutus_scripts_provided(tx, needed_scripts, reference_inputs, pre_selected_utxo, selection, sub_transaction_utxos, &plutus_scripts);
+
+  cardano_blake2b_hash_set_unref(&needed_scripts);
+
+  if (result != CARDANO_SUCCESS)
   {
-    result = add_utxo_datum_hashes(hashes, selection, true);
+    return result;
   }
 
+  cardano_blake2b_hash_set_t* hashes = NULL;
+
+  result = cardano_blake2b_hash_set_new(&hashes);
+
+  if (result != CARDANO_SUCCESS)
+  {
+    cardano_blake2b_hash_set_unref(&plutus_scripts);
+
+    return result;
+  }
+
+  result = add_utxo_datum_hashes(hashes, pre_selected_utxo, plutus_scripts);
+
   if (result == CARDANO_SUCCESS)
   {
-    result = add_utxo_datum_hashes(hashes, reference_inputs, false);
+    result = add_utxo_datum_hashes(hashes, selection, plutus_scripts);
+  }
+
+  cardano_blake2b_hash_set_unref(&plutus_scripts);
+
+  if (result == CARDANO_SUCCESS)
+  {
+    result = add_utxo_datum_hashes(hashes, reference_inputs, NULL);
   }
 
   cardano_transaction_body_t* body = cardano_transaction_get_body(tx);
@@ -1325,15 +1395,17 @@ get_top_level_allowed_datum_hashes(
  * \brief Checks whether the top level transaction carries a witness datum that the ledger does not allow once its sub
  * transactions are removed.
  *
- * \param[in]  tx                  The top level transaction, whose inputs and outputs are the ones of the current
- *                                 iteration.
- * \param[in]  datums              The witness datums of the top level transaction.
- * \param[in]  reference_inputs    The resolved reference inputs of the transaction, or NULL when it has none.
- * \param[in]  pre_selected_utxo   The UTXOs that must be included in the transaction inputs, or NULL when there are
- *                                 none.
- * \param[in]  selection           The UTXOs spent by the transaction on this iteration.
- * \param[out] has_foreign_datums  Set to true if a witness datum is neither needed by a spent input nor allowed by the
- *                                 outputs and the reference inputs of the top level transaction.
+ * \param[in]  tx                    The top level transaction, whose inputs and outputs are the ones of the current
+ *                                   iteration.
+ * \param[in]  datums                The witness datums of the top level transaction.
+ * \param[in]  reference_inputs      The resolved reference inputs of the transaction, or NULL when it has none.
+ * \param[in]  pre_selected_utxo     The UTXOs that must be included in the transaction inputs, or NULL when there are
+ *                                   none.
+ * \param[in]  selection             The UTXOs spent by the transaction on this iteration.
+ * \param[in]  sub_transaction_utxos The resolved UTXOs the sub transactions spend or reference.
+ * \param[out] has_foreign_datums    Set to true if a witness datum is neither needed by a spent input locked by a Plutus
+ *                                   script nor allowed by the outputs and the reference inputs of the top level
+ *                                   transaction.
  *
  * \return \ref CARDANO_SUCCESS if the witness datums were inspected, or an appropriate error code.
  */
@@ -1344,11 +1416,12 @@ has_datums_not_allowed_by_top_level(
   cardano_utxo_list_t*       reference_inputs,
   cardano_utxo_list_t*       pre_selected_utxo,
   cardano_utxo_list_t*       selection,
+  cardano_utxo_list_t*       sub_transaction_utxos,
   bool*                      has_foreign_datums)
 {
   cardano_blake2b_hash_set_t* allowed_hashes = NULL;
 
-  cardano_error_t result = get_top_level_allowed_datum_hashes(tx, reference_inputs, pre_selected_utxo, selection, &allowed_hashes);
+  cardano_error_t result = get_top_level_allowed_datum_hashes(tx, reference_inputs, pre_selected_utxo, selection, sub_transaction_utxos, &allowed_hashes);
 
   if (result != CARDANO_SUCCESS)
   {
@@ -1391,16 +1464,21 @@ has_datums_not_allowed_by_top_level(
  * \brief Rejects an iteration of the balancing loop whose top level transaction carries a witness datum the ledger
  * does not allow in legacy mode.
  *
- * Every witness datum of a level must be needed by a script input that level spends, or match a datum hash of the
- * outputs it creates or of the outputs behind its reference inputs. A sub transaction normally extends the datum
- * hashes the top level transaction may carry with its own outputs and reference inputs, but when the top level
- * transaction is validated in legacy mode the ledger checks its datums with the sub transactions removed.
+ * Every witness datum of a level must be needed by an input that level spends and that a Plutus script locks, or
+ * match a datum hash of the outputs it creates or of the outputs behind its reference inputs. A spent input locked by a
+ * native script, or by a script hash that no provided script matches, never needs its datum. A sub transaction
+ * normally extends the datum hashes the top level transaction may carry with its own outputs and reference inputs,
+ * but when the top level transaction is validated in legacy mode the ledger checks its datums with the sub
+ * transactions removed. The scripts the sub transactions provide still take part in resolving the scripts that lock
+ * the inputs of the top level transaction, since the ledger pools the provided scripts over the whole batch.
  *
- * \param[in] tx                The top level transaction, whose inputs and outputs are the ones of the current
- *                              iteration.
- * \param[in] reference_inputs  The resolved reference inputs of the transaction, or NULL when it has none.
- * \param[in] pre_selected_utxo The UTXOs that must be included in the transaction inputs, or NULL when there are none.
- * \param[in] selection         The UTXOs spent by the transaction on this iteration.
+ * \param[in] tx                    The top level transaction, whose inputs and outputs are the ones of the current
+ *                                  iteration.
+ * \param[in] reference_inputs      The resolved reference inputs of the transaction, or NULL when it has none.
+ * \param[in] pre_selected_utxo     The UTXOs that must be included in the transaction inputs, or NULL when there are
+ *                                  none.
+ * \param[in] selection             The UTXOs spent by the transaction on this iteration.
+ * \param[in] sub_transaction_utxos The resolved UTXOs the sub transactions spend or reference.
  *
  * \return \ref CARDANO_SUCCESS if the iteration may go on, \ref CARDANO_ERROR_NOT_ALLOWED_SUPPLEMENTAL_DATUMS if the
  *         transaction carries sub transactions, is validated in legacy mode and carries a witness datum that the
@@ -1411,7 +1489,8 @@ check_legacy_mode_supplemental_datums(
   cardano_transaction_t* tx,
   cardano_utxo_list_t*   reference_inputs,
   cardano_utxo_list_t*   pre_selected_utxo,
-  cardano_utxo_list_t*   selection)
+  cardano_utxo_list_t*   selection,
+  cardano_utxo_list_t*   sub_transaction_utxos)
 {
   cardano_transaction_body_t* body = cardano_transaction_get_body(tx);
   cardano_transaction_body_unref(&body);
@@ -1432,7 +1511,7 @@ check_legacy_mode_supplemental_datums(
 
   bool has_foreign_datums = false;
 
-  cardano_error_t result = has_datums_not_allowed_by_top_level(tx, datums, reference_inputs, pre_selected_utxo, selection, &has_foreign_datums);
+  cardano_error_t result = has_datums_not_allowed_by_top_level(tx, datums, reference_inputs, pre_selected_utxo, selection, sub_transaction_utxos, &has_foreign_datums);
 
   if ((result != CARDANO_SUCCESS) || !has_foreign_datums)
   {
@@ -1441,7 +1520,7 @@ check_legacy_mode_supplemental_datums(
 
   bool is_legacy_mode = false;
 
-  result = is_legacy_mode_transaction(tx, reference_inputs, pre_selected_utxo, selection, &is_legacy_mode);
+  result = is_legacy_mode_transaction(tx, reference_inputs, pre_selected_utxo, selection, sub_transaction_utxos, &is_legacy_mode);
 
   if ((result != CARDANO_SUCCESS) || !is_legacy_mode)
   {
@@ -1770,8 +1849,9 @@ add_sub_transaction_priced_inputs(
  * references and spends is listed once, while a UTXO used by several sub transactions is listed, and priced, once per
  * sub transaction, as the ledger prices the reference scripts of a batch. Besides pricing reference scripts, this list
  * resolves the inputs and reference inputs of the sub transactions when the transaction evaluator runs their scripts
- * together with the ones of the top level transaction; the scripts of the sub transactions take no part in the
- * validation mode of the top level transaction.
+ * together with the ones of the top level transaction, and provides their reference scripts to the lookup of the
+ * scripts the top level transaction needs, which the ledger pools over the whole batch. The scripts the sub
+ * transactions need take no part in the validation mode of the top level transaction.
  *
  * \param[in]  sub_transactions  The sub transactions carried by the transaction, or NULL when it has none.
  * \param[in]  available_utxo    The list of available UTXOs, or NULL when there are none.
@@ -2572,11 +2652,11 @@ balance_transaction(
       return result;
     }
 
-    result = check_legacy_mode_sub_transactions(unbalanced_tx, sub_transactions_imbalance, reference_inputs, pre_selected_utxo, selection);
+    result = check_legacy_mode_sub_transactions(unbalanced_tx, sub_transactions_imbalance, reference_inputs, pre_selected_utxo, selection, sub_transaction_priced_inputs);
 
     if (result == CARDANO_SUCCESS)
     {
-      result = check_legacy_mode_supplemental_datums(unbalanced_tx, reference_inputs, pre_selected_utxo, selection);
+      result = check_legacy_mode_supplemental_datums(unbalanced_tx, reference_inputs, pre_selected_utxo, selection, sub_transaction_priced_inputs);
     }
 
     if (result != CARDANO_SUCCESS)

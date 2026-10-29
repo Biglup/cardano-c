@@ -4497,6 +4497,43 @@ TEST(cardano_balance_transaction, returnsErrorIfSubTransactionsAreUnbalancedAndA
   cardano_utxo_list_unref(&reference_inputs);
 }
 
+TEST(cardano_balance_transaction, returnsErrorIfSubTransactionsAreUnbalancedAndASubTransactionReferenceInputProvidesANeededPlutusV2Script)
+{
+  // Arrange
+  cardano_utxo_t*                sub_tx_utxo       = new_default_utxo(SUB_TX_UTXO_CBOR);
+  cardano_utxo_t*                reference_utxo    = new_default_utxo(REF_SCRIPT_V2_UTXO);
+  cardano_sub_transaction_t*     sub_tx            = new_coin_sub_transaction(sub_tx_utxo, 10000000);
+  cardano_protocol_parameters_t* protocol          = init_protocol_parameters();
+  cardano_utxo_list_t*           available_utxo    = new_default_utxo_list();
+  cardano_utxo_list_t*           sub_tx_inputs     = new_utxo_list_of(sub_tx_utxo, NULL);
+  cardano_utxo_list_t*           sub_tx_ref_inputs = new_utxo_list_of(reference_utxo, NULL);
+  cardano_utxo_list_t*           reference_inputs  = new_empty_utxo_list();
+
+  set_sub_transaction_reference_input(sub_tx, reference_utxo);
+
+  cardano_transaction_t* tx = new_top_level_transaction(sub_tx, NULL);
+
+  require_reference_script(tx, reference_utxo);
+
+  // Act
+  cardano_error_t result = balance_batch_with_collateral(tx, protocol, reference_inputs, sub_tx_inputs, sub_tx_ref_inputs, available_utxo, NULL);
+
+  // Assert
+  EXPECT_EQ(result, CARDANO_ERROR_UNBALANCED_SUB_TRANSACTIONS);
+  EXPECT_STREQ(cardano_transaction_get_last_error(tx), LEGACY_MODE_ERROR);
+
+  // Cleanup
+  cardano_utxo_unref(&sub_tx_utxo);
+  cardano_utxo_unref(&reference_utxo);
+  cardano_sub_transaction_unref(&sub_tx);
+  cardano_transaction_unref(&tx);
+  cardano_protocol_parameters_unref(&protocol);
+  cardano_utxo_list_unref(&available_utxo);
+  cardano_utxo_list_unref(&sub_tx_inputs);
+  cardano_utxo_list_unref(&sub_tx_ref_inputs);
+  cardano_utxo_list_unref(&reference_inputs);
+}
+
 TEST(cardano_balance_transaction, balancesUnbalancedSubTransactionsIfAReferenceInputHasAPlutusV2ScriptThatIsNotNeeded)
 {
   // Arrange
