@@ -31,7 +31,11 @@
 #include "../allocators_helpers.h"
 #include "../src/allocators.h"
 
+#include <filesystem>
+#include <fstream>
 #include <gmock/gmock.h>
+#include <string>
+#include <vector>
 
 /* CONSTANTS *****************************************************************/
 
@@ -168,6 +172,61 @@ encode_account_balance_interval(cardano_account_balance_interval_t* account_bala
   cardano_cbor_writer_unref(&writer);
 
   return actual_cbor;
+}
+
+/**
+ * Loads the CBOR hex vectors generated from the Dijkstra CDDL for the given rule.
+ * @return The vectors, one per line of the vector file.
+ */
+static std::vector<std::string>
+load_cddl_vectors(const char* rule)
+{
+  const std::filesystem::path path = std::filesystem::path(__FILE__).parent_path().parent_path() / "vectors" / "dijkstra" / "cddl" / (std::string(rule) + ".txt");
+
+  std::ifstream            stream(path);
+  std::vector<std::string> vectors;
+  std::string              line;
+
+  while (std::getline(stream, line))
+  {
+    if (!line.empty())
+    {
+      vectors.push_back(line);
+    }
+  }
+
+  EXPECT_FALSE(vectors.empty());
+
+  return vectors;
+}
+
+/**
+ * Decodes every vector generated from the Dijkstra CDDL for the given rule and checks that it re-encodes
+ * to the same bytes.
+ */
+static void
+expect_cddl_vectors_round_trip(const char* rule)
+{
+  // Arrange
+  const std::vector<std::string> vectors = load_cddl_vectors(rule);
+
+  for (const std::string& vector: vectors)
+  {
+    SCOPED_TRACE(vector);
+
+    cardano_account_balance_intervals_map_t* account_balance_intervals_map = new_default_account_balance_intervals_map(vector.c_str());
+    ASSERT_THAT(account_balance_intervals_map, testing::Not((cardano_account_balance_intervals_map_t*)nullptr));
+
+    // Act
+    char* actual_cbor = encode_account_balance_intervals_map(account_balance_intervals_map);
+
+    // Assert
+    EXPECT_STREQ(actual_cbor, vector.c_str());
+
+    // Cleanup
+    cardano_account_balance_intervals_map_unref(&account_balance_intervals_map);
+    free(actual_cbor);
+  }
 }
 
 /* UNIT TESTS ****************************************************************/
@@ -462,6 +521,40 @@ TEST(cardano_account_balance_intervals_map_from_cbor, returnErrorIfMemoryAllocat
   // Cleanup
   cardano_set_allocators(malloc, realloc, free);
   cardano_cbor_reader_unref(&reader);
+}
+
+TEST(cardano_account_balance_intervals_map_from_cbor, returnErrorForEveryVectorWithArbitraryRewardAccountBytes)
+{
+  // Arrange
+  const std::vector<std::string> vectors = load_cddl_vectors("account_balance_intervals_unrestricted_key");
+
+  for (const std::string& vector: vectors)
+  {
+    SCOPED_TRACE(vector);
+
+    cardano_account_balance_intervals_map_t* account_balance_intervals_map = nullptr;
+    cardano_cbor_reader_t*                   reader                        = cardano_cbor_reader_from_hex(vector.c_str(), vector.size());
+
+    // Act
+    cardano_error_t error = cardano_account_balance_intervals_map_from_cbor(reader, &account_balance_intervals_map);
+
+    // Assert
+    EXPECT_EQ(error, CARDANO_ERROR_INVALID_ADDRESS_FORMAT);
+    EXPECT_EQ(account_balance_intervals_map, (cardano_account_balance_intervals_map_t*)nullptr);
+
+    // Cleanup
+    cardano_cbor_reader_unref(&reader);
+  }
+}
+
+TEST(cardano_account_balance_intervals_map_to_cbor, canRoundTripEveryAccountBalanceIntervalsVectorGeneratedFromTheCddl)
+{
+  expect_cddl_vectors_round_trip("account_balance_intervals");
+}
+
+TEST(cardano_account_balance_intervals_map_to_cbor, canRoundTripEveryStartingAccountBalanceIntervalsVectorGeneratedFromTheCddl)
+{
+  expect_cddl_vectors_round_trip("starting_account_balance_intervals");
 }
 
 TEST(cardano_account_balance_intervals_map_to_cbor, canRoundTripAllIntervalShapes)
