@@ -13618,3 +13618,77 @@ TEST(cardano_sub_tx_builder_add_datum, carriesTheDatumOfALockedOutputAlongsideAS
   cardano_sub_tx_builder_unref(&builder);
   cardano_protocol_parameters_unref(&params);
 }
+
+/* SCRIPT DATA HASH LANGUAGE VIEWS *******************************************/
+
+TEST(cardano_sub_tx_builder_build, leavesTheLanguageViewOfAnUnneededReferenceScriptOutOfTheScriptDataHash)
+{
+  // Arrange
+  cardano_protocol_parameters_t* params         = init_dijkstra_protocol_parameters();
+  cardano_sub_tx_builder_t*      builder        = cardano_sub_tx_builder_new(params, &CARDANO_MAINNET_SLOT_CONFIG);
+  cardano_script_t*              script         = create_script(ALWAYS_SUCCEEDS_V4_CBOR);
+  cardano_script_t*              unneeded       = create_script(ALWAYS_SUCCEEDS_V3_CBOR);
+  cardano_utxo_t*                utxo           = create_script_utxo(LOW_TX_ID, script, nullptr);
+  cardano_utxo_t*                reference_utxo = create_reference_script_utxo(REFERENCE_TX_ID, unneeded);
+  cardano_plutus_data_t*         redeemer       = create_plutus_data(PLUTUS_DATA_CBOR);
+
+  // Act
+  cardano_sub_tx_builder_add_script(builder, script);
+  cardano_sub_tx_builder_add_reference_input(builder, reference_utxo);
+  cardano_sub_tx_builder_add_input(builder, utxo, redeemer, nullptr);
+
+  cardano_sub_transaction_t* sub_tx   = build_sub_transaction(builder);
+  cardano_blake2b_hash_t*    hash     = cardano_sub_transaction_body_get_script_data_hash(get_body(sub_tx));
+  cardano_blake2b_hash_t*    expected = compute_sub_tx_script_data_hash(params, sub_tx);
+
+  // Assert
+  EXPECT_TRUE(builder->state.has_plutus_v3);
+  ASSERT_NE(hash, nullptr);
+  EXPECT_TRUE(cardano_blake2b_hash_equals(hash, expected));
+
+  // Cleanup
+  cardano_blake2b_hash_unref(&expected);
+  cardano_blake2b_hash_unref(&hash);
+  cardano_sub_transaction_unref(&sub_tx);
+  cardano_plutus_data_unref(&redeemer);
+  cardano_utxo_unref(&reference_utxo);
+  cardano_utxo_unref(&utxo);
+  cardano_script_unref(&unneeded);
+  cardano_script_unref(&script);
+  cardano_sub_tx_builder_unref(&builder);
+  cardano_protocol_parameters_unref(&params);
+}
+
+TEST(cardano_sub_tx_builder_build, keepsTheLanguageViewOfANeededScriptProvidedByReference)
+{
+  // Arrange
+  cardano_protocol_parameters_t* params         = init_dijkstra_protocol_parameters();
+  cardano_sub_tx_builder_t*      builder        = cardano_sub_tx_builder_new(params, &CARDANO_MAINNET_SLOT_CONFIG);
+  cardano_script_t*              script         = create_script(ALWAYS_SUCCEEDS_V4_CBOR);
+  cardano_utxo_t*                utxo           = create_script_utxo(LOW_TX_ID, script, nullptr);
+  cardano_utxo_t*                reference_utxo = create_reference_script_utxo(REFERENCE_TX_ID, script);
+  cardano_plutus_data_t*         redeemer       = create_plutus_data(PLUTUS_DATA_CBOR);
+
+  // Act
+  cardano_sub_tx_builder_add_reference_input(builder, reference_utxo);
+  cardano_sub_tx_builder_add_input(builder, utxo, redeemer, nullptr);
+
+  cardano_sub_transaction_t* sub_tx   = build_sub_transaction(builder);
+  cardano_blake2b_hash_t*    hash     = cardano_sub_transaction_body_get_script_data_hash(get_body(sub_tx));
+  cardano_blake2b_hash_t*    expected = compute_sub_tx_script_data_hash(params, sub_tx);
+
+  // Assert
+  ASSERT_NE(hash, nullptr);
+  EXPECT_TRUE(cardano_blake2b_hash_equals(hash, expected));
+
+  // Cleanup
+  cardano_blake2b_hash_unref(&expected);
+  cardano_blake2b_hash_unref(&hash);
+  cardano_sub_transaction_unref(&sub_tx);
+  cardano_plutus_data_unref(&redeemer);
+  cardano_utxo_unref(&reference_utxo);
+  cardano_utxo_unref(&utxo);
+  cardano_script_unref(&script);
+  cardano_sub_tx_builder_unref(&builder);
+  cardano_protocol_parameters_unref(&params);
+}

@@ -98,16 +98,16 @@ typedef struct cardano_builder_state_t
      */
     cardano_utxo_list_t* sub_transaction_reference_inputs;
 
-    /** \brief Whether the transaction uses at least one Plutus V1 script. */
+    /** \brief Whether a Plutus V1 script was provided to the builder. */
     bool has_plutus_v1;
 
-    /** \brief Whether the transaction uses at least one Plutus V2 script. */
+    /** \brief Whether a Plutus V2 script was provided to the builder. */
     bool has_plutus_v2;
 
-    /** \brief Whether the transaction uses at least one Plutus V3 script. */
+    /** \brief Whether a Plutus V3 script was provided to the builder. */
     bool has_plutus_v3;
 
-    /** \brief Whether the transaction uses at least one Plutus V4 script. */
+    /** \brief Whether a Plutus V4 script was provided to the builder. */
     bool has_plutus_v4;
 
     /** \brief The number of additional signatures accounted for when computing fees. */
