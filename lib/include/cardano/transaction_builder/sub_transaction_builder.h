@@ -74,7 +74,7 @@ extern "C" {
  * over each sub transaction.
  *
  * **Key Features:**
- * - **Modular Design**: Incrementally add inputs, outputs, minting operations, metadata, native scripts,
+ * - **Modular Design**: Incrementally add inputs, outputs, minting operations, metadata, native and PlutusV4 scripts,
  *   guards, direct deposits, account balance intervals, withdrawals, certificates, votes and governance
  *   proposals.
  * - **Never Balances**: The builder does not select inputs, does not add change outputs and does not compute
@@ -2450,9 +2450,10 @@ CARDANO_EXPORT void cardano_sub_tx_builder_propose_info_ex(
  * its input in the sorted inputs, resolves the deferred redeemers against the body of the sub transaction, evaluates
  * the redeemers natively against the UTXOs added as inputs and reference inputs, writes the computed execution units
  * into the redeemers and sets the script data hash of the sub transaction. The indices of the mint, withdrawal,
- * certificate, vote and guard redeemers are local to the sub transaction body. Building fails with
+ * certificate, vote, proposal and guard redeemers are local to the sub transaction body. Building fails with
  * \ref CARDANO_ERROR_ELEMENT_NOT_FOUND when no Plutus script with the hash of a guard, of the payment credential of a
- * spent input, of a minting policy, of a withdrawing account, of a certificate credential or of a voter is added with
+ * spent input, of a minting policy, of a withdrawing account, of a certificate credential, of a voter or of the
+ * guardrails of a parameter change or treasury withdrawals proposal is added with
  * `cardano_sub_tx_builder_add_script` or carried as a reference script by one of those UTXOs, with
  * \ref CARDANO_ERROR_INVALID_SCRIPT_LANGUAGE when that script is a PlutusV1, PlutusV2 or PlutusV3 script, with
  * \ref CARDANO_ERROR_DECODING when a script cannot be deserialized, and with

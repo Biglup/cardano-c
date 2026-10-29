@@ -146,8 +146,7 @@ static const char* ASSET_POOL[ASSET_POOL_SIZE] = {
 /* STRUCTURES ****************************************************************/
 
 /**
- * \brief How the top level transaction of a batch comes to carry the datum whose hash an output of a sub transaction
- * carries.
+ * \brief Which witness datum the top level transaction of a batch carries, and what allows it.
  */
 enum top_level_datum_t
 {
@@ -169,7 +168,12 @@ enum top_level_datum_t
   /**
    * \brief The batcher spends a script input whose datum hash is the hash of the datum, so the script needs it.
    */
-  TOP_LEVEL_DATUM_NEEDED_BY_A_TOP_LEVEL_INPUT
+  TOP_LEVEL_DATUM_NEEDED_BY_A_TOP_LEVEL_INPUT,
+
+  /**
+   * \brief The batcher adds another datum, whose hash no output, reference input or script input of the batch carries.
+   */
+  TOP_LEVEL_DATUM_NOTHING_ALLOWS
 };
 
 /**
@@ -1433,16 +1437,17 @@ build_signed_intent_with_datum_hash(
 }
 
 /**
- * Creates the builder of a batch whose top level transaction carries the datum whose hash the output of the sub
- * transaction of a party carries. In legacy mode the batcher also spends a UTXO locked by an always succeeding Plutus
- * V3 script, which makes the ledger validate the top level transaction in legacy mode.
+ * Creates the builder of a batch whose top level transaction carries a witness datum, which is the one the output of
+ * the sub transaction of a party carries in all but one case. In legacy mode the batcher also spends a UTXO locked by
+ * an always succeeding Plutus V3 script, which makes the ledger validate the top level transaction in legacy mode.
  * \param params the protocol parameters.
  * \param batcher the batcher, which funds the batch and posts its collateral.
  * \param sub_transaction the signed intent of the party.
  * \param party the party, whose UTXOs resolve the intent.
  * \param script_utxo the UTXO locked by the Plutus V3 script, or NULL to build the batch in normal mode.
- * \param datum the datum the top level transaction carries.
- * \param how how the top level transaction comes to carry the datum.
+ * \param datum the datum the output of the party carries, which the top level transaction carries as well unless
+ * how is TOP_LEVEL_DATUM_NOTHING_ALLOWS.
+ * \param how which witness datum the top level transaction carries, and what allows it.
  * \return A new instance of the transaction builder, ready to build.
  */
 static cardano_tx_builder_t*
@@ -1478,7 +1483,17 @@ new_batch_builder_carrying_datum(
     cardano_script_unref(&script);
   }
 
-  if (how != TOP_LEVEL_DATUM_NEEDED_BY_A_TOP_LEVEL_INPUT)
+  if (how == TOP_LEVEL_DATUM_NOTHING_ALLOWS)
+  {
+    cardano_plutus_data_t* unrelated_datum = NULL;
+
+    EXPECT_EQ(cardano_plutus_data_new_integer_from_int(8, &unrelated_datum), CARDANO_SUCCESS);
+
+    cardano_tx_builder_add_datum(tx_builder, unrelated_datum);
+
+    cardano_plutus_data_unref(&unrelated_datum);
+  }
+  else if (how != TOP_LEVEL_DATUM_NEEDED_BY_A_TOP_LEVEL_INPUT)
   {
     cardano_tx_builder_add_datum(tx_builder, datum);
   }
@@ -1511,9 +1526,9 @@ new_batch_builder_carrying_datum(
 
 /**
  * Settles the intent of a party whose sub transaction pays an output carrying the hash of a datum, while the top level
- * transaction carries that datum too, and expects the outcome of the build.
+ * transaction carries a witness datum, and expects the outcome of the build.
  * \param legacy_mode whether the top level transaction runs a Plutus V3 script, which validates it in legacy mode.
- * \param how how the top level transaction comes to carry the datum.
+ * \param how which witness datum the top level transaction carries, and what allows it.
  * \param expected the result the build is expected to return.
  */
 static void
@@ -1573,7 +1588,7 @@ expect_batch_carrying_datum(const bool legacy_mode, const top_level_datum_t how,
   else
   {
     EXPECT_EQ(tx, nullptr);
-    EXPECT_STREQ(cardano_tx_builder_get_last_error(tx_builder), "The top level transaction needs a PlutusV1, PlutusV2 or PlutusV3 script, so each of its witness datums must be needed by an input it spends or match a datum hash of its own outputs or reference inputs. A datum that only matches an output or a reference input of a sub transaction must not be added to the top level transaction.");
+    EXPECT_STREQ(cardano_tx_builder_get_last_error(tx_builder), "The top level transaction needs a PlutusV1, PlutusV2 or PlutusV3 script, so each of its witness datums must be needed by an input it spends or match a datum hash of its own outputs or reference inputs. For example, a datum that only matches an output or a reference input of a sub transaction is not allowed.");
   }
 
   // Cleanup
@@ -1955,6 +1970,15 @@ TEST(cardano_batch_settlement, settlesAnIntentThatSpendsAPlutusV4ScriptInput)
 TEST(cardano_batch_settlement, rejectsATopLevelDatumThatOnlyASubTransactionOutputAllowsInLegacyMode)
 {
   expect_batch_carrying_datum(true, TOP_LEVEL_DATUM_MATCHING_A_SUB_OUTPUT, CARDANO_ERROR_NOT_ALLOWED_SUPPLEMENTAL_DATUMS);
+}
+
+/**
+ * The ledger rejects in legacy mode any top level witness datum that the top level transaction alone does not allow,
+ * even one whose hash no output, reference input or script input of the batch carries.
+ */
+TEST(cardano_batch_settlement, rejectsATopLevelDatumThatNothingInTheBatchAllowsInLegacyMode)
+{
+  expect_batch_carrying_datum(true, TOP_LEVEL_DATUM_NOTHING_ALLOWS, CARDANO_ERROR_NOT_ALLOWED_SUPPLEMENTAL_DATUMS);
 }
 
 /**

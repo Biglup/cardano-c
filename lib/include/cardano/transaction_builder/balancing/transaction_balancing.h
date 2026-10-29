@@ -138,7 +138,8 @@ extern "C" {
  *         by a sub transaction is not resolved, \ref CARDANO_ERROR_DUPLICATED_KEY if a pre selected UTXO is also spent by a sub transaction,
  *         \ref CARDANO_ERROR_UNBALANCED_SUB_TRANSACTIONS if the top level transaction needs a PlutusV1, PlutusV2 or PlutusV3 script and
  *         its sub transactions do not balance between themselves, \ref CARDANO_ERROR_NOT_ALLOWED_SUPPLEMENTAL_DATUMS if the top level
- *         transaction needs a PlutusV1, PlutusV2 or PlutusV3 script and carries a witness datum that only a sub transaction allows,
+ *         transaction needs a PlutusV1, PlutusV2 or PlutusV3 script and carries a witness datum that the ledger
+ *         does not allow once its sub transactions are removed,
  *         \ref CARDANO_ERROR_BALANCE_INSUFFICIENT if collateral is required and
  *         no collateral UTXO is available, \ref CARDANO_ERROR_INTEGER_OVERFLOW if the withdrawals, deposits or reclaimed deposits add up
  *         to more than UINT64_MAX or the direct deposits, the produced coin or the consumed coin exceed INT64_MAX, or an appropriate

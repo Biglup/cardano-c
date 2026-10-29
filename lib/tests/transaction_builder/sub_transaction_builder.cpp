@@ -10712,7 +10712,7 @@ TEST(cardano_sub_tx_builder_propose_parameter_change, returnsErrorIfARequiredArg
   cardano_blake2b_hash_unref(&policy_hash);
 }
 
-TEST(cardano_sub_tx_builder_propose_parameter_change, withoutAPolicyHashAttachesNoRedeemer)
+TEST(cardano_sub_tx_builder_propose_parameter_change, rejectsAMissingPolicyHashWithoutAttachingARedeemer)
 {
   // Arrange
   cardano_protocol_parameters_t*   params         = init_dijkstra_protocol_parameters();
@@ -11145,7 +11145,7 @@ TEST(cardano_sub_tx_builder_propose_treasury_withdrawals, returnsErrorIfARequire
   cardano_blake2b_hash_unref(&policy_hash);
 }
 
-TEST(cardano_sub_tx_builder_propose_treasury_withdrawals, withoutAPolicyHashAttachesNoRedeemer)
+TEST(cardano_sub_tx_builder_propose_treasury_withdrawals, rejectsAMissingPolicyHashWithoutAttachingARedeemer)
 {
   // Arrange
   cardano_protocol_parameters_t* params         = init_dijkstra_protocol_parameters();

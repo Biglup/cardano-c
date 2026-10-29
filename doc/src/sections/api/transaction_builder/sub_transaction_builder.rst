@@ -37,6 +37,10 @@ Sub Transaction Builder
 
 ------------
 
+.. doxygenfunction:: cardano_sub_tx_builder_add_input_with_deferred_redeemer
+
+------------
+
 .. doxygenfunction:: cardano_sub_tx_builder_add_reference_input
 
 ------------
@@ -70,6 +74,10 @@ Sub Transaction Builder
 ------------
 
 .. doxygenfunction:: cardano_sub_tx_builder_mint_token
+
+------------
+
+.. doxygenfunction:: cardano_sub_tx_builder_mint_token_with_deferred_redeemer
 
 ------------
 
@@ -137,6 +145,10 @@ Sub Transaction Builder
 
 ------------
 
+.. doxygenfunction:: cardano_sub_tx_builder_withdraw_rewards_with_deferred_redeemer
+
+------------
+
 .. doxygenfunction:: cardano_sub_tx_builder_withdraw_rewards_ex
 
 ------------
@@ -201,7 +213,23 @@ Sub Transaction Builder
 
 ------------
 
+.. doxygenfunction:: cardano_sub_tx_builder_vote_with_deferred_redeemer
+
+------------
+
 .. doxygenfunction:: cardano_sub_tx_builder_add_certificate
+
+------------
+
+.. doxygenfunction:: cardano_sub_tx_builder_add_certificate_with_deferred_redeemer
+
+------------
+
+.. doxygenfunction:: cardano_sub_tx_builder_propose_parameter_change
+
+------------
+
+.. doxygenfunction:: cardano_sub_tx_builder_propose_parameter_change_ex
 
 ------------
 
@@ -210,6 +238,14 @@ Sub Transaction Builder
 ------------
 
 .. doxygenfunction:: cardano_sub_tx_builder_propose_hardfork_ex
+
+------------
+
+.. doxygenfunction:: cardano_sub_tx_builder_propose_treasury_withdrawals
+
+------------
+
+.. doxygenfunction:: cardano_sub_tx_builder_propose_treasury_withdrawals_ex
 
 ------------
 

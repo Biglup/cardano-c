@@ -1322,7 +1322,8 @@ get_top_level_allowed_datum_hashes(
 }
 
 /**
- * \brief Checks whether the top level transaction carries a witness datum that only a sub transaction could allow.
+ * \brief Checks whether the top level transaction carries a witness datum that the ledger does not allow once its sub
+ * transactions are removed.
  *
  * \param[in]  tx                  The top level transaction, whose inputs and outputs are the ones of the current
  *                                 iteration.
@@ -1402,8 +1403,8 @@ has_datums_not_allowed_by_top_level(
  * \param[in] selection         The UTXOs spent by the transaction on this iteration.
  *
  * \return \ref CARDANO_SUCCESS if the iteration may go on, \ref CARDANO_ERROR_NOT_ALLOWED_SUPPLEMENTAL_DATUMS if the
- *         transaction carries sub transactions, is validated in legacy mode and carries a witness datum that only a
- *         sub transaction could allow, or an appropriate error code.
+ *         transaction carries sub transactions, is validated in legacy mode and carries a witness datum that the
+ *         ledger does not allow once the sub transactions are removed, or an appropriate error code.
  */
 static cardano_error_t
 check_legacy_mode_supplemental_datums(
@@ -1449,7 +1450,7 @@ check_legacy_mode_supplemental_datums(
 
   cardano_transaction_set_last_error(
     tx,
-    "The top level transaction needs a PlutusV1, PlutusV2 or PlutusV3 script, so each of its witness datums must be needed by an input it spends or match a datum hash of its own outputs or reference inputs. A datum that only matches an output or a reference input of a sub transaction must not be added to the top level transaction.");
+    "The top level transaction needs a PlutusV1, PlutusV2 or PlutusV3 script, so each of its witness datums must be needed by an input it spends or match a datum hash of its own outputs or reference inputs. For example, a datum that only matches an output or a reference input of a sub transaction is not allowed.");
 
   return CARDANO_ERROR_NOT_ALLOWED_SUPPLEMENTAL_DATUMS;
 }
