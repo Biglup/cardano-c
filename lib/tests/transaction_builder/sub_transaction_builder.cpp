@@ -3317,7 +3317,6 @@ TEST(cardano_sub_tx_builder_add_script, rejectsPlutusV1Scripts)
   EXPECT_EQ(result, CARDANO_ERROR_INVALID_SCRIPT_LANGUAGE);
   EXPECT_STREQ(cardano_sub_tx_builder_get_last_error(builder), PLUTUS_SCRIPT_ERROR);
   EXPECT_EQ(sub_tx, nullptr);
-  EXPECT_FALSE(builder->state.has_plutus_v1);
 
   // Cleanup
   cardano_sub_tx_builder_unref(&builder);
@@ -3342,7 +3341,6 @@ TEST(cardano_sub_tx_builder_add_script, rejectsPlutusV2Scripts)
   EXPECT_EQ(result, CARDANO_ERROR_INVALID_SCRIPT_LANGUAGE);
   EXPECT_STREQ(cardano_sub_tx_builder_get_last_error(builder), PLUTUS_SCRIPT_ERROR);
   EXPECT_EQ(sub_tx, nullptr);
-  EXPECT_FALSE(builder->state.has_plutus_v2);
 
   // Cleanup
   cardano_sub_tx_builder_unref(&builder);
@@ -3367,7 +3365,6 @@ TEST(cardano_sub_tx_builder_add_script, rejectsPlutusV3Scripts)
   EXPECT_EQ(result, CARDANO_ERROR_INVALID_SCRIPT_LANGUAGE);
   EXPECT_STREQ(cardano_sub_tx_builder_get_last_error(builder), PLUTUS_SCRIPT_ERROR);
   EXPECT_EQ(sub_tx, nullptr);
-  EXPECT_FALSE(builder->state.has_plutus_v3);
 
   // Cleanup
   cardano_sub_tx_builder_unref(&builder);
@@ -3394,7 +3391,6 @@ TEST(cardano_sub_tx_builder_add_script, acceptsPlutusV4Scripts)
   // Assert
   EXPECT_EQ(result, CARDANO_SUCCESS) << cardano_sub_tx_builder_get_last_error(builder);
   EXPECT_EQ(cardano_plutus_v4_script_set_get_length(scripts), 1U);
-  EXPECT_TRUE(builder->state.has_plutus_v4);
 
   // Cleanup
   cardano_plutus_v4_script_set_unref(&scripts);
@@ -9540,7 +9536,6 @@ TEST(cardano_sub_tx_builder_add_guard_with_redeemer, evaluatesTheGuardScriptWhen
   cardano_blake2b_hash_t*    hash    = cardano_sub_transaction_body_get_script_data_hash(get_body(sub_tx));
 
   // Assert
-  EXPECT_TRUE(builder->state.has_plutus_v4);
   EXPECT_EQ(cardano_redeemer_get_tag(guarded), CARDANO_REDEEMER_TAG_GUARDING);
   EXPECT_EQ(cardano_redeemer_get_index(guarded), 1U);
   EXPECT_EQ(cardano_ex_units_get_cpu_steps(units), 92100U);
@@ -13642,7 +13637,6 @@ TEST(cardano_sub_tx_builder_build, leavesTheLanguageViewOfAnUnneededReferenceScr
   cardano_blake2b_hash_t*    expected = compute_sub_tx_script_data_hash(params, sub_tx);
 
   // Assert
-  EXPECT_TRUE(builder->state.has_plutus_v3);
   ASSERT_NE(hash, nullptr);
   EXPECT_TRUE(cardano_blake2b_hash_equals(hash, expected));
 

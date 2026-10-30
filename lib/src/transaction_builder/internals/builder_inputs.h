@@ -107,11 +107,9 @@ cardano_builder_add_input_with_deferred_redeemer(
  * \brief Adds a UTXO as a reference input of the transaction.
  *
  * This function appends the UTXO input to the transaction body reference input set, creating the set
- * when it is missing, and records the UTXO in the state reference input list. When the UTXO output
- * carries a Plutus script reference the matching script language flag is raised in the state so cost
- * models and collateral are accounted for during balancing. A UTXO whose input (transaction id and
- * index) is already in the state reference input list is rejected, since a reference input set
- * cannot hold the same input twice.
+ * when it is missing, and records the UTXO in the state reference input list. A UTXO whose input
+ * (transaction id and index) is already in the state reference input list is rejected, since a
+ * reference input set cannot hold the same input twice.
  *
  * \param[in,out] state A pointer to the \ref cardano_builder_state_t tracking the transaction under
  *                      construction. This parameter must not be NULL.

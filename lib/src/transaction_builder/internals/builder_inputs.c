@@ -357,49 +357,6 @@ cardano_builder_add_reference_input(
     return CARDANO_ERROR_POINTER_IS_NULL;
   }
 
-  cardano_script_t* script = cardano_transaction_output_get_script_ref(output);
-  cardano_script_unref(&script);
-
-  if (script != NULL)
-  {
-    cardano_script_language_t language;
-    result = cardano_script_get_language(script, &language);
-
-    if (result != CARDANO_SUCCESS)
-    {
-      *error_message = "Failed to get script language.";
-      return result;
-    }
-
-    switch (language)
-    {
-      case CARDANO_SCRIPT_LANGUAGE_PLUTUS_V1:
-      {
-        state->has_plutus_v1 = true;
-        break;
-      }
-      case CARDANO_SCRIPT_LANGUAGE_PLUTUS_V2:
-      {
-        state->has_plutus_v2 = true;
-        break;
-      }
-      case CARDANO_SCRIPT_LANGUAGE_PLUTUS_V3:
-      {
-        state->has_plutus_v3 = true;
-        break;
-      }
-      case CARDANO_SCRIPT_LANGUAGE_PLUTUS_V4:
-      {
-        state->has_plutus_v4 = true;
-        break;
-      }
-      default:
-      {
-        break;
-      }
-    }
-  }
-
   result = cardano_utxo_list_add(state->reference_inputs, utxo);
 
   if (result != CARDANO_SUCCESS)

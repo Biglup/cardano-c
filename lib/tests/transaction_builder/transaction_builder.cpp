@@ -5927,6 +5927,7 @@ TEST(cardano_tx_builder_add_script, canAddScript)
   cardano_tx_builder_add_script(tx_builder, scriptV3);
   cardano_tx_builder_add_script(tx_builder, scriptNative);
 
+  // Assert
   cardano_witness_set_t* witnesses = cardano_transaction_get_witness_set(tx_builder->state.transaction);
   cardano_witness_set_unref(&witnesses);
 
@@ -5945,11 +5946,6 @@ TEST(cardano_tx_builder_add_script, canAddScript)
   cardano_native_script_set_t* scriptsNative = cardano_witness_set_get_native_scripts(witnesses);
   cardano_native_script_set_unref(&scriptsNative);
   EXPECT_EQ(cardano_native_script_set_get_length(scriptsNative), 1);
-
-  // Assert
-  EXPECT_TRUE(tx_builder->state.has_plutus_v1);
-  EXPECT_TRUE(tx_builder->state.has_plutus_v2);
-  EXPECT_TRUE(tx_builder->state.has_plutus_v3);
 
   // Cleanup
   cardano_tx_builder_unref(&tx_builder);
@@ -14007,7 +14003,6 @@ TEST(cardano_tx_builder_add_guard_with_redeemer, evaluatesTheGuardsOfEveryLevelW
   cardano_transaction_body_t* body      = cardano_transaction_get_body(tx);
   cardano_blake2b_hash_t*     hash      = cardano_transaction_body_get_script_data_hash(body);
 
-  EXPECT_TRUE(tx_builder->state.has_plutus_v4);
   EXPECT_EQ(cardano_redeemer_get_tag(evaluated), CARDANO_REDEEMER_TAG_GUARDING);
   EXPECT_EQ(cardano_ex_units_get_cpu_steps(units), 92100U);
   EXPECT_EQ(cardano_ex_units_get_memory(units), 500U);
@@ -14032,7 +14027,7 @@ TEST(cardano_tx_builder_add_guard_with_redeemer, evaluatesTheGuardsOfEveryLevelW
   cardano_protocol_parameters_unref(&params);
 }
 
-TEST(cardano_tx_builder_add_reference_input, flagsAPlutusV4ReferenceScript)
+TEST(cardano_tx_builder_add_reference_input, acceptsAPlutusV4ReferenceScript)
 {
   // Arrange
   cardano_protocol_parameters_t* params     = init_protocol_parameters();
@@ -14051,9 +14046,20 @@ TEST(cardano_tx_builder_add_reference_input, flagsAPlutusV4ReferenceScript)
 
   // Assert
   EXPECT_EQ(tx_builder->last_error, CARDANO_SUCCESS);
-  EXPECT_TRUE(tx_builder->state.has_plutus_v4);
+  EXPECT_EQ(cardano_utxo_list_get_length(tx_builder->state.reference_inputs), 1U);
+
+  cardano_utxo_t* stored = nullptr;
+  EXPECT_EQ(cardano_utxo_list_get(tx_builder->state.reference_inputs, 0U, &stored), CARDANO_SUCCESS);
+
+  cardano_transaction_output_t* stored_output = cardano_utxo_get_output(stored);
+  cardano_script_t*             stored_script = cardano_transaction_output_get_script_ref(stored_output);
+
+  EXPECT_TRUE(cardano_script_equals(stored_script, script));
 
   // Cleanup
+  cardano_script_unref(&stored_script);
+  cardano_transaction_output_unref(&stored_output);
+  cardano_utxo_unref(&stored);
   cardano_utxo_unref(&reference);
   cardano_transaction_output_unref(&output);
   cardano_transaction_input_unref(&input);
@@ -14217,7 +14223,6 @@ TEST(cardano_tx_builder_build, leavesTheLanguageViewOfAnUnneededReferenceScriptO
   cardano_blake2b_hash_t* expected   = compute_script_data_hash_with_languages(params, tx, needed, 1U);
   cardano_blake2b_hash_t* every_view = compute_script_data_hash_with_languages(params, tx, provided, 2U);
 
-  EXPECT_TRUE(tx_builder->state.has_plutus_v2);
   ASSERT_NE(hash, nullptr);
   EXPECT_TRUE(cardano_blake2b_hash_equals(hash, expected));
   EXPECT_FALSE(cardano_blake2b_hash_equals(hash, every_view));

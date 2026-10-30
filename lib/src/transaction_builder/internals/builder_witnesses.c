@@ -639,48 +639,10 @@ cardano_builder_add_script(
     return CARDANO_ERROR_POINTER_IS_NULL;
   }
 
-  cardano_script_language_t language;
-  cardano_error_t           result = cardano_script_get_language(script, &language);
-
-  if (result != CARDANO_SUCCESS)
-  {
-    *error_message = "Failed to get script language.";
-
-    return result;
-  }
-
-  switch (language)
-  {
-    case CARDANO_SCRIPT_LANGUAGE_PLUTUS_V1:
-    {
-      state->has_plutus_v1 = true;
-      break;
-    }
-    case CARDANO_SCRIPT_LANGUAGE_PLUTUS_V2:
-    {
-      state->has_plutus_v2 = true;
-      break;
-    }
-    case CARDANO_SCRIPT_LANGUAGE_PLUTUS_V3:
-    {
-      state->has_plutus_v3 = true;
-      break;
-    }
-    case CARDANO_SCRIPT_LANGUAGE_PLUTUS_V4:
-    {
-      state->has_plutus_v4 = true;
-      break;
-    }
-    default:
-    {
-      break;
-    }
-  }
-
   cardano_witness_set_t* witness_set = cardano_transaction_get_witness_set(state->transaction);
   cardano_witness_set_unref(&witness_set);
 
-  result = cardano_witness_set_add_script(witness_set, script);
+  cardano_error_t result = cardano_witness_set_add_script(witness_set, script);
 
   if (result != CARDANO_SUCCESS)
   {
