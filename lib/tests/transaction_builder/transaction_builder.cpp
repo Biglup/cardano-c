@@ -14241,6 +14241,176 @@ TEST(cardano_tx_builder_build, leavesTheLanguageViewOfAnUnneededReferenceScriptO
   cardano_protocol_parameters_unref(&params);
 }
 
+TEST(cardano_tx_builder_build, keepsOnlyTheLanguageViewOfAScriptNeededByAWithdrawal)
+{
+  // Arrange
+  cardano_protocol_parameters_t* params     = init_dijkstra_protocol_parameters();
+  cardano_utxo_list_t*           utxos      = new_utxo_list();
+  cardano_tx_builder_t*          tx_builder = new_funded_tx_builder(params, utxos);
+  cardano_script_t*              script     = create_script(ALWAYS_SUCCEEDS_V3_CBOR);
+  cardano_credential_t*          credential = create_script_credential(script);
+  cardano_utxo_t*                reference  = create_utxo(UTXO_WITH_REF_SCRIPT_PV2);
+  cardano_plutus_data_t*         redeemer   = create_plutus_data(PLUTUS_DATA_CBOR);
+  cardano_reward_address_t*      reward     = nullptr;
+  cardano_transaction_t*         tx         = nullptr;
+
+  const cardano_plutus_language_version_t needed[]   = { CARDANO_PLUTUS_LANGUAGE_VERSION_V3 };
+  const cardano_plutus_language_version_t provided[] = { CARDANO_PLUTUS_LANGUAGE_VERSION_V2, CARDANO_PLUTUS_LANGUAGE_VERSION_V3 };
+
+  EXPECT_EQ(cardano_reward_address_from_credentials(CARDANO_NETWORK_ID_TEST_NET, credential, &reward), CARDANO_SUCCESS);
+
+  // Act
+  cardano_tx_builder_set_collateral_utxos(tx_builder, utxos);
+  cardano_tx_builder_set_collateral_change_address_ex(tx_builder, CHANGE_ADDRESS, strlen(CHANGE_ADDRESS));
+  cardano_tx_builder_add_script(tx_builder, script);
+  cardano_tx_builder_add_reference_input(tx_builder, reference);
+  cardano_tx_builder_withdraw_rewards(tx_builder, reward, 0, redeemer);
+
+  const cardano_error_t result = cardano_tx_builder_build(tx_builder, &tx);
+
+  // Assert
+  EXPECT_EQ(result, CARDANO_SUCCESS) << cardano_tx_builder_get_last_error(tx_builder);
+  ASSERT_NE(tx, nullptr);
+
+  cardano_blake2b_hash_t* hash       = get_script_data_hash(tx);
+  cardano_blake2b_hash_t* expected   = compute_script_data_hash_with_languages(params, tx, needed, 1U);
+  cardano_blake2b_hash_t* every_view = compute_script_data_hash_with_languages(params, tx, provided, 2U);
+
+  ASSERT_NE(hash, nullptr);
+  EXPECT_TRUE(cardano_blake2b_hash_equals(hash, expected));
+  EXPECT_FALSE(cardano_blake2b_hash_equals(hash, every_view));
+
+  // Cleanup
+  cardano_blake2b_hash_unref(&every_view);
+  cardano_blake2b_hash_unref(&expected);
+  cardano_blake2b_hash_unref(&hash);
+  cardano_transaction_unref(&tx);
+  cardano_reward_address_unref(&reward);
+  cardano_plutus_data_unref(&redeemer);
+  cardano_utxo_unref(&reference);
+  cardano_credential_unref(&credential);
+  cardano_script_unref(&script);
+  cardano_tx_builder_unref(&tx_builder);
+  cardano_utxo_list_unref(&utxos);
+  cardano_protocol_parameters_unref(&params);
+}
+
+TEST(cardano_tx_builder_build, keepsOnlyTheLanguageViewOfAScriptNeededByACertificate)
+{
+  // Arrange
+  cardano_protocol_parameters_t* params     = init_dijkstra_protocol_parameters();
+  cardano_utxo_list_t*           utxos      = new_utxo_list();
+  cardano_tx_builder_t*          tx_builder = new_funded_tx_builder(params, utxos);
+  cardano_script_t*              script     = create_script(ALWAYS_SUCCEEDS_V3_CBOR);
+  cardano_credential_t*          credential = create_script_credential(script);
+  cardano_utxo_t*                reference  = create_utxo(UTXO_WITH_REF_SCRIPT_PV2);
+  cardano_plutus_data_t*         redeemer   = create_plutus_data(PLUTUS_DATA_CBOR);
+  cardano_reward_address_t*      reward     = nullptr;
+  cardano_transaction_t*         tx         = nullptr;
+
+  const cardano_plutus_language_version_t needed[]   = { CARDANO_PLUTUS_LANGUAGE_VERSION_V3 };
+  const cardano_plutus_language_version_t provided[] = { CARDANO_PLUTUS_LANGUAGE_VERSION_V2, CARDANO_PLUTUS_LANGUAGE_VERSION_V3 };
+
+  EXPECT_EQ(cardano_reward_address_from_credentials(CARDANO_NETWORK_ID_TEST_NET, credential, &reward), CARDANO_SUCCESS);
+
+  // Act
+  cardano_tx_builder_set_collateral_utxos(tx_builder, utxos);
+  cardano_tx_builder_set_collateral_change_address_ex(tx_builder, CHANGE_ADDRESS, strlen(CHANGE_ADDRESS));
+  cardano_tx_builder_add_script(tx_builder, script);
+  cardano_tx_builder_add_reference_input(tx_builder, reference);
+  cardano_tx_builder_deregister_reward_address(tx_builder, reward, redeemer);
+
+  const cardano_error_t result = cardano_tx_builder_build(tx_builder, &tx);
+
+  // Assert
+  EXPECT_EQ(result, CARDANO_SUCCESS) << cardano_tx_builder_get_last_error(tx_builder);
+  ASSERT_NE(tx, nullptr);
+
+  cardano_blake2b_hash_t* hash       = get_script_data_hash(tx);
+  cardano_blake2b_hash_t* expected   = compute_script_data_hash_with_languages(params, tx, needed, 1U);
+  cardano_blake2b_hash_t* every_view = compute_script_data_hash_with_languages(params, tx, provided, 2U);
+
+  ASSERT_NE(hash, nullptr);
+  EXPECT_TRUE(cardano_blake2b_hash_equals(hash, expected));
+  EXPECT_FALSE(cardano_blake2b_hash_equals(hash, every_view));
+
+  // Cleanup
+  cardano_blake2b_hash_unref(&every_view);
+  cardano_blake2b_hash_unref(&expected);
+  cardano_blake2b_hash_unref(&hash);
+  cardano_transaction_unref(&tx);
+  cardano_reward_address_unref(&reward);
+  cardano_plutus_data_unref(&redeemer);
+  cardano_utxo_unref(&reference);
+  cardano_credential_unref(&credential);
+  cardano_script_unref(&script);
+  cardano_tx_builder_unref(&tx_builder);
+  cardano_utxo_list_unref(&utxos);
+  cardano_protocol_parameters_unref(&params);
+}
+
+TEST(cardano_tx_builder_build, keepsOnlyTheLanguageViewOfAScriptNeededByAVote)
+{
+  // Arrange
+  cardano_protocol_parameters_t*  params     = init_dijkstra_protocol_parameters();
+  cardano_utxo_list_t*            utxos      = new_utxo_list();
+  cardano_tx_builder_t*           tx_builder = new_funded_tx_builder(params, utxos);
+  cardano_script_t*               script     = create_script(ALWAYS_SUCCEEDS_V3_CBOR);
+  cardano_credential_t*           credential = create_script_credential(script);
+  cardano_utxo_t*                 reference  = create_utxo(UTXO_WITH_REF_SCRIPT_PV2);
+  cardano_plutus_data_t*          redeemer   = create_plutus_data(PLUTUS_DATA_CBOR);
+  cardano_governance_action_id_t* action_id  = nullptr;
+  cardano_voting_procedure_t*     procedure  = new_default_voting_procedure();
+  cardano_voter_t*                voter      = nullptr;
+  cardano_transaction_t*          tx         = nullptr;
+
+  const cardano_plutus_language_version_t needed[]   = { CARDANO_PLUTUS_LANGUAGE_VERSION_V3 };
+  const cardano_plutus_language_version_t provided[] = { CARDANO_PLUTUS_LANGUAGE_VERSION_V2, CARDANO_PLUTUS_LANGUAGE_VERSION_V3 };
+
+  cardano_cbor_reader_t* gov_action_reader = cardano_cbor_reader_from_hex(GOVERNANCE_ACTION_ID_CBOR, strlen(GOVERNANCE_ACTION_ID_CBOR));
+
+  EXPECT_EQ(cardano_governance_action_id_from_cbor(gov_action_reader, &action_id), CARDANO_SUCCESS);
+  EXPECT_EQ(cardano_voter_new(CARDANO_VOTER_TYPE_DREP_SCRIPT_HASH, credential, &voter), CARDANO_SUCCESS);
+
+  // Act
+  cardano_tx_builder_set_collateral_utxos(tx_builder, utxos);
+  cardano_tx_builder_set_collateral_change_address_ex(tx_builder, CHANGE_ADDRESS, strlen(CHANGE_ADDRESS));
+  cardano_tx_builder_add_script(tx_builder, script);
+  cardano_tx_builder_add_reference_input(tx_builder, reference);
+  cardano_tx_builder_vote(tx_builder, voter, action_id, procedure, redeemer);
+
+  const cardano_error_t result = cardano_tx_builder_build(tx_builder, &tx);
+
+  // Assert
+  EXPECT_EQ(result, CARDANO_SUCCESS) << cardano_tx_builder_get_last_error(tx_builder);
+  ASSERT_NE(tx, nullptr);
+
+  cardano_blake2b_hash_t* hash       = get_script_data_hash(tx);
+  cardano_blake2b_hash_t* expected   = compute_script_data_hash_with_languages(params, tx, needed, 1U);
+  cardano_blake2b_hash_t* every_view = compute_script_data_hash_with_languages(params, tx, provided, 2U);
+
+  ASSERT_NE(hash, nullptr);
+  EXPECT_TRUE(cardano_blake2b_hash_equals(hash, expected));
+  EXPECT_FALSE(cardano_blake2b_hash_equals(hash, every_view));
+
+  // Cleanup
+  cardano_blake2b_hash_unref(&every_view);
+  cardano_blake2b_hash_unref(&expected);
+  cardano_blake2b_hash_unref(&hash);
+  cardano_transaction_unref(&tx);
+  cardano_voter_unref(&voter);
+  cardano_voting_procedure_unref(&procedure);
+  cardano_governance_action_id_unref(&action_id);
+  cardano_cbor_reader_unref(&gov_action_reader);
+  cardano_plutus_data_unref(&redeemer);
+  cardano_utxo_unref(&reference);
+  cardano_credential_unref(&credential);
+  cardano_script_unref(&script);
+  cardano_tx_builder_unref(&tx_builder);
+  cardano_utxo_list_unref(&utxos);
+  cardano_protocol_parameters_unref(&params);
+}
+
 TEST(cardano_tx_builder_build, keepsTheLanguageViewOfEveryProvidedScriptTheTransactionNeeds)
 {
   // Arrange
