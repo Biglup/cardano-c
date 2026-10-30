@@ -124,6 +124,53 @@ compare_by_key(const cardano_object_t* lhs, const cardano_object_t* rhs, void* c
   return 0;
 }
 
+/**
+ * \brief Checks whether two redeemers of the list share the same tag and index.
+ *
+ * Redeemers are mutable and shared, so their keys can change after they are added to the list and the
+ * array is not guaranteed to be sorted. Every pair of redeemers is compared.
+ *
+ * \param[in] array Pointer to the array holding the redeemers of the list.
+ *
+ * \return \c true if two redeemers have the same tag and index; \c false otherwise.
+ */
+static bool
+has_duplicate_keys(const cardano_array_t* array)
+{
+  assert(array != NULL);
+
+  bool result = false;
+
+  const size_t length = cardano_array_get_size(array);
+
+  for (size_t i = 0U; (i < length) && !result; ++i)
+  {
+    cardano_object_t* lhs = cardano_array_get(array, i);
+
+    assert(lhs != NULL);
+
+    for (size_t j = i + 1U; j < length; ++j)
+    {
+      cardano_object_t* rhs = cardano_array_get(array, j);
+
+      assert(rhs != NULL);
+
+      result = (compare_by_key(lhs, rhs, NULL) == 0);
+
+      cardano_object_unref(&rhs);
+
+      if (result)
+      {
+        break;
+      }
+    }
+
+    cardano_object_unref(&lhs);
+  }
+
+  return result;
+}
+
 /* DEFINITIONS ****************************************************************/
 
 cardano_error_t
@@ -492,6 +539,12 @@ cardano_redeemer_list_to_cbor(const cardano_redeemer_list_t* redeemer_list, card
   }
 
   cardano_error_t result = CARDANO_SUCCESS;
+
+  if (has_duplicate_keys(redeemer_list->array))
+  {
+    cardano_cbor_writer_set_last_error(writer, "Redeemer list contains two redeemers with the same tag and index.");
+    return CARDANO_ERROR_DUPLICATED_CBOR_MAP_KEY;
+  }
 
   result = cardano_cbor_writer_write_start_map(writer, (int64_t)cardano_redeemer_list_get_length(redeemer_list));
 

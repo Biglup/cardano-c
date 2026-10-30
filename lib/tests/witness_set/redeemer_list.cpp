@@ -48,12 +48,14 @@ static const char* REDEEMER7_CBOR = "840003d8799f0102030405ff821821182c";
 static const char* REDEEMER8_CBOR = "840001d8799f0102030405ff821821182c";
 static const char* REDEEMER9_CBOR = "840001d8799f0102030405ff821821182c";
 
-static const char* CBOR_GUARDING               = "a282000082d8799f0102030405ff821821182c82060082d8799f0102030405ff8218371842";
-static const char* REDEEMER_GUARDING_CBOR      = "840600d8799f0102030405ff8218371842";
-static const char* REDEEMER_INDEX_ABOVE_UINT32 = "84001b0000000100000000d8799f0102030405ff821821182c";
+static const char* CBOR_GUARDING                       = "a282000082d8799f0102030405ff821821182c82060082d8799f0102030405ff8218371842";
+static const char* REDEEMER_SPEND_ZERO_OTHER_DATA_CBOR = "840000d8799f0102ff8218371842";
+static const char* REDEEMER_GUARDING_CBOR              = "840600d8799f0102030405ff8218371842";
+static const char* REDEEMER_INDEX_ABOVE_UINT32         = "84001b0000000100000000d8799f0102030405ff821821182c";
 
 static const char* CBOR_LEGACY_WITH_VOTE      = "82840000d8799f0102030405ff821821182c840400d8799f0102030405ff8218371842";
 static const char* CBOR_MAP_SPEND_AND_VOTE    = "a282000082d8799f0102030405ff821821182c82040082d8799f0102030405ff8218371842";
+static const char* CBOR_MAP_DUPLICATE_KEY     = "a282000082d8799f0102030405ff821821182c82000082d8799f0102030405ff8218371842";
 static const char* CBOR_THREE_ELEMENT_MAP_KEY = "a28308000082d8799f0102030405ff821821182c82040082d8799f0102030405ff8218371842";
 
 /**
@@ -472,6 +474,190 @@ TEST(cardano_redeemer_list_to_cbor, returnsErrorIfIndexExceedsUint32)
 
   // Cleanup
   cardano_redeemer_list_unref(&redeemer_list);
+  cardano_cbor_writer_unref(&writer);
+}
+
+TEST(cardano_redeemer_list_to_cbor, returnsErrorIfTwoRedeemersShareTagAndIndex)
+{
+  // Arrange
+  cardano_redeemer_list_t* redeemer_list = nullptr;
+  cardano_cbor_writer_t*   writer        = cardano_cbor_writer_new();
+
+  EXPECT_EQ(cardano_redeemer_list_new(&redeemer_list), CARDANO_SUCCESS);
+
+  cardano_redeemer_t* redeemer1 = new_default_redeemer(REDEEMER1_CBOR);
+  cardano_redeemer_t* redeemer2 = new_default_redeemer(REDEEMER_GUARDING_CBOR);
+  cardano_redeemer_t* redeemer3 = new_default_redeemer(REDEEMER5_CBOR);
+
+  EXPECT_EQ(cardano_redeemer_list_add(redeemer_list, redeemer1), CARDANO_SUCCESS);
+  EXPECT_EQ(cardano_redeemer_list_add(redeemer_list, redeemer2), CARDANO_SUCCESS);
+  EXPECT_EQ(cardano_redeemer_list_add(redeemer_list, redeemer3), CARDANO_SUCCESS);
+
+  // Act
+  cardano_error_t error = cardano_redeemer_list_to_cbor(redeemer_list, writer);
+
+  // Assert
+  EXPECT_EQ(error, CARDANO_ERROR_DUPLICATED_CBOR_MAP_KEY);
+  EXPECT_STREQ(cardano_cbor_writer_get_last_error(writer), "Redeemer list contains two redeemers with the same tag and index.");
+  EXPECT_EQ(cardano_cbor_writer_get_encode_size(writer), 0);
+
+  // Cleanup
+  cardano_redeemer_unref(&redeemer1);
+  cardano_redeemer_unref(&redeemer2);
+  cardano_redeemer_unref(&redeemer3);
+  cardano_redeemer_list_unref(&redeemer_list);
+  cardano_cbor_writer_unref(&writer);
+}
+
+TEST(cardano_redeemer_list_to_cbor, returnsErrorIfRedeemerKeyIsChangedToADuplicateAfterBeingAdded)
+{
+  // Arrange
+  cardano_redeemer_list_t* redeemer_list = nullptr;
+  cardano_cbor_writer_t*   writer        = cardano_cbor_writer_new();
+
+  EXPECT_EQ(cardano_redeemer_list_new(&redeemer_list), CARDANO_SUCCESS);
+
+  cardano_redeemer_t* redeemer1 = new_default_redeemer(REDEEMER1_CBOR);
+  cardano_redeemer_t* redeemer2 = new_default_redeemer(REDEEMER8_CBOR);
+  cardano_redeemer_t* redeemer3 = new_default_redeemer(REDEEMER7_CBOR);
+
+  EXPECT_EQ(cardano_redeemer_list_add(redeemer_list, redeemer1), CARDANO_SUCCESS);
+  EXPECT_EQ(cardano_redeemer_list_add(redeemer_list, redeemer2), CARDANO_SUCCESS);
+  EXPECT_EQ(cardano_redeemer_list_add(redeemer_list, redeemer3), CARDANO_SUCCESS);
+  EXPECT_EQ(cardano_redeemer_set_index(redeemer3, 0), CARDANO_SUCCESS);
+
+  // Act
+  cardano_error_t error = cardano_redeemer_list_to_cbor(redeemer_list, writer);
+
+  // Assert
+  EXPECT_EQ(error, CARDANO_ERROR_DUPLICATED_CBOR_MAP_KEY);
+  EXPECT_EQ(cardano_cbor_writer_get_encode_size(writer), 0);
+
+  // Cleanup
+  cardano_redeemer_unref(&redeemer1);
+  cardano_redeemer_unref(&redeemer2);
+  cardano_redeemer_unref(&redeemer3);
+  cardano_redeemer_list_unref(&redeemer_list);
+  cardano_cbor_writer_unref(&writer);
+}
+
+TEST(cardano_redeemer_list_to_cbor, returnsErrorIfDuplicatedRedeemersDifferInDataAndExUnits)
+{
+  // Arrange
+  cardano_redeemer_list_t* redeemer_list = nullptr;
+  cardano_cbor_writer_t*   writer        = cardano_cbor_writer_new();
+
+  EXPECT_EQ(cardano_redeemer_list_new(&redeemer_list), CARDANO_SUCCESS);
+
+  cardano_redeemer_t* redeemer1 = new_default_redeemer(REDEEMER1_CBOR);
+  cardano_redeemer_t* redeemer2 = new_default_redeemer(REDEEMER_SPEND_ZERO_OTHER_DATA_CBOR);
+
+  EXPECT_NE(redeemer2, nullptr);
+
+  EXPECT_EQ(cardano_redeemer_list_add(redeemer_list, redeemer1), CARDANO_SUCCESS);
+  EXPECT_EQ(cardano_redeemer_list_add(redeemer_list, redeemer2), CARDANO_SUCCESS);
+
+  // Act
+  cardano_error_t error = cardano_redeemer_list_to_cbor(redeemer_list, writer);
+
+  // Assert
+  EXPECT_EQ(error, CARDANO_ERROR_DUPLICATED_CBOR_MAP_KEY);
+
+  // Cleanup
+  cardano_redeemer_unref(&redeemer1);
+  cardano_redeemer_unref(&redeemer2);
+  cardano_redeemer_list_unref(&redeemer_list);
+  cardano_cbor_writer_unref(&writer);
+}
+
+TEST(cardano_redeemer_list_to_cbor, canSerializeRedeemersWithSameTagOrSameIndexButNotBoth)
+{
+  // Arrange
+  cardano_redeemer_list_t* redeemer_list = nullptr;
+  cardano_cbor_writer_t*   writer        = cardano_cbor_writer_new();
+
+  EXPECT_EQ(cardano_redeemer_list_new(&redeemer_list), CARDANO_SUCCESS);
+
+  cardano_redeemer_t* redeemer1 = new_default_redeemer(REDEEMER1_CBOR);
+  cardano_redeemer_t* redeemer2 = new_default_redeemer(REDEEMER8_CBOR);
+  cardano_redeemer_t* redeemer3 = new_default_redeemer(REDEEMER_GUARDING_CBOR);
+
+  EXPECT_EQ(cardano_redeemer_list_add(redeemer_list, redeemer1), CARDANO_SUCCESS);
+  EXPECT_EQ(cardano_redeemer_list_add(redeemer_list, redeemer2), CARDANO_SUCCESS);
+  EXPECT_EQ(cardano_redeemer_list_add(redeemer_list, redeemer3), CARDANO_SUCCESS);
+
+  // Act
+  cardano_error_t error = cardano_redeemer_list_to_cbor(redeemer_list, writer);
+
+  // Assert
+  EXPECT_EQ(error, CARDANO_SUCCESS);
+  EXPECT_GT(cardano_cbor_writer_get_encode_size(writer), 0);
+
+  // Cleanup
+  cardano_redeemer_unref(&redeemer1);
+  cardano_redeemer_unref(&redeemer2);
+  cardano_redeemer_unref(&redeemer3);
+  cardano_redeemer_list_unref(&redeemer_list);
+  cardano_cbor_writer_unref(&writer);
+}
+
+TEST(cardano_redeemer_list_to_cbor, canDeserializeAndReserializeMapWithDuplicateKeyFromCache)
+{
+  // Arrange
+  cardano_redeemer_list_t* redeemer_list = nullptr;
+  cardano_cbor_reader_t*   reader        = cardano_cbor_reader_from_hex(CBOR_MAP_DUPLICATE_KEY, strlen(CBOR_MAP_DUPLICATE_KEY));
+  cardano_cbor_writer_t*   writer        = cardano_cbor_writer_new();
+
+  cardano_error_t error = cardano_redeemer_list_from_cbor(reader, &redeemer_list);
+  EXPECT_EQ(error, CARDANO_SUCCESS);
+  EXPECT_EQ(cardano_redeemer_list_get_length(redeemer_list), 2);
+
+  // Act
+  error = cardano_redeemer_list_to_cbor(redeemer_list, writer);
+
+  // Assert
+  EXPECT_EQ(error, CARDANO_SUCCESS);
+
+  const size_t hex_size = cardano_cbor_writer_get_hex_size(writer);
+  EXPECT_EQ(hex_size, strlen(CBOR_MAP_DUPLICATE_KEY) + 1);
+
+  char* actual_cbor = (char*)malloc(hex_size);
+
+  error = cardano_cbor_writer_encode_hex(writer, actual_cbor, hex_size);
+  EXPECT_EQ(error, CARDANO_SUCCESS);
+
+  EXPECT_STREQ(actual_cbor, CBOR_MAP_DUPLICATE_KEY);
+
+  // Cleanup
+  cardano_redeemer_list_unref(&redeemer_list);
+  cardano_cbor_reader_unref(&reader);
+  cardano_cbor_writer_unref(&writer);
+  free(actual_cbor);
+}
+
+TEST(cardano_redeemer_list_to_cbor, returnsErrorIfMapWithDuplicateKeyIsReserializedWithoutCache)
+{
+  // Arrange
+  cardano_redeemer_list_t* redeemer_list = nullptr;
+  cardano_cbor_reader_t*   reader        = cardano_cbor_reader_from_hex(CBOR_MAP_DUPLICATE_KEY, strlen(CBOR_MAP_DUPLICATE_KEY));
+  cardano_cbor_writer_t*   writer        = cardano_cbor_writer_new();
+
+  cardano_error_t error = cardano_redeemer_list_from_cbor(reader, &redeemer_list);
+  EXPECT_EQ(error, CARDANO_SUCCESS);
+
+  cardano_redeemer_list_clear_cbor_cache(redeemer_list);
+
+  // Act
+  error = cardano_redeemer_list_to_cbor(redeemer_list, writer);
+
+  // Assert
+  EXPECT_EQ(error, CARDANO_ERROR_DUPLICATED_CBOR_MAP_KEY);
+  EXPECT_STREQ(cardano_cbor_writer_get_last_error(writer), "Redeemer list contains two redeemers with the same tag and index.");
+  EXPECT_EQ(cardano_cbor_writer_get_encode_size(writer), 0);
+
+  // Cleanup
+  cardano_redeemer_list_unref(&redeemer_list);
+  cardano_cbor_reader_unref(&reader);
   cardano_cbor_writer_unref(&writer);
 }
 
@@ -1351,6 +1537,34 @@ TEST(cardano_redeemer_list_clone, returnsErrorIfClonedIsNull)
   EXPECT_EQ(error, CARDANO_ERROR_POINTER_IS_NULL);
 
   // Cleanup
+  cardano_redeemer_list_unref(&redeemer_list);
+}
+
+TEST(cardano_redeemer_list_clone, returnsErrorIfTwoRedeemersShareTagAndIndex)
+{
+  // Arrange
+  cardano_redeemer_list_t* redeemer_list = nullptr;
+  cardano_error_t          error         = cardano_redeemer_list_new(&redeemer_list);
+
+  EXPECT_EQ(error, CARDANO_SUCCESS);
+
+  cardano_redeemer_t* redeemer1 = new_default_redeemer(REDEEMER1_CBOR);
+  cardano_redeemer_t* redeemer2 = new_default_redeemer(REDEEMER5_CBOR);
+
+  EXPECT_EQ(cardano_redeemer_list_add(redeemer_list, redeemer1), CARDANO_SUCCESS);
+  EXPECT_EQ(cardano_redeemer_list_add(redeemer_list, redeemer2), CARDANO_SUCCESS);
+
+  // Act
+  cardano_redeemer_list_t* cloned = nullptr;
+  error                           = cardano_redeemer_list_clone(redeemer_list, &cloned);
+
+  // Assert
+  EXPECT_EQ(error, CARDANO_ERROR_DUPLICATED_CBOR_MAP_KEY);
+  EXPECT_EQ(cloned, (cardano_redeemer_list_t*)nullptr);
+
+  // Cleanup
+  cardano_redeemer_unref(&redeemer1);
+  cardano_redeemer_unref(&redeemer2);
   cardano_redeemer_list_unref(&redeemer_list);
 }
 
