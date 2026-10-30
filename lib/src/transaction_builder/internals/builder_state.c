@@ -134,10 +134,6 @@ cardano_builder_state_init(
   state->mints_to_redeemer_map            = NULL;
   state->votes_to_redeemer_map            = NULL;
   state->deferred_redeemers               = NULL;
-  state->has_plutus_v1                    = false;
-  state->has_plutus_v2                    = false;
-  state->has_plutus_v3                    = false;
-  state->has_plutus_v4                    = false;
   state->additional_signature_count       = 0U;
 
   cardano_protocol_parameters_ref(params);

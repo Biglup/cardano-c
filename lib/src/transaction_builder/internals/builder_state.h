@@ -48,9 +48,8 @@ extern "C" {
  * \brief Holds everything a transaction builder tracks while assembling a transaction.
  *
  * The `cardano_builder_state_t` structure carries the transaction under construction together
- * with the protocol parameters, selection strategies, addresses, UTXO lists, script language
- * flags and redeemer bookkeeping that the builder consults when balancing and finalizing the
- * transaction.
+ * with the protocol parameters, selection strategies, addresses, UTXO lists and redeemer
+ * bookkeeping that the builder consults when balancing and finalizing the transaction.
  */
 typedef struct cardano_builder_state_t
 {
@@ -97,18 +96,6 @@ typedef struct cardano_builder_state_t
      * a reference input shared by several sub transactions is listed once per sub transaction.
      */
     cardano_utxo_list_t* sub_transaction_reference_inputs;
-
-    /** \brief Whether a Plutus V1 script was provided to the builder. */
-    bool has_plutus_v1;
-
-    /** \brief Whether a Plutus V2 script was provided to the builder. */
-    bool has_plutus_v2;
-
-    /** \brief Whether a Plutus V3 script was provided to the builder. */
-    bool has_plutus_v3;
-
-    /** \brief Whether a Plutus V4 script was provided to the builder. */
-    bool has_plutus_v4;
 
     /** \brief The number of additional signatures accounted for when computing fees. */
     size_t additional_signature_count;

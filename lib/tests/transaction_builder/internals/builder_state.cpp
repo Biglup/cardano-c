@@ -96,9 +96,6 @@ TEST(cardano_builder_state_init, canInitializeState)
   EXPECT_THAT(state.sub_transaction_reference_inputs, testing::Not((cardano_utxo_list_t*)nullptr));
   EXPECT_EQ(cardano_utxo_list_get_length(state.sub_transaction_inputs), 0U);
   EXPECT_EQ(cardano_utxo_list_get_length(state.sub_transaction_reference_inputs), 0U);
-  EXPECT_FALSE(state.has_plutus_v1);
-  EXPECT_FALSE(state.has_plutus_v2);
-  EXPECT_FALSE(state.has_plutus_v3);
   EXPECT_EQ(state.additional_signature_count, 0U);
   EXPECT_THAT(state.input_to_redeemer_map, testing::Not((cardano_input_to_redeemer_map_t*)nullptr));
   EXPECT_THAT(state.withdrawals_to_redeemer_map, testing::Not((cardano_blake2b_hash_to_redeemer_map_t*)nullptr));

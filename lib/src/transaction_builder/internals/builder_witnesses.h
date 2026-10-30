@@ -265,8 +265,7 @@ cardano_builder_add_datum(
 /**
  * \brief Adds a script to the witness set.
  *
- * This function adds \p script to the witness set of the transaction under construction and flags
- * the Plutus language version of the script in the state when it is a Plutus script.
+ * This function adds \p script to the witness set of the transaction under construction.
  *
  * \param[in,out] state A pointer to the \ref cardano_builder_state_t tracking the transaction under
  *                      construction. This parameter must not be NULL.
