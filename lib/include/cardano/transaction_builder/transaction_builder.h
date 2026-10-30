@@ -1119,7 +1119,8 @@ CARDANO_EXPORT void cardano_tx_builder_add_signer_ex(
  * The builder does not resolve or attach the script behind a script hash guard. Provide the script with
  * `cardano_tx_builder_add_script` or through a reference input. A script hash guard added with this function has
  * no redeemer; use `cardano_tx_builder_add_guard_with_redeemer` to add it together with the guarding redeemer
- * that satisfies it.
+ * that satisfies it. A guard whose script is a Plutus script provided to the batch makes `cardano_tx_builder_build`
+ * return \ref CARDANO_ERROR_MISSING_REDEEMER when it has no redeemer.
  *
  * \param[in] builder A pointer to the \ref cardano_tx_builder_t instance used for transaction construction.
  * \param[in] guard A pointer to the \ref cardano_credential_t structure representing the guard to be added.
@@ -2888,6 +2889,16 @@ CARDANO_EXPORT void cardano_tx_builder_propose_info_ex(
  * and a UTXO added both with \ref cardano_tx_builder_add_input and as a reference input makes this function return
  * \ref CARDANO_ERROR_DUPLICATED_KEY. Other protocol versions, and protocol parameters whose major protocol version is 0,
  * allow the overlap.
+ * Like the ledger, every script purpose of the balanced transaction whose script resolves to a PlutusV1, PlutusV2,
+ * PlutusV3 or PlutusV4 script must have a redeemer: spending an input locked by the script, minting under its policy,
+ * withdrawing from a reward account it controls, carrying a certificate it must authorize, voting with it as the voter,
+ * carrying a proposal it guards as the guardrails script or listing it among the guards. The scripts are looked up
+ * among the ones provided to the whole batch: the scripts added with \ref cardano_tx_builder_add_script, the scripts
+ * of the witness sets of the sub transactions and the reference scripts of the reference inputs, the spent inputs and
+ * the UTXOs the sub transactions spend or reference. A purpose without its redeemer makes this function return
+ * \ref CARDANO_ERROR_MISSING_REDEEMER, and the last error names the purpose, its redeemer index and the script hash.
+ * A purpose whose script is a native script needs no redeemer, and a purpose whose script is not provided is not
+ * reported.
  *
  * \param[in] builder A pointer to the \ref cardano_tx_builder_t instance that manages the transaction details.
  * \param[out] transaction A pointer to a \ref cardano_transaction_t pointer where the created transaction will be stored upon success.

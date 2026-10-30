@@ -35,6 +35,10 @@
 #include <cardano/proposal_procedures/proposal_procedure_set.h>
 #include <cardano/proposal_procedures/treasury_withdrawals_action.h>
 #include <cardano/scripts/script.h>
+#include <cardano/witness_set/redeemer.h>
+#include <cardano/witness_set/redeemer_list.h>
+
+#include "../../../common/ledger_order.h"
 
 /* STRUCTURES ****************************************************************/
 
@@ -59,6 +63,43 @@ typedef struct script_lookup_t
     cardano_blake2b_hash_set_t* plutus_scripts;
     plutus_languages_t          languages;
 } script_lookup_t;
+
+/**
+ * \brief Receives a script purpose of a transaction body.
+ *
+ * \param[in,out] context The context the visit was started with.
+ * \param[in] tag The redeemer tag of the purpose.
+ * \param[in] index The redeemer index of the purpose.
+ * \param[in] script_hash The hash of the script the purpose needs.
+ *
+ * \return \ref CARDANO_SUCCESS to continue the visit, or an appropriate error code that ends it.
+ */
+typedef cardano_error_t (*script_purpose_callback_t)(
+  void*                   context,
+  cardano_redeemer_tag_t  tag,
+  uint64_t                index,
+  cardano_blake2b_hash_t* script_hash);
+
+/**
+ * \brief A callback that receives every script purpose of a transaction body, and its context.
+ */
+typedef struct script_purpose_visitor_t
+{
+    script_purpose_callback_t callback;
+    void*                     context;
+} script_purpose_visitor_t;
+
+/**
+ * \brief The state of the search for a Plutus script purpose that has no redeemer.
+ */
+typedef struct missing_redeemer_search_t
+{
+    cardano_blake2b_hash_set_t* plutus_scripts;
+    cardano_redeemer_list_t*    redeemers;
+    cardano_redeemer_tag_t      tag;
+    uint64_t                    index;
+    cardano_blake2b_hash_t*     script_hash;
+} missing_redeemer_search_t;
 
 /* STATIC FUNCTIONS **********************************************************/
 
@@ -103,15 +144,106 @@ add_unique_hash(cardano_blake2b_hash_set_t* set, cardano_blake2b_hash_t* hash)
 }
 
 /**
- * \brief Adds the hash of a credential to a set if the credential is a script hash.
+ * \brief Script purpose callback that adds the needed script hash to a set.
  *
- * \param[in,out] set The set that receives the script hash.
+ * \param[in,out] context The \ref cardano_blake2b_hash_set_t that receives the script hash.
+ * \param[in] tag Unused.
+ * \param[in] index Unused.
+ * \param[in] script_hash The hash of the needed script.
+ *
+ * \return \ref CARDANO_SUCCESS if the set holds the script hash, or an appropriate error code.
+ */
+static cardano_error_t
+collect_script_hash(
+  void*                   context,
+  cardano_redeemer_tag_t  tag,
+  uint64_t                index,
+  cardano_blake2b_hash_t* script_hash)
+{
+  CARDANO_UNUSED(tag);
+  CARDANO_UNUSED(index);
+
+  return add_unique_hash((cardano_blake2b_hash_set_t*)context, script_hash);
+}
+
+/**
+ * \brief Checks whether a redeemer list holds a redeemer with the given tag and index.
+ *
+ * \param[in] redeemers The redeemers to search, or NULL when there are none.
+ * \param[in] tag The redeemer tag to look for.
+ * \param[in] index The redeemer index to look for.
+ *
+ * \return true if the list holds a redeemer with that tag and index, false otherwise.
+ */
+static bool
+has_redeemer(const cardano_redeemer_list_t* redeemers, const cardano_redeemer_tag_t tag, const uint64_t index)
+{
+  const size_t length = cardano_redeemer_list_get_length(redeemers);
+  bool         found  = false;
+
+  for (size_t i = 0U; (i < length) && !found; ++i)
+  {
+    cardano_redeemer_t* redeemer = NULL;
+
+    const cardano_error_t result = cardano_redeemer_list_get(redeemers, i, &redeemer);
+    cardano_redeemer_unref(&redeemer);
+
+    found = (result == CARDANO_SUCCESS) && (cardano_redeemer_get_tag(redeemer) == tag) && (cardano_redeemer_get_index(redeemer) == index);
+  }
+
+  return found;
+}
+
+/**
+ * \brief Script purpose callback that records the first purpose whose Plutus script has no redeemer.
+ *
+ * \param[in,out] context The \ref missing_redeemer_search_t that holds the Plutus script hashes and the redeemers,
+ *                        and receives the purpose.
+ * \param[in] tag The redeemer tag of the purpose.
+ * \param[in] index The redeemer index of the purpose.
+ * \param[in] script_hash The hash of the script the purpose needs.
+ *
+ * \return \ref CARDANO_SUCCESS, since the purpose is only recorded.
+ */
+static cardano_error_t
+find_purpose_without_redeemer(
+  void*                   context,
+  cardano_redeemer_tag_t  tag,
+  uint64_t                index,
+  cardano_blake2b_hash_t* script_hash)
+{
+  missing_redeemer_search_t* search = (missing_redeemer_search_t*)context;
+
+  if ((search->script_hash != NULL) || !_cardano_blake2b_hash_set_has(search->plutus_scripts, script_hash) || has_redeemer(search->redeemers, tag, index))
+  {
+    return CARDANO_SUCCESS;
+  }
+
+  cardano_blake2b_hash_ref(script_hash);
+
+  search->tag         = tag;
+  search->index       = index;
+  search->script_hash = script_hash;
+
+  return CARDANO_SUCCESS;
+}
+
+/**
+ * \brief Visits the purpose of a credential if the credential is a script hash.
+ *
+ * \param[in] visitor The visitor that receives the purpose.
+ * \param[in] tag The redeemer tag of the purpose.
+ * \param[in] index The redeemer index of the purpose.
  * \param[in] credential The credential to inspect.
  *
  * \return \ref CARDANO_SUCCESS if the credential was inspected, or an appropriate error code.
  */
 static cardano_error_t
-add_script_credential(cardano_blake2b_hash_set_t* set, cardano_credential_t* credential)
+visit_script_credential(
+  const script_purpose_visitor_t* visitor,
+  const cardano_redeemer_tag_t    tag,
+  const uint64_t                  index,
+  cardano_credential_t*           credential)
 {
   cardano_credential_type_t type   = CARDANO_CREDENTIAL_TYPE_KEY_HASH;
   cardano_error_t           result = cardano_credential_get_type(credential, &type);
@@ -133,7 +265,7 @@ add_script_credential(cardano_blake2b_hash_set_t* set, cardano_credential_t* cre
     return CARDANO_ERROR_POINTER_IS_NULL;
   }
 
-  result = add_unique_hash(set, hash);
+  result = visitor->callback(visitor->context, tag, index, hash);
 
   cardano_blake2b_hash_unref(&hash);
 
@@ -141,9 +273,11 @@ add_script_credential(cardano_blake2b_hash_set_t* set, cardano_credential_t* cre
 }
 
 /**
- * \brief Adds the payment script hash of every spent input locked by a script.
+ * \brief Visits the spend purpose of every spent input locked by a script.
  *
- * \param[in,out] set The set that receives the script hashes.
+ * The index of each purpose is the position of its input in the sorted input set.
+ *
+ * \param[in] visitor The visitor that receives the purposes.
  * \param[in] inputs The spent inputs, or NULL when there are none.
  * \param[in] resolved_inputs The resolved UTXOs of the spent inputs.
  *
@@ -151,8 +285,8 @@ add_script_credential(cardano_blake2b_hash_set_t* set, cardano_credential_t* cre
  *         resolved, or an appropriate error code.
  */
 static cardano_error_t
-add_input_scripts(
-  cardano_blake2b_hash_set_t*      set,
+visit_input_purposes(
+  const script_purpose_visitor_t*  visitor,
   cardano_transaction_input_set_t* inputs,
   cardano_utxo_list_t*             resolved_inputs)
 {
@@ -190,7 +324,7 @@ add_input_scripts(
       continue;
     }
 
-    result = add_unique_hash(set, script_hash);
+    result = visitor->callback(visitor->context, CARDANO_REDEEMER_TAG_SPEND, (uint64_t)i, script_hash);
 
     cardano_blake2b_hash_unref(&script_hash);
 
@@ -204,15 +338,17 @@ add_input_scripts(
 }
 
 /**
- * \brief Adds the policy id of every entry of the mint field.
+ * \brief Visits the mint purpose of every policy id of the mint field.
  *
- * \param[in,out] set The set that receives the script hashes.
+ * The index of each purpose is the position of its policy in the mint field.
+ *
+ * \param[in] visitor The visitor that receives the purposes.
  * \param[in] mint The mint field, or NULL when the body mints nothing.
  *
  * \return \ref CARDANO_SUCCESS if the mint field was inspected, or an appropriate error code.
  */
 static cardano_error_t
-add_mint_scripts(cardano_blake2b_hash_set_t* set, cardano_multi_asset_t* mint)
+visit_mint_purposes(const script_purpose_visitor_t* visitor, cardano_multi_asset_t* mint)
 {
   if (mint == NULL)
   {
@@ -237,7 +373,7 @@ add_mint_scripts(cardano_blake2b_hash_set_t* set, cardano_multi_asset_t* mint)
 
     if (result == CARDANO_SUCCESS)
     {
-      result = add_unique_hash(set, policy_id);
+      result = visitor->callback(visitor->context, CARDANO_REDEEMER_TAG_MINT, (uint64_t)i, policy_id);
     }
 
     cardano_blake2b_hash_unref(&policy_id);
@@ -249,15 +385,17 @@ add_mint_scripts(cardano_blake2b_hash_set_t* set, cardano_multi_asset_t* mint)
 }
 
 /**
- * \brief Adds the credential of every withdrawal whose reward address is controlled by a script.
+ * \brief Visits the reward purpose of every withdrawal whose reward address is controlled by a script.
  *
- * \param[in,out] set The set that receives the script hashes.
+ * The index of each purpose is the position of its reward address among the withdrawals in ledger order.
+ *
+ * \param[in] visitor The visitor that receives the purposes.
  * \param[in] withdrawals The withdrawals, or NULL when the body withdraws nothing.
  *
  * \return \ref CARDANO_SUCCESS if the withdrawals were inspected, or an appropriate error code.
  */
 static cardano_error_t
-add_withdrawal_scripts(cardano_blake2b_hash_set_t* set, cardano_withdrawal_map_t* withdrawals)
+visit_withdrawal_purposes(const script_purpose_visitor_t* visitor, cardano_withdrawal_map_t* withdrawals)
 {
   const size_t size = cardano_withdrawal_map_get_length(withdrawals);
 
@@ -272,6 +410,15 @@ add_withdrawal_scripts(cardano_blake2b_hash_set_t* set, cardano_withdrawal_map_t
       return result;
     }
 
+    uint64_t index = 0U;
+
+    result = _cardano_ledger_order_withdrawal_index(withdrawals, reward_address, &index);
+
+    if (result != CARDANO_SUCCESS)
+    {
+      return result;
+    }
+
     cardano_credential_t* credential = cardano_reward_address_get_credential(reward_address);
 
     if (credential == NULL)
@@ -279,7 +426,7 @@ add_withdrawal_scripts(cardano_blake2b_hash_set_t* set, cardano_withdrawal_map_t
       return CARDANO_ERROR_POINTER_IS_NULL;
     }
 
-    result = add_script_credential(set, credential);
+    result = visit_script_credential(visitor, CARDANO_REDEEMER_TAG_REWARD, index, credential);
 
     cardano_credential_unref(&credential);
 
@@ -328,15 +475,17 @@ get_certificate_witness_credential(
 }
 
 /**
- * \brief Adds the script credential that must authorize each certificate.
+ * \brief Visits the certifying purpose of every certificate a script must authorize.
  *
- * \param[in,out] set The set that receives the script hashes.
+ * The index of each purpose is the position of its certificate in the certificate list.
+ *
+ * \param[in] visitor The visitor that receives the purposes.
  * \param[in] certificates The certificates, or NULL when the body carries none.
  *
  * \return \ref CARDANO_SUCCESS if the certificates were inspected, or an appropriate error code.
  */
 static cardano_error_t
-add_certificate_scripts(cardano_blake2b_hash_set_t* set, cardano_certificate_set_t* certificates)
+visit_certificate_purposes(const script_purpose_visitor_t* visitor, cardano_certificate_set_t* certificates)
 {
   const size_t size = cardano_certificate_set_get_length(certificates);
 
@@ -366,7 +515,7 @@ add_certificate_scripts(cardano_blake2b_hash_set_t* set, cardano_certificate_set
 
     if ((result == CARDANO_SUCCESS) && (credential != NULL))
     {
-      result = add_script_credential(set, credential);
+      result = visit_script_credential(visitor, CARDANO_REDEEMER_TAG_CERTIFYING, (uint64_t)i, credential);
     }
 
     cardano_credential_unref(&credential);
@@ -381,15 +530,17 @@ add_certificate_scripts(cardano_blake2b_hash_set_t* set, cardano_certificate_set
 }
 
 /**
- * \brief Adds the credential of every voter that is a script.
+ * \brief Visits the voting purpose of every voter that is a script.
  *
- * \param[in,out] set The set that receives the script hashes.
+ * The index of each purpose is the position of its voter among the voters in ledger order.
+ *
+ * \param[in] visitor The visitor that receives the purposes.
  * \param[in] procedures The voting procedures, or NULL when the body casts no vote.
  *
  * \return \ref CARDANO_SUCCESS if the voters were inspected, or an appropriate error code.
  */
 static cardano_error_t
-add_voter_scripts(cardano_blake2b_hash_set_t* set, cardano_voting_procedures_t* procedures)
+visit_voter_purposes(const script_purpose_visitor_t* visitor, cardano_voting_procedures_t* procedures)
 {
   if (procedures == NULL)
   {
@@ -409,14 +560,20 @@ add_voter_scripts(cardano_blake2b_hash_set_t* set, cardano_voting_procedures_t* 
   for (size_t i = 0U; (i < size) && (result == CARDANO_SUCCESS); ++i)
   {
     cardano_voter_t* voter = NULL;
+    uint64_t         index = 0U;
 
     result = cardano_voter_list_get(voters, i, &voter);
 
     if (result == CARDANO_SUCCESS)
     {
+      result = _cardano_ledger_order_voter_index(voters, voter, &index);
+    }
+
+    if (result == CARDANO_SUCCESS)
+    {
       cardano_credential_t* credential = cardano_voter_get_credential(voter);
 
-      result = (credential == NULL) ? CARDANO_ERROR_POINTER_IS_NULL : add_script_credential(set, credential);
+      result = (credential == NULL) ? CARDANO_ERROR_POINTER_IS_NULL : visit_script_credential(visitor, CARDANO_REDEEMER_TAG_VOTING, index, credential);
 
       cardano_credential_unref(&credential);
     }
@@ -430,15 +587,17 @@ add_voter_scripts(cardano_blake2b_hash_set_t* set, cardano_voting_procedures_t* 
 }
 
 /**
- * \brief Adds every guard that is a script hash.
+ * \brief Visits the guarding purpose of every guard that is a script hash.
  *
- * \param[in,out] set The set that receives the script hashes.
+ * The index of each purpose is the position of its guard in the guard set, counting key hash guards.
+ *
+ * \param[in] visitor The visitor that receives the purposes.
  * \param[in] guards The guards, or NULL when the body has none.
  *
  * \return \ref CARDANO_SUCCESS if the guards were inspected, or an appropriate error code.
  */
 static cardano_error_t
-add_guard_scripts(cardano_blake2b_hash_set_t* set, cardano_guard_set_t* guards)
+visit_guard_purposes(const script_purpose_visitor_t* visitor, cardano_guard_set_t* guards)
 {
   const size_t size = cardano_guard_set_get_length(guards);
 
@@ -449,7 +608,7 @@ add_guard_scripts(cardano_blake2b_hash_set_t* set, cardano_guard_set_t* guards)
 
     if (result == CARDANO_SUCCESS)
     {
-      result = add_script_credential(set, credential);
+      result = visit_script_credential(visitor, CARDANO_REDEEMER_TAG_GUARDING, (uint64_t)i, credential);
     }
 
     cardano_credential_unref(&credential);
@@ -530,15 +689,17 @@ get_proposal_policy_hash(cardano_proposal_procedure_t* proposal, cardano_blake2b
 }
 
 /**
- * \brief Adds the guardrails script hash of every proposal procedure whose governance action carries one.
+ * \brief Visits the proposing purpose of every proposal procedure whose governance action carries a guardrails script.
  *
- * \param[in,out] set The set that receives the script hashes.
+ * The index of each purpose is the position of its proposal in the proposal list.
+ *
+ * \param[in] visitor The visitor that receives the purposes.
  * \param[in] proposals The proposal procedures, or NULL when the body proposes nothing.
  *
  * \return \ref CARDANO_SUCCESS if the proposals were inspected, or an appropriate error code.
  */
 static cardano_error_t
-add_proposal_scripts(cardano_blake2b_hash_set_t* set, cardano_proposal_procedure_set_t* proposals)
+visit_proposal_purposes(const script_purpose_visitor_t* visitor, cardano_proposal_procedure_set_t* proposals)
 {
   const size_t size = cardano_proposal_procedure_set_get_length(proposals);
 
@@ -559,7 +720,7 @@ add_proposal_scripts(cardano_blake2b_hash_set_t* set, cardano_proposal_procedure
 
     if ((result == CARDANO_SUCCESS) && (policy_hash != NULL))
     {
-      result = add_unique_hash(set, policy_hash);
+      result = visitor->callback(visitor->context, CARDANO_REDEEMER_TAG_PROPOSING, (uint64_t)i, policy_hash);
     }
 
     cardano_blake2b_hash_unref(&policy_hash);
@@ -571,6 +732,79 @@ add_proposal_scripts(cardano_blake2b_hash_set_t* set, cardano_proposal_procedure
   }
 
   return CARDANO_SUCCESS;
+}
+
+/**
+ * \brief Visits every script purpose of a transaction body.
+ *
+ * The purposes are visited in this order: the spent inputs, the mint field, the withdrawals, the certificates, the
+ * voters, the proposals and the guards.
+ *
+ * \param[in] visitor The visitor that receives the purposes.
+ * \param[in] body The transaction body whose purposes are visited.
+ * \param[in] inputs The inputs spent by the body, or NULL to visit no spend purpose.
+ * \param[in] resolved_inputs The resolved UTXOs of \p inputs.
+ *
+ * \return \ref CARDANO_SUCCESS if every purpose was visited, or the first error code returned while visiting them.
+ */
+static cardano_error_t
+visit_script_purposes(
+  const script_purpose_visitor_t*  visitor,
+  cardano_transaction_body_t*      body,
+  cardano_transaction_input_set_t* inputs,
+  cardano_utxo_list_t*             resolved_inputs)
+{
+  cardano_error_t result = visit_input_purposes(visitor, inputs, resolved_inputs);
+
+  if (result == CARDANO_SUCCESS)
+  {
+    cardano_multi_asset_t* mint = cardano_transaction_body_get_mint(body);
+    cardano_multi_asset_unref(&mint);
+
+    result = visit_mint_purposes(visitor, mint);
+  }
+
+  if (result == CARDANO_SUCCESS)
+  {
+    cardano_withdrawal_map_t* withdrawals = cardano_transaction_body_get_withdrawals(body);
+    cardano_withdrawal_map_unref(&withdrawals);
+
+    result = visit_withdrawal_purposes(visitor, withdrawals);
+  }
+
+  if (result == CARDANO_SUCCESS)
+  {
+    cardano_certificate_set_t* certificates = cardano_transaction_body_get_certificates(body);
+    cardano_certificate_set_unref(&certificates);
+
+    result = visit_certificate_purposes(visitor, certificates);
+  }
+
+  if (result == CARDANO_SUCCESS)
+  {
+    cardano_voting_procedures_t* procedures = cardano_transaction_body_get_voting_procedures(body);
+    cardano_voting_procedures_unref(&procedures);
+
+    result = visit_voter_purposes(visitor, procedures);
+  }
+
+  if (result == CARDANO_SUCCESS)
+  {
+    cardano_proposal_procedure_set_t* proposals = cardano_transaction_body_get_proposal_procedures(body);
+    cardano_proposal_procedure_set_unref(&proposals);
+
+    result = visit_proposal_purposes(visitor, proposals);
+  }
+
+  if (result == CARDANO_SUCCESS)
+  {
+    cardano_guard_set_t* guards = cardano_transaction_body_get_guards(body);
+    cardano_guard_set_unref(&guards);
+
+    result = visit_guard_purposes(visitor, guards);
+  }
+
+  return result;
 }
 
 /**
@@ -1043,61 +1277,17 @@ _cardano_get_script_hashes_needed(
     return result;
   }
 
+  cardano_transaction_input_set_t* inputs = NULL;
+
   if (resolved_inputs != NULL)
   {
-    cardano_transaction_input_set_t* inputs = cardano_transaction_body_get_inputs(body);
+    inputs = cardano_transaction_body_get_inputs(body);
     cardano_transaction_input_set_unref(&inputs);
-
-    result = add_input_scripts(needed, inputs, resolved_inputs);
   }
 
-  if (result == CARDANO_SUCCESS)
-  {
-    cardano_multi_asset_t* mint = cardano_transaction_body_get_mint(body);
-    cardano_multi_asset_unref(&mint);
+  const script_purpose_visitor_t visitor = { collect_script_hash, (void*)needed };
 
-    result = add_mint_scripts(needed, mint);
-  }
-
-  if (result == CARDANO_SUCCESS)
-  {
-    cardano_withdrawal_map_t* withdrawals = cardano_transaction_body_get_withdrawals(body);
-    cardano_withdrawal_map_unref(&withdrawals);
-
-    result = add_withdrawal_scripts(needed, withdrawals);
-  }
-
-  if (result == CARDANO_SUCCESS)
-  {
-    cardano_certificate_set_t* certificates = cardano_transaction_body_get_certificates(body);
-    cardano_certificate_set_unref(&certificates);
-
-    result = add_certificate_scripts(needed, certificates);
-  }
-
-  if (result == CARDANO_SUCCESS)
-  {
-    cardano_voting_procedures_t* procedures = cardano_transaction_body_get_voting_procedures(body);
-    cardano_voting_procedures_unref(&procedures);
-
-    result = add_voter_scripts(needed, procedures);
-  }
-
-  if (result == CARDANO_SUCCESS)
-  {
-    cardano_proposal_procedure_set_t* proposals = cardano_transaction_body_get_proposal_procedures(body);
-    cardano_proposal_procedure_set_unref(&proposals);
-
-    result = add_proposal_scripts(needed, proposals);
-  }
-
-  if (result == CARDANO_SUCCESS)
-  {
-    cardano_guard_set_t* guards = cardano_transaction_body_get_guards(body);
-    cardano_guard_set_unref(&guards);
-
-    result = add_guard_scripts(needed, guards);
-  }
+  result = visit_script_purposes(&visitor, body, inputs, resolved_inputs);
 
   if (result != CARDANO_SUCCESS)
   {
@@ -1201,6 +1391,42 @@ _cardano_get_plutus_scripts_provided(
   cardano_blake2b_hash_set_unref(&lookup.matched_scripts);
 
   *plutus_scripts = lookup.plutus_scripts;
+
+  return CARDANO_SUCCESS;
+}
+
+cardano_error_t
+_cardano_find_missing_redeemer(
+  cardano_transaction_body_t*      body,
+  cardano_transaction_input_set_t* inputs,
+  cardano_utxo_list_t*             resolved_inputs,
+  cardano_blake2b_hash_set_t*      plutus_scripts,
+  cardano_redeemer_list_t*         redeemers,
+  cardano_redeemer_tag_t*          tag,
+  uint64_t*                        index,
+  cardano_blake2b_hash_t**         script_hash)
+{
+  if ((body == NULL) || (plutus_scripts == NULL) || (tag == NULL) || (index == NULL) || (script_hash == NULL))
+  {
+    return CARDANO_ERROR_POINTER_IS_NULL;
+  }
+
+  missing_redeemer_search_t search = { plutus_scripts, redeemers, CARDANO_REDEEMER_TAG_SPEND, 0U, NULL };
+
+  const script_purpose_visitor_t visitor = { find_purpose_without_redeemer, (void*)&search };
+
+  const cardano_error_t result = visit_script_purposes(&visitor, body, inputs, resolved_inputs);
+
+  if (result != CARDANO_SUCCESS)
+  {
+    cardano_blake2b_hash_unref(&search.script_hash);
+
+    return result;
+  }
+
+  *tag         = search.tag;
+  *index       = search.index;
+  *script_hash = search.script_hash;
 
   return CARDANO_SUCCESS;
 }

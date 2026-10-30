@@ -960,7 +960,8 @@ CARDANO_EXPORT void cardano_sub_tx_builder_add_signer_ex(
  * The builder does not resolve or attach the script behind a script hash guard. Provide the script with
  * `cardano_sub_tx_builder_add_script` or through a reference input. A script hash guard added with this function
  * has no redeemer; use `cardano_sub_tx_builder_add_guard_with_redeemer` to add it together with the guarding
- * redeemer that satisfies it.
+ * redeemer that satisfies it. A guard whose script is a Plutus script provided to the sub transaction makes
+ * `cardano_sub_tx_builder_build` return \ref CARDANO_ERROR_MISSING_REDEEMER when it has no redeemer.
  *
  * \param[in] builder A pointer to the \ref cardano_sub_tx_builder_t instance used for sub transaction construction.
  * \param[in] guard A pointer to the \ref cardano_credential_t structure representing the guard to be added.
@@ -2616,6 +2617,15 @@ CARDANO_EXPORT void cardano_sub_tx_builder_propose_info_ex(
  *
  * A deferred redeemer callback that fails makes this function fail with the error of the callback, and one that
  * produces no payload makes it fail with \ref CARDANO_ERROR_POINTER_IS_NULL.
+ *
+ * Every script purpose of the sub transaction whose script resolves to a Plutus script, among the scripts added with
+ * `cardano_sub_tx_builder_add_script` and the reference scripts of the UTXOs added as inputs and reference inputs,
+ * must have a redeemer: spending an input locked by the script, minting under its policy, withdrawing from a reward
+ * account it controls, carrying a certificate it must authorize, voting with it as the voter, carrying a proposal it
+ * guards as the guardrails script or listing it among the guards. A purpose without its redeemer makes this function
+ * fail with \ref CARDANO_ERROR_MISSING_REDEEMER before any script is evaluated, and the last error names the purpose,
+ * its redeemer index and the script hash. A purpose whose script is a native script needs no redeemer, and a purpose
+ * whose script is not provided is not reported.
  *
  * \param[in] builder A pointer to the \ref cardano_sub_tx_builder_t instance that manages the sub transaction details.
  * \param[out] sub_transaction A pointer to a \ref cardano_sub_transaction_t pointer where the created sub transaction

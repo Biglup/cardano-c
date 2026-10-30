@@ -700,6 +700,18 @@ TEST(cardano_error_to_string, canConvertNotAllowedSupplementalDatums)
   ASSERT_STREQ(message, "Not allowed supplemental datums");
 }
 
+TEST(cardano_error_to_string, canConvertMissingRedeemer)
+{
+  // Arrange
+  cardano_error_t error = CARDANO_ERROR_MISSING_REDEEMER;
+
+  // Act
+  const char* message = cardano_error_to_string(error);
+
+  // Assert
+  ASSERT_STREQ(message, "Missing redeemer");
+}
+
 TEST(cardano_error_to_string, canConvertIllegalState)
 {
   // Arrange
