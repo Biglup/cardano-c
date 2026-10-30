@@ -96,6 +96,8 @@ get_passphrase(byte_t* buffer, const size_t buffer_len)
  * This function performs the following actions:
  * 1. Registers a reward address on the blockchain if it is not already registered.
  * 2. Delegates the registered reward address to a specified stake pool.
+ * 3. Delegates the voting power of the reward address to the predefined always abstain DRep, since the ledger
+ *    rejects withdrawals from a key hash reward address that has not delegated its voting power.
  *
  * \param[in] provider A pointer to a \ref cardano_provider_t object used for accessing blockchain state.
  * \param[in] key_handler A pointer to a \ref cardano_secure_key_handler_t object for signing and key management.
@@ -113,6 +115,24 @@ register_and_delegate(
   const char*                    reward_address,
   const char*                    pool_id)
 {
+  cardano_reward_address_t* address = NULL;
+  cardano_drep_t*           abstain = NULL;
+
+  cardano_error_t result = cardano_reward_address_from_bech32(reward_address, strlen(reward_address), &address);
+
+  if (result == CARDANO_SUCCESS)
+  {
+    result = cardano_drep_new(CARDANO_DREP_TYPE_ABSTAIN, NULL, &abstain);
+  }
+
+  if (result != CARDANO_SUCCESS)
+  {
+    console_error("Failed to create the reward address or the always abstain DRep");
+    console_error("Error [%d]: %s", result, cardano_error_to_string(result));
+
+    exit(result);
+  }
+
   cardano_utxo_list_t*  utxo_list  = get_unspent_utxos(provider, funding_address);
   cardano_tx_builder_t* tx_builder = cardano_tx_builder_new(pparams, &CARDANO_PREPROD_SLOT_CONFIG);
 
@@ -123,9 +143,10 @@ register_and_delegate(
   cardano_tx_builder_set_invalid_after_ex(tx_builder, invalid_after);
   cardano_tx_builder_register_reward_address_ex(tx_builder, reward_address, strlen(reward_address), NULL);
   cardano_tx_builder_delegate_stake_ex(tx_builder, reward_address, strlen(reward_address), pool_id, strlen(pool_id), NULL);
+  cardano_tx_builder_delegate_voting_power(tx_builder, address, abstain, NULL);
 
   cardano_transaction_t* transaction = NULL;
-  cardano_error_t        result      = cardano_tx_builder_build(tx_builder, &transaction);
+  result                             = cardano_tx_builder_build(tx_builder, &transaction);
 
   if (result != CARDANO_SUCCESS)
   {
@@ -147,6 +168,8 @@ register_and_delegate(
   cardano_utxo_list_unref(&utxo_list);
   cardano_tx_builder_unref(&tx_builder);
   cardano_transaction_unref(&transaction);
+  cardano_reward_address_unref(&address);
+  cardano_drep_unref(&abstain);
 
   console_info("Stake key registered and delegated successfully.");
 }
@@ -209,7 +232,7 @@ unregister_and_withdraw_rewards(
   cardano_tx_builder_unref(&tx_builder);
   cardano_transaction_unref(&transaction);
 
-  console_info("Stake key registered and delegated successfully.");
+  console_info("Rewards withdrawn and stake key deregistered successfully.");
 }
 
 /* MAIN **********************************************************************/
@@ -225,7 +248,7 @@ main(void)
   console_info("Delegate and Withdraw Example (Pubkey Hash)");
   console_info("libcardano-c:  V-%s\n", cardano_get_lib_version());
 
-  console_info("This example registers and delegates a stake key to a pool, and finally withdraws and deregisters it.");
+  console_info("This example registers and delegates a stake key to a pool and its voting power to the always abstain DRep, and finally withdraws and deregisters it.");
 
   console_set_foreground_color(CONSOLE_COLOR_GREEN);
   console_write("\nUse passphrase: 'password'\n\n");
@@ -250,7 +273,7 @@ main(void)
   cardano_protocol_parameters_t* protocol_params = get_protocol_parameters(provider);
   cardano_utxo_list_t*           utxo_list       = get_unspent_utxos(provider, payment_address);
 
-  // Registers and delegates the stake key to the pool
+  // Registers the stake key and delegates it to the pool and its voting power to the always abstain DRep
   register_and_delegate(provider, key_handler, protocol_params, payment_address, stake_address, pool_id);
   // Example register & delegate transaction created by this sample:
   // https://preprod.cardanoscan.io/transaction/00193063d1fd409fa22359459b24f5ea1519ae20eaf33dcea5ea9f480a6b28cc

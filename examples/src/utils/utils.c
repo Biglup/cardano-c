@@ -1088,7 +1088,7 @@ create_drep_voter(const char* drep_id)
   }
 
   result = cardano_voter_new(
-    CARDANO_DREP_TYPE_KEY_HASH ? CARDANO_VOTER_TYPE_DREP_KEY_HASH : CARDANO_VOTER_TYPE_DREP_SCRIPT_HASH, drep_cred, &voter);
+    (drep_type == CARDANO_DREP_TYPE_KEY_HASH) ? CARDANO_VOTER_TYPE_DREP_KEY_HASH : CARDANO_VOTER_TYPE_DREP_SCRIPT_HASH, drep_cred, &voter);
 
   cardano_credential_unref(&drep_cred);
 

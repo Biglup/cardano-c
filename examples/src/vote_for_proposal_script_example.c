@@ -253,7 +253,7 @@ vote_as_drep(
   cardano_governance_action_id_t* gov_id     = create_governance_id(proposal_id_hex, proposal_index);
   cardano_plutus_data_t*          redeemer   = create_void_plutus_data();
 
-  console_info("Voting for proposal %s#%d as DRep %s", proposal_id_hex, proposal_index, proposal_id_hex);
+  console_info("Voting for proposal %s#%llu as DRep %s", proposal_id_hex, (unsigned long long)proposal_index, drep_id);
 
   cardano_voting_procedure_t* voting_procedure = NULL;
 
@@ -316,10 +316,17 @@ vote_as_drep(
 /**
  * \brief Entry point of the program.
  *
+ * The proposal to vote for is read from the command line, as the transaction id that created it and,
+ * optionally, its index within that transaction (0 by default). Proposals expire after a few epochs, so pass
+ * one that is still active, for example one created with the 'propose_treasury_withdrawal_example'.
+ *
+ * \param[in] argc The number of command line arguments.
+ * \param[in] argv The command line arguments: the proposal transaction id and, optionally, the proposal index.
+ *
  * \return Returns `0` on successful execution, or a non-zero value if there is an error.
  */
 int
-main(void)
+main(int argc, char** argv)
 {
   console_info("Vote for proposal as a DRep (Script Hash)");
   console_info("libcardano-c:  V-%s\n", cardano_get_lib_version());
@@ -338,6 +345,16 @@ main(void)
 
     return EXIT_FAILURE;
   }
+
+  if ((argc < 2) || (argc > 3) || (strlen(argv[1]) != 64U))
+  {
+    console_error("Usage: %s <proposal transaction id> [proposal index]\n", argv[0]);
+
+    return EXIT_FAILURE;
+  }
+
+  const char*    proposal_id_hex = argv[1];
+  const uint64_t proposal_index  = (argc == 3) ? strtoull(argv[2], NULL, 10) : 0U;
 
   cardano_script_t*             always_succeeds_script = create_plutus_v3_script_from_hex(ALWAYS_SUCCEEDS_SCRIPT_V3);
   cardano_drep_t*               drep                   = get_script_drep(always_succeeds_script);
@@ -364,9 +381,8 @@ main(void)
   // Example register as DRep transaction created by this sample:
   // https://preprod.cardanoscan.io/transaction/6a50b38075037d0b18067e24a2040b44a2bf0f31814d28a5383406b2df8cc310
 
-  // Vote for proposal, we are going to vote for proposal https://preprod.cardanoscan.io/govAction/gov_action1xukk3ra2wls5v7vttqdnytq09xq6jq3hv3ek4hjaztswfeuk47xqqg4644z
-  // which is still active as of epoch 182, and will expire on epoch 188. This proposal was created using the example 'propose_withdrawal_example.c'.
-  vote_as_drep(provider, key_handler, protocol_params, always_succeeds_script, payment_address, drep_id, "372d688faa77e146798b581b322c0f2981a9023764736ade5d12e0e4e796af8c", 0, CARDANO_VOTE_YES);
+  // Votes yes on the proposal given in the command line
+  vote_as_drep(provider, key_handler, protocol_params, always_succeeds_script, payment_address, drep_id, proposal_id_hex, proposal_index, CARDANO_VOTE_YES);
   // Example unregister as DRep transaction created by this sample:
   // https://preprod.cardanoscan.io/dRep/drep1y0glsum6awevrkjz2hjd9r8sh4wppxc454t4ta3maw42s4s0pddmt
 
