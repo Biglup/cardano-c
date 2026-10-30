@@ -142,6 +142,28 @@ encode_to_hex(cardano_transaction_body_t* transaction_body)
 };
 
 /**
+ * Serializes the given transaction body to CIP-116 JSON and returns the JSON string.
+ *
+ * @param transaction_body The transaction body to serialize.
+ * @return The CIP-116 JSON string.
+ */
+static std::string
+encode_to_cip116_json(cardano_transaction_body_t* transaction_body)
+{
+  cardano_json_writer_t* writer = cardano_json_writer_new(CARDANO_JSON_FORMAT_COMPACT);
+
+  EXPECT_EQ(cardano_transaction_body_to_cip116_json(transaction_body, writer), CARDANO_SUCCESS);
+
+  char*       json = encode_json(writer);
+  std::string result(json);
+
+  cardano_json_writer_unref(&writer);
+  free(json);
+
+  return result;
+};
+
+/**
  * Decodes the given transaction body CBOR hex and re-encodes it keeping the CBOR cache,
  * expecting the produced bytes to be identical to the input.
  *
@@ -2610,6 +2632,52 @@ TEST(cardano_transaction_body_to_cip116_json, canConvertConwayToCip116Json)
   cardano_cbor_reader_unref(&reader);
   cardano_json_writer_unref(&json_writer);
   free(json_str);
+}
+
+TEST(cardano_transaction_body_to_cip116_json, omitsRequiredSignersForEmptyGuardsSet)
+{
+  // Arrange
+  cardano_transaction_body_t* transaction_body = new_default_transaction_body();
+  cardano_guard_set_t*        guards           = NULL;
+
+  EXPECT_EQ(cardano_guard_set_new(&guards), CARDANO_SUCCESS);
+  EXPECT_EQ(cardano_transaction_body_set_guards(transaction_body, guards), CARDANO_SUCCESS);
+
+  // Act
+  std::string json = encode_to_cip116_json(transaction_body);
+
+  // Assert
+  EXPECT_EQ(json.find("required_signers"), std::string::npos);
+  EXPECT_NE(json.find("\"collateral\":"), std::string::npos);
+
+  // Cleanup
+  cardano_transaction_body_unref(&transaction_body);
+  cardano_guard_set_unref(&guards);
+}
+
+TEST(cardano_transaction_body_to_cip116_json, omitsRequiredSignersWhenGuardsHoldOnlyScripts)
+{
+  // Arrange
+  cardano_transaction_body_t* transaction_body = new_default_transaction_body();
+  cardano_guard_set_t*        guards           = NULL;
+  cardano_credential_t*       script_guard     = NULL;
+  const char*                 script_hash      = "6199186adb51974690d7247d2646097d2c62763b16fb7ed3f9f55d39";
+
+  EXPECT_EQ(cardano_guard_set_new(&guards), CARDANO_SUCCESS);
+  EXPECT_EQ(cardano_credential_from_hash_hex(script_hash, strlen(script_hash), CARDANO_CREDENTIAL_TYPE_SCRIPT_HASH, &script_guard), CARDANO_SUCCESS);
+  EXPECT_EQ(cardano_guard_set_add(guards, script_guard), CARDANO_SUCCESS);
+  EXPECT_EQ(cardano_transaction_body_set_guards(transaction_body, guards), CARDANO_SUCCESS);
+
+  // Act
+  std::string json = encode_to_cip116_json(transaction_body);
+
+  // Assert
+  EXPECT_EQ(json.find("required_signers"), std::string::npos);
+
+  // Cleanup
+  cardano_transaction_body_unref(&transaction_body);
+  cardano_credential_unref(&script_guard);
+  cardano_guard_set_unref(&guards);
 }
 
 TEST(cardano_transaction_body_from_cbor, roundTripsTheMinimalInputsOutputsFeeBodyByteExact)
