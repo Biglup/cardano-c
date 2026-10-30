@@ -15141,3 +15141,76 @@ TEST(cardano_tx_builder_build, doesntCrashOnMemoryAllocationFailWhenCheckingTheR
   cardano_utxo_list_unref(&utxos);
   cardano_protocol_parameters_unref(&params);
 }
+
+TEST(cardano_tx_builder_build, neverSkipsTheRedeemerOfAPlutusLockedInputWhenAMemoryAllocationFails)
+{
+  // Arrange
+  cardano_protocol_parameters_t* params = init_dijkstra_protocol_parameters();
+  cardano_utxo_list_t*           utxos  = new_utxo_list();
+  cardano_script_t*              script = create_script(ALWAYS_SUCCEEDS_V3_CBOR);
+  cardano_utxo_t*                utxo   = create_script_utxo(script);
+
+  int  allocation_count = 0;
+  bool reported         = false;
+
+  while ((allocation_count < 5000) && !reported)
+  {
+    cardano_tx_builder_t* tx_builder = new_funded_tx_builder(params, utxos);
+
+    cardano_tx_builder_add_script(tx_builder, script);
+    cardano_tx_builder_add_input(tx_builder, utxo, nullptr, nullptr);
+
+    reset_allocators_run_count();
+    set_malloc_limit(allocation_count);
+    cardano_set_allocators(fail_malloc_at_limit, realloc, free);
+
+    cardano_transaction_t* tx     = nullptr;
+    cardano_error_t        result = cardano_tx_builder_build(tx_builder, &tx);
+
+    reset_allocators_run_count();
+    reset_limited_malloc();
+    cardano_set_allocators(malloc, realloc, free);
+
+    reported = (result == CARDANO_ERROR_MISSING_REDEEMER);
+
+    if (!reported)
+    {
+      ++allocation_count;
+    }
+
+    cardano_transaction_unref(&tx);
+    cardano_tx_builder_unref(&tx_builder);
+  }
+
+  // Act & Assert
+  for (int i = 0; i < allocation_count; ++i)
+  {
+    cardano_tx_builder_t* tx_builder = new_funded_tx_builder(params, utxos);
+
+    cardano_tx_builder_add_script(tx_builder, script);
+    cardano_tx_builder_add_input(tx_builder, utxo, nullptr, nullptr);
+
+    set_malloc_fail_index(i);
+    cardano_set_allocators(fail_malloc_at_exact_index, realloc, free);
+
+    cardano_transaction_t* tx     = nullptr;
+    cardano_error_t        result = cardano_tx_builder_build(tx_builder, &tx);
+
+    set_malloc_fail_index(-1);
+    cardano_set_allocators(malloc, realloc, free);
+
+    EXPECT_NE(result, CARDANO_SUCCESS) << i;
+    EXPECT_EQ(tx, nullptr);
+
+    cardano_transaction_unref(&tx);
+    cardano_tx_builder_unref(&tx_builder);
+  }
+
+  EXPECT_TRUE(reported);
+
+  // Cleanup
+  cardano_utxo_unref(&utxo);
+  cardano_script_unref(&script);
+  cardano_utxo_list_unref(&utxos);
+  cardano_protocol_parameters_unref(&params);
+}

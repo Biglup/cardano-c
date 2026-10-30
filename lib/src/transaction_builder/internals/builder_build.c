@@ -665,17 +665,24 @@ add_spent_script_hashes(cardano_blake2b_hash_set_t* script_hashes, cardano_utxo_
     result = cardano_utxo_list_get(spent_utxos, i, &utxo);
     cardano_utxo_unref(&utxo);
 
+    cardano_address_t* address = NULL;
+
     if (result == CARDANO_SUCCESS)
     {
       cardano_transaction_output_t* output = cardano_utxo_get_output(utxo);
       cardano_transaction_output_unref(&output);
 
-      cardano_address_t* address = cardano_transaction_output_get_address(output);
+      address = cardano_transaction_output_get_address(output);
       cardano_address_unref(&address);
+    }
 
+    if ((result == CARDANO_SUCCESS) && _cardano_has_payment_script(address))
+    {
       cardano_blake2b_hash_t* script_hash = _cardano_get_payment_script_hash(address);
 
-      if ((script_hash != NULL) && !_cardano_blake2b_hash_set_has(script_hashes, script_hash))
+      result = (script_hash != NULL) ? CARDANO_SUCCESS : CARDANO_ERROR_MEMORY_ALLOCATION_FAILED;
+
+      if ((result == CARDANO_SUCCESS) && !_cardano_blake2b_hash_set_has(script_hashes, script_hash))
       {
         result = cardano_blake2b_hash_set_add(script_hashes, script_hash);
       }

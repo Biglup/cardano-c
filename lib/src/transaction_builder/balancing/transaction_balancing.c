@@ -1260,10 +1260,20 @@ add_utxo_datum_hashes(cardano_blake2b_hash_set_t* hashes, cardano_utxo_list_t* u
     cardano_address_t* address = cardano_transaction_output_get_address(output);
     cardano_address_unref(&address);
 
-    cardano_blake2b_hash_t* script_hash = _cardano_get_payment_script_hash(address);
-    const bool              is_needed   = (plutus_scripts == NULL) || ((script_hash != NULL) && _cardano_blake2b_hash_set_has(plutus_scripts, script_hash));
+    bool is_needed = (plutus_scripts == NULL);
 
-    cardano_blake2b_hash_unref(&script_hash);
+    if (!is_needed && _cardano_has_payment_script(address))
+    {
+      cardano_blake2b_hash_t* script_hash = _cardano_get_payment_script_hash(address);
+
+      if (script_hash == NULL)
+      {
+        return CARDANO_ERROR_MEMORY_ALLOCATION_FAILED;
+      }
+
+      is_needed = _cardano_blake2b_hash_set_has(plutus_scripts, script_hash);
+      cardano_blake2b_hash_unref(&script_hash);
+    }
 
     if (is_needed)
     {
