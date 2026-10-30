@@ -165,6 +165,9 @@ CARDANO_EXPORT cardano_error_t cardano_redeemer_list_to_cip116_json(
  * \return Returns \ref CARDANO_SUCCESS if the serialization is successful. If the \p redeemer or \p writer
  *         is NULL, returns \ref CARDANO_ERROR_POINTER_IS_NULL. If any redeemer index is greater than `UINT32_MAX`,
  *         returns \ref CARDANO_ERROR_INVALID_ARGUMENT, since the wire format encodes the index as a 32-bit unsigned integer.
+ *         If two redeemers share the same tag and index, returns \ref CARDANO_ERROR_DUPLICATED_CBOR_MAP_KEY, since each script
+ *         purpose has exactly one redeemer and the ledger rejects a redeemers map with duplicate keys from protocol version 12.
+ *         A list decoded from CBOR that still holds its cached CBOR is written verbatim and is not checked.
  *
  * \remark In Cardano, entities are encoded in CBOR, but CBOR allows multiple valid ways to encode the same data. The Cardano blockchain
  *         does not enforce a canonical CBOR representation, meaning that if you decode a transaction from CBOR and then re-encode it,
@@ -351,6 +354,7 @@ CARDANO_EXPORT cardano_error_t cardano_redeemer_list_set_ex_units(
  *
  * This function creates a deep copy of the specified \ref cardano_redeemer_list_t object. The cloned list contains copies of all the redeemers
  * and their associated data, ensuring that modifications to the original list do not affect the cloned list and vice versa.
+ * Cloning a list built in code with two redeemers that share a tag and index fails with \ref CARDANO_ERROR_DUPLICATED_CBOR_MAP_KEY.
  *
  * \param[in] redeemer_list A pointer to an initialized \ref cardano_redeemer_list_t object that will be cloned.
  *                          This parameter must not be NULL.
@@ -358,7 +362,8 @@ CARDANO_EXPORT cardano_error_t cardano_redeemer_list_set_ex_units(
  *                                  The caller is responsible for managing the lifecycle of the cloned list and must call \ref cardano_redeemer_list_unref to release it when no longer needed.
  *
  * \return \ref cardano_error_t indicating the outcome of the operation. Returns \ref CARDANO_SUCCESS if the redeemer list was successfully cloned,
- *         or an appropriate error code indicating the failure reason (e.g., \ref CARDANO_ERROR_MEMORY_ALLOCATION_FAILED if memory allocation fails).
+ *         or an appropriate error code indicating the failure reason (e.g., \ref CARDANO_ERROR_MEMORY_ALLOCATION_FAILED if memory allocation fails,
+ *         or \ref CARDANO_ERROR_DUPLICATED_CBOR_MAP_KEY if two redeemers share a tag and index).
  *
  * Usage Example:
  * \code{.c}
