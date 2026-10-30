@@ -2246,7 +2246,7 @@ cardano_transaction_body_to_cip116_json(const cardano_transaction_body_t* transa
     }
   }
 
-  if (transaction_body->guards != NULL)
+  if (cardano_body_has_guards(transaction_body->guards))
   {
     cardano_blake2b_hash_set_t* required_signers = get_key_hash_guards(transaction_body->guards);
 
@@ -2255,8 +2255,11 @@ cardano_transaction_body_to_cip116_json(const cardano_transaction_body_t* transa
       return CARDANO_ERROR_MEMORY_ALLOCATION_FAILED;
     }
 
-    cardano_json_writer_write_property_name(writer, "required_signers", 16);
-    result = cardano_blake2b_hash_set_to_cip116_json(required_signers, writer);
+    if (cardano_blake2b_hash_set_get_length(required_signers) > 0U)
+    {
+      cardano_json_writer_write_property_name(writer, "required_signers", 16);
+      result = cardano_blake2b_hash_set_to_cip116_json(required_signers, writer);
+    }
 
     cardano_blake2b_hash_set_unref(&required_signers);
 
