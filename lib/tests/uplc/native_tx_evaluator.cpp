@@ -1387,6 +1387,7 @@ TEST(cardano_tx_evaluator_native, returnsErrorOnMemoryAllocationFailureWhileReso
     else
     {
       EXPECT_EQ(result, nullptr);
+      EXPECT_NE(error, CARDANO_ERROR_ELEMENT_NOT_FOUND);
     }
 
     cardano_redeemer_list_unref(&result);
@@ -3600,6 +3601,55 @@ TEST(cardano_tx_evaluator_native, evaluatesAPlutusV3SpendThroughAReferenceScript
   cardano_utxo_list_unref(&utxos);
   cardano_script_unref(&script);
   cardano_plutus_v3_script_unref(&plutus);
+}
+
+TEST(cardano_tx_evaluator_native, returnsErrorOnMemoryAllocationFailureWhileResolvingAReferenceScript)
+{
+  cardano_plutus_v2_script_t* plutus    = build_v2_script(3U);
+  cardano_script_t*           script    = nullptr;
+  cardano_utxo_list_t*        utxos     = nullptr;
+  cardano_tx_evaluator_t*     evaluator = nullptr;
+  bool                        succeeded = false;
+
+  EXPECT_EQ(cardano_script_new_plutus_v2(plutus, &script), CARDANO_SUCCESS);
+
+  cardano_transaction_t* tx = build_reference_spend_tx(script, true, &utxos);
+
+  EXPECT_EQ(cardano_tx_evaluator_new_native(&kSlotConfig, nullptr, 10U, &evaluator), CARDANO_SUCCESS);
+
+  for (int limit = 0; (limit < 100000) && !succeeded; ++limit)
+  {
+    cardano_redeemer_list_t* result = nullptr;
+
+    reset_allocators_run_count();
+    reset_limited_malloc();
+    set_malloc_limit(limit);
+    cardano_set_allocators(fail_malloc_at_limit, realloc, free);
+
+    const cardano_error_t error = cardano_tx_evaluator_evaluate(evaluator, tx, utxos, &result);
+
+    cardano_set_allocators(malloc, realloc, free);
+
+    if (error == CARDANO_SUCCESS)
+    {
+      succeeded = true;
+    }
+    else
+    {
+      EXPECT_EQ(result, nullptr);
+      EXPECT_NE(error, CARDANO_ERROR_ELEMENT_NOT_FOUND);
+    }
+
+    cardano_redeemer_list_unref(&result);
+  }
+
+  EXPECT_TRUE(succeeded);
+
+  cardano_tx_evaluator_unref(&evaluator);
+  cardano_transaction_unref(&tx);
+  cardano_utxo_list_unref(&utxos);
+  cardano_script_unref(&script);
+  cardano_plutus_v2_script_unref(&plutus);
 }
 
 TEST(cardano_tx_evaluator_native, rejectsAPlutusV2SpendWithoutADatum)

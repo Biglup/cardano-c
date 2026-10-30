@@ -338,14 +338,27 @@ find_witness_script(
   {
     cardano_plutus_v1_script_t* script = NULL;
 
-    if (cardano_plutus_v1_script_set_get(v1, i, &script) == CARDANO_SUCCESS)
+    cardano_error_t get_result = cardano_plutus_v1_script_set_get(v1, i, &script);
+
+    if (get_result != CARDANO_SUCCESS)
+    {
+      result = get_result;
+    }
+    else
     {
       cardano_blake2b_hash_t* hash = cardano_plutus_v1_script_get_hash(script);
 
-      if (cardano_blake2b_hash_equals(hash, script_hash))
+      if (hash == NULL)
       {
-        result       = cardano_plutus_v1_script_to_raw_bytes(script, out_bytes);
-        *out_version = PRV_SCRIPT_V1;
+        result = CARDANO_ERROR_MEMORY_ALLOCATION_FAILED;
+      }
+      else
+      {
+        if (cardano_blake2b_hash_equals(hash, script_hash))
+        {
+          result       = cardano_plutus_v1_script_to_raw_bytes(script, out_bytes);
+          *out_version = PRV_SCRIPT_V1;
+        }
       }
 
       cardano_blake2b_hash_unref(&hash);
@@ -358,14 +371,27 @@ find_witness_script(
   {
     cardano_plutus_v2_script_t* script = NULL;
 
-    if (cardano_plutus_v2_script_set_get(v2, i, &script) == CARDANO_SUCCESS)
+    cardano_error_t get_result = cardano_plutus_v2_script_set_get(v2, i, &script);
+
+    if (get_result != CARDANO_SUCCESS)
+    {
+      result = get_result;
+    }
+    else
     {
       cardano_blake2b_hash_t* hash = cardano_plutus_v2_script_get_hash(script);
 
-      if (cardano_blake2b_hash_equals(hash, script_hash))
+      if (hash == NULL)
       {
-        result       = cardano_plutus_v2_script_to_raw_bytes(script, out_bytes);
-        *out_version = PRV_SCRIPT_V2;
+        result = CARDANO_ERROR_MEMORY_ALLOCATION_FAILED;
+      }
+      else
+      {
+        if (cardano_blake2b_hash_equals(hash, script_hash))
+        {
+          result       = cardano_plutus_v2_script_to_raw_bytes(script, out_bytes);
+          *out_version = PRV_SCRIPT_V2;
+        }
       }
 
       cardano_blake2b_hash_unref(&hash);
@@ -378,14 +404,27 @@ find_witness_script(
   {
     cardano_plutus_v3_script_t* script = NULL;
 
-    if (cardano_plutus_v3_script_set_get(v3, i, &script) == CARDANO_SUCCESS)
+    cardano_error_t get_result = cardano_plutus_v3_script_set_get(v3, i, &script);
+
+    if (get_result != CARDANO_SUCCESS)
+    {
+      result = get_result;
+    }
+    else
     {
       cardano_blake2b_hash_t* hash = cardano_plutus_v3_script_get_hash(script);
 
-      if (cardano_blake2b_hash_equals(hash, script_hash))
+      if (hash == NULL)
       {
-        result       = cardano_plutus_v3_script_to_raw_bytes(script, out_bytes);
-        *out_version = PRV_SCRIPT_V3;
+        result = CARDANO_ERROR_MEMORY_ALLOCATION_FAILED;
+      }
+      else
+      {
+        if (cardano_blake2b_hash_equals(hash, script_hash))
+        {
+          result       = cardano_plutus_v3_script_to_raw_bytes(script, out_bytes);
+          *out_version = PRV_SCRIPT_V3;
+        }
       }
 
       cardano_blake2b_hash_unref(&hash);
@@ -398,14 +437,27 @@ find_witness_script(
   {
     cardano_plutus_v4_script_t* script = NULL;
 
-    if (cardano_plutus_v4_script_set_get(v4, i, &script) == CARDANO_SUCCESS)
+    cardano_error_t get_result = cardano_plutus_v4_script_set_get(v4, i, &script);
+
+    if (get_result != CARDANO_SUCCESS)
+    {
+      result = get_result;
+    }
+    else
     {
       cardano_blake2b_hash_t* hash = cardano_plutus_v4_script_get_hash(script);
 
-      if (cardano_blake2b_hash_equals(hash, script_hash))
+      if (hash == NULL)
       {
-        result       = cardano_plutus_v4_script_to_raw_bytes(script, out_bytes);
-        *out_version = PRV_SCRIPT_V4;
+        result = CARDANO_ERROR_MEMORY_ALLOCATION_FAILED;
+      }
+      else
+      {
+        if (cardano_blake2b_hash_equals(hash, script_hash))
+        {
+          result       = cardano_plutus_v4_script_to_raw_bytes(script, out_bytes);
+          *out_version = PRV_SCRIPT_V4;
+        }
       }
 
       cardano_blake2b_hash_unref(&hash);
@@ -542,9 +594,16 @@ find_reference_script(
       {
         cardano_blake2b_hash_t* hash = cardano_script_get_hash(script_ref);
 
-        if (cardano_blake2b_hash_equals(hash, script_hash))
+        if (hash == NULL)
         {
-          result = reference_script_bytes(script_ref, out_bytes, out_version);
+          result = CARDANO_ERROR_MEMORY_ALLOCATION_FAILED;
+        }
+        else
+        {
+          if (cardano_blake2b_hash_equals(hash, script_hash))
+          {
+            result = reference_script_bytes(script_ref, out_bytes, out_version);
+          }
         }
 
         cardano_blake2b_hash_unref(&hash);
@@ -704,11 +763,22 @@ resolve_datum(
         {
           cardano_plutus_data_t* candidate = NULL;
 
-          if (cardano_plutus_data_set_get(datums, i, &candidate) == CARDANO_SUCCESS)
-          {
-            cardano_blake2b_hash_t* hash = NULL;
+          cardano_error_t get_result = cardano_plutus_data_set_get(datums, i, &candidate);
 
-            if (hash_plutus_data(candidate, &hash) == CARDANO_SUCCESS)
+          if (get_result != CARDANO_SUCCESS)
+          {
+            result = get_result;
+          }
+          else
+          {
+            cardano_blake2b_hash_t* hash        = NULL;
+            cardano_error_t         hash_result = hash_plutus_data(candidate, &hash);
+
+            if (hash_result != CARDANO_SUCCESS)
+            {
+              result = hash_result;
+            }
+            else
             {
               if (cardano_blake2b_hash_equals(hash, target))
               {
