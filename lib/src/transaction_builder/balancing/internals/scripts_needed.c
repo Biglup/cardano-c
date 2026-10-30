@@ -317,11 +317,16 @@ visit_input_purposes(
     cardano_address_t* address = cardano_transaction_output_get_address(output);
     cardano_address_unref(&address);
 
+    if (!_cardano_has_payment_script(address))
+    {
+      continue;
+    }
+
     cardano_blake2b_hash_t* script_hash = _cardano_get_payment_script_hash(address);
 
     if (script_hash == NULL)
     {
-      continue;
+      return CARDANO_ERROR_MEMORY_ALLOCATION_FAILED;
     }
 
     result = visitor->callback(visitor->context, CARDANO_REDEEMER_TAG_SPEND, (uint64_t)i, script_hash);
@@ -1177,78 +1182,52 @@ lookup_provided_scripts(
 
 /* IMPLEMENTATION ************************************************************/
 
+bool
+_cardano_has_payment_script(const cardano_address_t* address)
+{
+  cardano_address_type_t type = CARDANO_ADDRESS_TYPE_BYRON;
+
+  if ((address == NULL) || (cardano_address_get_type(address, &type) != CARDANO_SUCCESS))
+  {
+    return false;
+  }
+
+  return (type == CARDANO_ADDRESS_TYPE_BASE_PAYMENT_SCRIPT_STAKE_KEY) || (type == CARDANO_ADDRESS_TYPE_BASE_PAYMENT_SCRIPT_STAKE_SCRIPT) || (type == CARDANO_ADDRESS_TYPE_POINTER_SCRIPT) || (type == CARDANO_ADDRESS_TYPE_ENTERPRISE_SCRIPT);
+}
+
 cardano_blake2b_hash_t*
 _cardano_get_payment_script_hash(cardano_address_t* address)
 {
-  if (address == NULL)
+  if (!_cardano_has_payment_script(address))
   {
     return NULL;
   }
 
-  cardano_address_type_t type;
+  cardano_address_type_t type       = CARDANO_ADDRESS_TYPE_ENTERPRISE_SCRIPT;
+  cardano_credential_t*  credential = NULL;
 
-  cardano_error_t result = cardano_address_get_type(address, &type);
+  CARDANO_UNUSED(cardano_address_get_type(address, &type));
 
-  if (result != CARDANO_SUCCESS)
+  if ((type == CARDANO_ADDRESS_TYPE_BASE_PAYMENT_SCRIPT_STAKE_KEY) || (type == CARDANO_ADDRESS_TYPE_BASE_PAYMENT_SCRIPT_STAKE_SCRIPT))
   {
-    return NULL;
+    cardano_base_address_t* base_address = cardano_address_to_base_address(address);
+
+    credential = cardano_base_address_get_payment_credential(base_address);
+    cardano_base_address_unref(&base_address);
   }
-
-  cardano_credential_t* credential;
-
-  switch (type)
+  else if (type == CARDANO_ADDRESS_TYPE_POINTER_SCRIPT)
   {
-    case CARDANO_ADDRESS_TYPE_BASE_PAYMENT_SCRIPT_STAKE_KEY:
-    case CARDANO_ADDRESS_TYPE_BASE_PAYMENT_SCRIPT_STAKE_SCRIPT:
-    {
-      cardano_base_address_t* base_address = cardano_address_to_base_address(address);
+    cardano_pointer_address_t* pointer_address = cardano_address_to_pointer_address(address);
 
-      if (base_address == NULL)
-      {
-        return NULL;
-      }
+    credential = cardano_pointer_address_get_payment_credential(pointer_address);
+    cardano_pointer_address_unref(&pointer_address);
+  }
+  else
+  {
+    cardano_enterprise_address_t* enterprise_address = cardano_address_to_enterprise_address(address);
 
-      credential = cardano_base_address_get_payment_credential(base_address);
-      cardano_base_address_unref(&base_address);
-      break;
-    }
-    case CARDANO_ADDRESS_TYPE_POINTER_SCRIPT:
-    {
-      cardano_pointer_address_t* pointer_address = cardano_address_to_pointer_address(address);
-
-      if (pointer_address == NULL)
-      {
-        return NULL;
-      }
-
-      credential = cardano_pointer_address_get_payment_credential(pointer_address);
-      cardano_pointer_address_unref(&pointer_address);
-      break;
-    }
-    case CARDANO_ADDRESS_TYPE_ENTERPRISE_SCRIPT:
-    {
-      cardano_enterprise_address_t* enterprise_address = cardano_address_to_enterprise_address(address);
-
-      if (enterprise_address == NULL)
-      {
-        return NULL;
-      }
-
-      credential = cardano_enterprise_address_get_payment_credential(enterprise_address);
-      cardano_enterprise_address_unref(&enterprise_address);
-      break;
-    }
-    case CARDANO_ADDRESS_TYPE_BYRON:
-    case CARDANO_ADDRESS_TYPE_REWARD_KEY:
-    case CARDANO_ADDRESS_TYPE_REWARD_SCRIPT:
-    case CARDANO_ADDRESS_TYPE_ENTERPRISE_KEY:
-    case CARDANO_ADDRESS_TYPE_POINTER_KEY:
-    case CARDANO_ADDRESS_TYPE_BASE_PAYMENT_KEY_STAKE_KEY:
-    case CARDANO_ADDRESS_TYPE_BASE_PAYMENT_KEY_STAKE_SCRIPT:
-    default:
-    {
-      credential = NULL;
-    }
+    credential = cardano_enterprise_address_get_payment_credential(enterprise_address);
+    cardano_enterprise_address_unref(&enterprise_address);
   }
 
   cardano_blake2b_hash_t* script_hash = cardano_credential_get_hash(credential);

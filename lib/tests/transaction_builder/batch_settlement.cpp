@@ -1790,6 +1790,92 @@ expect_batch_carrying_datum_under_allocation_failures(const bool legacy_mode, co
   free_party(batcher);
 }
 
+/**
+ * Builds a batch in legacy mode whose top level transaction carries the datum that the Plutus V3 script input it spends
+ * needs, failing exactly one allocation at a time at every point of the build, and expects no failure to make the build
+ * reject the datum as one the ledger does not allow.
+ */
+static void
+expect_batch_carrying_needed_datum_under_single_allocation_failures()
+{
+  // Arrange
+  cardano_protocol_parameters_t* params           = new_dijkstra_protocol_parameters();
+  party_t                        party            = new_party(BUYER_KEY_HEX);
+  party_t                        batcher          = new_party(BATCHER_KEY_HEX);
+  cardano_plutus_data_t*         datum            = NULL;
+  cardano_script_t*              script           = new_script(ALWAYS_SUCCEEDS_V3_CBOR);
+  int                            allocation_count = 0;
+  bool                           finished         = false;
+
+  ASSERT_EQ(cardano_plutus_data_new_integer_from_int(7, &datum), CARDANO_SUCCESS);
+
+  cardano_utxo_t* script_utxo = new_script_utxo(3U, script, datum);
+
+  fund_party(party, 1U, amounts_t(100000000, 0));
+  fund_party(batcher, 2U, amounts_t(20000000, 0));
+
+  cardano_sub_transaction_t* sub_tx    = build_signed_intent_with_datum_hash(params, party, batcher, datum, NULL, NULL);
+  cardano_utxo_list_t*       sub_utxos = join_utxos({ &party });
+
+  while ((allocation_count < 100000) && !finished)
+  {
+    cardano_tx_builder_t* tx_builder = new_batch_builder_carrying_datum(params, batcher, sub_tx, sub_utxos, script_utxo, NULL, datum, TOP_LEVEL_DATUM_NEEDED_BY_A_TOP_LEVEL_INPUT, PLUTUS_SCRIPT_IN_TOP_LEVEL_WITNESS_SET);
+
+    reset_allocators_run_count();
+    set_malloc_limit(allocation_count);
+    cardano_set_allocators(fail_malloc_at_limit, realloc, free);
+
+    cardano_transaction_t* tx     = NULL;
+    cardano_error_t        result = cardano_tx_builder_build(tx_builder, &tx);
+
+    reset_allocators_run_count();
+    reset_limited_malloc();
+    cardano_set_allocators(malloc, realloc, free);
+
+    finished = (result == CARDANO_SUCCESS);
+
+    if (!finished)
+    {
+      ++allocation_count;
+    }
+
+    cardano_transaction_unref(&tx);
+    cardano_tx_builder_unref(&tx_builder);
+  }
+
+  // Act & Assert
+  for (int i = 0; i < allocation_count; ++i)
+  {
+    cardano_tx_builder_t* tx_builder = new_batch_builder_carrying_datum(params, batcher, sub_tx, sub_utxos, script_utxo, NULL, datum, TOP_LEVEL_DATUM_NEEDED_BY_A_TOP_LEVEL_INPUT, PLUTUS_SCRIPT_IN_TOP_LEVEL_WITNESS_SET);
+
+    set_malloc_fail_index(i);
+    cardano_set_allocators(fail_malloc_at_exact_index, realloc, free);
+
+    cardano_transaction_t* tx     = NULL;
+    cardano_error_t        result = cardano_tx_builder_build(tx_builder, &tx);
+
+    set_malloc_fail_index(-1);
+    cardano_set_allocators(malloc, realloc, free);
+
+    EXPECT_NE(result, CARDANO_ERROR_NOT_ALLOWED_SUPPLEMENTAL_DATUMS) << i;
+
+    cardano_transaction_unref(&tx);
+    cardano_tx_builder_unref(&tx_builder);
+  }
+
+  EXPECT_TRUE(finished);
+
+  // Cleanup
+  cardano_utxo_list_unref(&sub_utxos);
+  cardano_sub_transaction_unref(&sub_tx);
+  cardano_utxo_unref(&script_utxo);
+  cardano_script_unref(&script);
+  cardano_plutus_data_unref(&datum);
+  cardano_protocol_parameters_unref(&params);
+  free_party(party);
+  free_party(batcher);
+}
+
 /* UNIT TESTS ****************************************************************/
 
 TEST(cardano_batch_settlement, settlesACoincidenceOfWantsAndTheBatcherOnlyPaysTheFee)
@@ -2255,6 +2341,11 @@ TEST(cardano_batch_settlement, returnsErrorIfMemoryAllocationFailsWhileCheckingT
 {
   expect_batch_carrying_datum_under_allocation_failures(true, CARDANO_ERROR_NOT_ALLOWED_SUPPLEMENTAL_DATUMS);
   expect_batch_carrying_datum_under_allocation_failures(false, CARDANO_SUCCESS);
+}
+
+TEST(cardano_batch_settlement, neverRejectsATopLevelDatumThatATopLevelScriptInputNeedsWhenAnAllocationFails)
+{
+  expect_batch_carrying_needed_datum_under_single_allocation_failures();
 }
 
 TEST(cardano_batch_settlement_properties, randomIntentsBuildIntoABalancedBatchOrFailForLackOfFunds)

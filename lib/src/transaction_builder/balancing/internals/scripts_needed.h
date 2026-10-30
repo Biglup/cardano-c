@@ -34,10 +34,24 @@
 /* DECLARATIONS **************************************************************/
 
 /**
+ * \brief Checks whether a Cardano address has a payment credential that is a script hash.
+ *
+ * Only base, pointer and enterprise addresses whose payment credential is a script hash have one. This check does not
+ * allocate, so a NULL result of \ref _cardano_get_payment_script_hash for an address that has a payment script can only
+ * mean an allocation failure. It must list exactly the address types \ref _cardano_get_payment_script_hash resolves.
+ *
+ * \param[in] address A pointer to an initialized \ref cardano_address_t object, or NULL.
+ *
+ * \return true if the payment credential of the address is a script hash, false otherwise or if \p address is NULL.
+ */
+bool
+_cardano_has_payment_script(const cardano_address_t* address);
+
+/**
  * \brief Retrieves the script hash of the payment credential of a Cardano address.
  *
  * This function extracts the script hash from the payment credential of the specified Cardano address, if the
- * address is a base, pointer or enterprise address whose payment credential is a script hash.
+ * address has a payment script as reported by \ref _cardano_has_payment_script.
  *
  * \param[in] address A pointer to an initialized \ref cardano_address_t object representing the Cardano address
  *                    from which the payment script hash will be retrieved. This parameter is required and must not be NULL.

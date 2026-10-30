@@ -891,6 +891,65 @@ TEST(_cardano_get_payment_script_hash, returnsNullIfMemoryAllocationFails)
   }
 }
 
+TEST(_cardano_has_payment_script, returnsTrueIfThePaymentCredentialIsAScript)
+{
+  const std::string script_addresses[] = { basePaymentScriptStakeKey, basePaymentScriptStakeScript, pointerScript, enterpriseScript };
+
+  for (const std::string& value: script_addresses)
+  {
+    // Arrange
+    cardano_address_t* address = new_address(value);
+
+    // Act & Assert
+    EXPECT_TRUE(_cardano_has_payment_script(address)) << value;
+
+    // Cleanup
+    cardano_address_unref(&address);
+  }
+}
+
+TEST(_cardano_has_payment_script, returnsFalseIfThePaymentCredentialIsNotAScript)
+{
+  const std::string other_addresses[] = { basePaymentKeyStakeKey, basePaymentKeyStakeScript, pointerKey, enterpriseKey, rewardKey, rewardScript, byron };
+
+  for (const std::string& value: other_addresses)
+  {
+    // Arrange
+    cardano_address_t* address = new_address(value);
+
+    // Act & Assert
+    EXPECT_FALSE(_cardano_has_payment_script(address)) << value;
+
+    // Cleanup
+    cardano_address_unref(&address);
+  }
+}
+
+TEST(_cardano_has_payment_script, returnsFalseIfGivenNull)
+{
+  // Act & Assert
+  EXPECT_FALSE(_cardano_has_payment_script(nullptr));
+}
+
+TEST(_cardano_has_payment_script, doesNotAllocate)
+{
+  // Arrange
+  cardano_address_t* address = new_address(enterpriseScript);
+
+  cardano_set_allocators(fail_right_away_malloc, realloc, free);
+
+  // Act
+  const bool has_payment_script = _cardano_has_payment_script(address);
+
+  cardano_set_allocators(malloc, realloc, free);
+
+  // Assert
+  EXPECT_TRUE(has_payment_script);
+
+  // Cleanup
+  cardano_address_unref(&address);
+}
+
 TEST(_cardano_get_script_hashes_needed, returnsErrorIfGivenNull)
 {
   // Arrange
@@ -1370,6 +1429,62 @@ TEST(_cardano_get_script_hashes_needed, returnsErrorIfMemoryAllocationFails)
     }
     else
     {
+      EXPECT_EQ(needed, nullptr);
+    }
+
+    cardano_blake2b_hash_set_unref(&needed);
+  }
+
+  EXPECT_TRUE(has_succeeded);
+
+  // Cleanup
+  cardano_transaction_body_unref(&body);
+  cardano_utxo_list_unref(&resolved);
+  cardano_utxo_unref(&utxo);
+  cardano_address_unref(&address);
+  cardano_script_unref(&script);
+  cardano_transaction_unref(&tx);
+}
+
+TEST(_cardano_get_script_hashes_needed, returnsErrorIfMemoryAllocationFailsWhileReadingTheScriptOfASpentInput)
+{
+  // Arrange
+  cardano_transaction_t* tx       = new_empty_transaction();
+  cardano_script_t*      script   = new_script(PLUTUS_V2_SCRIPT_CBOR);
+  cardano_address_t*     address  = new_script_address(script);
+  cardano_utxo_t*        utxo     = new_utxo(1U, address, nullptr);
+  cardano_utxo_list_t*   resolved = new_utxo_list(utxo, nullptr);
+
+  set_spent_input(tx, utxo);
+
+  cardano_transaction_body_t* body = cardano_transaction_get_body(tx);
+
+  bool has_succeeded = false;
+
+  for (int i = 0; (i < 100) && !has_succeeded; ++i)
+  {
+    cardano_blake2b_hash_set_t* needed = nullptr;
+
+    reset_allocators_run_count();
+    set_malloc_limit(i);
+    cardano_set_allocators(fail_malloc_at_limit, realloc, free);
+
+    // Act
+    cardano_error_t result = _cardano_get_script_hashes_needed(body, resolved, &needed);
+
+    cardano_set_allocators(malloc, realloc, free);
+    reset_limited_malloc();
+
+    // Assert
+    has_succeeded = result == CARDANO_SUCCESS;
+
+    if (has_succeeded)
+    {
+      EXPECT_TRUE(holds_only_script(needed, script));
+    }
+    else
+    {
+      EXPECT_EQ(result, CARDANO_ERROR_MEMORY_ALLOCATION_FAILED);
       EXPECT_EQ(needed, nullptr);
     }
 
@@ -2434,6 +2549,75 @@ TEST(_cardano_find_missing_redeemer, returnsErrorIfMemoryAllocationFails)
   cardano_transaction_input_set_unref(&inputs);
   cardano_transaction_body_unref(&body);
   cardano_blake2b_hash_set_unref(&plutus);
+  cardano_utxo_list_unref(&resolved);
+  cardano_utxo_unref(&utxo);
+  cardano_address_unref(&address);
+  cardano_script_unref(&script);
+  cardano_transaction_unref(&tx);
+}
+
+TEST(_cardano_find_missing_redeemer, returnsErrorIfMemoryAllocationFailsWhileReadingTheScriptOfASpentInput)
+{
+  // Arrange
+  cardano_transaction_t*  tx       = new_empty_transaction();
+  cardano_script_t*       script   = new_script(PLUTUS_V3_SCRIPT_CBOR);
+  cardano_address_t*      address  = new_script_address(script);
+  cardano_utxo_t*         utxo     = new_utxo(1U, address, nullptr);
+  cardano_utxo_list_t*    resolved = new_utxo_list(utxo, nullptr);
+  cardano_blake2b_hash_t* hash     = cardano_script_get_hash(script);
+  char                    hex[57]  = { 0 };
+
+  EXPECT_EQ(cardano_blake2b_hash_to_hex(hash, hex, sizeof(hex)), CARDANO_SUCCESS);
+
+  set_spent_input(tx, utxo);
+
+  cardano_transaction_body_t*      body   = cardano_transaction_get_body(tx);
+  cardano_transaction_input_set_t* inputs = cardano_transaction_body_get_inputs(body);
+  cardano_blake2b_hash_set_t*      plutus = new_hash_set({ hex });
+
+  bool has_succeeded = false;
+
+  for (int i = 0; (i < 100) && !has_succeeded; ++i)
+  {
+    cardano_redeemer_tag_t  tag         = CARDANO_REDEEMER_TAG_MINT;
+    uint64_t                index       = 1U;
+    cardano_blake2b_hash_t* script_hash = nullptr;
+
+    reset_allocators_run_count();
+    set_malloc_limit(i);
+    cardano_set_allocators(fail_malloc_at_limit, realloc, free);
+
+    // Act
+    cardano_error_t result = _cardano_find_missing_redeemer(body, inputs, resolved, plutus, nullptr, &tag, &index, &script_hash);
+
+    cardano_set_allocators(malloc, realloc, free);
+    reset_limited_malloc();
+
+    // Assert
+    has_succeeded = result == CARDANO_SUCCESS;
+
+    if (has_succeeded)
+    {
+      EXPECT_EQ(tag, CARDANO_REDEEMER_TAG_SPEND);
+      EXPECT_EQ(index, 0U);
+      EXPECT_TRUE(cardano_blake2b_hash_equals(script_hash, hash));
+    }
+    else
+    {
+      EXPECT_EQ(result, CARDANO_ERROR_MEMORY_ALLOCATION_FAILED);
+      EXPECT_EQ(script_hash, nullptr);
+    }
+
+    cardano_blake2b_hash_unref(&script_hash);
+  }
+
+  EXPECT_TRUE(has_succeeded);
+
+  // Cleanup
+  cardano_blake2b_hash_set_unref(&plutus);
+  cardano_transaction_input_set_unref(&inputs);
+  cardano_transaction_body_unref(&body);
+  cardano_blake2b_hash_unref(&hash);
   cardano_utxo_list_unref(&resolved);
   cardano_utxo_unref(&utxo);
   cardano_address_unref(&address);
