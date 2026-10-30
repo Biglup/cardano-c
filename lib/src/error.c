@@ -206,6 +206,9 @@ cardano_error_to_string(const cardano_error_t error)
     case CARDANO_ERROR_NOT_ALLOWED_SUPPLEMENTAL_DATUMS:
       message = "Not allowed supplemental datums";
       break;
+    case CARDANO_ERROR_MISSING_REDEEMER:
+      message = "Missing redeemer";
+      break;
     case CARDANO_ERROR_SCRIPT_EVALUATION_FAILURE:
       message = "Script evaluation failure";
       break;

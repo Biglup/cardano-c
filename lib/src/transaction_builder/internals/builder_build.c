@@ -52,6 +52,8 @@
 #include "../balancing/internals/unique_signers.h"
 
 #include <assert.h>
+#include <inttypes.h>
+#include <stdio.h>
 
 /* STATIC DECLARATIONS *******************************************************/
 
@@ -686,6 +688,50 @@ add_spent_script_hashes(cardano_blake2b_hash_set_t* script_hashes, cardano_utxo_
 }
 
 /**
+ * \brief Collects the hashes of the scripts a transaction needs.
+ *
+ * Those are the scripts of the spent UTXOs locked by a script, its mint, withdrawals, certificates, voters, proposal
+ * guardrails and guards.
+ *
+ * \param[in] tx A pointer to the \ref cardano_transaction_t whose needed scripts are collected.
+ * \param[in] spent_utxos A pointer to the \ref cardano_utxo_list_t with the UTXOs the transaction spends.
+ * \param[out] needed_scripts On success, this will point to the needed script hashes. The caller is responsible for
+ *                            releasing them with \ref cardano_blake2b_hash_set_unref.
+ *
+ * \return \ref CARDANO_SUCCESS if the hashes were collected, or an appropriate error code indicating the failure
+ *         reason.
+ */
+static cardano_error_t
+get_needed_scripts(
+  cardano_transaction_t*       tx,
+  cardano_utxo_list_t*         spent_utxos,
+  cardano_blake2b_hash_set_t** needed_scripts)
+{
+  cardano_transaction_body_t* body = cardano_transaction_get_body(tx);
+  cardano_transaction_body_unref(&body);
+
+  cardano_blake2b_hash_set_t* script_hashes = NULL;
+
+  cardano_error_t result = _cardano_get_script_hashes_needed(body, NULL, &script_hashes);
+
+  if (result == CARDANO_SUCCESS)
+  {
+    result = add_spent_script_hashes(script_hashes, spent_utxos);
+  }
+
+  if (result != CARDANO_SUCCESS)
+  {
+    cardano_blake2b_hash_set_unref(&script_hashes);
+
+    return result;
+  }
+
+  *needed_scripts = script_hashes;
+
+  return CARDANO_SUCCESS;
+}
+
+/**
  * \brief Finds the Plutus languages of the scripts a transaction needs.
  *
  * Like the ledger, only the scripts the body needs count: the scripts of its spent inputs, mint,
@@ -725,21 +771,12 @@ get_plutus_languages_used(
     return result;
   }
 
-  cardano_transaction_body_t* body = cardano_transaction_get_body(tx);
-  cardano_transaction_body_unref(&body);
-
   cardano_blake2b_hash_set_t* needed_scripts = NULL;
 
-  result = _cardano_get_script_hashes_needed(body, NULL, &needed_scripts);
-
-  if (result == CARDANO_SUCCESS)
-  {
-    result = add_spent_script_hashes(needed_scripts, spent_utxos);
-  }
+  result = get_needed_scripts(tx, spent_utxos, &needed_scripts);
 
   if (result != CARDANO_SUCCESS)
   {
-    cardano_blake2b_hash_set_unref(&needed_scripts);
     cardano_utxo_list_unref(&spent_utxos);
 
     return result;
@@ -852,6 +889,99 @@ get_cost_models(cardano_builder_state_t* state, cardano_transaction_t* tx, carda
   return result;
 }
 
+/**
+ * \brief Retrieves the name of the script purpose of a redeemer tag.
+ *
+ * \param[in] tag The redeemer tag.
+ *
+ * \return A static string naming the purpose.
+ */
+static const char*
+get_purpose_name(const cardano_redeemer_tag_t tag)
+{
+  const char* name = "unknown";
+
+  switch (tag)
+  {
+    case CARDANO_REDEEMER_TAG_SPEND:
+    {
+      name = "spending";
+      break;
+    }
+    case CARDANO_REDEEMER_TAG_MINT:
+    {
+      name = "minting";
+      break;
+    }
+    case CARDANO_REDEEMER_TAG_CERTIFYING:
+    {
+      name = "certifying";
+      break;
+    }
+    case CARDANO_REDEEMER_TAG_REWARD:
+    {
+      name = "rewarding";
+      break;
+    }
+    case CARDANO_REDEEMER_TAG_VOTING:
+    {
+      name = "voting";
+      break;
+    }
+    case CARDANO_REDEEMER_TAG_PROPOSING:
+    {
+      name = "proposing";
+      break;
+    }
+    case CARDANO_REDEEMER_TAG_GUARDING:
+    {
+      name = "guarding";
+      break;
+    }
+    default:
+    {
+      break;
+    }
+  }
+
+  return name;
+}
+
+/**
+ * \brief Sets the last error of a transaction to describe a script purpose that has no redeemer.
+ *
+ * \param[in,out] tx A pointer to the \ref cardano_transaction_t that receives the error message.
+ * \param[in] tag The redeemer tag of the purpose.
+ * \param[in] index The redeemer index of the purpose.
+ * \param[in] script_hash A pointer to the \ref cardano_blake2b_hash_t of the Plutus script of the purpose.
+ */
+static void
+set_missing_redeemer_error(
+  cardano_transaction_t*        tx,
+  const cardano_redeemer_tag_t  tag,
+  const uint64_t                index,
+  const cardano_blake2b_hash_t* script_hash)
+{
+  char hash_hex[65] = { 0 };
+
+  CARDANO_UNUSED(cardano_blake2b_hash_to_hex(script_hash, hash_hex, sizeof(hash_hex)));
+
+  char buffer[256] = { 0 };
+
+  const int32_t written = snprintf(
+    buffer,
+    sizeof(buffer),
+    "The %s purpose at index %" PRIu64 " needs a redeemer for the Plutus script %s, but the transaction carries none.",
+    get_purpose_name(tag),
+    index,
+    hash_hex);
+
+  assert(written > 0);
+  CARDANO_UNUSED(written);
+
+  cardano_transaction_set_last_error(tx, buffer);
+}
+
 /* IMPLEMENTATION ************************************************************/
 
 cardano_error_t
@@ -937,6 +1067,75 @@ cardano_builder_update_script_data_hash(cardano_builder_state_t* state, cardano_
 
   result = cardano_transaction_body_set_script_data_hash(body, hash);
   cardano_blake2b_hash_unref(&hash);
+
+  return result;
+}
+
+cardano_error_t
+cardano_builder_check_redeemers(
+  cardano_builder_state_t*         state,
+  cardano_transaction_t*           tx,
+  cardano_transaction_input_set_t* inputs,
+  const char**                     error_message)
+{
+  cardano_utxo_list_t*        spent_utxos           = NULL;
+  cardano_blake2b_hash_set_t* needed_scripts        = NULL;
+  cardano_utxo_list_t*        sub_transaction_utxos = NULL;
+  cardano_blake2b_hash_set_t* plutus_scripts        = NULL;
+  cardano_blake2b_hash_t*     script_hash           = NULL;
+  cardano_redeemer_tag_t      tag                   = CARDANO_REDEEMER_TAG_SPEND;
+  uint64_t                    index                 = 0U;
+
+  cardano_error_t result = get_spent_utxos(state, tx, &spent_utxos);
+
+  if (result == CARDANO_SUCCESS)
+  {
+    result = get_needed_scripts(tx, spent_utxos, &needed_scripts);
+  }
+
+  if (result == CARDANO_SUCCESS)
+  {
+    sub_transaction_utxos = cardano_utxo_list_concat(state->sub_transaction_inputs, state->sub_transaction_reference_inputs);
+    result                = (sub_transaction_utxos != NULL) ? CARDANO_SUCCESS : CARDANO_ERROR_MEMORY_ALLOCATION_FAILED;
+  }
+
+  if (result == CARDANO_SUCCESS)
+  {
+    result = _cardano_get_plutus_scripts_provided(tx, needed_scripts, state->reference_inputs, spent_utxos, NULL, sub_transaction_utxos, &plutus_scripts);
+  }
+
+  if (result == CARDANO_SUCCESS)
+  {
+    cardano_transaction_body_t* body = cardano_transaction_get_body(tx);
+    cardano_transaction_body_unref(&body);
+
+    cardano_witness_set_t* witness_set = cardano_transaction_get_witness_set(tx);
+    cardano_witness_set_unref(&witness_set);
+
+    cardano_redeemer_list_t* redeemers = cardano_witness_set_get_redeemers(witness_set);
+    cardano_redeemer_list_unref(&redeemers);
+
+    result = _cardano_find_missing_redeemer(body, inputs, spent_utxos, plutus_scripts, redeemers, &tag, &index, &script_hash);
+  }
+
+  if (result != CARDANO_SUCCESS)
+  {
+    *error_message = "Failed to check the redeemers of the Plutus scripts the transaction needs.";
+  }
+
+  if (script_hash != NULL)
+  {
+    set_missing_redeemer_error(tx, tag, index, script_hash);
+
+    *error_message = cardano_transaction_get_last_error(tx);
+    result         = CARDANO_ERROR_MISSING_REDEEMER;
+  }
+
+  cardano_blake2b_hash_unref(&script_hash);
+  cardano_blake2b_hash_set_unref(&plutus_scripts);
+  cardano_utxo_list_unref(&sub_transaction_utxos);
+  cardano_blake2b_hash_set_unref(&needed_scripts);
+  cardano_utxo_list_unref(&spent_utxos);
 
   return result;
 }
@@ -1049,6 +1248,19 @@ cardano_builder_build(
   {
     *error_message = cardano_transaction_get_last_error(tx);
 
+    return result;
+  }
+
+  cardano_transaction_body_t* body = cardano_transaction_get_body(tx);
+  cardano_transaction_body_unref(&body);
+
+  cardano_transaction_input_set_t* inputs = cardano_transaction_body_get_inputs(body);
+  cardano_transaction_input_set_unref(&inputs);
+
+  result = cardano_builder_check_redeemers(state, tx, inputs, error_message);
+
+  if (result != CARDANO_SUCCESS)
+  {
     return result;
   }
 

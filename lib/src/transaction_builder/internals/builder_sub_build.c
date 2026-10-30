@@ -681,6 +681,15 @@ cardano_builder_build_sub_transaction(
     return result;
   }
 
+  result = cardano_builder_check_redeemers(state, state->transaction, inputs, error_message);
+
+  if (result != CARDANO_SUCCESS)
+  {
+    cardano_transaction_input_set_unref(&inputs);
+
+    return result;
+  }
+
   cardano_transaction_output_list_t* outputs = cardano_transaction_body_get_outputs(body);
   cardano_transaction_output_list_unref(&outputs);
 

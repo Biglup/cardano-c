@@ -368,6 +368,14 @@ typedef enum
    */
   CARDANO_ERROR_NOT_ALLOWED_SUPPLEMENTAL_DATUMS = 1105,
 
+  /**
+   * \brief A script purpose of the transaction needs a Plutus script but the transaction carries no redeemer for it.
+   * Spending an input locked by a Plutus script, minting under a Plutus policy, withdrawing from a reward account
+   * controlled by a Plutus script, or carrying a certificate, a vote, a proposal or a guard that a Plutus script must
+   * authorize requires a redeemer with the tag and index of that purpose.
+   */
+  CARDANO_ERROR_MISSING_REDEEMER = 1106,
+
   // TX Evaluation Failures
 
   /**

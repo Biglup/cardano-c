@@ -102,6 +102,7 @@ static const char* ASSET_ID_HEX                = "000000000000000000000000000000
 static const char* PLUTUS_V1_CBOR              = "82014e4d01000033222220051200120011";
 static const char* PLUTUS_V2_CBOR              = "82025908955908920100003233223232323232332232323232323232323232332232323232322223232533532323232325335001101d13357389211e77726f6e67207573616765206f66207265666572656e636520696e7075740001c3232533500221533500221333573466e1c00800408007c407854cd4004840784078d40900114cd4c8d400488888888888802d40044c08526221533500115333533550222350012222002350022200115024213355023320015021001232153353235001222222222222300e00250052133550253200150233355025200100115026320013550272253350011502722135002225335333573466e3c00801c0940904d40b00044c01800c884c09526135001220023333573466e1cd55cea80224000466442466002006004646464646464646464646464646666ae68cdc39aab9d500c480008cccccccccccc88888888888848cccccccccccc00403403002c02802402001c01801401000c008cd405c060d5d0a80619a80b80c1aba1500b33501701935742a014666aa036eb94068d5d0a804999aa80dbae501a35742a01066a02e0446ae85401cccd5406c08dd69aba150063232323333573466e1cd55cea801240004664424660020060046464646666ae68cdc39aab9d5002480008cc8848cc00400c008cd40b5d69aba15002302e357426ae8940088c98c80c0cd5ce01901a01709aab9e5001137540026ae854008c8c8c8cccd5cd19b8735573aa004900011991091980080180119a816bad35742a004605c6ae84d5d1280111931901819ab9c03203402e135573ca00226ea8004d5d09aba2500223263202c33573805c06005426aae7940044dd50009aba1500533501775c6ae854010ccd5406c07c8004d5d0a801999aa80dbae200135742a00460426ae84d5d1280111931901419ab9c02a02c026135744a00226ae8940044d5d1280089aba25001135744a00226ae8940044d5d1280089aba25001135744a00226ae8940044d55cf280089baa00135742a00860226ae84d5d1280211931900d19ab9c01c01e018375a00a6666ae68cdc39aab9d375400a9000100e11931900c19ab9c01a01c016101b132632017335738921035054350001b135573ca00226ea800448c88c008dd6000990009aa80d911999aab9f0012500a233500930043574200460066ae880080608c8c8cccd5cd19b8735573aa004900011991091980080180118061aba150023005357426ae8940088c98c8050cd5ce00b00c00909aab9e5001137540024646464646666ae68cdc39aab9d5004480008cccc888848cccc00401401000c008c8c8c8cccd5cd19b8735573aa0049000119910919800801801180a9aba1500233500f014357426ae8940088c98c8064cd5ce00d80e80b89aab9e5001137540026ae854010ccd54021d728039aba150033232323333573466e1d4005200423212223002004357426aae79400c8cccd5cd19b875002480088c84888c004010dd71aba135573ca00846666ae68cdc3a801a400042444006464c6403666ae7007407c06406005c4d55cea80089baa00135742a00466a016eb8d5d09aba2500223263201533573802e03202626ae8940044d5d1280089aab9e500113754002266aa002eb9d6889119118011bab00132001355018223233335573e0044a010466a00e66442466002006004600c6aae754008c014d55cf280118021aba200301613574200222440042442446600200800624464646666ae68cdc3a800a400046a02e600a6ae84d55cf280191999ab9a3370ea00490011280b91931900819ab9c01201400e00d135573aa00226ea80048c8c8cccd5cd19b875001480188c848888c010014c01cd5d09aab9e500323333573466e1d400920042321222230020053009357426aae7940108cccd5cd19b875003480088c848888c004014c01cd5d09aab9e500523333573466e1d40112000232122223003005375c6ae84d55cf280311931900819ab9c01201400e00d00c00b135573aa00226ea80048c8c8cccd5cd19b8735573aa004900011991091980080180118029aba15002375a6ae84d5d1280111931900619ab9c00e01000a135573ca00226ea80048c8cccd5cd19b8735573aa002900011bae357426aae7940088c98c8028cd5ce00600700409baa001232323232323333573466e1d4005200c21222222200323333573466e1d4009200a21222222200423333573466e1d400d2008233221222222233001009008375c6ae854014dd69aba135744a00a46666ae68cdc3a8022400c4664424444444660040120106eb8d5d0a8039bae357426ae89401c8cccd5cd19b875005480108cc8848888888cc018024020c030d5d0a8049bae357426ae8940248cccd5cd19b875006480088c848888888c01c020c034d5d09aab9e500b23333573466e1d401d2000232122222223005008300e357426aae7940308c98c804ccd5ce00a80b80880800780700680600589aab9d5004135573ca00626aae7940084d55cf280089baa0012323232323333573466e1d400520022333222122333001005004003375a6ae854010dd69aba15003375a6ae84d5d1280191999ab9a3370ea0049000119091180100198041aba135573ca00c464c6401866ae700380400280244d55cea80189aba25001135573ca00226ea80048c8c8cccd5cd19b875001480088c8488c00400cdd71aba135573ca00646666ae68cdc3a8012400046424460040066eb8d5d09aab9e500423263200933573801601a00e00c26aae7540044dd500089119191999ab9a3370ea00290021091100091999ab9a3370ea00490011190911180180218031aba135573ca00846666ae68cdc3a801a400042444004464c6401466ae7003003802001c0184d55cea80089baa0012323333573466e1d40052002200623333573466e1d40092000200623263200633573801001400800626aae74dd5000a4c244004244002921035054310012333333357480024a00c4a00c4a00c46a00e6eb400894018008480044488c0080049400848488c00800c4488004448c8c00400488cc00cc0080080041";
 static const char* PLUTUS_V3_CBOR              = "82035908955908920100003233223232323232332232323232323232323232332232323232322223232533532323232325335001101d13357389211e77726f6e67207573616765206f66207265666572656e636520696e7075740001c3232533500221533500221333573466e1c00800408007c407854cd4004840784078d40900114cd4c8d400488888888888802d40044c08526221533500115333533550222350012222002350022200115024213355023320015021001232153353235001222222222222300e00250052133550253200150233355025200100115026320013550272253350011502722135002225335333573466e3c00801c0940904d40b00044c01800c884c09526135001220023333573466e1cd55cea80224000466442466002006004646464646464646464646464646666ae68cdc39aab9d500c480008cccccccccccc88888888888848cccccccccccc00403403002c02802402001c01801401000c008cd405c060d5d0a80619a80b80c1aba1500b33501701935742a014666aa036eb94068d5d0a804999aa80dbae501a35742a01066a02e0446ae85401cccd5406c08dd69aba150063232323333573466e1cd55cea801240004664424660020060046464646666ae68cdc39aab9d5002480008cc8848cc00400c008cd40b5d69aba15002302e357426ae8940088c98c80c0cd5ce01901a01709aab9e5001137540026ae854008c8c8c8cccd5cd19b8735573aa004900011991091980080180119a816bad35742a004605c6ae84d5d1280111931901819ab9c03203402e135573ca00226ea8004d5d09aba2500223263202c33573805c06005426aae7940044dd50009aba1500533501775c6ae854010ccd5406c07c8004d5d0a801999aa80dbae200135742a00460426ae84d5d1280111931901419ab9c02a02c026135744a00226ae8940044d5d1280089aba25001135744a00226ae8940044d5d1280089aba25001135744a00226ae8940044d55cf280089baa00135742a00860226ae84d5d1280211931900d19ab9c01c01e018375a00a6666ae68cdc39aab9d375400a9000100e11931900c19ab9c01a01c016101b132632017335738921035054350001b135573ca00226ea800448c88c008dd6000990009aa80d911999aab9f0012500a233500930043574200460066ae880080608c8c8cccd5cd19b8735573aa004900011991091980080180118061aba150023005357426ae8940088c98c8050cd5ce00b00c00909aab9e5001137540024646464646666ae68cdc39aab9d5004480008cccc888848cccc00401401000c008c8c8c8cccd5cd19b8735573aa0049000119910919800801801180a9aba1500233500f014357426ae8940088c98c8064cd5ce00d80e80b89aab9e5001137540026ae854010ccd54021d728039aba150033232323333573466e1d4005200423212223002004357426aae79400c8cccd5cd19b875002480088c84888c004010dd71aba135573ca00846666ae68cdc3a801a400042444006464c6403666ae7007407c06406005c4d55cea80089baa00135742a00466a016eb8d5d09aba2500223263201533573802e03202626ae8940044d5d1280089aab9e500113754002266aa002eb9d6889119118011bab00132001355018223233335573e0044a010466a00e66442466002006004600c6aae754008c014d55cf280118021aba200301613574200222440042442446600200800624464646666ae68cdc3a800a400046a02e600a6ae84d55cf280191999ab9a3370ea00490011280b91931900819ab9c01201400e00d135573aa00226ea80048c8c8cccd5cd19b875001480188c848888c010014c01cd5d09aab9e500323333573466e1d400920042321222230020053009357426aae7940108cccd5cd19b875003480088c848888c004014c01cd5d09aab9e500523333573466e1d40112000232122223003005375c6ae84d55cf280311931900819ab9c01201400e00d00c00b135573aa00226ea80048c8c8cccd5cd19b8735573aa004900011991091980080180118029aba15002375a6ae84d5d1280111931900619ab9c00e01000a135573ca00226ea80048c8cccd5cd19b8735573aa002900011bae357426aae7940088c98c8028cd5ce00600700409baa001232323232323333573466e1d4005200c21222222200323333573466e1d4009200a21222222200423333573466e1d400d2008233221222222233001009008375c6ae854014dd69aba135744a00a46666ae68cdc3a8022400c4664424444444660040120106eb8d5d0a8039bae357426ae89401c8cccd5cd19b875005480108cc8848888888cc018024020c030d5d0a8049bae357426ae8940248cccd5cd19b875006480088c848888888c01c020c034d5d09aab9e500b23333573466e1d401d2000232122222223005008300e357426aae7940308c98c804ccd5ce00a80b80880800780700680600589aab9d5004135573ca00626aae7940084d55cf280089baa0012323232323333573466e1d400520022333222122333001005004003375a6ae854010dd69aba15003375a6ae84d5d1280191999ab9a3370ea0049000119091180100198041aba135573ca00c464c6401866ae700380400280244d55cea80189aba25001135573ca00226ea80048c8c8cccd5cd19b875001480088c8488c00400cdd71aba135573ca00646666ae68cdc3a8012400046424460040066eb8d5d09aab9e500423263200933573801601a00e00c26aae7540044dd500089119191999ab9a3370ea00290021091100091999ab9a3370ea00490011190911180180218031aba135573ca00846666ae68cdc3a801a400042444004464c6401466ae7003003802001c0184d55cea80089baa0012323333573466e1d40052002200623333573466e1d40092000200623263200633573801001400800626aae74dd5000a4c244004244002921035054310012333333357480024a00c4a00c4a00c46a00e6eb400894018008480044488c0080049400848488c00800c4488004448c8c00400488cc00cc0080080041";
+static const char* ALWAYS_SUCCEEDS_V3_CBOR     = "820346450100002499";
 static const char* NATIVE_SCRIPT_CBOR          = "82008202828200581cb275b08c999097247f7c17e77007c7010cd19f20cc086ad99d3985388201838205190bb88200581c966e394a544f242081e41d1965137b1bb412ac230d40ed5407821c378204190fa0";
 static const char* REWARD_ADDRESS              = "stake_test1uppy2gm2hqzkwc80em4mlat73j4jyqvzhclrvsu72g9xg4q2yweet";
 static const char* REWARD_ADDRESS2             = "stake_test1uqehkck0lajq8gr28t9uxnuvgcqrc6070x3k9r8048z8y5gssrtvn";
@@ -4288,16 +4289,26 @@ TEST(cardano_tx_builder_add_input, retursErrorIfMissingCollateralUtxos)
   cardano_utxo_list_unref(&utxos);
 }
 
-TEST(cardano_tx_builder_add_input, buildsWithoutCollateralIfScriptInputIsAddedWithoutRedeemer)
+TEST(cardano_tx_builder_add_input, buildsWithoutCollateralIfNativeScriptInputIsAddedWithoutRedeemer)
 {
   // Arrange
   cardano_protocol_parameters_t* params         = init_protocol_parameters();
-  cardano_provider_t*            provider       = NULL;
   cardano_utxo_t*                utxo           = create_utxo(UTXO_WITH_SCRIPT_ADDRESS);
+  cardano_transaction_output_t*  output         = cardano_utxo_get_output(utxo);
+  cardano_script_t*              script         = create_script(NATIVE_SCRIPT_CBOR);
+  cardano_blake2b_hash_t*        script_hash    = cardano_script_get_hash(script);
+  cardano_credential_t*          credential     = nullptr;
+  cardano_enterprise_address_t*  script_address = nullptr;
   cardano_plutus_data_t*         datum          = create_plutus_data(PLUTUS_DATA_CBOR);
   cardano_address_t*             change_address = nullptr;
   cardano_utxo_list_t*           utxos          = new_utxo_list();
 
+  EXPECT_EQ(cardano_credential_new(script_hash, CARDANO_CREDENTIAL_TYPE_SCRIPT_HASH, &credential), CARDANO_SUCCESS);
+  EXPECT_EQ(cardano_enterprise_address_from_credentials(CARDANO_NETWORK_ID_MAIN_NET, credential, &script_address), CARDANO_SUCCESS);
+
+  cardano_address_t* locked_address = cardano_enterprise_address_to_address(script_address);
+
+  EXPECT_EQ(cardano_transaction_output_set_address(output, locked_address), CARDANO_SUCCESS);
   EXPECT_EQ(cardano_address_from_string(SCRIPT_ADDRESS, strlen(SCRIPT_ADDRESS), &change_address), CARDANO_SUCCESS);
 
   cardano_tx_builder_t* tx_builder = cardano_tx_builder_new(params, &CARDANO_MAINNET_SLOT_CONFIG);
@@ -4308,6 +4319,7 @@ TEST(cardano_tx_builder_add_input, buildsWithoutCollateralIfScriptInputIsAddedWi
   // Act
   cardano_transaction_t* tx = nullptr;
 
+  cardano_tx_builder_add_script(tx_builder, script);
   cardano_tx_builder_add_input(tx_builder, utxo, nullptr, datum);
 
   const cardano_error_t result = cardano_tx_builder_build(tx_builder, &tx);
@@ -4332,6 +4344,12 @@ TEST(cardano_tx_builder_add_input, buildsWithoutCollateralIfScriptInputIsAddedWi
   cardano_protocol_parameters_unref(&params);
 
   cardano_transaction_unref(&tx);
+  cardano_address_unref(&locked_address);
+  cardano_enterprise_address_unref(&script_address);
+  cardano_credential_unref(&credential);
+  cardano_blake2b_hash_unref(&script_hash);
+  cardano_script_unref(&script);
+  cardano_transaction_output_unref(&output);
   cardano_utxo_unref(&utxo);
   cardano_address_unref(&change_address);
   cardano_plutus_data_unref(&datum);
@@ -8081,29 +8099,31 @@ TEST(cardano_tx_builder_add_sub_transaction, reportsUnbalancedSubTransactionsInL
 TEST(cardano_tx_builder_add_sub_transaction, buildsABalancedBatchInLegacyModeIfThePartiesCancelOut)
 {
   // Arrange
-  cardano_protocol_parameters_t* params         = init_protocol_parameters();
-  cardano_utxo_list_t*           all_utxos      = new_utxo_list();
-  cardano_utxo_t*                seller_utxo    = create_utxo(CBOR_DIFFERENT_VAL1);
-  cardano_utxo_t*                batcher_utxo   = create_utxo(CBOR_DIFFERENT_VAL3);
-  cardano_utxo_t*                buyer_utxo     = create_utxo(CBOR_DIFFERENT_VAL2);
-  cardano_utxo_t*                reference_utxo = create_utxo(UTXO_WITH_REF_SCRIPT_PV2);
-  cardano_utxo_list_t*           seller_utxos   = new_single_utxo_list(seller_utxo);
-  cardano_utxo_list_t*           batcher_utxos  = new_single_utxo_list(batcher_utxo);
-  cardano_utxo_list_t*           buyer_utxos    = new_single_utxo_list(buyer_utxo);
-  cardano_sub_transaction_t*     seller_sub_tx  = build_party_sub_transaction(params, seller_utxo, 11150770, 0);
-  cardano_sub_transaction_t*     buyer_sub_tx   = build_party_sub_transaction(params, buyer_utxo, 224831727, 1);
-  cardano_transaction_output_t*  ref_output     = cardano_utxo_get_output(reference_utxo);
-  cardano_script_t*              ref_script     = cardano_transaction_output_get_script_ref(ref_output);
-  cardano_blake2b_hash_t*        ref_hash       = cardano_script_get_hash(ref_script);
-  cardano_credential_t*          script_guard   = nullptr;
+  cardano_protocol_parameters_t* params        = init_protocol_parameters_with_version(12U);
+  cardano_utxo_list_t*           all_utxos     = new_utxo_list();
+  cardano_utxo_t*                seller_utxo   = create_utxo(CBOR_DIFFERENT_VAL1);
+  cardano_utxo_t*                batcher_utxo  = create_utxo(CBOR_DIFFERENT_VAL3);
+  cardano_utxo_t*                buyer_utxo    = create_utxo(CBOR_DIFFERENT_VAL2);
+  cardano_utxo_list_t*           seller_utxos  = new_single_utxo_list(seller_utxo);
+  cardano_utxo_list_t*           batcher_utxos = new_single_utxo_list(batcher_utxo);
+  cardano_utxo_list_t*           buyer_utxos   = new_single_utxo_list(buyer_utxo);
+  cardano_sub_transaction_t*     seller_sub_tx = build_party_sub_transaction(params, seller_utxo, 11150770, 0);
+  cardano_sub_transaction_t*     buyer_sub_tx  = build_party_sub_transaction(params, buyer_utxo, 224831727, 1);
+  cardano_script_t*              policy        = create_script(ALWAYS_SUCCEEDS_V3_CBOR);
+  cardano_blake2b_hash_t*        policy_id     = cardano_script_get_hash(policy);
+  cardano_asset_name_t*          asset_name    = nullptr;
+  cardano_plutus_data_t*         redeemer      = create_plutus_data(PLUTUS_DATA_CBOR);
 
-  EXPECT_EQ(cardano_credential_new(ref_hash, CARDANO_CREDENTIAL_TYPE_SCRIPT_HASH, &script_guard), CARDANO_SUCCESS);
+  EXPECT_EQ(cardano_asset_name_from_string("token", strlen("token"), &asset_name), CARDANO_SUCCESS);
 
   cardano_tx_builder_t* tx_builder = new_funded_tx_builder(params, batcher_utxos);
 
+  cardano_tx_builder_set_collateral_change_address_ex(tx_builder, CHANGE_ADDRESS, strlen(CHANGE_ADDRESS));
+  cardano_tx_builder_set_collateral_utxos(tx_builder, batcher_utxos);
+
   // Act
-  cardano_tx_builder_add_reference_input(tx_builder, reference_utxo);
-  cardano_tx_builder_add_guard(tx_builder, script_guard);
+  cardano_tx_builder_add_script(tx_builder, policy);
+  cardano_tx_builder_mint_token(tx_builder, policy_id, asset_name, 1, redeemer);
   cardano_tx_builder_add_sub_transaction(tx_builder, seller_sub_tx, seller_utxos);
   cardano_tx_builder_add_sub_transaction(tx_builder, buyer_sub_tx, buyer_utxos);
 
@@ -8111,7 +8131,7 @@ TEST(cardano_tx_builder_add_sub_transaction, buildsABalancedBatchInLegacyModeIfT
   cardano_error_t        result = cardano_tx_builder_build(tx_builder, &tx);
 
   // Assert
-  EXPECT_EQ(result, CARDANO_SUCCESS);
+  EXPECT_EQ(result, CARDANO_SUCCESS) << cardano_tx_builder_get_last_error(tx_builder);
   ASSERT_NE(tx, nullptr);
 
   bool is_balanced = false;
@@ -8125,10 +8145,10 @@ TEST(cardano_tx_builder_add_sub_transaction, buildsABalancedBatchInLegacyModeIfT
   EXPECT_TRUE(cardano_value_is_zero(top_level_imbalance));
 
   // Cleanup
-  cardano_credential_unref(&script_guard);
-  cardano_blake2b_hash_unref(&ref_hash);
-  cardano_script_unref(&ref_script);
-  cardano_transaction_output_unref(&ref_output);
+  cardano_plutus_data_unref(&redeemer);
+  cardano_asset_name_unref(&asset_name);
+  cardano_blake2b_hash_unref(&policy_id);
+  cardano_script_unref(&policy);
   cardano_value_unref(&top_level_imbalance);
   cardano_transaction_unref(&tx);
   cardano_tx_builder_unref(&tx_builder);
@@ -8138,7 +8158,6 @@ TEST(cardano_tx_builder_add_sub_transaction, buildsABalancedBatchInLegacyModeIfT
   cardano_utxo_unref(&seller_utxo);
   cardano_utxo_unref(&batcher_utxo);
   cardano_utxo_unref(&buyer_utxo);
-  cardano_utxo_unref(&reference_utxo);
   cardano_utxo_list_unref(&all_utxos);
   cardano_utxo_list_unref(&seller_utxos);
   cardano_utxo_list_unref(&batcher_utxos);
@@ -14071,8 +14090,7 @@ TEST(cardano_tx_builder_add_reference_input, acceptsAPlutusV4ReferenceScript)
 
 /* SCRIPT DATA HASH LANGUAGE VIEWS *******************************************/
 
-static const char* ALWAYS_SUCCEEDS_V3_CBOR = "820346450100002499";
-static const char* SCRIPT_UTXO_TX_ID       = "0000000000000000000000000000000000000000000000000000000000000001";
+static const char* SCRIPT_UTXO_TX_ID = "0000000000000000000000000000000000000000000000000000000000000001";
 
 /**
  * Creates a UTXO without a datum locked by a script.
@@ -14694,6 +14712,432 @@ TEST(cardano_tx_builder_build, doesntCrashOnMemoryAllocationFailWhenFindingTheLa
   cardano_datum_unref(&datum);
   cardano_plutus_data_unref(&data);
   cardano_utxo_unref(&reference);
+  cardano_utxo_list_unref(&utxos);
+  cardano_protocol_parameters_unref(&params);
+}
+
+/* MISSING REDEEMERS *********************************************************/
+
+/**
+ * Creates the error message the builder reports when a Plutus script purpose has no redeemer.
+ * \param purpose The name of the purpose.
+ * \param index The redeemer index of the purpose.
+ * \param script The Plutus script of the purpose.
+ * \return The expected error message.
+ */
+static std::string
+missing_redeemer_message(const char* purpose, const uint64_t index, cardano_script_t* script)
+{
+  cardano_blake2b_hash_t* hash    = cardano_script_get_hash(script);
+  char                    hex[57] = { 0 };
+
+  EXPECT_EQ(cardano_blake2b_hash_to_hex(hash, hex, sizeof(hex)), CARDANO_SUCCESS);
+
+  cardano_blake2b_hash_unref(&hash);
+
+  return std::string("The ") + purpose + " purpose at index " + std::to_string(index) + " needs a redeemer for the Plutus script " + hex + ", but the transaction carries none.";
+}
+
+/**
+ * Builds a transaction and expects the build to fail because a Plutus script purpose has no redeemer.
+ * \param tx_builder The transaction builder.
+ * \param purpose The name of the purpose without a redeemer.
+ * \param index The redeemer index of the purpose.
+ * \param script The Plutus script of the purpose.
+ */
+static void
+expect_missing_redeemer(cardano_tx_builder_t* tx_builder, const char* purpose, const uint64_t index, cardano_script_t* script)
+{
+  cardano_transaction_t* tx     = nullptr;
+  const cardano_error_t  result = cardano_tx_builder_build(tx_builder, &tx);
+
+  EXPECT_EQ(result, CARDANO_ERROR_MISSING_REDEEMER);
+  EXPECT_EQ(tx, nullptr);
+  EXPECT_EQ(std::string(cardano_tx_builder_get_last_error(tx_builder)), missing_redeemer_message(purpose, index, script));
+
+  cardano_transaction_unref(&tx);
+}
+
+TEST(cardano_tx_builder_build, reportsAMissingRedeemerForAnInputLockedByAPlutusScript)
+{
+  // Arrange
+  cardano_protocol_parameters_t* params     = init_dijkstra_protocol_parameters();
+  cardano_utxo_list_t*           utxos      = new_utxo_list();
+  cardano_tx_builder_t*          tx_builder = new_funded_tx_builder(params, utxos);
+  cardano_script_t*              script     = create_script(ALWAYS_SUCCEEDS_V3_CBOR);
+  cardano_utxo_t*                utxo       = create_script_utxo(script);
+
+  // Act
+  cardano_tx_builder_add_script(tx_builder, script);
+  cardano_tx_builder_add_input(tx_builder, utxo, nullptr, nullptr);
+
+  // Assert
+  expect_missing_redeemer(tx_builder, "spending", 0U, script);
+
+  // Cleanup
+  cardano_utxo_unref(&utxo);
+  cardano_script_unref(&script);
+  cardano_tx_builder_unref(&tx_builder);
+  cardano_utxo_list_unref(&utxos);
+  cardano_protocol_parameters_unref(&params);
+}
+
+TEST(cardano_tx_builder_build, reportsAMissingRedeemerForAPlutusMintingPolicy)
+{
+  // Arrange
+  cardano_protocol_parameters_t* params     = init_dijkstra_protocol_parameters();
+  cardano_utxo_list_t*           utxos      = new_utxo_list();
+  cardano_tx_builder_t*          tx_builder = new_funded_tx_builder(params, utxos);
+  cardano_script_t*              script     = create_script(ALWAYS_SUCCEEDS_V3_CBOR);
+  cardano_blake2b_hash_t*        policy_id  = cardano_script_get_hash(script);
+  cardano_asset_name_t*          asset_name = nullptr;
+
+  EXPECT_EQ(cardano_asset_name_from_string("TEXT", 4, &asset_name), CARDANO_SUCCESS);
+
+  // Act
+  cardano_tx_builder_add_script(tx_builder, script);
+  cardano_tx_builder_mint_token(tx_builder, policy_id, asset_name, 1, nullptr);
+
+  // Assert
+  expect_missing_redeemer(tx_builder, "minting", 0U, script);
+
+  // Cleanup
+  cardano_asset_name_unref(&asset_name);
+  cardano_blake2b_hash_unref(&policy_id);
+  cardano_script_unref(&script);
+  cardano_tx_builder_unref(&tx_builder);
+  cardano_utxo_list_unref(&utxos);
+  cardano_protocol_parameters_unref(&params);
+}
+
+TEST(cardano_tx_builder_build, reportsAMissingRedeemerForAWithdrawalFromAPlutusScriptAccount)
+{
+  // Arrange
+  cardano_protocol_parameters_t* params     = init_dijkstra_protocol_parameters();
+  cardano_utxo_list_t*           utxos      = new_utxo_list();
+  cardano_tx_builder_t*          tx_builder = new_funded_tx_builder(params, utxos);
+  cardano_script_t*              script     = create_script(ALWAYS_SUCCEEDS_V3_CBOR);
+  cardano_credential_t*          credential = create_script_credential(script);
+  cardano_reward_address_t*      reward     = nullptr;
+
+  EXPECT_EQ(cardano_reward_address_from_credentials(CARDANO_NETWORK_ID_TEST_NET, credential, &reward), CARDANO_SUCCESS);
+
+  // Act
+  cardano_tx_builder_add_script(tx_builder, script);
+  cardano_tx_builder_withdraw_rewards(tx_builder, reward, 0, nullptr);
+
+  // Assert
+  expect_missing_redeemer(tx_builder, "rewarding", 0U, script);
+
+  // Cleanup
+  cardano_reward_address_unref(&reward);
+  cardano_credential_unref(&credential);
+  cardano_script_unref(&script);
+  cardano_tx_builder_unref(&tx_builder);
+  cardano_utxo_list_unref(&utxos);
+  cardano_protocol_parameters_unref(&params);
+}
+
+TEST(cardano_tx_builder_build, reportsAMissingRedeemerForACertificateOfAPlutusScriptCredential)
+{
+  // Arrange
+  cardano_protocol_parameters_t* params     = init_dijkstra_protocol_parameters();
+  cardano_utxo_list_t*           utxos      = new_utxo_list();
+  cardano_tx_builder_t*          tx_builder = new_funded_tx_builder(params, utxos);
+  cardano_script_t*              script     = create_script(ALWAYS_SUCCEEDS_V3_CBOR);
+  cardano_credential_t*          credential = create_script_credential(script);
+  cardano_reward_address_t*      reward     = nullptr;
+
+  EXPECT_EQ(cardano_reward_address_from_credentials(CARDANO_NETWORK_ID_TEST_NET, credential, &reward), CARDANO_SUCCESS);
+
+  // Act
+  cardano_tx_builder_add_script(tx_builder, script);
+  cardano_tx_builder_deregister_reward_address(tx_builder, reward, nullptr);
+
+  // Assert
+  expect_missing_redeemer(tx_builder, "certifying", 0U, script);
+
+  // Cleanup
+  cardano_reward_address_unref(&reward);
+  cardano_credential_unref(&credential);
+  cardano_script_unref(&script);
+  cardano_tx_builder_unref(&tx_builder);
+  cardano_utxo_list_unref(&utxos);
+  cardano_protocol_parameters_unref(&params);
+}
+
+TEST(cardano_tx_builder_build, reportsAMissingRedeemerForAPlutusScriptVoter)
+{
+  // Arrange
+  cardano_protocol_parameters_t*  params     = init_dijkstra_protocol_parameters();
+  cardano_utxo_list_t*            utxos      = new_utxo_list();
+  cardano_tx_builder_t*           tx_builder = new_funded_tx_builder(params, utxos);
+  cardano_script_t*               script     = create_script(ALWAYS_SUCCEEDS_V3_CBOR);
+  cardano_credential_t*           credential = create_script_credential(script);
+  cardano_governance_action_id_t* action_id  = nullptr;
+  cardano_voting_procedure_t*     procedure  = new_default_voting_procedure();
+  cardano_voter_t*                voter      = nullptr;
+
+  cardano_cbor_reader_t* gov_action_reader = cardano_cbor_reader_from_hex(GOVERNANCE_ACTION_ID_CBOR, strlen(GOVERNANCE_ACTION_ID_CBOR));
+
+  EXPECT_EQ(cardano_governance_action_id_from_cbor(gov_action_reader, &action_id), CARDANO_SUCCESS);
+  EXPECT_EQ(cardano_voter_new(CARDANO_VOTER_TYPE_DREP_SCRIPT_HASH, credential, &voter), CARDANO_SUCCESS);
+
+  // Act
+  cardano_tx_builder_add_script(tx_builder, script);
+  cardano_tx_builder_vote(tx_builder, voter, action_id, procedure, nullptr);
+
+  // Assert
+  expect_missing_redeemer(tx_builder, "voting", 0U, script);
+
+  // Cleanup
+  cardano_voter_unref(&voter);
+  cardano_voting_procedure_unref(&procedure);
+  cardano_governance_action_id_unref(&action_id);
+  cardano_cbor_reader_unref(&gov_action_reader);
+  cardano_credential_unref(&credential);
+  cardano_script_unref(&script);
+  cardano_tx_builder_unref(&tx_builder);
+  cardano_utxo_list_unref(&utxos);
+  cardano_protocol_parameters_unref(&params);
+}
+
+TEST(cardano_tx_builder_build, reportsAMissingRedeemerForAPlutusScriptGuard)
+{
+  // Arrange
+  cardano_protocol_parameters_t* params     = init_dijkstra_protocol_parameters();
+  cardano_utxo_list_t*           utxos      = new_utxo_list();
+  cardano_tx_builder_t*          tx_builder = new_funded_tx_builder(params, utxos);
+  cardano_script_t*              script     = create_script(ALWAYS_SUCCEEDS_V4_CBOR);
+  cardano_credential_t*          guard      = create_script_credential(script);
+
+  // Act
+  cardano_tx_builder_add_script(tx_builder, script);
+  cardano_tx_builder_add_guard(tx_builder, guard);
+
+  // Assert
+  expect_missing_redeemer(tx_builder, "guarding", 0U, script);
+
+  // Cleanup
+  cardano_credential_unref(&guard);
+  cardano_script_unref(&script);
+  cardano_tx_builder_unref(&tx_builder);
+  cardano_utxo_list_unref(&utxos);
+  cardano_protocol_parameters_unref(&params);
+}
+
+TEST(cardano_tx_builder_build, reportsAMissingRedeemerForAPlutusScriptProvidedOnlyByAReferenceInput)
+{
+  // Arrange
+  cardano_protocol_parameters_t* params     = init_dijkstra_protocol_parameters();
+  cardano_utxo_list_t*           utxos      = new_utxo_list();
+  cardano_tx_builder_t*          tx_builder = new_funded_tx_builder(params, utxos);
+  cardano_script_t*              script     = create_script(ALWAYS_SUCCEEDS_V3_CBOR);
+  cardano_utxo_t*                reference  = create_reference_script_utxo(script);
+  cardano_blake2b_hash_t*        policy_id  = cardano_script_get_hash(script);
+  cardano_asset_name_t*          asset_name = nullptr;
+
+  EXPECT_EQ(cardano_asset_name_from_string("TEXT", 4, &asset_name), CARDANO_SUCCESS);
+
+  // Act
+  cardano_tx_builder_add_reference_input(tx_builder, reference);
+  cardano_tx_builder_mint_token(tx_builder, policy_id, asset_name, 1, nullptr);
+
+  // Assert
+  expect_missing_redeemer(tx_builder, "minting", 0U, script);
+
+  // Cleanup
+  cardano_asset_name_unref(&asset_name);
+  cardano_blake2b_hash_unref(&policy_id);
+  cardano_utxo_unref(&reference);
+  cardano_script_unref(&script);
+  cardano_tx_builder_unref(&tx_builder);
+  cardano_utxo_list_unref(&utxos);
+  cardano_protocol_parameters_unref(&params);
+}
+
+TEST(cardano_tx_builder_build, reportsAMissingRedeemerForAPlutusScriptProvidedOnlyByASubTransaction)
+{
+  // Arrange
+  cardano_protocol_parameters_t* params      = init_dijkstra_protocol_parameters();
+  cardano_utxo_list_t*           utxos       = new_utxo_list();
+  cardano_tx_builder_t*          tx_builder  = new_funded_tx_builder(params, utxos);
+  cardano_sub_tx_builder_t*      sub_builder = cardano_sub_tx_builder_new(params, &CARDANO_MAINNET_SLOT_CONFIG);
+  cardano_script_t*              script      = create_script(ALWAYS_SUCCEEDS_V4_CBOR);
+  cardano_blake2b_hash_t*        policy_id   = cardano_script_get_hash(script);
+  cardano_asset_name_t*          asset_name  = nullptr;
+  cardano_sub_transaction_t*     sub_tx      = nullptr;
+  cardano_utxo_list_t*           sub_utxos   = nullptr;
+
+  EXPECT_EQ(cardano_asset_name_from_string("TEXT", 4, &asset_name), CARDANO_SUCCESS);
+  EXPECT_EQ(cardano_utxo_list_new(&sub_utxos), CARDANO_SUCCESS);
+
+  cardano_sub_tx_builder_add_script(sub_builder, script);
+
+  EXPECT_EQ(cardano_sub_tx_builder_build(sub_builder, &sub_tx), CARDANO_SUCCESS) << cardano_sub_tx_builder_get_last_error(sub_builder);
+
+  // Act
+  cardano_tx_builder_add_sub_transaction(tx_builder, sub_tx, sub_utxos);
+  cardano_tx_builder_mint_token(tx_builder, policy_id, asset_name, 1, nullptr);
+
+  // Assert
+  expect_missing_redeemer(tx_builder, "minting", 0U, script);
+
+  // Cleanup
+  cardano_utxo_list_unref(&sub_utxos);
+  cardano_sub_transaction_unref(&sub_tx);
+  cardano_asset_name_unref(&asset_name);
+  cardano_blake2b_hash_unref(&policy_id);
+  cardano_script_unref(&script);
+  cardano_sub_tx_builder_unref(&sub_builder);
+  cardano_tx_builder_unref(&tx_builder);
+  cardano_utxo_list_unref(&utxos);
+  cardano_protocol_parameters_unref(&params);
+}
+
+TEST(cardano_tx_builder_build, buildsWithoutARedeemerForANativeScriptPolicy)
+{
+  // Arrange
+  cardano_protocol_parameters_t* params     = init_dijkstra_protocol_parameters();
+  cardano_utxo_list_t*           utxos      = new_utxo_list();
+  cardano_tx_builder_t*          tx_builder = new_funded_tx_builder(params, utxos);
+  cardano_script_t*              script     = create_script(NATIVE_SCRIPT_CBOR);
+  cardano_blake2b_hash_t*        policy_id  = cardano_script_get_hash(script);
+  cardano_asset_name_t*          asset_name = nullptr;
+  cardano_transaction_t*         tx         = nullptr;
+
+  EXPECT_EQ(cardano_asset_name_from_string("TEXT", 4, &asset_name), CARDANO_SUCCESS);
+
+  // Act
+  cardano_tx_builder_add_script(tx_builder, script);
+  cardano_tx_builder_mint_token(tx_builder, policy_id, asset_name, 1, nullptr);
+
+  const cardano_error_t result = cardano_tx_builder_build(tx_builder, &tx);
+
+  // Assert
+  EXPECT_EQ(result, CARDANO_SUCCESS) << cardano_tx_builder_get_last_error(tx_builder);
+  EXPECT_NE(tx, nullptr);
+
+  // Cleanup
+  cardano_transaction_unref(&tx);
+  cardano_asset_name_unref(&asset_name);
+  cardano_blake2b_hash_unref(&policy_id);
+  cardano_script_unref(&script);
+  cardano_tx_builder_unref(&tx_builder);
+  cardano_utxo_list_unref(&utxos);
+  cardano_protocol_parameters_unref(&params);
+}
+
+TEST(cardano_tx_builder_build, doesNotReportAMissingRedeemerForAScriptThatIsNotProvided)
+{
+  // Arrange
+  cardano_protocol_parameters_t* params     = init_dijkstra_protocol_parameters();
+  cardano_utxo_list_t*           utxos      = new_utxo_list();
+  cardano_tx_builder_t*          tx_builder = new_funded_tx_builder(params, utxos);
+  cardano_script_t*              script     = create_script(ALWAYS_SUCCEEDS_V3_CBOR);
+  cardano_blake2b_hash_t*        policy_id  = cardano_script_get_hash(script);
+  cardano_asset_name_t*          asset_name = nullptr;
+  cardano_transaction_t*         tx         = nullptr;
+
+  EXPECT_EQ(cardano_asset_name_from_string("TEXT", 4, &asset_name), CARDANO_SUCCESS);
+
+  // Act
+  cardano_tx_builder_mint_token(tx_builder, policy_id, asset_name, 1, nullptr);
+
+  const cardano_error_t result = cardano_tx_builder_build(tx_builder, &tx);
+
+  // Assert
+  EXPECT_EQ(result, CARDANO_SUCCESS) << cardano_tx_builder_get_last_error(tx_builder);
+  EXPECT_NE(tx, nullptr);
+
+  // Cleanup
+  cardano_transaction_unref(&tx);
+  cardano_asset_name_unref(&asset_name);
+  cardano_blake2b_hash_unref(&policy_id);
+  cardano_script_unref(&script);
+  cardano_tx_builder_unref(&tx_builder);
+  cardano_utxo_list_unref(&utxos);
+  cardano_protocol_parameters_unref(&params);
+}
+
+TEST(cardano_tx_builder_build, buildsAPlutusScriptInputSpentWithADeferredRedeemer)
+{
+  // Arrange
+  cardano_protocol_parameters_t* params     = init_dijkstra_protocol_parameters();
+  cardano_utxo_list_t*           utxos      = new_utxo_list();
+  cardano_tx_builder_t*          tx_builder = new_funded_tx_builder(params, utxos);
+  cardano_script_t*              script     = create_script(ALWAYS_SUCCEEDS_V3_CBOR);
+  cardano_utxo_t*                utxo       = create_script_utxo(script);
+  cardano_transaction_t*         tx         = nullptr;
+
+  // Act
+  cardano_tx_builder_set_collateral_utxos(tx_builder, utxos);
+  cardano_tx_builder_set_collateral_change_address_ex(tx_builder, CHANGE_ADDRESS, strlen(CHANGE_ADDRESS));
+  cardano_tx_builder_add_script(tx_builder, script);
+  cardano_tx_builder_add_input_with_deferred_redeemer(tx_builder, utxo, build_self_index_redeemer, utxo, nullptr);
+
+  const cardano_error_t result = cardano_tx_builder_build(tx_builder, &tx);
+
+  // Assert
+  EXPECT_EQ(result, CARDANO_SUCCESS) << cardano_tx_builder_get_last_error(tx_builder);
+  EXPECT_NE(tx, nullptr);
+
+  // Cleanup
+  cardano_transaction_unref(&tx);
+  cardano_utxo_unref(&utxo);
+  cardano_script_unref(&script);
+  cardano_tx_builder_unref(&tx_builder);
+  cardano_utxo_list_unref(&utxos);
+  cardano_protocol_parameters_unref(&params);
+}
+
+TEST(cardano_tx_builder_build, doesntCrashOnMemoryAllocationFailWhenCheckingTheRedeemers)
+{
+  // Arrange
+  cardano_protocol_parameters_t* params     = init_dijkstra_protocol_parameters();
+  cardano_utxo_list_t*           utxos      = new_utxo_list();
+  cardano_script_t*              script     = create_script(ALWAYS_SUCCEEDS_V3_CBOR);
+  cardano_blake2b_hash_t*        policy_id  = cardano_script_get_hash(script);
+  cardano_asset_name_t*          asset_name = nullptr;
+
+  EXPECT_EQ(cardano_asset_name_from_string("TEXT", 4, &asset_name), CARDANO_SUCCESS);
+
+  bool reported = false;
+
+  // Act & Assert
+  for (int i = 0; (i < 5000) && !reported; ++i)
+  {
+    cardano_tx_builder_t* tx_builder = new_funded_tx_builder(params, utxos);
+
+    cardano_tx_builder_add_script(tx_builder, script);
+    cardano_tx_builder_mint_token(tx_builder, policy_id, asset_name, 1, nullptr);
+
+    reset_allocators_run_count();
+    set_malloc_limit(i);
+    cardano_set_allocators(fail_malloc_at_limit, realloc, free);
+
+    cardano_transaction_t* tx     = nullptr;
+    cardano_error_t        result = cardano_tx_builder_build(tx_builder, &tx);
+
+    reset_allocators_run_count();
+    reset_limited_malloc();
+    cardano_set_allocators(malloc, realloc, free);
+
+    EXPECT_NE(result, CARDANO_SUCCESS);
+    EXPECT_EQ(tx, nullptr);
+
+    reported = (result == CARDANO_ERROR_MISSING_REDEEMER);
+
+    cardano_transaction_unref(&tx);
+    cardano_tx_builder_unref(&tx_builder);
+  }
+
+  EXPECT_TRUE(reported);
+
+  // Cleanup
+  cardano_asset_name_unref(&asset_name);
+  cardano_blake2b_hash_unref(&policy_id);
+  cardano_script_unref(&script);
   cardano_utxo_list_unref(&utxos);
   cardano_protocol_parameters_unref(&params);
 }
