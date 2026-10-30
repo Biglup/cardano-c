@@ -539,16 +539,29 @@ cardano_body_write_script_data_hash_if_present(cardano_cbor_writer_t* writer, co
  * \brief Writes a body guards field as a key value pair when the value is present.
  *
  * This function writes map key 14 followed by the CBOR encoding of \p guards to the given writer.
- * If \p guards is NULL, nothing is written and the function succeeds.
+ * If \p guards is NULL or empty, nothing is written and the function succeeds.
  *
  * \param[in] writer A pointer to the CBOR writer. This parameter must not be NULL.
- * \param[in] guards A pointer to the guard set to write. If NULL, nothing is written.
+ * \param[in] guards A pointer to the guard set to write. If NULL or empty, nothing is written.
  *
  * \return \ref CARDANO_SUCCESS if the field was written or absent, or an appropriate error code
  *         indicating the failure reason.
  */
 cardano_error_t
 cardano_body_write_guards_if_present(cardano_cbor_writer_t* writer, const cardano_guard_set_t* guards);
+
+/**
+ * \brief Checks whether a body guards field is encoded.
+ *
+ * A guard set is encoded at map key 14 only when it holds at least one guard. An empty guard set is treated as
+ * absent, because the Conway and Dijkstra eras reject an explicitly empty set at that key.
+ *
+ * \param[in] guards A pointer to the guard set to check. If NULL, the field is absent.
+ *
+ * \return True if \p guards is not NULL and holds at least one guard, false otherwise.
+ */
+bool
+cardano_body_has_guards(const cardano_guard_set_t* guards);
 
 /**
  * \brief Writes a body network id field as a key value pair when the value is present.

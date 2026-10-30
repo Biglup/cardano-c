@@ -539,6 +539,49 @@ TEST(cardano_sub_transaction_body_to_cbor, encodesKeysInAscendingOrderAfterClear
   free(hex);
 }
 
+TEST(cardano_sub_transaction_body_to_cbor, omitsEmptyGuardsSetInCode)
+{
+  // Arrange
+  cardano_sub_transaction_body_t* with_empty_guards = new_default_sub_transaction_body();
+  cardano_sub_transaction_body_t* without_guards    = new_default_sub_transaction_body();
+  cardano_guard_set_t*            guards            = NULL;
+
+  EXPECT_EQ(cardano_guard_set_new(&guards), CARDANO_SUCCESS);
+
+  // Act
+  EXPECT_EQ(cardano_sub_transaction_body_set_guards(with_empty_guards, guards), CARDANO_SUCCESS);
+  EXPECT_EQ(cardano_sub_transaction_body_set_guards(without_guards, nullptr), CARDANO_SUCCESS);
+
+  cardano_sub_transaction_body_clear_cbor_cache(with_empty_guards);
+  cardano_sub_transaction_body_clear_cbor_cache(without_guards);
+
+  cardano_cbor_writer_t* empty_writer = cardano_cbor_writer_new();
+  cardano_cbor_writer_t* none_writer  = cardano_cbor_writer_new();
+
+  EXPECT_EQ(cardano_sub_transaction_body_to_cbor(with_empty_guards, empty_writer), CARDANO_SUCCESS);
+  EXPECT_EQ(cardano_sub_transaction_body_to_cbor(without_guards, none_writer), CARDANO_SUCCESS);
+
+  size_t empty_size = cardano_cbor_writer_get_hex_size(empty_writer);
+  size_t none_size  = cardano_cbor_writer_get_hex_size(none_writer);
+  char*  empty_hex  = (char*)malloc(empty_size);
+  char*  none_hex   = (char*)malloc(none_size);
+
+  ASSERT_EQ(cardano_cbor_writer_encode_hex(empty_writer, empty_hex, empty_size), CARDANO_SUCCESS);
+  ASSERT_EQ(cardano_cbor_writer_encode_hex(none_writer, none_hex, none_size), CARDANO_SUCCESS);
+
+  // Assert
+  EXPECT_STREQ(empty_hex, none_hex);
+
+  // Cleanup
+  cardano_sub_transaction_body_unref(&with_empty_guards);
+  cardano_sub_transaction_body_unref(&without_guards);
+  cardano_guard_set_unref(&guards);
+  cardano_cbor_writer_unref(&empty_writer);
+  cardano_cbor_writer_unref(&none_writer);
+  free(empty_hex);
+  free(none_hex);
+}
+
 TEST(cardano_sub_transaction_body_to_cbor, returnsErrorIfSubTransactionBodyIsNull)
 {
   // Arrange

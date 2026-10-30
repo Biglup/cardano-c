@@ -220,7 +220,7 @@ get_map_size(const cardano_transaction_body_t* body)
     map_size += 1U;
   }
 
-  if (body->guards != NULL)
+  if (cardano_body_has_guards(body->guards))
   {
     map_size += 1U;
   }
@@ -948,7 +948,9 @@ peek_empty_guard_set(cardano_cbor_reader_t* reader, bool* is_empty, bool* is_tag
  * The guard set decoder rejects empty sets because the Dijkstra sub body forbids them, but the
  * transaction body key 14 must remain permissive with the historical empty required signers form.
  * This function consumes the optional tag 258, the empty array, and creates an empty guard set
- * that preserves the tag presence so the re-encode stays byte exact.
+ * that preserves the tag presence, so the set keeps its decoded form when it is encoded on its own.
+ * The body re-encodes the decoded bytes from its CBOR cache, and omits an empty guard set when it
+ * is encoded from its fields.
  *
  * \param[in] reader A pointer to the CBOR reader positioned at the empty guard set value.
  * \param[in] is_tagged \c true if the empty guard set is prefixed with tag 258; \c false otherwise.

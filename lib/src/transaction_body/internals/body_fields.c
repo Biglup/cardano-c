@@ -437,7 +437,7 @@ cardano_body_write_guards_if_present(cardano_cbor_writer_t* writer, const cardan
 {
   assert(writer != NULL);
 
-  if (guards != NULL)
+  if (cardano_body_has_guards(guards))
   {
     cardano_error_t result = cardano_cbor_writer_write_uint(writer, 14U);
 
@@ -455,6 +455,12 @@ cardano_body_write_guards_if_present(cardano_cbor_writer_t* writer, const cardan
   }
 
   return CARDANO_SUCCESS;
+}
+
+bool
+cardano_body_has_guards(const cardano_guard_set_t* guards)
+{
+  return (guards != NULL) && (cardano_guard_set_get_length(guards) > 0U);
 }
 
 cardano_error_t

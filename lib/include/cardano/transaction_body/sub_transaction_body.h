@@ -800,6 +800,9 @@ CARDANO_EXPORT cardano_guard_set_t* cardano_sub_transaction_body_get_guards(card
  * This function assigns a guard set to a \ref cardano_sub_transaction_body_t object. Passing NULL
  * unsets the guards, removing them from the sub transaction body.
  *
+ * An empty guard set is kept by the sub transaction body but is not encoded: key 14 is omitted, as the
+ * Dijkstra era rejects an explicitly empty set at that key.
+ *
  * \param[in,out] sub_transaction_body A pointer to an initialized \ref cardano_sub_transaction_body_t object.
  * \param[in] guards A pointer to an initialized \ref cardano_guard_set_t object, or NULL to unset the field.
  *
