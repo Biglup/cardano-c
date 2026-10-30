@@ -989,6 +989,169 @@ set_missing_redeemer_error(
   cardano_transaction_set_last_error(tx, buffer);
 }
 
+/**
+ * \brief Sets the last error of a transaction to describe a script purpose of one of its sub transactions that has
+ * no redeemer.
+ *
+ * \param[in,out] tx A pointer to the \ref cardano_transaction_t that receives the error message.
+ * \param[in] sub_transaction A pointer to the \ref cardano_sub_transaction_t the purpose belongs to.
+ * \param[in] batch_index The zero based index of the sub transaction in the batch.
+ * \param[in] tag The redeemer tag of the purpose.
+ * \param[in] index The redeemer index of the purpose.
+ * \param[in] script_hash A pointer to the \ref cardano_blake2b_hash_t of the Plutus script of the purpose.
+ */
+static void
+set_sub_transaction_missing_redeemer_error(
+  cardano_transaction_t*        tx,
+  cardano_sub_transaction_t*    sub_transaction,
+  const size_t                  batch_index,
+  const cardano_redeemer_tag_t  tag,
+  const uint64_t                index,
+  const cardano_blake2b_hash_t* script_hash)
+{
+  char hash_hex[65] = { 0 };
+  char id_hex[65]   = { 0 };
+
+  CARDANO_UNUSED(cardano_blake2b_hash_to_hex(script_hash, hash_hex, sizeof(hash_hex)));
+
+  cardano_blake2b_hash_t* id = cardano_sub_transaction_get_id(sub_transaction);
+
+  CARDANO_UNUSED(cardano_blake2b_hash_to_hex(id, id_hex, sizeof(id_hex)));
+  cardano_blake2b_hash_unref(&id);
+
+  char buffer[384] = { 0 };
+
+  const int32_t written = snprintf(
+    buffer,
+    sizeof(buffer),
+    "The %s purpose at index %" PRIu64 " of the sub transaction %s (index %" PRIu64 " in the batch) needs a redeemer for the Plutus script %s, but the sub transaction carries none.",
+    get_purpose_name(tag),
+    index,
+    id_hex,
+    (uint64_t)batch_index,
+    hash_hex);
+
+  assert(written > 0);
+  CARDANO_UNUSED(written);
+
+  cardano_transaction_set_last_error(tx, buffer);
+}
+
+/**
+ * \brief Checks that every script purpose of a sub transaction whose script is a Plutus script has a redeemer.
+ *
+ * The purposes come from the body of the sub transaction, its spend indices are positions in its own sorted inputs
+ * and its redeemers are the ones of its own witness set, while the scripts are looked up among the ones provided to
+ * the whole batch.
+ *
+ * \param[in] state A pointer to the \ref cardano_builder_state_t holding the resolved UTXOs of the batch.
+ * \param[in,out] tx A pointer to the \ref cardano_transaction_t carrying the sub transaction. Its last error describes
+ *                   the purpose that has no redeemer.
+ * \param[in] spent_utxos A pointer to the \ref cardano_utxo_list_t with the UTXOs the transaction spends.
+ * \param[in] sub_transaction_utxos A pointer to the \ref cardano_utxo_list_t with the UTXOs the sub transactions spend
+ *                                  or reference.
+ * \param[in] sub_transaction A pointer to the \ref cardano_sub_transaction_t to check.
+ * \param[in] batch_index The zero based index of the sub transaction in the batch.
+ *
+ * \return \ref CARDANO_SUCCESS if every such purpose has a redeemer, \ref CARDANO_ERROR_MISSING_REDEEMER if one of
+ *         them has none, or an appropriate error code indicating the failure reason.
+ */
+static cardano_error_t
+check_sub_transaction_redeemers(
+  cardano_builder_state_t*   state,
+  cardano_transaction_t*     tx,
+  cardano_utxo_list_t*       spent_utxos,
+  cardano_utxo_list_t*       sub_transaction_utxos,
+  cardano_sub_transaction_t* sub_transaction,
+  const size_t               batch_index)
+{
+  cardano_blake2b_hash_set_t* needed_scripts = NULL;
+  cardano_blake2b_hash_set_t* plutus_scripts = NULL;
+  cardano_blake2b_hash_t*     script_hash    = NULL;
+  cardano_redeemer_tag_t      tag            = CARDANO_REDEEMER_TAG_SPEND;
+  uint64_t                    index          = 0U;
+
+  cardano_sub_transaction_body_t* sub_body = cardano_sub_transaction_get_body(sub_transaction);
+  cardano_sub_transaction_body_unref(&sub_body);
+
+  cardano_error_t result = _cardano_get_sub_transaction_script_hashes_needed(sub_body, state->sub_transaction_inputs, &needed_scripts);
+
+  if (result == CARDANO_SUCCESS)
+  {
+    result = _cardano_get_plutus_scripts_provided(tx, needed_scripts, state->reference_inputs, spent_utxos, NULL, sub_transaction_utxos, &plutus_scripts);
+  }
+
+  if (result == CARDANO_SUCCESS)
+  {
+    cardano_witness_set_t* witness_set = cardano_sub_transaction_get_witness_set(sub_transaction);
+    cardano_witness_set_unref(&witness_set);
+
+    cardano_redeemer_list_t* redeemers = cardano_witness_set_get_redeemers(witness_set);
+    cardano_redeemer_list_unref(&redeemers);
+
+    result = _cardano_find_sub_transaction_missing_redeemer(sub_body, state->sub_transaction_inputs, plutus_scripts, redeemers, &tag, &index, &script_hash);
+  }
+
+  if (script_hash != NULL)
+  {
+    set_sub_transaction_missing_redeemer_error(tx, sub_transaction, batch_index, tag, index, script_hash);
+
+    result = CARDANO_ERROR_MISSING_REDEEMER;
+  }
+
+  cardano_blake2b_hash_unref(&script_hash);
+  cardano_blake2b_hash_set_unref(&plutus_scripts);
+  cardano_blake2b_hash_set_unref(&needed_scripts);
+
+  return result;
+}
+
+/**
+ * \brief Checks the redeemers of every sub transaction of a transaction.
+ *
+ * \param[in] state A pointer to the \ref cardano_builder_state_t holding the resolved UTXOs of the batch.
+ * \param[in,out] tx A pointer to the \ref cardano_transaction_t whose sub transactions are checked. Its last error
+ *                   describes the purpose that has no redeemer.
+ * \param[in] spent_utxos A pointer to the \ref cardano_utxo_list_t with the UTXOs the transaction spends.
+ * \param[in] sub_transaction_utxos A pointer to the \ref cardano_utxo_list_t with the UTXOs the sub transactions spend
+ *                                  or reference.
+ *
+ * \return \ref CARDANO_SUCCESS if every Plutus script purpose of every sub transaction has a redeemer,
+ *         \ref CARDANO_ERROR_MISSING_REDEEMER if one of them has none, or an appropriate error code indicating the
+ *         failure reason.
+ */
+static cardano_error_t
+check_sub_transactions_redeemers(
+  cardano_builder_state_t* state,
+  cardano_transaction_t*   tx,
+  cardano_utxo_list_t*     spent_utxos,
+  cardano_utxo_list_t*     sub_transaction_utxos)
+{
+  cardano_transaction_body_t* body = cardano_transaction_get_body(tx);
+  cardano_transaction_body_unref(&body);
+
+  cardano_sub_transaction_set_t* sub_transactions = cardano_transaction_body_get_sub_transactions(body);
+  cardano_sub_transaction_set_unref(&sub_transactions);
+
+  cardano_error_t result = CARDANO_SUCCESS;
+  const size_t    length = cardano_sub_transaction_set_get_length(sub_transactions);
+
+  for (size_t i = 0U; (i < length) && (result == CARDANO_SUCCESS); ++i)
+  {
+    cardano_sub_transaction_t* sub_transaction = NULL;
+
+    result = cardano_sub_transaction_set_get(sub_transactions, i, &sub_transaction);
+    cardano_sub_transaction_unref(&sub_transaction);
+
+    if (result == CARDANO_SUCCESS)
+    {
+      result = check_sub_transaction_redeemers(state, tx, spent_utxos, sub_transaction_utxos, sub_transaction, i);
+    }
+  }
+
+  return result;
+}
+
 /* IMPLEMENTATION ************************************************************/
 
 cardano_error_t
@@ -1125,17 +1288,26 @@ cardano_builder_check_redeemers(
     result = _cardano_find_missing_redeemer(body, inputs, spent_utxos, plutus_scripts, redeemers, &tag, &index, &script_hash);
   }
 
-  if (result != CARDANO_SUCCESS)
-  {
-    *error_message = "Failed to check the redeemers of the Plutus scripts the transaction needs.";
-  }
-
   if (script_hash != NULL)
   {
     set_missing_redeemer_error(tx, tag, index, script_hash);
 
+    result = CARDANO_ERROR_MISSING_REDEEMER;
+  }
+
+  if (result == CARDANO_SUCCESS)
+  {
+    result = check_sub_transactions_redeemers(state, tx, spent_utxos, sub_transaction_utxos);
+  }
+
+  if (result == CARDANO_ERROR_MISSING_REDEEMER)
+  {
     *error_message = cardano_transaction_get_last_error(tx);
-    result         = CARDANO_ERROR_MISSING_REDEEMER;
+  }
+
+  if ((result != CARDANO_SUCCESS) && (result != CARDANO_ERROR_MISSING_REDEEMER))
+  {
+    *error_message = "Failed to check the redeemers of the Plutus scripts the transaction needs.";
   }
 
   cardano_blake2b_hash_unref(&script_hash);

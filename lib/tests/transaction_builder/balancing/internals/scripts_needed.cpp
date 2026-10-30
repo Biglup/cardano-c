@@ -2624,3 +2624,634 @@ TEST(_cardano_find_missing_redeemer, returnsErrorIfMemoryAllocationFailsWhileRea
   cardano_script_unref(&script);
   cardano_transaction_unref(&tx);
 }
+
+/**
+ * Creates a sub transaction body that spends the inputs of a transaction and carries the mint, withdrawals,
+ * certificates, voting procedures, proposals and guards of its body.
+ * \param tx the transaction whose body fields are copied.
+ * \return A new instance of the sub transaction body.
+ */
+static cardano_sub_transaction_body_t*
+new_sub_transaction_body(cardano_transaction_t* tx)
+{
+  cardano_transaction_body_t*        body         = cardano_transaction_get_body(tx);
+  cardano_transaction_input_set_t*   inputs       = cardano_transaction_body_get_inputs(body);
+  cardano_transaction_output_list_t* outputs      = cardano_transaction_body_get_outputs(body);
+  cardano_multi_asset_t*             mint         = cardano_transaction_body_get_mint(body);
+  cardano_withdrawal_map_t*          withdrawals  = cardano_transaction_body_get_withdrawals(body);
+  cardano_certificate_set_t*         certificates = cardano_transaction_body_get_certificates(body);
+  cardano_voting_procedures_t*       procedures   = cardano_transaction_body_get_voting_procedures(body);
+  cardano_proposal_procedure_set_t*  proposals    = cardano_transaction_body_get_proposal_procedures(body);
+  cardano_guard_set_t*               guards       = cardano_transaction_body_get_guards(body);
+  cardano_sub_transaction_body_t*    sub_body     = nullptr;
+
+  EXPECT_EQ(cardano_sub_transaction_body_new(inputs, outputs, nullptr, &sub_body), CARDANO_SUCCESS);
+  EXPECT_EQ(cardano_sub_transaction_body_set_mint(sub_body, mint), CARDANO_SUCCESS);
+
+  if (withdrawals != nullptr)
+  {
+    EXPECT_EQ(cardano_sub_transaction_body_set_withdrawals(sub_body, withdrawals), CARDANO_SUCCESS);
+  }
+
+  if (certificates != nullptr)
+  {
+    EXPECT_EQ(cardano_sub_transaction_body_set_certificates(sub_body, certificates), CARDANO_SUCCESS);
+  }
+
+  if (procedures != nullptr)
+  {
+    EXPECT_EQ(cardano_sub_transaction_body_set_voting_procedures(sub_body, procedures), CARDANO_SUCCESS);
+  }
+
+  if (proposals != nullptr)
+  {
+    EXPECT_EQ(cardano_sub_transaction_body_set_proposal_procedures(sub_body, proposals), CARDANO_SUCCESS);
+  }
+
+  if (guards != nullptr)
+  {
+    EXPECT_EQ(cardano_sub_transaction_body_set_guards(sub_body, guards), CARDANO_SUCCESS);
+  }
+
+  cardano_guard_set_unref(&guards);
+  cardano_proposal_procedure_set_unref(&proposals);
+  cardano_voting_procedures_unref(&procedures);
+  cardano_certificate_set_unref(&certificates);
+  cardano_withdrawal_map_unref(&withdrawals);
+  cardano_multi_asset_unref(&mint);
+  cardano_transaction_output_list_unref(&outputs);
+  cardano_transaction_input_set_unref(&inputs);
+  cardano_transaction_body_unref(&body);
+
+  return sub_body;
+}
+
+/**
+ * Collects the needed script hashes of a sub transaction that carries the body fields of a transaction.
+ * \param tx the transaction whose body fields the sub transaction carries.
+ * \param resolved_inputs the resolved inputs, or NULL.
+ * \param needed on success, the set of needed script hashes.
+ * \return The result of the collection.
+ */
+static cardano_error_t
+get_sub_transaction_needed(cardano_transaction_t* tx, cardano_utxo_list_t* resolved_inputs, cardano_blake2b_hash_set_t** needed)
+{
+  cardano_sub_transaction_body_t* sub_body = new_sub_transaction_body(tx);
+
+  const cardano_error_t result = _cardano_get_sub_transaction_script_hashes_needed(sub_body, resolved_inputs, needed);
+
+  cardano_sub_transaction_body_unref(&sub_body);
+
+  return result;
+}
+
+/**
+ * Checks whether a set of hashes holds a given hash.
+ * \param set the set of hashes.
+ * \param hex the hexadecimal hash.
+ * \return true if the set holds the hash.
+ */
+static bool
+holds(cardano_blake2b_hash_set_t* set, const char* hex)
+{
+  cardano_blake2b_hash_t* hash = new_hash(hex);
+
+  const bool found = _cardano_blake2b_hash_set_has(set, hash);
+
+  cardano_blake2b_hash_unref(&hash);
+
+  return found;
+}
+
+/**
+ * Finds the first Plutus script purpose of a sub transaction that has no redeemer.
+ * \param tx the transaction whose body fields the sub transaction carries.
+ * \param resolved_inputs the resolved inputs, or NULL to inspect no spend purpose.
+ * \param plutus_scripts the hexadecimal hashes of the scripts that resolve to a Plutus script.
+ * \param redeemers the redeemers of the sub transaction, or NULL.
+ * \return The outcome of the search.
+ */
+static missing_redeemer_t
+find_sub_transaction_missing(
+  cardano_transaction_t*          tx,
+  cardano_utxo_list_t*            resolved_inputs,
+  const std::vector<const char*>& plutus_scripts,
+  cardano_redeemer_list_t*        redeemers)
+{
+  cardano_sub_transaction_body_t* sub_body    = new_sub_transaction_body(tx);
+  cardano_blake2b_hash_set_t*     plutus      = new_hash_set(plutus_scripts);
+  cardano_blake2b_hash_t*         script_hash = nullptr;
+  missing_redeemer_t              missing     = { CARDANO_SUCCESS, CARDANO_REDEEMER_TAG_SPEND, 0U, "" };
+
+  missing.result = _cardano_find_sub_transaction_missing_redeemer(sub_body, resolved_inputs, plutus, redeemers, &missing.tag, &missing.index, &script_hash);
+
+  if (script_hash != nullptr)
+  {
+    char hex[57] = { 0 };
+
+    EXPECT_EQ(cardano_blake2b_hash_to_hex(script_hash, hex, sizeof(hex)), CARDANO_SUCCESS);
+
+    missing.script_hash = hex;
+  }
+
+  cardano_blake2b_hash_unref(&script_hash);
+  cardano_blake2b_hash_set_unref(&plutus);
+  cardano_sub_transaction_body_unref(&sub_body);
+
+  return missing;
+}
+
+TEST(_cardano_get_sub_transaction_script_hashes_needed, returnsErrorIfGivenNull)
+{
+  // Arrange
+  cardano_transaction_t*          tx       = new_empty_transaction();
+  cardano_sub_transaction_body_t* sub_body = new_sub_transaction_body(tx);
+  cardano_blake2b_hash_set_t*     needed   = nullptr;
+
+  // Act & Assert
+  EXPECT_EQ(_cardano_get_sub_transaction_script_hashes_needed(nullptr, nullptr, &needed), CARDANO_ERROR_POINTER_IS_NULL);
+  EXPECT_EQ(_cardano_get_sub_transaction_script_hashes_needed(sub_body, nullptr, nullptr), CARDANO_ERROR_POINTER_IS_NULL);
+  EXPECT_EQ(needed, nullptr);
+
+  // Cleanup
+  cardano_sub_transaction_body_unref(&sub_body);
+  cardano_transaction_unref(&tx);
+}
+
+TEST(_cardano_get_sub_transaction_script_hashes_needed, collectsTheScriptsOfEveryPurposeOfTheSubTransactionBody)
+{
+  // Arrange
+  cardano_transaction_t*      tx       = new_empty_transaction();
+  cardano_script_t*           script   = new_script(PLUTUS_V4_SCRIPT_CBOR);
+  cardano_address_t*          locked   = new_script_address(script);
+  cardano_utxo_t*             utxo     = new_utxo(1U, locked, nullptr);
+  cardano_utxo_list_t*        resolved = new_utxo_list(utxo, nullptr);
+  cardano_blake2b_hash_t*     hash     = cardano_script_get_hash(script);
+  cardano_blake2b_hash_set_t* needed   = nullptr;
+  char                        hex[57]  = { 0 };
+
+  EXPECT_EQ(cardano_blake2b_hash_to_hex(hash, hex, sizeof(hex)), CARDANO_SUCCESS);
+
+  set_spent_input(tx, utxo);
+  set_mint(tx, ZERO_HASH);
+  set_withdrawals(tx, WITHDRAWAL_CBOR);
+  set_voting_procedures(tx, VOTING_PROCEDURES_CBOR);
+  set_proposal(tx, TREASURY_WITHDRAWALS_PROPOSAL_CBOR);
+  set_guards(tx, GUARDS_CBOR);
+
+  // Act
+  const cardano_error_t result = get_sub_transaction_needed(tx, resolved, &needed);
+
+  // Assert
+  EXPECT_EQ(result, CARDANO_SUCCESS);
+  EXPECT_EQ(cardano_blake2b_hash_set_get_length(needed), 6U);
+  EXPECT_TRUE(holds(needed, hex));
+  EXPECT_TRUE(holds(needed, ZERO_HASH));
+  EXPECT_TRUE(holds(needed, WITHDRAWAL_SCRIPT_HASH));
+  EXPECT_TRUE(holds(needed, VOTER_SCRIPT_HASH));
+  EXPECT_TRUE(holds(needed, GUARDRAILS_SCRIPT_HASH));
+  EXPECT_TRUE(holds(needed, GUARD_SCRIPT_HASH));
+
+  // Cleanup
+  cardano_blake2b_hash_set_unref(&needed);
+  cardano_blake2b_hash_unref(&hash);
+  cardano_utxo_list_unref(&resolved);
+  cardano_utxo_unref(&utxo);
+  cardano_address_unref(&locked);
+  cardano_script_unref(&script);
+  cardano_transaction_unref(&tx);
+}
+
+TEST(_cardano_get_sub_transaction_script_hashes_needed, collectsTheScriptCredentialOfACertificate)
+{
+  // Arrange
+  cardano_transaction_t*      tx     = new_empty_transaction();
+  cardano_blake2b_hash_set_t* needed = nullptr;
+
+  set_certificate(tx, with_script_credential(CBOR_STAKE_DEREGISTRATION, 0U));
+
+  // Act
+  const cardano_error_t result = get_sub_transaction_needed(tx, nullptr, &needed);
+
+  // Assert
+  EXPECT_EQ(result, CARDANO_SUCCESS);
+  EXPECT_TRUE(holds_only(needed, ZERO_HASH));
+
+  // Cleanup
+  cardano_blake2b_hash_set_unref(&needed);
+  cardano_transaction_unref(&tx);
+}
+
+TEST(_cardano_get_sub_transaction_script_hashes_needed, ignoresTheSpentInputsIfNoResolvedInputsAreGiven)
+{
+  // Arrange
+  cardano_transaction_t*      tx     = new_empty_transaction();
+  cardano_script_t*           script = new_script(PLUTUS_V4_SCRIPT_CBOR);
+  cardano_address_t*          locked = new_script_address(script);
+  cardano_utxo_t*             utxo   = new_utxo(1U, locked, nullptr);
+  cardano_blake2b_hash_set_t* needed = nullptr;
+
+  set_spent_input(tx, utxo);
+
+  // Act
+  const cardano_error_t result = get_sub_transaction_needed(tx, nullptr, &needed);
+
+  // Assert
+  EXPECT_EQ(result, CARDANO_SUCCESS);
+  EXPECT_EQ(cardano_blake2b_hash_set_get_length(needed), 0U);
+
+  // Cleanup
+  cardano_blake2b_hash_set_unref(&needed);
+  cardano_utxo_unref(&utxo);
+  cardano_address_unref(&locked);
+  cardano_script_unref(&script);
+  cardano_transaction_unref(&tx);
+}
+
+TEST(_cardano_get_sub_transaction_script_hashes_needed, returnsErrorIfASpentInputIsNotResolved)
+{
+  // Arrange
+  cardano_transaction_t*      tx       = new_empty_transaction();
+  cardano_address_t*          owner    = new_address(enterpriseKey);
+  cardano_utxo_t*             utxo     = new_utxo(1U, owner, nullptr);
+  cardano_utxo_list_t*        resolved = new_utxo_list(nullptr, nullptr);
+  cardano_blake2b_hash_set_t* needed   = nullptr;
+
+  set_spent_input(tx, utxo);
+
+  // Act
+  const cardano_error_t result = get_sub_transaction_needed(tx, resolved, &needed);
+
+  // Assert
+  EXPECT_EQ(result, CARDANO_ERROR_ELEMENT_NOT_FOUND);
+  EXPECT_EQ(needed, nullptr);
+
+  // Cleanup
+  cardano_utxo_list_unref(&resolved);
+  cardano_utxo_unref(&utxo);
+  cardano_address_unref(&owner);
+  cardano_transaction_unref(&tx);
+}
+
+TEST(_cardano_get_sub_transaction_script_hashes_needed, returnsErrorIfMemoryAllocationFails)
+{
+  // Arrange
+  cardano_transaction_t* tx       = new_empty_transaction();
+  cardano_script_t*      script   = new_script(PLUTUS_V4_SCRIPT_CBOR);
+  cardano_address_t*     locked   = new_script_address(script);
+  cardano_utxo_t*        utxo     = new_utxo(1U, locked, nullptr);
+  cardano_utxo_list_t*   resolved = new_utxo_list(utxo, nullptr);
+
+  set_spent_input(tx, utxo);
+  set_mint(tx, ZERO_HASH);
+  set_withdrawals(tx, WITHDRAWAL_CBOR);
+  set_guards(tx, GUARDS_CBOR);
+
+  cardano_sub_transaction_body_t* sub_body = new_sub_transaction_body(tx);
+
+  bool has_succeeded = false;
+
+  for (int i = 0; (i < 200) && !has_succeeded; ++i)
+  {
+    cardano_blake2b_hash_set_t* needed = nullptr;
+
+    reset_allocators_run_count();
+    set_malloc_limit(i);
+    cardano_set_allocators(fail_malloc_at_limit, realloc, free);
+
+    // Act
+    cardano_error_t result = _cardano_get_sub_transaction_script_hashes_needed(sub_body, resolved, &needed);
+
+    cardano_set_allocators(malloc, realloc, free);
+    reset_limited_malloc();
+
+    // Assert
+    has_succeeded = result == CARDANO_SUCCESS;
+
+    if (has_succeeded)
+    {
+      EXPECT_EQ(cardano_blake2b_hash_set_get_length(needed), 4U);
+    }
+    else
+    {
+      EXPECT_EQ(needed, nullptr);
+    }
+
+    cardano_blake2b_hash_set_unref(&needed);
+  }
+
+  EXPECT_TRUE(has_succeeded);
+
+  // Cleanup
+  cardano_sub_transaction_body_unref(&sub_body);
+  cardano_utxo_list_unref(&resolved);
+  cardano_utxo_unref(&utxo);
+  cardano_address_unref(&locked);
+  cardano_script_unref(&script);
+  cardano_transaction_unref(&tx);
+}
+
+TEST(_cardano_find_sub_transaction_missing_redeemer, returnsErrorIfGivenNull)
+{
+  // Arrange
+  cardano_transaction_t*          tx          = new_empty_transaction();
+  cardano_sub_transaction_body_t* sub_body    = new_sub_transaction_body(tx);
+  cardano_blake2b_hash_set_t*     plutus      = new_hash_set({});
+  cardano_redeemer_tag_t          tag         = CARDANO_REDEEMER_TAG_SPEND;
+  uint64_t                        index       = 0U;
+  cardano_blake2b_hash_t*         script_hash = nullptr;
+
+  // Act & Assert
+  EXPECT_EQ(_cardano_find_sub_transaction_missing_redeemer(nullptr, nullptr, plutus, nullptr, &tag, &index, &script_hash), CARDANO_ERROR_POINTER_IS_NULL);
+  EXPECT_EQ(_cardano_find_sub_transaction_missing_redeemer(sub_body, nullptr, nullptr, nullptr, &tag, &index, &script_hash), CARDANO_ERROR_POINTER_IS_NULL);
+  EXPECT_EQ(_cardano_find_sub_transaction_missing_redeemer(sub_body, nullptr, plutus, nullptr, nullptr, &index, &script_hash), CARDANO_ERROR_POINTER_IS_NULL);
+  EXPECT_EQ(_cardano_find_sub_transaction_missing_redeemer(sub_body, nullptr, plutus, nullptr, &tag, nullptr, &script_hash), CARDANO_ERROR_POINTER_IS_NULL);
+  EXPECT_EQ(_cardano_find_sub_transaction_missing_redeemer(sub_body, nullptr, plutus, nullptr, &tag, &index, nullptr), CARDANO_ERROR_POINTER_IS_NULL);
+  EXPECT_EQ(script_hash, nullptr);
+
+  // Cleanup
+  cardano_blake2b_hash_set_unref(&plutus);
+  cardano_sub_transaction_body_unref(&sub_body);
+  cardano_transaction_unref(&tx);
+}
+
+TEST(_cardano_find_sub_transaction_missing_redeemer, reportsNothingIfThePurposeHasARedeemer)
+{
+  // Arrange
+  cardano_transaction_t*   tx        = new_empty_transaction();
+  cardano_redeemer_list_t* redeemers = new_redeemer_list({ { CARDANO_REDEEMER_TAG_MINT, 0U } });
+
+  set_mint(tx, WITHDRAWAL_SCRIPT_HASH);
+
+  // Act
+  const missing_redeemer_t missing = find_sub_transaction_missing(tx, nullptr, { WITHDRAWAL_SCRIPT_HASH }, redeemers);
+
+  // Assert
+  EXPECT_EQ(missing.result, CARDANO_SUCCESS);
+  EXPECT_EQ(missing.script_hash, "");
+
+  // Cleanup
+  cardano_redeemer_list_unref(&redeemers);
+  cardano_transaction_unref(&tx);
+}
+
+TEST(_cardano_find_sub_transaction_missing_redeemer, reportsNothingForAScriptThatIsNotAPlutusScript)
+{
+  // Arrange
+  cardano_transaction_t* tx = new_empty_transaction();
+
+  set_mint(tx, WITHDRAWAL_SCRIPT_HASH);
+  set_guards(tx, GUARDS_CBOR);
+
+  // Act
+  const missing_redeemer_t missing = find_sub_transaction_missing(tx, nullptr, {}, nullptr);
+
+  // Assert
+  EXPECT_EQ(missing.result, CARDANO_SUCCESS);
+  EXPECT_EQ(missing.script_hash, "");
+
+  // Cleanup
+  cardano_transaction_unref(&tx);
+}
+
+TEST(_cardano_find_sub_transaction_missing_redeemer, reportsASpendAtThePositionOfItsInputInTheSortedInputsOfTheSubTransaction)
+{
+  // Arrange
+  cardano_transaction_t*           tx          = new_empty_transaction();
+  cardano_script_t*                script      = new_script(PLUTUS_V4_SCRIPT_CBOR);
+  cardano_address_t*               owner       = new_address(enterpriseKey);
+  cardano_address_t*               locked      = new_script_address(script);
+  cardano_utxo_t*                  key_utxo    = new_utxo(1U, owner, nullptr);
+  cardano_utxo_t*                  script_utxo = new_utxo(2U, locked, nullptr);
+  cardano_utxo_list_t*             resolved    = new_utxo_list(script_utxo, key_utxo);
+  cardano_transaction_input_set_t* inputs      = new_input_set(script_utxo);
+  cardano_transaction_input_t*     key_input   = cardano_utxo_get_input(key_utxo);
+  cardano_transaction_body_t*      body        = cardano_transaction_get_body(tx);
+  cardano_blake2b_hash_t*          hash        = cardano_script_get_hash(script);
+  char                             hex[57]     = { 0 };
+
+  EXPECT_EQ(cardano_transaction_input_set_add(inputs, key_input), CARDANO_SUCCESS);
+  EXPECT_EQ(cardano_transaction_body_set_inputs(body, inputs), CARDANO_SUCCESS);
+  EXPECT_EQ(cardano_blake2b_hash_to_hex(hash, hex, sizeof(hex)), CARDANO_SUCCESS);
+
+  // Act
+  const missing_redeemer_t missing = find_sub_transaction_missing(tx, resolved, { hex }, nullptr);
+
+  // Assert
+  EXPECT_EQ(missing.result, CARDANO_SUCCESS);
+  EXPECT_EQ(missing.tag, CARDANO_REDEEMER_TAG_SPEND);
+  EXPECT_EQ(missing.index, 1U);
+  EXPECT_EQ(missing.script_hash, hex);
+
+  // Cleanup
+  cardano_blake2b_hash_unref(&hash);
+  cardano_transaction_body_unref(&body);
+  cardano_transaction_input_unref(&key_input);
+  cardano_transaction_input_set_unref(&inputs);
+  cardano_utxo_list_unref(&resolved);
+  cardano_utxo_unref(&script_utxo);
+  cardano_utxo_unref(&key_utxo);
+  cardano_address_unref(&locked);
+  cardano_address_unref(&owner);
+  cardano_script_unref(&script);
+  cardano_transaction_unref(&tx);
+}
+
+TEST(_cardano_find_sub_transaction_missing_redeemer, inspectsNoSpendIfNoResolvedInputsAreGiven)
+{
+  // Arrange
+  cardano_transaction_t*  tx      = new_empty_transaction();
+  cardano_script_t*       script  = new_script(PLUTUS_V4_SCRIPT_CBOR);
+  cardano_address_t*      locked  = new_script_address(script);
+  cardano_utxo_t*         utxo    = new_utxo(1U, locked, nullptr);
+  cardano_blake2b_hash_t* hash    = cardano_script_get_hash(script);
+  char                    hex[57] = { 0 };
+
+  EXPECT_EQ(cardano_blake2b_hash_to_hex(hash, hex, sizeof(hex)), CARDANO_SUCCESS);
+
+  set_spent_input(tx, utxo);
+
+  // Act
+  const missing_redeemer_t missing = find_sub_transaction_missing(tx, nullptr, { hex }, nullptr);
+
+  // Assert
+  EXPECT_EQ(missing.result, CARDANO_SUCCESS);
+  EXPECT_EQ(missing.script_hash, "");
+
+  // Cleanup
+  cardano_blake2b_hash_unref(&hash);
+  cardano_utxo_unref(&utxo);
+  cardano_address_unref(&locked);
+  cardano_script_unref(&script);
+  cardano_transaction_unref(&tx);
+}
+
+TEST(_cardano_find_sub_transaction_missing_redeemer, reportsACertificateAtItsPositionInTheCertificates)
+{
+  // Arrange
+  cardano_transaction_t* tx = new_empty_transaction();
+
+  set_certificate(tx, with_script_credential(CBOR_STAKE_DEREGISTRATION, 0U));
+
+  // Act
+  const missing_redeemer_t missing = find_sub_transaction_missing(tx, nullptr, { ZERO_HASH }, nullptr);
+
+  // Assert
+  EXPECT_EQ(missing.result, CARDANO_SUCCESS);
+  EXPECT_EQ(missing.tag, CARDANO_REDEEMER_TAG_CERTIFYING);
+  EXPECT_EQ(missing.index, 0U);
+  EXPECT_EQ(missing.script_hash, ZERO_HASH);
+
+  // Cleanup
+  cardano_transaction_unref(&tx);
+}
+
+TEST(_cardano_find_sub_transaction_missing_redeemer, reportsAVoterAtItsLedgerIndex)
+{
+  // Arrange
+  cardano_transaction_t* tx = new_empty_transaction();
+
+  set_voting_procedures(tx, VOTING_PROCEDURES_CBOR);
+
+  // Act
+  const missing_redeemer_t missing = find_sub_transaction_missing(tx, nullptr, { VOTER_SCRIPT_HASH }, nullptr);
+
+  // Assert
+  EXPECT_EQ(missing.result, CARDANO_SUCCESS);
+  EXPECT_EQ(missing.tag, CARDANO_REDEEMER_TAG_VOTING);
+  EXPECT_EQ(missing.index, 0U);
+  EXPECT_EQ(missing.script_hash, VOTER_SCRIPT_HASH);
+
+  // Cleanup
+  cardano_transaction_unref(&tx);
+}
+
+TEST(_cardano_find_sub_transaction_missing_redeemer, reportsAProposalAtItsPositionInTheProposals)
+{
+  // Arrange
+  cardano_transaction_t* tx = new_empty_transaction();
+
+  set_proposal(tx, TREASURY_WITHDRAWALS_PROPOSAL_CBOR);
+
+  // Act
+  const missing_redeemer_t missing = find_sub_transaction_missing(tx, nullptr, { GUARDRAILS_SCRIPT_HASH }, nullptr);
+
+  // Assert
+  EXPECT_EQ(missing.result, CARDANO_SUCCESS);
+  EXPECT_EQ(missing.tag, CARDANO_REDEEMER_TAG_PROPOSING);
+  EXPECT_EQ(missing.index, 0U);
+  EXPECT_EQ(missing.script_hash, GUARDRAILS_SCRIPT_HASH);
+
+  // Cleanup
+  cardano_transaction_unref(&tx);
+}
+
+TEST(_cardano_find_sub_transaction_missing_redeemer, reportsTheFirstPurposeWithoutARedeemer)
+{
+  // Arrange
+  cardano_transaction_t*   tx        = new_empty_transaction();
+  cardano_redeemer_list_t* redeemers = new_redeemer_list({ { CARDANO_REDEEMER_TAG_MINT, 0U } });
+
+  set_mint(tx, WITHDRAWAL_SCRIPT_HASH);
+  set_withdrawals(tx, TESTNET_WITHDRAWAL_CBOR);
+  set_guards(tx, GUARDS_CBOR);
+
+  // Act
+  const missing_redeemer_t missing = find_sub_transaction_missing(tx, nullptr, { WITHDRAWAL_SCRIPT_HASH, GUARD_SCRIPT_HASH }, redeemers);
+
+  // Assert
+  EXPECT_EQ(missing.result, CARDANO_SUCCESS);
+  EXPECT_EQ(missing.tag, CARDANO_REDEEMER_TAG_REWARD);
+  EXPECT_EQ(missing.index, 0U);
+  EXPECT_EQ(missing.script_hash, WITHDRAWAL_SCRIPT_HASH);
+
+  // Cleanup
+  cardano_redeemer_list_unref(&redeemers);
+  cardano_transaction_unref(&tx);
+}
+
+TEST(_cardano_find_sub_transaction_missing_redeemer, reportsAGuardAtItsPositionCountingKeyHashGuards)
+{
+  // Arrange
+  cardano_transaction_t* tx = new_empty_transaction();
+
+  set_guards(tx, GUARDS_CBOR);
+
+  // Act
+  const missing_redeemer_t missing = find_sub_transaction_missing(tx, nullptr, { GUARD_SCRIPT_HASH }, nullptr);
+
+  // Assert
+  EXPECT_EQ(missing.result, CARDANO_SUCCESS);
+  EXPECT_EQ(missing.tag, CARDANO_REDEEMER_TAG_GUARDING);
+  EXPECT_EQ(missing.index, 1U);
+  EXPECT_EQ(missing.script_hash, GUARD_SCRIPT_HASH);
+
+  // Cleanup
+  cardano_transaction_unref(&tx);
+}
+
+TEST(_cardano_find_sub_transaction_missing_redeemer, returnsErrorIfMemoryAllocationFails)
+{
+  // Arrange
+  cardano_transaction_t*      tx       = new_empty_transaction();
+  cardano_script_t*           script   = new_script(PLUTUS_V4_SCRIPT_CBOR);
+  cardano_address_t*          address  = new_script_address(script);
+  cardano_utxo_t*             utxo     = new_utxo(1U, address, nullptr);
+  cardano_utxo_list_t*        resolved = new_utxo_list(utxo, nullptr);
+  cardano_blake2b_hash_set_t* plutus   = new_hash_set({ GUARD_SCRIPT_HASH });
+
+  set_spent_input(tx, utxo);
+  set_mint(tx, WITHDRAWAL_SCRIPT_HASH);
+  set_withdrawals(tx, WITHDRAWAL_CBOR);
+  set_voting_procedures(tx, VOTING_PROCEDURES_CBOR);
+  set_guards(tx, GUARDS_CBOR);
+  set_proposal(tx, TREASURY_WITHDRAWALS_PROPOSAL_CBOR);
+
+  cardano_sub_transaction_body_t* sub_body = new_sub_transaction_body(tx);
+
+  bool has_succeeded = false;
+
+  for (int i = 0; (i < 200) && !has_succeeded; ++i)
+  {
+    cardano_redeemer_tag_t  tag         = CARDANO_REDEEMER_TAG_SPEND;
+    uint64_t                index       = 0U;
+    cardano_blake2b_hash_t* script_hash = nullptr;
+
+    reset_allocators_run_count();
+    set_malloc_limit(i);
+    cardano_set_allocators(fail_malloc_at_limit, realloc, free);
+
+    // Act
+    cardano_error_t result = _cardano_find_sub_transaction_missing_redeemer(sub_body, resolved, plutus, nullptr, &tag, &index, &script_hash);
+
+    cardano_set_allocators(malloc, realloc, free);
+    reset_limited_malloc();
+
+    // Assert
+    has_succeeded = result == CARDANO_SUCCESS;
+
+    if (has_succeeded)
+    {
+      EXPECT_EQ(tag, CARDANO_REDEEMER_TAG_GUARDING);
+      EXPECT_EQ(index, 1U);
+      EXPECT_NE(script_hash, nullptr);
+    }
+    else
+    {
+      EXPECT_EQ(script_hash, nullptr);
+    }
+
+    cardano_blake2b_hash_unref(&script_hash);
+  }
+
+  EXPECT_TRUE(has_succeeded);
+
+  // Cleanup
+  cardano_sub_transaction_body_unref(&sub_body);
+  cardano_blake2b_hash_set_unref(&plutus);
+  cardano_utxo_list_unref(&resolved);
+  cardano_utxo_unref(&utxo);
+  cardano_address_unref(&address);
+  cardano_script_unref(&script);
+  cardano_transaction_unref(&tx);
+}

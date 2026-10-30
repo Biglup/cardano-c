@@ -35,6 +35,7 @@
 #include <cardano/proposal_procedures/proposal_procedure_set.h>
 #include <cardano/proposal_procedures/treasury_withdrawals_action.h>
 #include <cardano/scripts/script.h>
+#include <cardano/transaction_body/sub_transaction_body.h>
 #include <cardano/witness_set/redeemer.h>
 #include <cardano/witness_set/redeemer_list.h>
 
@@ -88,6 +89,21 @@ typedef struct script_purpose_visitor_t
     script_purpose_callback_t callback;
     void*                     context;
 } script_purpose_visitor_t;
+
+/**
+ * \brief The fields of a transaction body or sub transaction body that hold script purposes.
+ */
+typedef struct script_purpose_fields_t
+{
+    cardano_transaction_input_set_t*  inputs;
+    cardano_utxo_list_t*              resolved_inputs;
+    cardano_multi_asset_t*            mint;
+    cardano_withdrawal_map_t*         withdrawals;
+    cardano_certificate_set_t*        certificates;
+    cardano_voting_procedures_t*      voting_procedures;
+    cardano_proposal_procedure_set_t* proposals;
+    cardano_guard_set_t*              guards;
+} script_purpose_fields_t;
 
 /**
  * \brief The state of the search for a Plutus script purpose that has no redeemer.
@@ -740,76 +756,207 @@ visit_proposal_purposes(const script_purpose_visitor_t* visitor, cardano_proposa
 }
 
 /**
- * \brief Visits every script purpose of a transaction body.
+ * \brief Visits every script purpose of the fields of a transaction body or sub transaction body.
  *
  * The purposes are visited in this order: the spent inputs, the mint field, the withdrawals, the certificates, the
  * voters, the proposals and the guards.
  *
  * \param[in] visitor The visitor that receives the purposes.
- * \param[in] body The transaction body whose purposes are visited.
- * \param[in] inputs The inputs spent by the body, or NULL to visit no spend purpose.
- * \param[in] resolved_inputs The resolved UTXOs of \p inputs.
+ * \param[in] fields The fields whose purposes are visited.
  *
  * \return \ref CARDANO_SUCCESS if every purpose was visited, or the first error code returned while visiting them.
  */
 static cardano_error_t
-visit_script_purposes(
-  const script_purpose_visitor_t*  visitor,
+visit_script_purposes(const script_purpose_visitor_t* visitor, script_purpose_fields_t* fields)
+{
+  cardano_error_t result = visit_input_purposes(visitor, fields->inputs, fields->resolved_inputs);
+
+  if (result == CARDANO_SUCCESS)
+  {
+    result = visit_mint_purposes(visitor, fields->mint);
+  }
+
+  if (result == CARDANO_SUCCESS)
+  {
+    result = visit_withdrawal_purposes(visitor, fields->withdrawals);
+  }
+
+  if (result == CARDANO_SUCCESS)
+  {
+    result = visit_certificate_purposes(visitor, fields->certificates);
+  }
+
+  if (result == CARDANO_SUCCESS)
+  {
+    result = visit_voter_purposes(visitor, fields->voting_procedures);
+  }
+
+  if (result == CARDANO_SUCCESS)
+  {
+    result = visit_proposal_purposes(visitor, fields->proposals);
+  }
+
+  if (result == CARDANO_SUCCESS)
+  {
+    result = visit_guard_purposes(visitor, fields->guards);
+  }
+
+  return result;
+}
+
+/**
+ * \brief Gets the fields of a transaction body that hold script purposes.
+ *
+ * \param[in] body The transaction body.
+ * \param[in] inputs The inputs spent by the body, or NULL to visit no spend purpose.
+ * \param[in] resolved_inputs The resolved UTXOs of \p inputs.
+ *
+ * \return The fields of the body. They are borrowed from the body and must not be released.
+ */
+static script_purpose_fields_t
+get_body_purpose_fields(
   cardano_transaction_body_t*      body,
   cardano_transaction_input_set_t* inputs,
   cardano_utxo_list_t*             resolved_inputs)
 {
-  cardano_error_t result = visit_input_purposes(visitor, inputs, resolved_inputs);
+  script_purpose_fields_t fields = { inputs, resolved_inputs, NULL, NULL, NULL, NULL, NULL, NULL };
 
-  if (result == CARDANO_SUCCESS)
+  fields.mint = cardano_transaction_body_get_mint(body);
+  cardano_multi_asset_unref(&fields.mint);
+
+  fields.withdrawals = cardano_transaction_body_get_withdrawals(body);
+  cardano_withdrawal_map_unref(&fields.withdrawals);
+
+  fields.certificates = cardano_transaction_body_get_certificates(body);
+  cardano_certificate_set_unref(&fields.certificates);
+
+  fields.voting_procedures = cardano_transaction_body_get_voting_procedures(body);
+  cardano_voting_procedures_unref(&fields.voting_procedures);
+
+  fields.proposals = cardano_transaction_body_get_proposal_procedures(body);
+  cardano_proposal_procedure_set_unref(&fields.proposals);
+
+  fields.guards = cardano_transaction_body_get_guards(body);
+  cardano_guard_set_unref(&fields.guards);
+
+  return fields;
+}
+
+/**
+ * \brief Gets the fields of a sub transaction body that hold script purposes.
+ *
+ * \param[in] body The sub transaction body.
+ * \param[in] resolved_inputs The resolved UTXOs of the inputs of the body, or NULL to visit no spend purpose.
+ *
+ * \return The fields of the body. They are borrowed from the body and must not be released.
+ */
+static script_purpose_fields_t
+get_sub_body_purpose_fields(cardano_sub_transaction_body_t* body, cardano_utxo_list_t* resolved_inputs)
+{
+  script_purpose_fields_t fields = { NULL, resolved_inputs, NULL, NULL, NULL, NULL, NULL, NULL };
+
+  if (resolved_inputs != NULL)
   {
-    cardano_multi_asset_t* mint = cardano_transaction_body_get_mint(body);
-    cardano_multi_asset_unref(&mint);
-
-    result = visit_mint_purposes(visitor, mint);
+    fields.inputs = cardano_sub_transaction_body_get_inputs(body);
+    cardano_transaction_input_set_unref(&fields.inputs);
   }
 
-  if (result == CARDANO_SUCCESS)
-  {
-    cardano_withdrawal_map_t* withdrawals = cardano_transaction_body_get_withdrawals(body);
-    cardano_withdrawal_map_unref(&withdrawals);
+  fields.mint = cardano_sub_transaction_body_get_mint(body);
+  cardano_multi_asset_unref(&fields.mint);
 
-    result = visit_withdrawal_purposes(visitor, withdrawals);
+  fields.withdrawals = cardano_sub_transaction_body_get_withdrawals(body);
+  cardano_withdrawal_map_unref(&fields.withdrawals);
+
+  fields.certificates = cardano_sub_transaction_body_get_certificates(body);
+  cardano_certificate_set_unref(&fields.certificates);
+
+  fields.voting_procedures = cardano_sub_transaction_body_get_voting_procedures(body);
+  cardano_voting_procedures_unref(&fields.voting_procedures);
+
+  fields.proposals = cardano_sub_transaction_body_get_proposal_procedures(body);
+  cardano_proposal_procedure_set_unref(&fields.proposals);
+
+  fields.guards = cardano_sub_transaction_body_get_guards(body);
+  cardano_guard_set_unref(&fields.guards);
+
+  return fields;
+}
+
+/**
+ * \brief Collects the hashes of the scripts the purposes of a body need.
+ *
+ * \param[in] fields The fields of the body whose purposes are inspected.
+ * \param[out] script_hashes On success, a new set holding each needed script hash once.
+ *
+ * \return \ref CARDANO_SUCCESS if the hashes were collected, or an appropriate error code.
+ */
+static cardano_error_t
+collect_script_hashes_needed(script_purpose_fields_t* fields, cardano_blake2b_hash_set_t** script_hashes)
+{
+  cardano_blake2b_hash_set_t* needed = NULL;
+  cardano_error_t             result = cardano_blake2b_hash_set_new(&needed);
+
+  if (result != CARDANO_SUCCESS)
+  {
+    return result;
   }
 
-  if (result == CARDANO_SUCCESS)
-  {
-    cardano_certificate_set_t* certificates = cardano_transaction_body_get_certificates(body);
-    cardano_certificate_set_unref(&certificates);
+  const script_purpose_visitor_t visitor = { collect_script_hash, (void*)needed };
 
-    result = visit_certificate_purposes(visitor, certificates);
+  result = visit_script_purposes(&visitor, fields);
+
+  if (result != CARDANO_SUCCESS)
+  {
+    cardano_blake2b_hash_set_unref(&needed);
+
+    return result;
   }
 
-  if (result == CARDANO_SUCCESS)
-  {
-    cardano_voting_procedures_t* procedures = cardano_transaction_body_get_voting_procedures(body);
-    cardano_voting_procedures_unref(&procedures);
+  *script_hashes = needed;
 
-    result = visit_voter_purposes(visitor, procedures);
+  return CARDANO_SUCCESS;
+}
+
+/**
+ * \brief Finds the first purpose of a body whose Plutus script has no redeemer.
+ *
+ * \param[in] fields The fields of the body whose purposes are inspected.
+ * \param[in] plutus_scripts The script hashes that resolve to a Plutus script.
+ * \param[in] redeemers The redeemers of the body, or NULL when it has none.
+ * \param[out] tag On success, the redeemer tag of the purpose without a redeemer, if any.
+ * \param[out] index On success, the redeemer index of the purpose without a redeemer, if any.
+ * \param[out] script_hash On success, a new reference to the Plutus script hash of the purpose, or NULL if every
+ *                         purpose has its redeemer.
+ *
+ * \return \ref CARDANO_SUCCESS if the purposes were inspected, or an appropriate error code.
+ */
+static cardano_error_t
+find_missing_redeemer(
+  script_purpose_fields_t*    fields,
+  cardano_blake2b_hash_set_t* plutus_scripts,
+  cardano_redeemer_list_t*    redeemers,
+  cardano_redeemer_tag_t*     tag,
+  uint64_t*                   index,
+  cardano_blake2b_hash_t**    script_hash)
+{
+  missing_redeemer_search_t search = { plutus_scripts, redeemers, CARDANO_REDEEMER_TAG_SPEND, 0U, NULL };
+
+  const script_purpose_visitor_t visitor = { find_purpose_without_redeemer, (void*)&search };
+
+  const cardano_error_t result = visit_script_purposes(&visitor, fields);
+
+  if (result != CARDANO_SUCCESS)
+  {
+    cardano_blake2b_hash_unref(&search.script_hash);
+
+    return result;
   }
 
-  if (result == CARDANO_SUCCESS)
-  {
-    cardano_proposal_procedure_set_t* proposals = cardano_transaction_body_get_proposal_procedures(body);
-    cardano_proposal_procedure_set_unref(&proposals);
+  *tag         = search.tag;
+  *index       = search.index;
+  *script_hash = search.script_hash;
 
-    result = visit_proposal_purposes(visitor, proposals);
-  }
-
-  if (result == CARDANO_SUCCESS)
-  {
-    cardano_guard_set_t* guards = cardano_transaction_body_get_guards(body);
-    cardano_guard_set_unref(&guards);
-
-    result = visit_guard_purposes(visitor, guards);
-  }
-
-  return result;
+  return CARDANO_SUCCESS;
 }
 
 /**
@@ -1248,14 +1395,6 @@ _cardano_get_script_hashes_needed(
     return CARDANO_ERROR_POINTER_IS_NULL;
   }
 
-  cardano_blake2b_hash_set_t* needed = NULL;
-  cardano_error_t             result = cardano_blake2b_hash_set_new(&needed);
-
-  if (result != CARDANO_SUCCESS)
-  {
-    return result;
-  }
-
   cardano_transaction_input_set_t* inputs = NULL;
 
   if (resolved_inputs != NULL)
@@ -1264,20 +1403,25 @@ _cardano_get_script_hashes_needed(
     cardano_transaction_input_set_unref(&inputs);
   }
 
-  const script_purpose_visitor_t visitor = { collect_script_hash, (void*)needed };
+  script_purpose_fields_t fields = get_body_purpose_fields(body, inputs, resolved_inputs);
 
-  result = visit_script_purposes(&visitor, body, inputs, resolved_inputs);
+  return collect_script_hashes_needed(&fields, script_hashes);
+}
 
-  if (result != CARDANO_SUCCESS)
+cardano_error_t
+_cardano_get_sub_transaction_script_hashes_needed(
+  cardano_sub_transaction_body_t* body,
+  cardano_utxo_list_t*            resolved_inputs,
+  cardano_blake2b_hash_set_t**    script_hashes)
+{
+  if ((body == NULL) || (script_hashes == NULL))
   {
-    cardano_blake2b_hash_set_unref(&needed);
-
-    return result;
+    return CARDANO_ERROR_POINTER_IS_NULL;
   }
 
-  *script_hashes = needed;
+  script_purpose_fields_t fields = get_sub_body_purpose_fields(body, resolved_inputs);
 
-  return CARDANO_SUCCESS;
+  return collect_script_hashes_needed(&fields, script_hashes);
 }
 
 cardano_error_t
@@ -1390,22 +1534,27 @@ _cardano_find_missing_redeemer(
     return CARDANO_ERROR_POINTER_IS_NULL;
   }
 
-  missing_redeemer_search_t search = { plutus_scripts, redeemers, CARDANO_REDEEMER_TAG_SPEND, 0U, NULL };
+  script_purpose_fields_t fields = get_body_purpose_fields(body, inputs, resolved_inputs);
 
-  const script_purpose_visitor_t visitor = { find_purpose_without_redeemer, (void*)&search };
+  return find_missing_redeemer(&fields, plutus_scripts, redeemers, tag, index, script_hash);
+}
 
-  const cardano_error_t result = visit_script_purposes(&visitor, body, inputs, resolved_inputs);
-
-  if (result != CARDANO_SUCCESS)
+cardano_error_t
+_cardano_find_sub_transaction_missing_redeemer(
+  cardano_sub_transaction_body_t* body,
+  cardano_utxo_list_t*            resolved_inputs,
+  cardano_blake2b_hash_set_t*     plutus_scripts,
+  cardano_redeemer_list_t*        redeemers,
+  cardano_redeemer_tag_t*         tag,
+  uint64_t*                       index,
+  cardano_blake2b_hash_t**        script_hash)
+{
+  if ((body == NULL) || (plutus_scripts == NULL) || (tag == NULL) || (index == NULL) || (script_hash == NULL))
   {
-    cardano_blake2b_hash_unref(&search.script_hash);
-
-    return result;
+    return CARDANO_ERROR_POINTER_IS_NULL;
   }
 
-  *tag         = search.tag;
-  *index       = search.index;
-  *script_hash = search.script_hash;
+  script_purpose_fields_t fields = get_sub_body_purpose_fields(body, resolved_inputs);
 
-  return CARDANO_SUCCESS;
+  return find_missing_redeemer(&fields, plutus_scripts, redeemers, tag, index, script_hash);
 }

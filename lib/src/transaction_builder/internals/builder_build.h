@@ -44,9 +44,10 @@ extern "C" {
  * redeemer exists anywhere in the batch, including one carried only by a sub transaction. It then
  * sets a placeholder script data hash for fee calculation when the transaction carries script data,
  * balances the transaction using the configured protocol parameters, coin selector and transaction
- * evaluator, checks that every script purpose of the balanced body whose script is a Plutus script
- * has a redeemer, recomputes the script data hash from the final redeemers, datums and cost models,
- * and returns the finalized transaction with a new reference.
+ * evaluator, checks that every script purpose of the balanced body and of the bodies of its sub
+ * transactions whose script is a Plutus script has a redeemer, recomputes the script data hash
+ * from the final redeemers, datums and cost models, and returns the finalized transaction with a
+ * new reference.
  *
  * \param[in,out] state A pointer to the \ref cardano_builder_state_t tracking the transaction under
  *                      construction. This parameter must not be NULL.
@@ -62,8 +63,8 @@ extern "C" {
  * \return \ref CARDANO_SUCCESS if the transaction was balanced and finalized,
  *         \ref CARDANO_ERROR_ELEMENT_NOT_FOUND if the transaction lacks a guard required by one of its
  *         sub transactions, \ref CARDANO_ERROR_MISSING_REDEEMER if a script purpose of the transaction
- *         needs a Plutus script but has no redeemer, or an appropriate error code indicating the failure
- *         reason.
+ *         or of one of its sub transactions needs a Plutus script but has no redeemer, or an
+ *         appropriate error code indicating the failure reason.
  */
 cardano_error_t
 cardano_builder_build(
@@ -112,15 +113,19 @@ cardano_error_t
 cardano_builder_update_script_data_hash(cardano_builder_state_t* state, cardano_transaction_t* tx);
 
 /**
- * \brief Checks that every script purpose of a transaction whose script is a Plutus script has a redeemer.
+ * \brief Checks that every script purpose of a transaction and of its sub transactions whose
+ * script is a Plutus script has a redeemer.
  *
  * The scripts the body needs are collected from the spent inputs, the mint, the withdrawals, the
  * certificates, the voters, the proposal guardrails and the guards, and each one is looked up among
  * the scripts provided to the batch: the witness sets of the transaction and of its sub transactions,
  * and the reference scripts of the reference inputs, the spent inputs and the UTXOs the sub
  * transactions spend or reference. Every purpose whose script resolves to a Plutus script must have a
- * redeemer with the tag and index the ledger gives that purpose. A purpose whose script is a native
- * script, or a script that nothing provides, needs no redeemer.
+ * redeemer with the tag and index the ledger gives that purpose. The purposes of every sub
+ * transaction the transaction carries are then checked against the same pooled scripts, each one
+ * with the redeemers of the witness set of that sub transaction and spend indices counted in its own
+ * sorted inputs, which are resolved among the UTXOs the sub transactions spend. A purpose whose
+ * script is a native script, or a script that nothing provides, needs no redeemer.
  *
  * \param[in] state A pointer to the \ref cardano_builder_state_t holding the resolved UTXOs of the
  *                  transaction. This parameter must not be NULL.
