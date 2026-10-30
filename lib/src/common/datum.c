@@ -76,6 +76,85 @@ cardano_datum_deallocate(void* object)
   _cardano_free(object);
 }
 
+/**
+ * \brief Computes the hash of the plutus data of an inline datum.
+ *
+ * The hash is the blake2b-256 digest of the CBOR encoding of the data. Data decoded from CBOR keeps the bytes
+ * it was decoded from and is hashed over them, so the result matches the datum hash the ledger computes.
+ *
+ * \param[in] data The plutus data to hash.
+ * \param[out] hash On success, the hash of the data. The caller must release it with \ref cardano_blake2b_hash_unref.
+ *
+ * \return \ref CARDANO_SUCCESS if the hash was computed, or an error code if the data could not be encoded or
+ *         memory could not be allocated.
+ */
+static cardano_error_t
+compute_inline_data_hash(const cardano_plutus_data_t* data, cardano_blake2b_hash_t** hash)
+{
+  cardano_cbor_writer_t* writer = cardano_cbor_writer_new();
+  cardano_buffer_t*      buffer = NULL;
+
+  *hash = NULL;
+
+  if (writer == NULL)
+  {
+    return CARDANO_ERROR_MEMORY_ALLOCATION_FAILED;
+  }
+
+  cardano_error_t result = cardano_plutus_data_to_cbor(data, writer);
+
+  if (result == CARDANO_SUCCESS)
+  {
+    result = cardano_cbor_writer_encode_in_buffer(writer, &buffer);
+  }
+
+  if (result == CARDANO_SUCCESS)
+  {
+    result = cardano_blake2b_compute_hash(cardano_buffer_get_data(buffer), cardano_buffer_get_size(buffer), (size_t)CARDANO_BLAKE2B_HASH_SIZE_256, hash);
+  }
+
+  cardano_buffer_unref(&buffer);
+  cardano_cbor_writer_unref(&writer);
+
+  return result;
+}
+
+/**
+ * \brief Refreshes the stored hash of an inline datum from its current plutus data.
+ *
+ * The plutus data of an inline datum is shared by reference and can change after the datum is created, so the
+ * stored hash bytes and hex are recomputed from the data every time they are read.
+ *
+ * \param[in] datum The inline datum whose stored hash is refreshed.
+ *
+ * \return \ref CARDANO_SUCCESS if the stored hash was refreshed, or an error code if it could not be computed.
+ */
+static cardano_error_t
+refresh_inline_data_hash(const cardano_datum_t* datum)
+{
+  cardano_blake2b_hash_t* hash   = NULL;
+  cardano_error_t         result = compute_inline_data_hash(datum->inline_data, &hash);
+
+  if (result != CARDANO_SUCCESS)
+  {
+    return result;
+  }
+
+  // cppcheck-suppress misra-c2012-11.8; Reason: the stored hash is a cache of the shared plutus data
+  cardano_datum_t* cache = (cardano_datum_t*)((void*)datum);
+
+  result = cardano_blake2b_hash_to_bytes(hash, cache->hash_bytes, sizeof(cache->hash_bytes));
+
+  if (result == CARDANO_SUCCESS)
+  {
+    result = cardano_blake2b_hash_to_hex(hash, cache->hash_hex, sizeof(cache->hash_hex));
+  }
+
+  cardano_blake2b_hash_unref(&hash);
+
+  return result;
+}
+
 /* DEFINITIONS ****************************************************************/
 
 cardano_error_t
@@ -238,6 +317,9 @@ cardano_datum_new_inline_data(
   (*datum)->base.last_error[0] = '\0';
   (*datum)->type               = CARDANO_DATUM_TYPE_INLINE_DATA;
   (*datum)->inline_data        = data;
+
+  CARDANO_UNUSED(memset((*datum)->hash_bytes, 0, sizeof((*datum)->hash_bytes)));
+  CARDANO_UNUSED(memset((*datum)->hash_hex, 0, sizeof((*datum)->hash_hex)));
 
   cardano_plutus_data_ref(data);
 
@@ -547,7 +629,16 @@ cardano_datum_get_data_hash(const cardano_datum_t* datum)
   }
 
   cardano_blake2b_hash_t* hash             = NULL;
-  cardano_error_t         read_hash_result = cardano_blake2b_hash_from_bytes(datum->hash_bytes, sizeof(datum->hash_bytes), &hash);
+  cardano_error_t         read_hash_result = CARDANO_SUCCESS;
+
+  if (datum->type == CARDANO_DATUM_TYPE_INLINE_DATA)
+  {
+    read_hash_result = compute_inline_data_hash(datum->inline_data, &hash);
+  }
+  else
+  {
+    read_hash_result = cardano_blake2b_hash_from_bytes(datum->hash_bytes, sizeof(datum->hash_bytes), &hash);
+  }
 
   if (read_hash_result != CARDANO_SUCCESS)
   {
@@ -576,6 +667,11 @@ cardano_datum_get_data_hash_bytes(const cardano_datum_t* datum)
     return NULL;
   }
 
+  if ((datum->type == CARDANO_DATUM_TYPE_INLINE_DATA) && (refresh_inline_data_hash(datum) != CARDANO_SUCCESS))
+  {
+    return NULL;
+  }
+
   return datum->hash_bytes;
 }
 
@@ -587,6 +683,11 @@ cardano_datum_get_data_hash_hex_size(const cardano_datum_t* datum)
     return 0U;
   }
 
+  if (datum->type == CARDANO_DATUM_TYPE_INLINE_DATA)
+  {
+    return sizeof(datum->hash_hex);
+  }
+
   return cardano_safe_strlen(datum->hash_hex, sizeof(datum->hash_hex)) + 1U;
 }
 
@@ -594,6 +695,11 @@ const char*
 cardano_datum_get_data_hash_hex(const cardano_datum_t* datum)
 {
   if (datum == NULL)
+  {
+    return NULL;
+  }
+
+  if ((datum->type == CARDANO_DATUM_TYPE_INLINE_DATA) && (refresh_inline_data_hash(datum) != CARDANO_SUCCESS))
   {
     return NULL;
   }
