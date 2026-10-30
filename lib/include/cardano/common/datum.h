@@ -377,11 +377,16 @@ CARDANO_EXPORT cardano_plutus_data_t* cardano_datum_get_inline_data(cardano_datu
  * reference count of the hash object is increased by one, making it the caller's responsibility
  * to release it by calling \ref cardano_blake2b_hash_unref when it is no longer needed.
  *
+ * For a datum of type \ref CARDANO_DATUM_TYPE_INLINE_DATA the hash is the datum hash of its plutus data: the
+ * blake2b-256 hash of the CBOR encoding of the data, computed from the data on every call. Plutus data decoded
+ * from CBOR is hashed over the bytes it was decoded from (until its CBOR cache is cleared), so the hash matches
+ * the one the ledger computes.
+ *
  * \param datum A constant pointer to the \ref cardano_datum_t object from which
  *                   the hash is to be retrieved.
  *
  * \return A pointer to a new \ref cardano_blake2b_hash_t object containing the hash.
- *         If the input datum is NULL or the hash cannot be allocated, returns NULL.
+ *         If the input datum is NULL or the hash cannot be computed or allocated, returns NULL.
  *         The caller is responsible for managing the lifecycle of this object,
  *         including releasing it with \ref cardano_blake2b_hash_unref.
  *
@@ -442,12 +447,18 @@ CARDANO_EXPORT size_t cardano_datum_get_data_hash_bytes_size(const cardano_datum
  * \ref cardano_datum_t object. It provides a direct pointer to the internal byte array
  * representing the hash, which should not be modified or freed by the caller.
  *
+ * For a datum of type \ref CARDANO_DATUM_TYPE_INLINE_DATA the hash is the datum hash of its plutus data, as
+ * reported by \ref cardano_datum_get_data_hash. It is computed from the data on every call and stored in the
+ * datum, despite the const parameter, so the returned bytes are only valid until the next call to
+ * \ref cardano_datum_get_data_hash_bytes or \ref cardano_datum_get_data_hash_hex on the same datum. These two
+ * functions must not be called concurrently on the same datum.
+ *
  * \param datum A constant pointer to the \ref cardano_datum_t object from which
  *                   the hash bytes are to be retrieved.
  *
  * \return A pointer to a constant byte array containing the hash data. If the input datum
- *         is NULL, returns NULL. The data remains valid as long as the datum object is not
- *         freed or modified.
+ *         is NULL, or the hash of an inline datum cannot be computed, returns NULL. For a datum created from a
+ *         hash, the data remains valid as long as the datum is not freed or modified.
  *
  * Usage Example:
  * \code{.c}
@@ -501,12 +512,18 @@ CARDANO_EXPORT size_t cardano_datum_get_data_hash_hex_size(const cardano_datum_t
  * associated with a given \ref cardano_datum_t object. It returns a direct pointer to the
  * internal hex string which should not be modified or freed by the caller.
  *
+ * For a datum of type \ref CARDANO_DATUM_TYPE_INLINE_DATA the hash is the datum hash of its plutus data, as
+ * reported by \ref cardano_datum_get_data_hash. It is computed from the data on every call and stored in the
+ * datum, despite the const parameter, so the returned string is only valid until the next call to
+ * \ref cardano_datum_get_data_hash_bytes or \ref cardano_datum_get_data_hash_hex on the same datum. These two
+ * functions must not be called concurrently on the same datum.
+ *
  * \param datum A constant pointer to the \ref cardano_datum_t object from which
  *                   the hex string of the hash is to be retrieved. The object must not be NULL.
  *
  * \return A pointer to a constant character array containing the hex representation of the hash.
- *         If the input datum is NULL, returns NULL. The data remains valid as long as the
- *         datum object is not freed or modified.
+ *         If the input datum is NULL, or the hash of an inline datum cannot be computed, returns NULL. For a datum
+ *         created from a hash, the data remains valid as long as the datum is not freed or modified.
  *
  * Usage Example:
  * \code{.c}
@@ -565,6 +582,8 @@ cardano_datum_get_type(const cardano_datum_t* datum, cardano_datum_type_t* type)
  * represents the identifying data for the datum. The function copies the provided hash into
  * the datum, so the original hash object may be modified or freed after this operation without
  * affecting the datum's hash.
+ *
+ * An inline datum always reports the hash of its data, so a hash set on it is not reported by the hash getters.
  *
  * \param[in,out] datum A pointer to the \ref cardano_datum_t object whose hash is to be set.
  *                           This object must have been previously created and not yet freed.

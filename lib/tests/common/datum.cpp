@@ -24,6 +24,7 @@
 #include <cardano/error.h>
 
 #include <cardano/common/datum.h>
+#include <cardano/plutus_data/plutus_list.h>
 
 #include "../allocators_helpers.h"
 #include "../json_helpers.h"
@@ -38,6 +39,14 @@ static const char* DATUM_HASH_CBOR         = "8200582000000000000000000000000000
 static const char* INVALID_DATUM_HASH_CBOR = "82005821000000000000000000000000000000000000000000000000000000000000000000";
 static const char* HASH                    = "0000000000000000000000000000000000000000000000000000000000000000";
 static const char* PLUTUS_DATA             = "d8799f0102030405ff";
+
+static const char* INTEGER_INLINE_DATUM_CBOR       = "8201d818421865";
+static const char* INTEGER_INLINE_DATUM_HASH       = "4250ea713ad7ba3b121621a8d14d8e39a4300065314b7ce9a40526acf992c8e3";
+static const char* NON_CANONICAL_INLINE_DATUM_CBOR = "8201d818449f0102ff";
+static const char* NON_CANONICAL_INLINE_DATUM_HASH = "ed33125018c5cbc9ae1b242a3ff8f3db2e108e4a63866d0b5238a34502c723ed";
+static const char* DEFINITE_LIST_HASH              = "9dab3a6d25da90664899d6e74993a7281e21fb7d420c0f347351dd24c2abba5e";
+static const char* EMPTY_LIST_HASH                 = "45b0cfc220ceec5b7c1c62c4d4193d38e4eba48e8815729ce75f9c0ab0e4c1c0";
+static const char* SINGLE_ELEMENT_LIST_HASH        = "1b78327c4501e0d63678b6e5cad490ff8fa1127446f81fcab1a3f4ca9d01b6cf";
 
 /* STATIC FUNCTIONS **********************************************************/
 
@@ -58,6 +67,54 @@ new_default_datum(const char* cbor)
 
   return datum;
 };
+
+/**
+ * Creates an inline datum holding the integer 101.
+ * @return A new inline datum.
+ */
+static cardano_datum_t*
+new_integer_inline_datum()
+{
+  cardano_plutus_data_t* data  = nullptr;
+  cardano_datum_t*       datum = nullptr;
+
+  EXPECT_EQ(cardano_plutus_data_new_integer_from_int(101, &data), CARDANO_SUCCESS);
+  EXPECT_EQ(cardano_datum_new_inline_data(data, &datum), CARDANO_SUCCESS);
+
+  cardano_plutus_data_unref(&data);
+
+  return datum;
+}
+
+/**
+ * Asserts that every hash getter of the datum reports the given hash.
+ * @param datum The datum to check.
+ * @param expected_hex The expected hash in hex.
+ */
+static void
+expect_datum_hash(const cardano_datum_t* datum, const char* expected_hex)
+{
+  cardano_blake2b_hash_t* expected = nullptr;
+
+  ASSERT_EQ(cardano_blake2b_hash_from_hex(expected_hex, strlen(expected_hex), &expected), CARDANO_SUCCESS);
+
+  cardano_blake2b_hash_t* hash = cardano_datum_get_data_hash(datum);
+
+  ASSERT_NE(hash, nullptr);
+  EXPECT_TRUE(cardano_blake2b_hash_equals(hash, expected));
+
+  const byte_t* bytes = cardano_datum_get_data_hash_bytes(datum);
+
+  ASSERT_NE(bytes, nullptr);
+  ASSERT_EQ(cardano_datum_get_data_hash_bytes_size(datum), cardano_blake2b_hash_get_bytes_size(expected));
+  EXPECT_EQ(memcmp(bytes, cardano_blake2b_hash_get_data(expected), cardano_blake2b_hash_get_bytes_size(expected)), 0);
+
+  EXPECT_STREQ(cardano_datum_get_data_hash_hex(datum), expected_hex);
+  EXPECT_EQ(cardano_datum_get_data_hash_hex_size(datum), strlen(expected_hex) + 1U);
+
+  cardano_blake2b_hash_unref(&hash);
+  cardano_blake2b_hash_unref(&expected);
+}
 
 /* UNIT TESTS ****************************************************************/
 
@@ -784,6 +841,174 @@ TEST(cardano_datum_get_hash_hex, returnsNullIfGivenANullPtr)
 
   // Assert
   EXPECT_EQ(hash, (const char*)nullptr);
+}
+
+TEST(cardano_datum_get_data_hash, returnsTheHashOfInlineData)
+{
+  // Arrange
+  cardano_datum_t* datum = new_integer_inline_datum();
+
+  // Act & Assert
+  expect_datum_hash(datum, INTEGER_INLINE_DATUM_HASH);
+
+  // Cleanup
+  cardano_datum_unref(&datum);
+}
+
+TEST(cardano_datum_get_data_hash, returnsTheHashOfDecodedInlineData)
+{
+  // Arrange
+  cardano_datum_t* datum = new_default_datum(INTEGER_INLINE_DATUM_CBOR);
+
+  // Act & Assert
+  expect_datum_hash(datum, INTEGER_INLINE_DATUM_HASH);
+
+  // Cleanup
+  cardano_datum_unref(&datum);
+}
+
+TEST(cardano_datum_get_data_hash, returnsTheHashOfTheOriginalBytesOfInlineData)
+{
+  // Arrange
+  cardano_datum_t* datum = new_default_datum(NON_CANONICAL_INLINE_DATUM_CBOR);
+
+  // Act & Assert
+  expect_datum_hash(datum, NON_CANONICAL_INLINE_DATUM_HASH);
+  EXPECT_STRNE(cardano_datum_get_data_hash_hex(datum), DEFINITE_LIST_HASH);
+
+  // Cleanup
+  cardano_datum_unref(&datum);
+}
+
+TEST(cardano_datum_get_data_hash, followsChangesToTheInlineData)
+{
+  // Arrange
+  cardano_plutus_list_t* list    = nullptr;
+  cardano_plutus_data_t* data    = nullptr;
+  cardano_plutus_data_t* element = nullptr;
+  cardano_datum_t*       datum   = nullptr;
+
+  ASSERT_EQ(cardano_plutus_list_new(&list), CARDANO_SUCCESS);
+  ASSERT_EQ(cardano_plutus_data_new_list(list, &data), CARDANO_SUCCESS);
+  ASSERT_EQ(cardano_datum_new_inline_data(data, &datum), CARDANO_SUCCESS);
+  ASSERT_EQ(cardano_plutus_data_new_integer_from_int(1, &element), CARDANO_SUCCESS);
+
+  expect_datum_hash(datum, EMPTY_LIST_HASH);
+
+  // Act
+  ASSERT_EQ(cardano_plutus_list_add(list, element), CARDANO_SUCCESS);
+
+  // Assert
+  expect_datum_hash(datum, SINGLE_ELEMENT_LIST_HASH);
+
+  // Cleanup
+  cardano_datum_unref(&datum);
+  cardano_plutus_data_unref(&element);
+  cardano_plutus_data_unref(&data);
+  cardano_plutus_list_unref(&list);
+}
+
+TEST(cardano_datum_get_data_hash, returnsNullOnEveryAllocationFailureForInlineData)
+{
+  bool succeeded = false;
+
+  for (int i = 0; (i < 256) && !succeeded; ++i)
+  {
+    // Arrange
+    cardano_datum_t* datum = new_integer_inline_datum();
+
+    reset_allocators_run_count();
+    set_malloc_limit(i);
+    cardano_set_allocators(fail_malloc_at_limit, realloc, free);
+
+    // Act
+    cardano_blake2b_hash_t* hash = cardano_datum_get_data_hash(datum);
+
+    reset_allocators_run_count();
+    reset_limited_malloc();
+    cardano_set_allocators(malloc, realloc, free);
+
+    // Assert
+    if (hash != nullptr)
+    {
+      succeeded = true;
+      EXPECT_EQ(cardano_blake2b_hash_get_hex_size(hash), strlen(INTEGER_INLINE_DATUM_HASH) + 1U);
+    }
+
+    // Cleanup
+    cardano_blake2b_hash_unref(&hash);
+    cardano_datum_unref(&datum);
+  }
+
+  EXPECT_TRUE(succeeded);
+}
+
+TEST(cardano_datum_get_data_hash_bytes, returnsNullOnEveryAllocationFailureForInlineData)
+{
+  bool succeeded = false;
+
+  for (int i = 0; (i < 256) && !succeeded; ++i)
+  {
+    // Arrange
+    cardano_datum_t* datum = new_integer_inline_datum();
+
+    reset_allocators_run_count();
+    set_malloc_limit(i);
+    cardano_set_allocators(fail_malloc_at_limit, realloc, free);
+
+    // Act
+    const byte_t* bytes = cardano_datum_get_data_hash_bytes(datum);
+
+    reset_allocators_run_count();
+    reset_limited_malloc();
+    cardano_set_allocators(malloc, realloc, free);
+
+    // Assert
+    if (bytes != nullptr)
+    {
+      succeeded = true;
+      EXPECT_STREQ(cardano_datum_get_data_hash_hex(datum), INTEGER_INLINE_DATUM_HASH);
+    }
+
+    // Cleanup
+    cardano_datum_unref(&datum);
+  }
+
+  EXPECT_TRUE(succeeded);
+}
+
+TEST(cardano_datum_get_data_hash_hex, returnsNullOnEveryAllocationFailureForInlineData)
+{
+  bool succeeded = false;
+
+  for (int i = 0; (i < 256) && !succeeded; ++i)
+  {
+    // Arrange
+    cardano_datum_t* datum = new_integer_inline_datum();
+
+    reset_allocators_run_count();
+    set_malloc_limit(i);
+    cardano_set_allocators(fail_malloc_at_limit, realloc, free);
+
+    // Act
+    const char* hex = cardano_datum_get_data_hash_hex(datum);
+
+    reset_allocators_run_count();
+    reset_limited_malloc();
+    cardano_set_allocators(malloc, realloc, free);
+
+    // Assert
+    if (hex != nullptr)
+    {
+      succeeded = true;
+      EXPECT_STREQ(hex, INTEGER_INLINE_DATUM_HASH);
+    }
+
+    // Cleanup
+    cardano_datum_unref(&datum);
+  }
+
+  EXPECT_TRUE(succeeded);
 }
 
 TEST(cardano_datum_get_type, returnsErrorIfGivenANullPtr)
