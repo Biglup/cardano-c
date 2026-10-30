@@ -8052,25 +8052,27 @@ TEST(cardano_tx_builder_add_sub_transaction, buildsTheSameBatchIfTheBatcherIsAls
 TEST(cardano_tx_builder_add_sub_transaction, reportsUnbalancedSubTransactionsInLegacyModeWhenBuilding)
 {
   // Arrange
-  cardano_protocol_parameters_t* params         = init_protocol_parameters();
-  cardano_utxo_t*                seller_utxo    = create_utxo(CBOR_DIFFERENT_VAL1);
-  cardano_utxo_t*                batcher_utxo   = create_utxo(CBOR_DIFFERENT_VAL2);
-  cardano_utxo_t*                reference_utxo = create_utxo(UTXO_WITH_REF_SCRIPT_PV2);
-  cardano_utxo_list_t*           seller_utxos   = new_single_utxo_list(seller_utxo);
-  cardano_utxo_list_t*           batcher_utxos  = new_single_utxo_list(batcher_utxo);
-  cardano_sub_transaction_t*     seller_sub_tx  = build_party_sub_transaction(params, seller_utxo, 11150770, 0);
-  cardano_transaction_output_t*  ref_output     = cardano_utxo_get_output(reference_utxo);
-  cardano_script_t*              ref_script     = cardano_transaction_output_get_script_ref(ref_output);
-  cardano_blake2b_hash_t*        ref_hash       = cardano_script_get_hash(ref_script);
-  cardano_credential_t*          script_guard   = nullptr;
+  cardano_protocol_parameters_t* params        = init_protocol_parameters_with_version(12U);
+  cardano_utxo_t*                seller_utxo   = create_utxo(CBOR_DIFFERENT_VAL1);
+  cardano_utxo_t*                batcher_utxo  = create_utxo(CBOR_DIFFERENT_VAL2);
+  cardano_utxo_list_t*           seller_utxos  = new_single_utxo_list(seller_utxo);
+  cardano_utxo_list_t*           batcher_utxos = new_single_utxo_list(batcher_utxo);
+  cardano_sub_transaction_t*     seller_sub_tx = build_party_sub_transaction(params, seller_utxo, 11150770, 0);
+  cardano_script_t*              policy        = create_script(ALWAYS_SUCCEEDS_V3_CBOR);
+  cardano_blake2b_hash_t*        policy_id     = cardano_script_get_hash(policy);
+  cardano_asset_name_t*          asset_name    = nullptr;
+  cardano_plutus_data_t*         redeemer      = create_plutus_data(PLUTUS_DATA_CBOR);
 
-  EXPECT_EQ(cardano_credential_new(ref_hash, CARDANO_CREDENTIAL_TYPE_SCRIPT_HASH, &script_guard), CARDANO_SUCCESS);
+  EXPECT_EQ(cardano_asset_name_from_string("token", strlen("token"), &asset_name), CARDANO_SUCCESS);
 
   cardano_tx_builder_t* tx_builder = new_funded_tx_builder(params, batcher_utxos);
 
+  cardano_tx_builder_set_collateral_change_address_ex(tx_builder, CHANGE_ADDRESS, strlen(CHANGE_ADDRESS));
+  cardano_tx_builder_set_collateral_utxos(tx_builder, batcher_utxos);
+
   // Act
-  cardano_tx_builder_add_reference_input(tx_builder, reference_utxo);
-  cardano_tx_builder_add_guard(tx_builder, script_guard);
+  cardano_tx_builder_add_script(tx_builder, policy);
+  cardano_tx_builder_mint_token(tx_builder, policy_id, asset_name, 1, redeemer);
   cardano_tx_builder_add_sub_transaction(tx_builder, seller_sub_tx, seller_utxos);
 
   cardano_transaction_t* tx     = nullptr;
@@ -8082,16 +8084,15 @@ TEST(cardano_tx_builder_add_sub_transaction, reportsUnbalancedSubTransactionsInL
   EXPECT_STREQ(cardano_tx_builder_get_last_error(tx_builder), "The top level transaction needs a PlutusV1, PlutusV2 or PlutusV3 script, so the sub transactions must balance between themselves. Add a balancing sub transaction, top level change can not absorb their imbalance.");
 
   // Cleanup
-  cardano_credential_unref(&script_guard);
-  cardano_blake2b_hash_unref(&ref_hash);
-  cardano_script_unref(&ref_script);
-  cardano_transaction_output_unref(&ref_output);
+  cardano_plutus_data_unref(&redeemer);
+  cardano_asset_name_unref(&asset_name);
+  cardano_blake2b_hash_unref(&policy_id);
+  cardano_script_unref(&policy);
   cardano_tx_builder_unref(&tx_builder);
   cardano_protocol_parameters_unref(&params);
   cardano_sub_transaction_unref(&seller_sub_tx);
   cardano_utxo_unref(&seller_utxo);
   cardano_utxo_unref(&batcher_utxo);
-  cardano_utxo_unref(&reference_utxo);
   cardano_utxo_list_unref(&seller_utxos);
   cardano_utxo_list_unref(&batcher_utxos);
 }
@@ -15210,6 +15211,475 @@ TEST(cardano_tx_builder_build, neverSkipsTheRedeemerOfAPlutusLockedInputWhenAMem
 
   // Cleanup
   cardano_utxo_unref(&utxo);
+  cardano_script_unref(&script);
+  cardano_utxo_list_unref(&utxos);
+  cardano_protocol_parameters_unref(&params);
+}
+
+static const char* HIGH_SCRIPT_UTXO_TX_ID = "ff00000000000000000000000000000000000000000000000000000000000000";
+
+/**
+ * Creates a UTXO without a datum locked by a script, with the given transaction id.
+ * \param tx_id The hex encoded id of the transaction that created the UTXO.
+ * \param script The script that locks the UTXO.
+ * \return A new instance of the UTXO.
+ */
+static cardano_utxo_t*
+create_script_utxo_with_id(const char* tx_id, cardano_script_t* script)
+{
+  cardano_utxo_t*               base   = create_script_utxo(script);
+  cardano_transaction_output_t* output = cardano_utxo_get_output(base);
+  cardano_blake2b_hash_t*       id     = nullptr;
+  cardano_transaction_input_t*  input  = nullptr;
+  cardano_utxo_t*               utxo   = nullptr;
+
+  EXPECT_EQ(cardano_blake2b_hash_from_hex(tx_id, strlen(tx_id), &id), CARDANO_SUCCESS);
+  EXPECT_EQ(cardano_transaction_input_new(id, 0U, &input), CARDANO_SUCCESS);
+  EXPECT_EQ(cardano_utxo_new(input, output, &utxo), CARDANO_SUCCESS);
+
+  cardano_transaction_input_unref(&input);
+  cardano_blake2b_hash_unref(&id);
+  cardano_transaction_output_unref(&output);
+  cardano_utxo_unref(&base);
+
+  return utxo;
+}
+
+TEST(cardano_tx_builder_build, reportsTheSpendIndexOfAMissingRedeemerInTheBalancedInputs)
+{
+  // Arrange
+  cardano_protocol_parameters_t* params        = init_dijkstra_protocol_parameters();
+  cardano_utxo_t*                funding_utxo  = create_utxo(CBOR_DIFFERENT_VAL2);
+  cardano_utxo_list_t*           funding_utxos = new_single_utxo_list(funding_utxo);
+  cardano_tx_builder_t*          tx_builder    = new_funded_tx_builder(params, funding_utxos);
+  cardano_script_t*              script        = create_script(ALWAYS_SUCCEEDS_V3_CBOR);
+  cardano_utxo_t*                utxo          = create_script_utxo_with_id(HIGH_SCRIPT_UTXO_TX_ID, script);
+
+  // Act
+  cardano_tx_builder_add_script(tx_builder, script);
+  cardano_tx_builder_add_input(tx_builder, utxo, nullptr, nullptr);
+  cardano_tx_builder_send_lovelace_ex(tx_builder, CHANGE_ADDRESS, strlen(CHANGE_ADDRESS), 50000000U);
+
+  // Assert
+  expect_missing_redeemer(tx_builder, "spending", 1U, script);
+
+  // Cleanup
+  cardano_utxo_unref(&utxo);
+  cardano_script_unref(&script);
+  cardano_tx_builder_unref(&tx_builder);
+  cardano_utxo_list_unref(&funding_utxos);
+  cardano_utxo_unref(&funding_utxo);
+  cardano_protocol_parameters_unref(&params);
+}
+
+/* SUB TRANSACTION MISSING REDEEMERS *****************************************/
+
+/**
+ * Creates the error message the builder reports when a Plutus script purpose of a sub transaction has no redeemer.
+ * \param sub_tx The sub transaction of the purpose.
+ * \param batch_index The zero based index of the sub transaction in the batch.
+ * \param purpose The name of the purpose.
+ * \param index The redeemer index of the purpose.
+ * \param script The Plutus script of the purpose.
+ * \return The expected error message.
+ */
+static std::string
+sub_transaction_missing_redeemer_message(
+  cardano_sub_transaction_t* sub_tx,
+  const uint64_t             batch_index,
+  const char*                purpose,
+  const uint64_t             index,
+  cardano_script_t*          script)
+{
+  cardano_blake2b_hash_t* hash         = cardano_script_get_hash(script);
+  cardano_blake2b_hash_t* id           = cardano_sub_transaction_get_id(sub_tx);
+  char                    hash_hex[57] = { 0 };
+  char                    id_hex[65]   = { 0 };
+
+  EXPECT_EQ(cardano_blake2b_hash_to_hex(hash, hash_hex, sizeof(hash_hex)), CARDANO_SUCCESS);
+  EXPECT_EQ(cardano_blake2b_hash_to_hex(id, id_hex, sizeof(id_hex)), CARDANO_SUCCESS);
+
+  cardano_blake2b_hash_unref(&id);
+  cardano_blake2b_hash_unref(&hash);
+
+  return std::string("The ") + purpose + " purpose at index " + std::to_string(index) + " of the sub transaction " + id_hex + " (index " + std::to_string(batch_index) + " in the batch) needs a redeemer for the Plutus script " + hash_hex + ", but the sub transaction carries none.";
+}
+
+/**
+ * Builds a transaction and expects the build to fail because a Plutus script purpose of a sub transaction has no
+ * redeemer.
+ * \param tx_builder The transaction builder.
+ * \param sub_tx The sub transaction of the purpose without a redeemer.
+ * \param batch_index The zero based index of the sub transaction in the batch.
+ * \param purpose The name of the purpose without a redeemer.
+ * \param index The redeemer index of the purpose.
+ * \param script The Plutus script of the purpose.
+ */
+static void
+expect_sub_transaction_missing_redeemer(
+  cardano_tx_builder_t*      tx_builder,
+  cardano_sub_transaction_t* sub_tx,
+  const uint64_t             batch_index,
+  const char*                purpose,
+  const uint64_t             index,
+  cardano_script_t*          script)
+{
+  cardano_transaction_t* tx     = nullptr;
+  const cardano_error_t  result = cardano_tx_builder_build(tx_builder, &tx);
+
+  EXPECT_EQ(result, CARDANO_ERROR_MISSING_REDEEMER);
+  EXPECT_EQ(tx, nullptr);
+  EXPECT_EQ(std::string(cardano_tx_builder_get_last_error(tx_builder)), sub_transaction_missing_redeemer_message(sub_tx, batch_index, purpose, index, script));
+
+  cardano_transaction_unref(&tx);
+}
+
+/**
+ * Builds a sub transaction that spends one UTXO, without providing the script that locks it.
+ * \param params The protocol parameters.
+ * \param utxo The UTXO the sub transaction spends.
+ * \return A new instance of the sub transaction.
+ */
+static cardano_sub_transaction_t*
+build_spending_sub_transaction(cardano_protocol_parameters_t* params, cardano_utxo_t* utxo)
+{
+  cardano_sub_tx_builder_t*  builder = cardano_sub_tx_builder_new(params, &CARDANO_MAINNET_SLOT_CONFIG);
+  cardano_sub_transaction_t* sub_tx  = nullptr;
+
+  cardano_sub_tx_builder_add_input(builder, utxo, nullptr, nullptr);
+
+  EXPECT_EQ(cardano_sub_tx_builder_build(builder, &sub_tx), CARDANO_SUCCESS) << cardano_sub_tx_builder_get_last_error(builder);
+
+  cardano_sub_tx_builder_unref(&builder);
+
+  return sub_tx;
+}
+
+/**
+ * Builds by hand a sub transaction that spends one UTXO locked by a PlutusV4 script it does not provide, pays its value
+ * to the change address and carries the spend redeemer of the input, together with the script data hash of that
+ * redeemer under the PlutusV4 cost model.
+ * \param params The protocol parameters the cost model is taken from.
+ * \param utxo The UTXO the sub transaction spends.
+ * \return A new instance of the sub transaction.
+ */
+static cardano_sub_transaction_t*
+build_redeemed_spending_sub_transaction(cardano_protocol_parameters_t* params, cardano_utxo_t* utxo)
+{
+  cardano_transaction_input_t*       input           = cardano_utxo_get_input(utxo);
+  cardano_transaction_output_t*      spent_output    = cardano_utxo_get_output(utxo);
+  cardano_value_t*                   value           = cardano_transaction_output_get_value(spent_output);
+  cardano_costmdls_t*                params_costmdls = cardano_protocol_parameters_get_cost_models(params);
+  cardano_address_t*                 address         = nullptr;
+  cardano_transaction_output_t*      output          = nullptr;
+  cardano_transaction_input_set_t*   inputs          = nullptr;
+  cardano_transaction_output_list_t* outputs         = nullptr;
+  cardano_redeemer_list_t*           redeemers       = nullptr;
+  cardano_redeemer_t*                redeemer        = nullptr;
+  cardano_plutus_data_t*             data            = nullptr;
+  cardano_ex_units_t*                ex_units        = nullptr;
+  cardano_cost_model_t*              cost_model      = nullptr;
+  cardano_costmdls_t*                costmdls        = nullptr;
+  cardano_blake2b_hash_t*            hash            = nullptr;
+  cardano_sub_transaction_body_t*    body            = nullptr;
+  cardano_witness_set_t*             witness_set     = nullptr;
+  cardano_sub_transaction_t*         sub_tx          = nullptr;
+
+  EXPECT_EQ(cardano_address_from_string(CHANGE_ADDRESS, strlen(CHANGE_ADDRESS), &address), CARDANO_SUCCESS);
+  EXPECT_EQ(cardano_transaction_output_new(address, cardano_value_get_coin(value), &output), CARDANO_SUCCESS);
+  EXPECT_EQ(cardano_transaction_input_set_new(&inputs), CARDANO_SUCCESS);
+  EXPECT_EQ(cardano_transaction_input_set_add(inputs, input), CARDANO_SUCCESS);
+  EXPECT_EQ(cardano_transaction_output_list_new(&outputs), CARDANO_SUCCESS);
+  EXPECT_EQ(cardano_transaction_output_list_add(outputs, output), CARDANO_SUCCESS);
+
+  EXPECT_EQ(cardano_redeemer_list_new(&redeemers), CARDANO_SUCCESS);
+  EXPECT_EQ(cardano_plutus_data_new_integer_from_int(42, &data), CARDANO_SUCCESS);
+  EXPECT_EQ(cardano_ex_units_new(1000000U, 200000000U, &ex_units), CARDANO_SUCCESS);
+  EXPECT_EQ(cardano_redeemer_new(CARDANO_REDEEMER_TAG_SPEND, 0U, data, ex_units, &redeemer), CARDANO_SUCCESS);
+  EXPECT_EQ(cardano_redeemer_list_add(redeemers, redeemer), CARDANO_SUCCESS);
+
+  EXPECT_EQ(cardano_costmdls_new(&costmdls), CARDANO_SUCCESS);
+  EXPECT_EQ(cardano_costmdls_get(params_costmdls, CARDANO_PLUTUS_LANGUAGE_VERSION_V4, &cost_model), CARDANO_SUCCESS);
+  EXPECT_EQ(cardano_costmdls_insert(costmdls, cost_model), CARDANO_SUCCESS);
+  EXPECT_EQ(cardano_compute_script_data_hash(costmdls, redeemers, nullptr, &hash), CARDANO_SUCCESS);
+
+  EXPECT_EQ(cardano_sub_transaction_body_new(inputs, outputs, nullptr, &body), CARDANO_SUCCESS);
+  EXPECT_EQ(cardano_sub_transaction_body_set_script_data_hash(body, hash), CARDANO_SUCCESS);
+  EXPECT_EQ(cardano_witness_set_new(&witness_set), CARDANO_SUCCESS);
+  EXPECT_EQ(cardano_witness_set_set_redeemers(witness_set, redeemers), CARDANO_SUCCESS);
+  EXPECT_EQ(cardano_sub_transaction_new(body, witness_set, nullptr, &sub_tx), CARDANO_SUCCESS);
+
+  cardano_witness_set_unref(&witness_set);
+  cardano_sub_transaction_body_unref(&body);
+  cardano_blake2b_hash_unref(&hash);
+  cardano_costmdls_unref(&costmdls);
+  cardano_cost_model_unref(&cost_model);
+  cardano_ex_units_unref(&ex_units);
+  cardano_plutus_data_unref(&data);
+  cardano_redeemer_unref(&redeemer);
+  cardano_redeemer_list_unref(&redeemers);
+  cardano_transaction_output_list_unref(&outputs);
+  cardano_transaction_input_set_unref(&inputs);
+  cardano_transaction_output_unref(&output);
+  cardano_address_unref(&address);
+  cardano_costmdls_unref(&params_costmdls);
+  cardano_value_unref(&value);
+  cardano_transaction_output_unref(&spent_output);
+  cardano_transaction_input_unref(&input);
+
+  return sub_tx;
+}
+
+TEST(cardano_tx_builder_build, reportsAMissingRedeemerForASubTransactionInputLockedByAPlutusScriptOfTheTransaction)
+{
+  // Arrange
+  cardano_protocol_parameters_t* params      = init_dijkstra_protocol_parameters();
+  cardano_utxo_list_t*           utxos       = new_utxo_list();
+  cardano_tx_builder_t*          tx_builder  = new_funded_tx_builder(params, utxos);
+  cardano_script_t*              script      = create_script(ALWAYS_SUCCEEDS_V4_CBOR);
+  cardano_utxo_t*                script_utxo = create_script_utxo(script);
+  cardano_utxo_list_t*           sub_utxos   = new_single_utxo_list(script_utxo);
+  cardano_sub_transaction_t*     sub_tx      = build_spending_sub_transaction(params, script_utxo);
+
+  // Act
+  cardano_tx_builder_add_script(tx_builder, script);
+  cardano_tx_builder_add_sub_transaction(tx_builder, sub_tx, sub_utxos);
+
+  // Assert
+  expect_sub_transaction_missing_redeemer(tx_builder, sub_tx, 0U, "spending", 0U, script);
+
+  // Cleanup
+  cardano_sub_transaction_unref(&sub_tx);
+  cardano_utxo_list_unref(&sub_utxos);
+  cardano_utxo_unref(&script_utxo);
+  cardano_script_unref(&script);
+  cardano_tx_builder_unref(&tx_builder);
+  cardano_utxo_list_unref(&utxos);
+  cardano_protocol_parameters_unref(&params);
+}
+
+TEST(cardano_tx_builder_build, reportsAMissingRedeemerForASubTransactionGuardProvidedOnlyByAReferenceInput)
+{
+  // Arrange
+  cardano_protocol_parameters_t* params      = init_dijkstra_protocol_parameters();
+  cardano_utxo_list_t*           utxos       = new_utxo_list();
+  cardano_tx_builder_t*          tx_builder  = new_funded_tx_builder(params, utxos);
+  cardano_sub_tx_builder_t*      sub_builder = cardano_sub_tx_builder_new(params, &CARDANO_MAINNET_SLOT_CONFIG);
+  cardano_script_t*              script      = create_script(ALWAYS_SUCCEEDS_V4_CBOR);
+  cardano_credential_t*          guard       = create_script_credential(script);
+  cardano_utxo_t*                reference   = create_reference_script_utxo(script);
+  cardano_sub_transaction_t*     sub_tx      = nullptr;
+  cardano_utxo_list_t*           sub_utxos   = nullptr;
+
+  EXPECT_EQ(cardano_utxo_list_new(&sub_utxos), CARDANO_SUCCESS);
+
+  cardano_sub_tx_builder_add_guard(sub_builder, guard);
+
+  EXPECT_EQ(cardano_sub_tx_builder_build(sub_builder, &sub_tx), CARDANO_SUCCESS) << cardano_sub_tx_builder_get_last_error(sub_builder);
+
+  // Act
+  cardano_tx_builder_add_reference_input(tx_builder, reference);
+  cardano_tx_builder_add_sub_transaction(tx_builder, sub_tx, sub_utxos);
+
+  // Assert
+  expect_sub_transaction_missing_redeemer(tx_builder, sub_tx, 0U, "guarding", 0U, script);
+
+  // Cleanup
+  cardano_utxo_list_unref(&sub_utxos);
+  cardano_sub_transaction_unref(&sub_tx);
+  cardano_utxo_unref(&reference);
+  cardano_credential_unref(&guard);
+  cardano_script_unref(&script);
+  cardano_sub_tx_builder_unref(&sub_builder);
+  cardano_tx_builder_unref(&tx_builder);
+  cardano_utxo_list_unref(&utxos);
+  cardano_protocol_parameters_unref(&params);
+}
+
+TEST(cardano_tx_builder_build, reportsAMissingRedeemerForASubTransactionMintingPolicyProvidedOnlyByAnotherSubTransaction)
+{
+  // Arrange
+  cardano_protocol_parameters_t* params          = init_dijkstra_protocol_parameters();
+  cardano_utxo_list_t*           utxos           = new_utxo_list();
+  cardano_tx_builder_t*          tx_builder      = new_funded_tx_builder(params, utxos);
+  cardano_sub_tx_builder_t*      script_builder  = cardano_sub_tx_builder_new(params, &CARDANO_MAINNET_SLOT_CONFIG);
+  cardano_sub_tx_builder_t*      minting_builder = cardano_sub_tx_builder_new(params, &CARDANO_MAINNET_SLOT_CONFIG);
+  cardano_script_t*              script          = create_script(ALWAYS_SUCCEEDS_V4_CBOR);
+  cardano_blake2b_hash_t*        policy_id       = cardano_script_get_hash(script);
+  cardano_asset_name_t*          asset_name      = nullptr;
+  cardano_sub_transaction_t*     script_sub_tx   = nullptr;
+  cardano_sub_transaction_t*     minting_sub_tx  = nullptr;
+  cardano_utxo_list_t*           sub_utxos       = nullptr;
+
+  EXPECT_EQ(cardano_asset_name_from_string("TEXT", 4, &asset_name), CARDANO_SUCCESS);
+  EXPECT_EQ(cardano_utxo_list_new(&sub_utxos), CARDANO_SUCCESS);
+
+  cardano_sub_tx_builder_add_script(script_builder, script);
+  cardano_sub_tx_builder_mint_token(minting_builder, policy_id, asset_name, 1, nullptr);
+
+  EXPECT_EQ(cardano_sub_tx_builder_build(script_builder, &script_sub_tx), CARDANO_SUCCESS) << cardano_sub_tx_builder_get_last_error(script_builder);
+  EXPECT_EQ(cardano_sub_tx_builder_build(minting_builder, &minting_sub_tx), CARDANO_SUCCESS) << cardano_sub_tx_builder_get_last_error(minting_builder);
+
+  // Act
+  cardano_tx_builder_add_sub_transaction(tx_builder, script_sub_tx, sub_utxos);
+  cardano_tx_builder_add_sub_transaction(tx_builder, minting_sub_tx, sub_utxos);
+
+  // Assert
+  expect_sub_transaction_missing_redeemer(tx_builder, minting_sub_tx, 1U, "minting", 0U, script);
+
+  // Cleanup
+  cardano_utxo_list_unref(&sub_utxos);
+  cardano_sub_transaction_unref(&minting_sub_tx);
+  cardano_sub_transaction_unref(&script_sub_tx);
+  cardano_asset_name_unref(&asset_name);
+  cardano_blake2b_hash_unref(&policy_id);
+  cardano_script_unref(&script);
+  cardano_sub_tx_builder_unref(&minting_builder);
+  cardano_sub_tx_builder_unref(&script_builder);
+  cardano_tx_builder_unref(&tx_builder);
+  cardano_utxo_list_unref(&utxos);
+  cardano_protocol_parameters_unref(&params);
+}
+
+TEST(cardano_tx_builder_build, reportsAMissingRedeemerForAWithdrawalOfASubTransactionBuiltByHand)
+{
+  // Arrange
+  cardano_protocol_parameters_t*     params      = init_dijkstra_protocol_parameters();
+  cardano_utxo_list_t*               utxos       = new_utxo_list();
+  cardano_tx_builder_t*              tx_builder  = new_funded_tx_builder(params, utxos);
+  cardano_script_t*                  script      = create_script(ALWAYS_SUCCEEDS_V3_CBOR);
+  cardano_credential_t*              credential  = create_script_credential(script);
+  cardano_reward_address_t*          reward      = nullptr;
+  cardano_withdrawal_map_t*          withdrawals = nullptr;
+  cardano_transaction_input_set_t*   inputs      = nullptr;
+  cardano_transaction_output_list_t* outputs     = nullptr;
+  cardano_sub_transaction_body_t*    body        = nullptr;
+  cardano_witness_set_t*             witness_set = nullptr;
+  cardano_sub_transaction_t*         sub_tx      = nullptr;
+  cardano_utxo_list_t*               sub_utxos   = nullptr;
+
+  EXPECT_EQ(cardano_reward_address_from_credentials(CARDANO_NETWORK_ID_TEST_NET, credential, &reward), CARDANO_SUCCESS);
+  EXPECT_EQ(cardano_withdrawal_map_new(&withdrawals), CARDANO_SUCCESS);
+  EXPECT_EQ(cardano_withdrawal_map_insert(withdrawals, reward, 0U), CARDANO_SUCCESS);
+  EXPECT_EQ(cardano_transaction_input_set_new(&inputs), CARDANO_SUCCESS);
+  EXPECT_EQ(cardano_transaction_output_list_new(&outputs), CARDANO_SUCCESS);
+  EXPECT_EQ(cardano_sub_transaction_body_new(inputs, outputs, nullptr, &body), CARDANO_SUCCESS);
+  EXPECT_EQ(cardano_sub_transaction_body_set_withdrawals(body, withdrawals), CARDANO_SUCCESS);
+  EXPECT_EQ(cardano_witness_set_new(&witness_set), CARDANO_SUCCESS);
+  EXPECT_EQ(cardano_witness_set_add_script(witness_set, script), CARDANO_SUCCESS);
+  EXPECT_EQ(cardano_sub_transaction_new(body, witness_set, nullptr, &sub_tx), CARDANO_SUCCESS);
+  EXPECT_EQ(cardano_utxo_list_new(&sub_utxos), CARDANO_SUCCESS);
+
+  // Act
+  cardano_tx_builder_add_sub_transaction(tx_builder, sub_tx, sub_utxos);
+
+  // Assert
+  expect_sub_transaction_missing_redeemer(tx_builder, sub_tx, 0U, "rewarding", 0U, script);
+
+  // Cleanup
+  cardano_utxo_list_unref(&sub_utxos);
+  cardano_sub_transaction_unref(&sub_tx);
+  cardano_witness_set_unref(&witness_set);
+  cardano_sub_transaction_body_unref(&body);
+  cardano_transaction_output_list_unref(&outputs);
+  cardano_transaction_input_set_unref(&inputs);
+  cardano_withdrawal_map_unref(&withdrawals);
+  cardano_reward_address_unref(&reward);
+  cardano_credential_unref(&credential);
+  cardano_script_unref(&script);
+  cardano_tx_builder_unref(&tx_builder);
+  cardano_utxo_list_unref(&utxos);
+  cardano_protocol_parameters_unref(&params);
+}
+
+TEST(cardano_tx_builder_build, buildsASubTransactionWhoseRedeemerUsesAPlutusScriptOfTheTransaction)
+{
+  // Arrange
+  cardano_protocol_parameters_t* params      = init_dijkstra_protocol_parameters();
+  cardano_utxo_list_t*           utxos       = new_utxo_list();
+  cardano_tx_builder_t*          tx_builder  = new_funded_tx_builder(params, utxos);
+  cardano_script_t*              script      = create_script(ALWAYS_SUCCEEDS_V4_CBOR);
+  cardano_utxo_t*                script_utxo = create_script_utxo(script);
+  cardano_utxo_list_t*           sub_utxos   = new_single_utxo_list(script_utxo);
+  cardano_sub_transaction_t*     sub_tx      = build_redeemed_spending_sub_transaction(params, script_utxo);
+  cardano_transaction_t*         tx          = nullptr;
+
+  // Act
+  cardano_tx_builder_set_collateral_utxos(tx_builder, utxos);
+  cardano_tx_builder_set_collateral_change_address_ex(tx_builder, CHANGE_ADDRESS, strlen(CHANGE_ADDRESS));
+  cardano_tx_builder_add_script(tx_builder, script);
+  cardano_tx_builder_add_sub_transaction(tx_builder, sub_tx, sub_utxos);
+
+  const cardano_error_t result = cardano_tx_builder_build(tx_builder, &tx);
+
+  // Assert
+  EXPECT_EQ(result, CARDANO_SUCCESS) << cardano_tx_builder_get_last_error(tx_builder);
+  ASSERT_NE(tx, nullptr);
+
+  cardano_utxo_list_t* all_utxos   = cardano_utxo_list_concat(utxos, sub_utxos);
+  bool                 is_balanced = false;
+
+  EXPECT_EQ(cardano_is_transaction_balanced(tx, all_utxos, params, &is_balanced), CARDANO_SUCCESS);
+  EXPECT_TRUE(is_balanced);
+
+  // Cleanup
+  cardano_utxo_list_unref(&all_utxos);
+  cardano_transaction_unref(&tx);
+  cardano_sub_transaction_unref(&sub_tx);
+  cardano_utxo_list_unref(&sub_utxos);
+  cardano_utxo_unref(&script_utxo);
+  cardano_script_unref(&script);
+  cardano_tx_builder_unref(&tx_builder);
+  cardano_utxo_list_unref(&utxos);
+  cardano_protocol_parameters_unref(&params);
+}
+
+TEST(cardano_tx_builder_build, doesntCrashOnMemoryAllocationFailWhenCheckingTheRedeemersOfASubTransaction)
+{
+  // Arrange
+  cardano_protocol_parameters_t* params      = init_dijkstra_protocol_parameters();
+  cardano_utxo_list_t*           utxos       = new_utxo_list();
+  cardano_script_t*              script      = create_script(ALWAYS_SUCCEEDS_V4_CBOR);
+  cardano_utxo_t*                script_utxo = create_script_utxo(script);
+  cardano_utxo_list_t*           sub_utxos   = new_single_utxo_list(script_utxo);
+  cardano_sub_transaction_t*     sub_tx      = build_spending_sub_transaction(params, script_utxo);
+
+  bool reported = false;
+
+  // Act & Assert
+  for (int i = 0; (i < 5000) && !reported; ++i)
+  {
+    cardano_tx_builder_t* tx_builder = new_funded_tx_builder(params, utxos);
+
+    cardano_tx_builder_add_script(tx_builder, script);
+    cardano_tx_builder_add_sub_transaction(tx_builder, sub_tx, sub_utxos);
+
+    reset_allocators_run_count();
+    set_malloc_limit(i);
+    cardano_set_allocators(fail_malloc_at_limit, realloc, free);
+
+    cardano_transaction_t* tx     = nullptr;
+    cardano_error_t        result = cardano_tx_builder_build(tx_builder, &tx);
+
+    reset_allocators_run_count();
+    reset_limited_malloc();
+    cardano_set_allocators(malloc, realloc, free);
+
+    EXPECT_NE(result, CARDANO_SUCCESS);
+    EXPECT_EQ(tx, nullptr);
+
+    reported = (result == CARDANO_ERROR_MISSING_REDEEMER);
+
+    cardano_transaction_unref(&tx);
+    cardano_tx_builder_unref(&tx_builder);
+  }
+
+  EXPECT_TRUE(reported);
+
+  // Cleanup
+  cardano_sub_transaction_unref(&sub_tx);
+  cardano_utxo_list_unref(&sub_utxos);
+  cardano_utxo_unref(&script_utxo);
   cardano_script_unref(&script);
   cardano_utxo_list_unref(&utxos);
   cardano_protocol_parameters_unref(&params);

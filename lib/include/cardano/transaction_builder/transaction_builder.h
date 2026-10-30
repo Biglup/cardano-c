@@ -1589,6 +1589,9 @@ CARDANO_EXPORT void cardano_tx_builder_add_starting_account_balance_interval_ex(
  * builder never adds them by itself, since a key hash guard is also a required signer, and building fails with
  * \ref CARDANO_ERROR_ELEMENT_NOT_FOUND when one is missing.
  *
+ * Building also fails with \ref CARDANO_ERROR_MISSING_REDEEMER when a purpose of a sub transaction needs a Plutus
+ * script provided anywhere in the batch and the sub transaction carries no redeemer for it.
+ *
  * \param[in] builder A pointer to the \ref cardano_tx_builder_t instance used for constructing the transaction.
  * \param[in] sub_transaction A pointer to the \ref cardano_sub_transaction_t to add to the transaction.
  * \param[in] resolved_utxos A pointer to the \ref cardano_utxo_list_t with the UTXOs behind the inputs of the sub
@@ -2897,8 +2900,12 @@ CARDANO_EXPORT void cardano_tx_builder_propose_info_ex(
  * of the witness sets of the sub transactions and the reference scripts of the reference inputs, the spent inputs and
  * the UTXOs the sub transactions spend or reference. A purpose without its redeemer makes this function return
  * \ref CARDANO_ERROR_MISSING_REDEEMER, and the last error names the purpose, its redeemer index and the script hash.
- * A purpose whose script is a native script needs no redeemer, and a purpose whose script is not provided is not
- * reported.
+ * The script purposes of every sub transaction of the batch are checked the same way: the purposes of the body of the
+ * sub transaction, whose spend indices count its own sorted inputs, must have a redeemer in its own witness set
+ * whenever their script resolves to a Plutus script provided to the whole batch, even when only the transaction or
+ * another sub transaction provides it. For a sub transaction the last error also names its id and its zero based
+ * index in the batch. A purpose whose script is a native script needs no redeemer, and a purpose whose script is not
+ * provided is not reported.
  *
  * \param[in] builder A pointer to the \ref cardano_tx_builder_t instance that manages the transaction details.
  * \param[out] transaction A pointer to a \ref cardano_transaction_t pointer where the created transaction will be stored upon success.

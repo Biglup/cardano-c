@@ -27,6 +27,7 @@
 #include <cardano/common/utxo_list.h>
 #include <cardano/error.h>
 #include <cardano/transaction/transaction.h>
+#include <cardano/transaction_body/sub_transaction_body.h>
 #include <cardano/typedefs.h>
 #include <cardano/witness_set/redeemer_list.h>
 #include <cardano/witness_set/redeemer_tag.h>
@@ -106,6 +107,33 @@ _cardano_get_script_hashes_needed(
   cardano_transaction_body_t*  body,
   cardano_utxo_list_t*         resolved_inputs,
   cardano_blake2b_hash_set_t** script_hashes);
+
+/**
+ * \brief Collects the hashes of the scripts a Cardano sub transaction body needs to run.
+ *
+ * The needed scripts of a sub transaction are found the same way as the ones of a transaction body, described in
+ * \ref _cardano_get_script_hashes_needed, from the spent inputs, the mint field, the withdrawals, the certificates, the
+ * voters, the proposal procedures and the guards of the sub transaction body.
+ *
+ * \param[in] body A pointer to an initialized \ref cardano_sub_transaction_body_t object whose needed scripts are
+ *                 collected. This parameter is required and must not be NULL.
+ * \param[in] resolved_inputs A pointer to an initialized \ref cardano_utxo_list_t object containing the resolved UTXOs of
+ *                            the inputs spent by the body. If this parameter is NULL, the spent inputs are ignored.
+ * \param[out] script_hashes On successful execution, this will point to a newly created \ref cardano_blake2b_hash_set_t
+ *                           object containing each needed script hash once. The caller is responsible for managing the
+ *                           lifecycle of this object. Specifically, the caller must release it by calling
+ *                           \ref cardano_blake2b_hash_set_unref once it is no longer needed.
+ *
+ * \return \ref cardano_error_t indicating the outcome of the operation. Returns \ref CARDANO_SUCCESS if the needed script
+ *         hashes were collected, \ref CARDANO_ERROR_ELEMENT_NOT_FOUND if a spent input is not among \p resolved_inputs, or
+ *         an appropriate error code indicating the failure reason, such as \ref CARDANO_ERROR_POINTER_IS_NULL if `body` or
+ *         `script_hashes` is NULL.
+ */
+cardano_error_t
+_cardano_get_sub_transaction_script_hashes_needed(
+  cardano_sub_transaction_body_t* body,
+  cardano_utxo_list_t*            resolved_inputs,
+  cardano_blake2b_hash_set_t**    script_hashes);
 
 /**
  * \brief Finds the Plutus languages of the scripts a Cardano transaction needs among the scripts it is provided with.
@@ -241,5 +269,44 @@ _cardano_find_missing_redeemer(
   cardano_redeemer_tag_t*          tag,
   uint64_t*                        index,
   cardano_blake2b_hash_t**         script_hash);
+
+/**
+ * \brief Finds a script purpose of a Cardano sub transaction body whose Plutus script has no redeemer.
+ *
+ * The ledger checks the redeemers of every sub transaction of a batch on their own: each script purpose of the sub
+ * transaction body whose needed script hash resolves to a Plutus script among the scripts provided to the whole batch
+ * must have a redeemer in the witness set of that sub transaction. The purposes, their redeemer indices and the order
+ * in which they are inspected are the ones described in \ref _cardano_find_missing_redeemer, and the spend indices are
+ * positions in the sorted inputs of the sub transaction body.
+ *
+ * \param[in] body A pointer to an initialized \ref cardano_sub_transaction_body_t object whose purposes are inspected.
+ *                 This parameter is required and must not be NULL.
+ * \param[in] resolved_inputs A pointer to the \ref cardano_utxo_list_t holding the resolved UTXOs of the inputs of
+ *                            \p body, or NULL to inspect no spend purpose.
+ * \param[in] plutus_scripts A pointer to an initialized \ref cardano_blake2b_hash_set_t object holding the script hashes
+ *                           that resolve to a Plutus script, as found by \ref _cardano_get_plutus_scripts_provided.
+ *                           This parameter is required and must not be NULL.
+ * \param[in] redeemers A pointer to the \ref cardano_redeemer_list_t of the sub transaction, or NULL when it has none.
+ * \param[out] tag On success, the redeemer tag of the purpose without a redeemer, if any. This parameter must not be NULL.
+ * \param[out] index On success, the redeemer index of the purpose without a redeemer, if any. This parameter must not
+ *                   be NULL.
+ * \param[out] script_hash On success, a new reference to the hash of the Plutus script of the first purpose that has no
+ *                         redeemer, or NULL if every such purpose has one. The caller is responsible for releasing it
+ *                         by calling \ref cardano_blake2b_hash_unref.
+ *
+ * \return \ref cardano_error_t indicating the outcome of the operation. Returns \ref CARDANO_SUCCESS if the purposes
+ *         were inspected, \ref CARDANO_ERROR_ELEMENT_NOT_FOUND if an input is not among \p resolved_inputs, or an
+ *         appropriate error code indicating the failure reason, such as \ref CARDANO_ERROR_POINTER_IS_NULL if a required
+ *         parameter is NULL.
+ */
+cardano_error_t
+_cardano_find_sub_transaction_missing_redeemer(
+  cardano_sub_transaction_body_t* body,
+  cardano_utxo_list_t*            resolved_inputs,
+  cardano_blake2b_hash_set_t*     plutus_scripts,
+  cardano_redeemer_list_t*        redeemers,
+  cardano_redeemer_tag_t*         tag,
+  uint64_t*                       index,
+  cardano_blake2b_hash_t**        script_hash);
 
 #endif // BIGLUP_LABS_INCLUDE_CARDANO_SCRIPTS_NEEDED_H

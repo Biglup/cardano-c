@@ -13888,6 +13888,32 @@ TEST(cardano_sub_tx_builder_build, reportsAMissingRedeemerForAPlutusScriptProvid
   cardano_protocol_parameters_unref(&params);
 }
 
+TEST(cardano_sub_tx_builder_build, buildsWithoutARedeemerForAnInputLockedByANativeScript)
+{
+  // Arrange
+  cardano_protocol_parameters_t* params  = init_dijkstra_protocol_parameters();
+  cardano_sub_tx_builder_t*      builder = cardano_sub_tx_builder_new(params, &CARDANO_MAINNET_SLOT_CONFIG);
+  cardano_script_t*              script  = create_script(NATIVE_SCRIPT_CBOR);
+  cardano_utxo_t*                utxo    = create_script_utxo(LOW_TX_ID, script, nullptr);
+
+  // Act
+  cardano_sub_tx_builder_add_script(builder, script);
+  cardano_sub_tx_builder_add_input(builder, utxo, nullptr, nullptr);
+
+  cardano_sub_transaction_t* sub_tx = build_sub_transaction(builder);
+
+  // Assert
+  ASSERT_NE(sub_tx, nullptr);
+  EXPECT_EQ(get_sub_tx_redeemer_count(sub_tx), 0U);
+
+  // Cleanup
+  cardano_sub_transaction_unref(&sub_tx);
+  cardano_utxo_unref(&utxo);
+  cardano_script_unref(&script);
+  cardano_sub_tx_builder_unref(&builder);
+  cardano_protocol_parameters_unref(&params);
+}
+
 TEST(cardano_sub_tx_builder_build, doesNotReportAMissingRedeemerForAScriptThatIsNotProvided)
 {
   // Arrange
