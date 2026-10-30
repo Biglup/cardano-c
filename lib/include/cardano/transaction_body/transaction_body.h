@@ -1187,6 +1187,9 @@ CARDANO_EXPORT cardano_blake2b_hash_set_t* cardano_transaction_body_get_required
  * required signers wire format, so transaction bodies produced through this function encode exactly as
  * they did in earlier eras.
  *
+ * An empty set is kept by the body but is not encoded: key 14 is omitted, as the Conway and Dijkstra eras
+ * reject an explicitly empty set at that key.
+ *
  * \param[in,out] transaction_body A pointer to an initialized \ref cardano_transaction_body_t object to which the required signers will be set.
  * \param[in] required_signers A pointer to a \ref cardano_blake2b_hash_set_t object representing the set of required signers. This parameter can be NULL
  *                             to unset the required signers.
@@ -1255,6 +1258,9 @@ CARDANO_EXPORT cardano_guard_set_t* cardano_transaction_body_get_guards(cardano_
  *
  * This function assigns a guard set to a \ref cardano_transaction_body_t object. Passing NULL
  * unsets the guards, removing them from the transaction body.
+ *
+ * An empty guard set is kept by the body but is not encoded: key 14 is omitted, as the Conway and Dijkstra
+ * eras reject an explicitly empty set at that key.
  *
  * \param[in,out] transaction_body A pointer to an initialized \ref cardano_transaction_body_t object.
  * \param[in] guards A pointer to an initialized \ref cardano_guard_set_t object, or NULL to unset the field.

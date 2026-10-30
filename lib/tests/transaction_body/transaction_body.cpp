@@ -116,6 +116,51 @@ new_default_transaction_body()
 };
 
 /**
+ * Encodes the given transaction body and returns the CBOR hex string.
+ *
+ * @param transaction_body The transaction body to encode.
+ * @return The CBOR hex string.
+ */
+static std::string
+encode_to_hex(cardano_transaction_body_t* transaction_body)
+{
+  cardano_cbor_writer_t* writer = cardano_cbor_writer_new();
+
+  EXPECT_EQ(cardano_transaction_body_to_cbor(transaction_body, writer), CARDANO_SUCCESS);
+
+  size_t hex_size = cardano_cbor_writer_get_hex_size(writer);
+  char*  hex      = (char*)malloc(hex_size);
+
+  EXPECT_EQ(cardano_cbor_writer_encode_hex(writer, hex, hex_size), CARDANO_SUCCESS);
+
+  std::string result(hex);
+
+  cardano_cbor_writer_unref(&writer);
+  free(hex);
+
+  return result;
+};
+
+/**
+ * Decodes the given transaction body CBOR hex and re-encodes it keeping the CBOR cache,
+ * expecting the produced bytes to be identical to the input.
+ *
+ * @param cbor The transaction body CBOR hex string to round trip.
+ */
+static void
+expect_cached_byte_exact_round_trip(const char* cbor)
+{
+  cardano_transaction_body_t* transaction_body = NULL;
+  cardano_cbor_reader_t*      reader           = cardano_cbor_reader_from_hex(cbor, strlen(cbor));
+
+  EXPECT_EQ(cardano_transaction_body_from_cbor(reader, &transaction_body), CARDANO_SUCCESS);
+  EXPECT_STREQ(encode_to_hex(transaction_body).c_str(), cbor);
+
+  cardano_transaction_body_unref(&transaction_body);
+  cardano_cbor_reader_unref(&reader);
+};
+
+/**
  * Decodes the given transaction body CBOR hex, clears the CBOR cache and re-encodes it,
  * expecting the produced bytes to be identical to the input.
  *
@@ -131,20 +176,10 @@ expect_byte_exact_round_trip(const char* cbor)
 
   cardano_transaction_body_clear_cbor_cache(transaction_body);
 
-  cardano_cbor_writer_t* writer = cardano_cbor_writer_new();
-
-  EXPECT_EQ(cardano_transaction_body_to_cbor(transaction_body, writer), CARDANO_SUCCESS);
-
-  size_t hex_size = cardano_cbor_writer_get_hex_size(writer);
-  char*  hex      = (char*)malloc(hex_size);
-
-  EXPECT_EQ(cardano_cbor_writer_encode_hex(writer, hex, hex_size), CARDANO_SUCCESS);
-  EXPECT_STREQ(hex, cbor);
+  EXPECT_STREQ(encode_to_hex(transaction_body).c_str(), cbor);
 
   cardano_transaction_body_unref(&transaction_body);
   cardano_cbor_reader_unref(&reader);
-  cardano_cbor_writer_unref(&writer);
-  free(hex);
 };
 
 /**
@@ -2636,8 +2671,76 @@ TEST(cardano_transaction_body_from_cbor, roundTripsTaggedLegacyRequiredSignersFo
 
 TEST(cardano_transaction_body_from_cbor, roundTripsEmptyRequiredSignersFormsByteExact)
 {
-  expect_byte_exact_round_trip(GUARDS_EMPTY_TAGGED_BODY);
-  expect_byte_exact_round_trip(GUARDS_EMPTY_BARE_BODY);
+  expect_cached_byte_exact_round_trip(GUARDS_EMPTY_TAGGED_BODY);
+  expect_cached_byte_exact_round_trip(GUARDS_EMPTY_BARE_BODY);
+}
+
+TEST(cardano_transaction_body_to_cbor, omitsDecodedEmptyGuardsAfterClearingTheCache)
+{
+  const char* bodies[] = { GUARDS_EMPTY_TAGGED_BODY, GUARDS_EMPTY_BARE_BODY };
+
+  for (const char* cbor: bodies)
+  {
+    // Arrange
+    cardano_transaction_body_t* transaction_body = NULL;
+    cardano_cbor_reader_t*      reader           = cardano_cbor_reader_from_hex(cbor, strlen(cbor));
+
+    EXPECT_EQ(cardano_transaction_body_from_cbor(reader, &transaction_body), CARDANO_SUCCESS);
+
+    // Act
+    cardano_transaction_body_clear_cbor_cache(transaction_body);
+
+    // Assert
+    EXPECT_STREQ(encode_to_hex(transaction_body).c_str(), MINIMAL_DIJKSTRA_BODY);
+
+    // Cleanup
+    cardano_transaction_body_unref(&transaction_body);
+    cardano_cbor_reader_unref(&reader);
+  }
+}
+
+TEST(cardano_transaction_body_to_cbor, omitsEmptyGuardsSetInCode)
+{
+  // Arrange
+  cardano_transaction_body_t* with_empty_guards = new_default_transaction_body();
+  cardano_transaction_body_t* without_guards    = new_default_transaction_body();
+  cardano_guard_set_t*        guards            = NULL;
+
+  EXPECT_EQ(cardano_guard_set_new(&guards), CARDANO_SUCCESS);
+
+  // Act
+  EXPECT_EQ(cardano_transaction_body_set_guards(with_empty_guards, guards), CARDANO_SUCCESS);
+  EXPECT_EQ(cardano_transaction_body_set_guards(without_guards, nullptr), CARDANO_SUCCESS);
+
+  // Assert
+  EXPECT_STREQ(encode_to_hex(with_empty_guards).c_str(), encode_to_hex(without_guards).c_str());
+
+  // Cleanup
+  cardano_transaction_body_unref(&with_empty_guards);
+  cardano_transaction_body_unref(&without_guards);
+  cardano_guard_set_unref(&guards);
+}
+
+TEST(cardano_transaction_body_to_cbor, omitsEmptyRequiredSignersSetInCode)
+{
+  // Arrange
+  cardano_transaction_body_t* with_empty_signers = new_default_transaction_body();
+  cardano_transaction_body_t* without_signers    = new_default_transaction_body();
+  cardano_blake2b_hash_set_t* required_signers   = NULL;
+
+  EXPECT_EQ(cardano_blake2b_hash_set_new(&required_signers), CARDANO_SUCCESS);
+
+  // Act
+  EXPECT_EQ(cardano_transaction_body_set_required_signers(with_empty_signers, required_signers), CARDANO_SUCCESS);
+  EXPECT_EQ(cardano_transaction_body_set_required_signers(without_signers, nullptr), CARDANO_SUCCESS);
+
+  // Assert
+  EXPECT_STREQ(encode_to_hex(with_empty_signers).c_str(), encode_to_hex(without_signers).c_str());
+
+  // Cleanup
+  cardano_transaction_body_unref(&with_empty_signers);
+  cardano_transaction_body_unref(&without_signers);
+  cardano_blake2b_hash_set_unref(&required_signers);
 }
 
 TEST(cardano_transaction_body_from_cbor, decodesEmptyRequiredSignersAsAnEmptyGuardSet)

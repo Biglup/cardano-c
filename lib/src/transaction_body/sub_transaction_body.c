@@ -190,7 +190,7 @@ get_map_size(const cardano_sub_transaction_body_t* body)
     map_size += 1U;
   }
 
-  if (body->guards != NULL)
+  if (cardano_body_has_guards(body->guards))
   {
     map_size += 1U;
   }
