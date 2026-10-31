@@ -21,6 +21,17 @@ Ready to learn? Get the latest documentation at [cardano-c.readthedocs.io](https
 [![Documentation Status](https://img.shields.io/readthedocs/cardano-c/latest)](https://cardano-c.readthedocs.io/en/latest/?badge=latest)
 [![Static Badge](https://img.shields.io/badge/Funded_By-Project_Catalyst-133ff0?logo=cardano&logoColor=ffffff)](https://projectcatalyst.io/)
 
+## Releases
+
+| Channel | Version | Intended use |
+| :------ | :------ | :----------- |
+| Stable | [v1.2.1](https://github.com/Biglup/cardano-c/releases/tag/v1.2.1) | The stable 1.2 series for Conway applications. |
+| Release candidate | [v2.0.0-rc.1](https://github.com/Biglup/cardano-c/releases/tag/v2.0.0-rc.1) | Integration testing of the native Plutus evaluator and Conway/Dijkstra transaction support. |
+
+The `-rc.1` suffix identifies a prerelease. Dijkstra (protocol version 12) is still under development; its support may change before the hardfork. Use Conway protocol parameters and features when targeting Conway networks.
+
+Version 2 includes breaking C API/ABI changes. Rebuild bindings and update callback declarations before replacing a 1.2 library binary; see the [changelog](CHANGELOG.md). The Cometa bindings listed below still target the 1.2 series. Features described in this README reflect the release candidate.
+
 ## Features
 
 - Address Parsing & Generation
@@ -43,7 +54,7 @@ Here is a list with all the languages/bindings available.
 
 | Name                                                                                     | libcardano-c version | Language                                                             | License              |
 | :--------------------------------------------------------------------------------------- | :------------------: | :------------------------------------------------------------------: | :------------------: |
-| [libcarcano-c](https://github.com/Biglup/cardano-c)                                      | **1.2.0**            | [C](https://en.wikipedia.org/wiki/C_(programming_language))          | Apache 2.0           |
+| [libcardano-c](https://github.com/Biglup/cardano-c)                                      | **1.2.1 stable / 2.0.0-rc.1**            | [C](https://en.wikipedia.org/wiki/C_(programming_language))          | Apache 2.0           |
 | [cometa.js](https://github.com/Biglup/cometa.js)                                         | **1.2.0**            | [JavaScript](https://en.wikipedia.org/wiki/JavaScript)               | Apache 2.0           |
 | [cometa.py](https://github.com/Biglup/cometa.py)                                         | **1.2.0**            | [Python](https://www.python.org)                                     | Apache 2.0           |
 

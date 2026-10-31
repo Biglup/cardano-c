@@ -62,23 +62,33 @@ jobs:
           echo "VERSION_MAJOR=$VERSION_MAJOR" >> $GITHUB_ENV
           echo "VERSION_MINOR=$VERSION_MINOR" >> $GITHUB_ENV
           echo "VERSION_PATCH=$VERSION_PATCH" >> $GITHUB_ENV
-          echo "VERSION=$VERSION_MAJOR.$VERSION_MINOR.$VERSION_PATCH" >> $GITHUB_ENV
+          VERSION="$VERSION_MAJOR.$VERSION_MINOR.$VERSION_PATCH"
+          if [[ -n "${VERSION_PRERELEASE:-}" ]]; then
+            VERSION="$VERSION-$VERSION_PRERELEASE"
+          fi
+          [[ "${{ github.event.release.tag_name }}" == "v$VERSION" ]] || { echo "Release tag does not match VERSION"; exit 1; }
+          echo "VERSION=$VERSION" >> $GITHUB_ENV
 
       # Read version on Windows systems
       - name: Read version (Windows)
         if: runner.os == 'Windows'
         shell: pwsh
         run: |
+          $versionPrerelease = ""
           $versionContent = Get-Content VERSION
           foreach ($line in $versionContent) {
             if ($line -match 'VERSION_MAJOR=(.*)') { $env:VERSION_MAJOR = $Matches[1] }
             if ($line -match 'VERSION_MINOR=(.*)') { $env:VERSION_MINOR = $Matches[1] }
             if ($line -match 'VERSION_PATCH=(.*)') { $env:VERSION_PATCH = $Matches[1] }
+            if ($line -match '^VERSION_PRERELEASE=(.*)$') { $versionPrerelease = $Matches[1] }
           }
           Add-Content -Path $env:GITHUB_ENV -Value "VERSION_MAJOR=$($env:VERSION_MAJOR)"
           Add-Content -Path $env:GITHUB_ENV -Value "VERSION_MINOR=$($env:VERSION_MINOR)"
           Add-Content -Path $env:GITHUB_ENV -Value "VERSION_PATCH=$($env:VERSION_PATCH)"
-          Add-Content -Path $env:GITHUB_ENV -Value "VERSION=$($env:VERSION_MAJOR).$($env:VERSION_MINOR).$($env:VERSION_PATCH)"
+          $version = "$($env:VERSION_MAJOR).$($env:VERSION_MINOR).$($env:VERSION_PATCH)"
+          if ($versionPrerelease) { $version = "$version-$versionPrerelease" }
+          if ("${{ github.event.release.tag_name }}" -ne "v$version") { throw "Release tag does not match VERSION" }
+          Add-Content -Path $env:GITHUB_ENV -Value "VERSION=$version"
 
       - name: Set Release Name (Unix)
         if: runner.os != 'Windows'
@@ -113,8 +123,8 @@ jobs:
           if [[ "${{ matrix.os }}" == "ubuntu-22.04" ]]; then
             sudo apt-get update
             case "${{ matrix.arch }}" in
-              arm64) sudo apt-get install -y gcc-aarch64-linux-gnu ;;
-              armv7) sudo apt-get install -y gcc-arm-linux-gnueabihf ;;
+              arm64) sudo apt-get install -y gcc-aarch64-linux-gnu g++-aarch64-linux-gnu ;;
+              armv7) sudo apt-get install -y gcc-arm-linux-gnueabihf g++-arm-linux-gnueabihf ;;
               armv6)
                 # Use Zig for true ARMv6 hard-float cross-compilation
                 sudo snap install zig --classic --beta
@@ -167,17 +177,27 @@ jobs:
         run: |
           case "${{ matrix.arch }}" in
             arm64)
-              cmake -DCMAKE_SYSTEM_PROCESSOR=aarch64 \
-                -DVERSION_MAJOR=${{ env.VERSION_MAJOR }} \
-                -DVERSION_MINOR=${{ env.VERSION_MINOR }} \
-                -DVERSION_PATCH=${{ env.VERSION_PATCH }} \
-                -DCMAKE_BUILD_TYPE=Release \
-                .
+              if [[ "$RUNNER_OS" == "macOS" ]]; then
+                cmake -DCMAKE_OSX_ARCHITECTURES=arm64 -DCMAKE_BUILD_TYPE=Release .
+              else
+                cmake -DCMAKE_SYSTEM_NAME=Linux \
+                  -DCMAKE_SYSTEM_PROCESSOR=aarch64 \
+                  -DCMAKE_C_COMPILER=aarch64-linux-gnu-gcc \
+                  -DCMAKE_CXX_COMPILER=aarch64-linux-gnu-g++ \
+                  -DCMAKE_FIND_ROOT_PATH=/usr/aarch64-linux-gnu \
+                  -DVERSION_MAJOR=${{ env.VERSION_MAJOR }} \
+                  -DVERSION_MINOR=${{ env.VERSION_MINOR }} \
+                  -DVERSION_PATCH=${{ env.VERSION_PATCH }} \
+                  -DCMAKE_BUILD_TYPE=Release \
+                  .
+              fi
               ;;
             armv7)
               cmake -DCMAKE_SYSTEM_NAME=Linux \
                 -DCMAKE_SYSTEM_PROCESSOR=arm \
                 -DCMAKE_C_COMPILER=arm-linux-gnueabihf-gcc \
+                -DCMAKE_CXX_COMPILER=arm-linux-gnueabihf-g++ \
+                -DCMAKE_FIND_ROOT_PATH=/usr/arm-linux-gnueabihf \
                 -DCMAKE_C_FLAGS="-march=armv7-a -mfpu=neon-vfpv4 -mfloat-abi=hard" \
                 -DVERSION_MAJOR=${{ env.VERSION_MAJOR }} \
                 -DVERSION_MINOR=${{ env.VERSION_MINOR }} \
@@ -201,6 +221,7 @@ jobs:
               ;;
             x86_64)
               cmake -DCMAKE_SYSTEM_PROCESSOR=x86_64 \
+                -DCMAKE_OSX_ARCHITECTURES=x86_64 \
                 -DVERSION_MAJOR=${{ env.VERSION_MAJOR }} \
                 -DVERSION_MINOR=${{ env.VERSION_MINOR }} \
                 -DVERSION_PATCH=${{ env.VERSION_PATCH }} \
