@@ -100,6 +100,11 @@ cardano_bootstrap_witness_set_new(cardano_bootstrap_witness_set_t** bootstrap_wi
  *       The caller is responsible for freeing the created \ref cardano_bootstrap_witness_set_t object by calling
  *       \ref cardano_bootstrap_witness_set_unref when it is no longer needed.
  *
+ * \remark The set keeps every witness it is decoded with, including several witnesses for the same address root, and
+ *         encodes them all back so that the original CBOR is reproduced. Earlier protocol versions keep only the last
+ *         of them and protocol version 12 rejects them; call \ref cardano_bootstrap_witness_set_clear_cbor_cache to
+ *         encode one witness per address root.
+ *
  * Usage Example:
  * \code{.c}
  * cardano_cbor_reader_t* reader = cardano_cbor_reader_new(cbor_data, data_size);
@@ -138,6 +143,13 @@ cardano_bootstrap_witness_set_from_cbor(cardano_cbor_reader_t* reader, cardano_b
  *
  * \return Returns \ref CARDANO_SUCCESS if the serialization is successful. If the \p bootstrap_witness or \p writer
  *         is NULL, returns \ref CARDANO_ERROR_POINTER_IS_NULL.
+ *
+ * \remark The ledger identifies a bootstrap witness by its address root, the hash of its public key, chain code and
+ *         attributes, so two witnesses with the same public key, chain code and attributes are the same witness even
+ *         if their signatures differ. The ledger keeps only the last of them before protocol version 12 and rejects
+ *         them from protocol version 12, so only the last witness for each address root is written. A set decoded
+ *         from CBOR is the exception: it writes every witness it was decoded with until it is modified with
+ *         \ref cardano_bootstrap_witness_set_add or \ref cardano_bootstrap_witness_set_clear_cbor_cache is called.
  *
  * Usage Example:
  * \code{.c}
@@ -195,6 +207,9 @@ CARDANO_EXPORT cardano_error_t cardano_bootstrap_witness_set_to_cip116_json(
  * \param[in] bootstrap_witness_set A constant pointer to the \ref cardano_bootstrap_witness_set_t object whose length is to be retrieved.
  *
  * \return The number of elements in the bootstrap_witness_set. Return 0 if the bootstrap_witness_set is NULL.
+ *
+ * \note The length counts every element held by the set, including decoded witnesses for the same address root, of
+ *       which \ref cardano_bootstrap_witness_set_to_cbor may write only the last.
  *
  * Usage Example:
  * \code{.c}
@@ -256,6 +271,11 @@ CARDANO_EXPORT cardano_error_t cardano_bootstrap_witness_set_get(const cardano_b
  * \brief Adds an element to a bootstrap_witness list.
  *
  * This function adds the specified element to the end of the provided \ref cardano_bootstrap_witness_set_t object.
+ * If elements with the same public key, chain code and attributes, and therefore the same address root, are already
+ * present in the set, the signature of each of them is replaced with the signature of the added element and no element
+ * is added, so the set holds one witness per address root.
+ *
+ * After this call the set is encoded with one witness per address root, even if it was decoded from CBOR with more.
  *
  * \param[in] bootstrap_witness_set A constant pointer to the \ref cardano_bootstrap_witness_set_t object to which
  *                        the element is to be added.
@@ -346,6 +366,34 @@ CARDANO_EXPORT bool cardano_bootstrap_witness_set_get_use_tag(const cardano_boot
  */
 CARDANO_NODISCARD
 CARDANO_EXPORT cardano_error_t cardano_bootstrap_witness_set_set_use_tag(cardano_bootstrap_witness_set_t* bootstrap_witness_set, bool use_tag);
+
+/**
+ * \brief Clears the encoding details a bootstrap witness set keeps from the CBOR it was decoded from.
+ *
+ * A bootstrap witness set created with \ref cardano_bootstrap_witness_set_from_cbor encodes back with the same set tag
+ * form and every witness it was decoded with, including several witnesses for the same address root, so that the
+ * original CBOR is reproduced. This function drops those details: the set is then encoded with the set tag and only
+ * the last witness for each address root, which is the form the ledger accepts in every protocol version.
+ *
+ * \param[in,out] bootstrap_witness_set A pointer to an initialized \ref cardano_bootstrap_witness_set_t object. If NULL,
+ *                                      the function does nothing.
+ *
+ * \warning Clearing the encoding details may change the binary representation of the witness set when serialized,
+ *          which changes the bytes of a transaction that holds it. The transaction id is not affected.
+ *
+ * Usage Example:
+ * \code{.c}
+ * cardano_bootstrap_witness_set_t* bootstrap_witness_set = ...; // Assume it was decoded from CBOR
+ *
+ * cardano_bootstrap_witness_set_clear_cbor_cache(bootstrap_witness_set);
+ *
+ * cardano_cbor_writer_t* writer = cardano_cbor_writer_new();
+ * cardano_error_t result = cardano_bootstrap_witness_set_to_cbor(bootstrap_witness_set, writer);
+ *
+ * cardano_cbor_writer_unref(&writer);
+ * \endcode
+ */
+CARDANO_EXPORT void cardano_bootstrap_witness_set_clear_cbor_cache(cardano_bootstrap_witness_set_t* bootstrap_witness_set);
 
 /**
  * \brief Decrements the reference count of a bootstrap_witness_set object.

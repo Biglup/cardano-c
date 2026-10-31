@@ -41,6 +41,7 @@ typedef struct cardano_vkey_witness_set_t
     cardano_object_t base;
     cardano_array_t* array;
     bool             uses_tags;
+    bool             preserves_duplicates;
 } cardano_vkey_witness_set_t;
 
 /* STATIC FUNCTIONS **********************************************************/
@@ -74,19 +75,79 @@ cardano_vkey_witness_set_deallocate(void* object)
 }
 
 /**
- * \brief Determines if a vkey_witness public key is equal to a given public key.
+ * \brief Determines whether two vkey witnesses are the same witness.
  *
- * \param item The vkey_witness object to compare.
- * \param context The public key to compare against.
- * \return true if the public key is equal to the given public key, false otherwise.
+ * Two vkey witnesses are the same witness when they have the same public key and the same signature. Witnesses
+ * with the same public key and different signatures are different witnesses.
+ *
+ * \param lhs The first vkey witness to compare.
+ * \param rhs The second vkey witness to compare.
+ * \return true if both witnesses have the same public key and the same signature, false otherwise.
  */
 static bool
-is_pub_key_equal(const cardano_object_t* item, const void* context)
+is_same_witness(cardano_vkey_witness_t* lhs, cardano_vkey_witness_t* rhs)
 {
-  const cardano_vkey_witness_t*       vkey_witness = (const cardano_vkey_witness_t*)((const void*)item);
-  const cardano_ed25519_public_key_t* pubkey       = (const cardano_ed25519_public_key_t*)context;
+  cardano_ed25519_public_key_t* vkey    = cardano_vkey_witness_get_vkey(rhs);
+  cardano_ed25519_signature_t*  lhs_sig = cardano_vkey_witness_get_signature(lhs);
+  cardano_ed25519_signature_t*  rhs_sig = cardano_vkey_witness_get_signature(rhs);
 
-  return cardano_vkey_witness_has_public_key(vkey_witness, pubkey);
+  cardano_ed25519_public_key_unref(&vkey);
+  cardano_ed25519_signature_unref(&lhs_sig);
+  cardano_ed25519_signature_unref(&rhs_sig);
+
+  if ((vkey == NULL) || (lhs_sig == NULL) || (rhs_sig == NULL) || !cardano_vkey_witness_has_public_key(lhs, vkey))
+  {
+    return false;
+  }
+
+  const size_t lhs_size = cardano_ed25519_signature_get_bytes_size(lhs_sig);
+  const size_t rhs_size = cardano_ed25519_signature_get_bytes_size(rhs_sig);
+
+  return (lhs_size == rhs_size) && (memcmp(cardano_ed25519_signature_get_data(lhs_sig), cardano_ed25519_signature_get_data(rhs_sig), lhs_size) == 0);
+}
+
+/**
+ * \brief Determines whether the witness at the given index is repeated later in the vkey witness set.
+ *
+ * \param vkey_witness_set The vkey witness set to search.
+ * \param index The index of the witness to look for.
+ * \return true if a witness after \p index is the same witness, false otherwise.
+ */
+static bool
+is_repeated_later(const cardano_vkey_witness_set_t* vkey_witness_set, const size_t index)
+{
+  cardano_object_t* item  = cardano_array_get(vkey_witness_set->array, index);
+  bool              found = false;
+
+  for (size_t i = index + 1U; (i < cardano_array_get_size(vkey_witness_set->array)) && !found; ++i)
+  {
+    cardano_object_t* other = cardano_array_get(vkey_witness_set->array, i);
+
+    found = is_same_witness((cardano_vkey_witness_t*)((void*)item), (cardano_vkey_witness_t*)((void*)other));
+
+    cardano_object_unref(&other);
+  }
+
+  cardano_object_unref(&item);
+
+  return found;
+}
+
+/**
+ * \brief Determines whether the witness at the given index is part of the encoding of the vkey witness set.
+ *
+ * A vkey witness set decoded from CBOR encodes every witness it was decoded with. Otherwise, a witness repeated
+ * later in the set is left out, so that the encoding never holds the same witness twice and the last occurrence of
+ * each witness keeps its position.
+ *
+ * \param vkey_witness_set The vkey witness set being encoded.
+ * \param index The index of the witness.
+ * \return true if the witness is written when the set is encoded, false otherwise.
+ */
+static bool
+is_encoded(const cardano_vkey_witness_set_t* vkey_witness_set, const size_t index)
+{
+  return vkey_witness_set->preserves_duplicates || !is_repeated_later(vkey_witness_set, index);
 }
 
 /* DEFINITIONS ****************************************************************/
@@ -106,10 +167,11 @@ cardano_vkey_witness_set_new(cardano_vkey_witness_set_t** vkey_witness_set)
     return CARDANO_ERROR_MEMORY_ALLOCATION_FAILED;
   }
 
-  list->base.ref_count     = 1;
-  list->base.last_error[0] = '\0';
-  list->base.deallocator   = cardano_vkey_witness_set_deallocate;
-  list->uses_tags          = true;
+  list->base.ref_count       = 1;
+  list->base.last_error[0]   = '\0';
+  list->base.deallocator     = cardano_vkey_witness_set_deallocate;
+  list->uses_tags            = true;
+  list->preserves_duplicates = false;
 
   list->array = cardano_array_new(128);
 
@@ -153,7 +215,8 @@ cardano_vkey_witness_set_from_cbor(cardano_cbor_reader_t* reader, cardano_vkey_w
     return CARDANO_ERROR_DECODING;
   }
 
-  list->uses_tags = (state == CARDANO_CBOR_READER_STATE_TAG);
+  list->uses_tags            = (state == CARDANO_CBOR_READER_STATE_TAG);
+  list->preserves_duplicates = true;
 
   if (state == CARDANO_CBOR_READER_STATE_TAG)
   {
@@ -254,15 +317,25 @@ cardano_vkey_witness_set_to_cbor(const cardano_vkey_witness_set_t* vkey_witness_
     }
   }
 
-  size_t array_size = cardano_array_get_size(vkey_witness_set->array);
-  result            = cardano_cbor_writer_write_start_array(writer, (int64_t)array_size);
+  const size_t array_size    = cardano_array_get_size(vkey_witness_set->array);
+  size_t       encoded_count = 0U;
+
+  for (size_t i = 0U; i < array_size; ++i)
+  {
+    if (is_encoded(vkey_witness_set, i))
+    {
+      ++encoded_count;
+    }
+  }
+
+  result = cardano_cbor_writer_write_start_array(writer, (int64_t)encoded_count);
 
   if (result != CARDANO_SUCCESS)
   {
     return result;
   }
 
-  for (size_t i = 0; i < cardano_array_get_size(vkey_witness_set->array); ++i)
+  for (size_t i = 0U; i < array_size; ++i)
   {
     cardano_object_t* element = cardano_array_get(vkey_witness_set->array, i);
 
@@ -272,7 +345,10 @@ cardano_vkey_witness_set_to_cbor(const cardano_vkey_witness_set_t* vkey_witness_
       return CARDANO_ERROR_ENCODING;
     }
 
-    result = cardano_vkey_witness_to_cbor((cardano_vkey_witness_t*)((void*)element), writer);
+    if (is_encoded(vkey_witness_set, i))
+    {
+      result = cardano_vkey_witness_to_cbor((cardano_vkey_witness_t*)((void*)element), writer);
+    }
 
     cardano_object_unref(&element);
 
@@ -387,29 +463,40 @@ cardano_vkey_witness_set_add(cardano_vkey_witness_set_t* vkey_witness_set, carda
     return CARDANO_ERROR_POINTER_IS_NULL;
   }
 
-  cardano_vkey_witness_t* found_elem = (cardano_vkey_witness_t*)((void*)cardano_array_find(vkey_witness_set->array, is_pub_key_equal, (void*)vkey));
+  bool found = false;
 
-  cardano_vkey_witness_unref(&found_elem);
-
-  if (found_elem != NULL)
+  for (size_t i = 0U; i < cardano_array_get_size(vkey_witness_set->array); ++i)
   {
-    cardano_error_t result = cardano_vkey_witness_set_signature(found_elem, sig);
+    cardano_object_t* item = cardano_array_get(vkey_witness_set->array, i);
 
-    if (result != CARDANO_SUCCESS)
+    cardano_vkey_witness_t* witness = (cardano_vkey_witness_t*)((void*)item);
+    cardano_object_unref(&item);
+
+    if (cardano_vkey_witness_has_public_key(witness, vkey))
     {
-      return result;
+      cardano_error_t result = cardano_vkey_witness_set_signature(witness, sig);
+
+      if (result != CARDANO_SUCCESS)
+      {
+        return result;
+      }
+
+      found = true;
     }
-
-    return CARDANO_SUCCESS;
   }
 
-  const size_t original_size = cardano_array_get_size(vkey_witness_set->array);
-  const size_t new_size      = cardano_array_push(vkey_witness_set->array, (cardano_object_t*)((void*)element));
-
-  if (new_size != (original_size + 1U))
+  if (!found)
   {
-    return CARDANO_ERROR_MEMORY_ALLOCATION_FAILED;
+    const size_t original_size = cardano_array_get_size(vkey_witness_set->array);
+    const size_t new_size      = cardano_array_push(vkey_witness_set->array, (cardano_object_t*)((void*)element));
+
+    if (new_size != (original_size + 1U))
+    {
+      return CARDANO_ERROR_MEMORY_ALLOCATION_FAILED;
+    }
   }
+
+  vkey_witness_set->preserves_duplicates = false;
 
   return CARDANO_SUCCESS;
 }
@@ -474,6 +561,18 @@ cardano_vkey_witness_set_set_use_tag(cardano_vkey_witness_set_t* vkey_witness_se
   vkey_witness_set->uses_tags = use_tag;
 
   return CARDANO_SUCCESS;
+}
+
+void
+cardano_vkey_witness_set_clear_cbor_cache(cardano_vkey_witness_set_t* vkey_witness_set)
+{
+  if (vkey_witness_set == NULL)
+  {
+    return;
+  }
+
+  vkey_witness_set->uses_tags            = true;
+  vkey_witness_set->preserves_duplicates = false;
 }
 
 void

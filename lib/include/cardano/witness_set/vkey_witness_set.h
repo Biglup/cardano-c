@@ -102,6 +102,11 @@ cardano_vkey_witness_set_new(cardano_vkey_witness_set_t** vkey_witness_set);
  *       The caller is responsible for freeing the created \ref cardano_vkey_witness_set_t object by calling
  *       \ref cardano_vkey_witness_set_unref when it is no longer needed.
  *
+ * \remark The set keeps every witness it is decoded with, including a witness that appears more than once, and encodes
+ *         them all back so that the original CBOR is reproduced. Earlier protocol versions drop repeated witnesses and
+ *         protocol version 12 rejects them; call \ref cardano_vkey_witness_set_clear_cbor_cache to encode each witness
+ *         only once.
+ *
  * Usage Example:
  * \code{.c}
  * cardano_cbor_reader_t* reader = cardano_cbor_reader_new(cbor_data, data_size);
@@ -140,6 +145,13 @@ cardano_vkey_witness_set_from_cbor(cardano_cbor_reader_t* reader, cardano_vkey_w
  *
  * \return Returns \ref CARDANO_SUCCESS if the serialization is successful. If the \p vkey_witness or \p writer
  *         is NULL, returns \ref CARDANO_ERROR_POINTER_IS_NULL.
+ *
+ * \remark Two vkey witnesses are the same witness when they have the same public key and the same signature, as in
+ *         the ledger; witnesses with the same public key and different signatures are different witnesses. The ledger
+ *         drops a repeated witness before protocol version 12 and rejects it from protocol version 12, so a witness
+ *         that appears more than once is written only once, at the position of its last occurrence. A set decoded
+ *         from CBOR is the exception: it writes every witness it was decoded with until it is modified with
+ *         \ref cardano_vkey_witness_set_add or \ref cardano_vkey_witness_set_clear_cbor_cache is called.
  *
  * Usage Example:
  * \code{.c}
@@ -197,6 +209,9 @@ CARDANO_EXPORT cardano_error_t cardano_vkey_witness_set_to_cip116_json(
  * \param[in] vkey_witness_set A constant pointer to the \ref cardano_vkey_witness_set_t object whose length is to be retrieved.
  *
  * \return The number of elements in the vkey_witness_set. Return 0 if the vkey_witness_set is NULL.
+ *
+ * \note The length counts every element held by the set, including a witness decoded more than once, which
+ *       \ref cardano_vkey_witness_set_to_cbor may write only once.
  *
  * Usage Example:
  * \code{.c}
@@ -258,8 +273,11 @@ CARDANO_EXPORT cardano_error_t cardano_vkey_witness_set_get(const cardano_vkey_w
  * \brief Adds an element to a vkey_witness list, replacing existing signatures for duplicate public keys.
  *
  * This function adds the specified element to the end of the provided \ref cardano_vkey_witness_set_t object.
- * If an element with the same public key is already present in the set, the signature for that public key will be replaced
- * with the new signature provided by the added \ref cardano_vkey_witness_t element.
+ * If elements with the same public key are already present in the set, the signature of each of them is replaced
+ * with the new signature provided by the added \ref cardano_vkey_witness_t element and no element is added, so the set
+ * holds one witness per public key and signing a transaction again with the same key does not add a second witness.
+ *
+ * After this call the set is encoded without repeated witnesses, even if it was decoded from CBOR that repeats one.
  *
  * \param[in] vkey_witness_set A pointer to the \ref cardano_vkey_witness_set_t object to which
  *                             the element is to be added.
@@ -384,6 +402,34 @@ CARDANO_EXPORT bool cardano_vkey_witness_set_get_use_tag(const cardano_vkey_witn
  */
 CARDANO_NODISCARD
 CARDANO_EXPORT cardano_error_t cardano_vkey_witness_set_set_use_tag(cardano_vkey_witness_set_t* vkey_witness_set, bool use_tag);
+
+/**
+ * \brief Clears the encoding details a vkey witness set keeps from the CBOR it was decoded from.
+ *
+ * A vkey witness set created with \ref cardano_vkey_witness_set_from_cbor encodes back with the same set tag form and
+ * every witness it was decoded with, including repeated ones, so that the original CBOR is reproduced. This function
+ * drops those details: the set is then encoded with the set tag and each witness only once, which is the form the
+ * ledger accepts in every protocol version.
+ *
+ * \param[in,out] vkey_witness_set A pointer to an initialized \ref cardano_vkey_witness_set_t object. If NULL, the
+ *                                 function does nothing.
+ *
+ * \warning Clearing the encoding details may change the binary representation of the witness set when serialized,
+ *          which changes the bytes of a transaction that holds it. The transaction id is not affected.
+ *
+ * Usage Example:
+ * \code{.c}
+ * cardano_vkey_witness_set_t* vkey_witness_set = ...; // Assume it was decoded from CBOR
+ *
+ * cardano_vkey_witness_set_clear_cbor_cache(vkey_witness_set);
+ *
+ * cardano_cbor_writer_t* writer = cardano_cbor_writer_new();
+ * cardano_error_t result = cardano_vkey_witness_set_to_cbor(vkey_witness_set, writer);
+ *
+ * cardano_cbor_writer_unref(&writer);
+ * \endcode
+ */
+CARDANO_EXPORT void cardano_vkey_witness_set_clear_cbor_cache(cardano_vkey_witness_set_t* vkey_witness_set);
 
 /**
  * \brief Decrements the reference count of a vkey_witness_set object.
