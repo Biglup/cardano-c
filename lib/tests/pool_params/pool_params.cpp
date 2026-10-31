@@ -489,6 +489,67 @@ TEST(cardano_pool_params_from_cbor, returnsErrorIfMetadata)
   cardano_cbor_reader_unref(&reader);
 }
 
+TEST(cardano_pool_params_from_cbor, returnsErrorIfOperatorKeyHashIsEmpty)
+{
+  // Arrange
+  const char*            cbor        = "4058208dd154228946bd12967c12bedb1cb6038b78f8b84a1760b1a788fa72a4af3db01927101903e8d81e820105581de1cb0ec2692497b458e46812c8a5bfa2931d1a2d965a99893828ec810fd9010281581ccb0ec2692497b458e46812c8a5bfa2931d1a2d965a99893828ec810f8383011913886b6578616d706c652e636f6d8400191770447f000001f682026b6578616d706c652e636f6d827368747470733a2f2f6578616d706c652e636f6d40";
+  cardano_pool_params_t* pool_params = nullptr;
+  cardano_cbor_reader_t* reader      = cardano_cbor_reader_from_hex(cbor, strlen(cbor));
+
+  // Act
+  cardano_error_t error = cardano_pool_params_from_cbor(reader, &pool_params);
+
+  // Assert
+  EXPECT_EQ(error, CARDANO_ERROR_OUT_OF_BOUNDS_MEMORY_READ);
+  EXPECT_EQ(pool_params, (cardano_pool_params_t*)nullptr);
+
+  // Cleanup
+  cardano_cbor_reader_unref(&reader);
+}
+
+TEST(cardano_pool_params_from_cbor, returnsErrorIfVrfKeyHashIsEmpty)
+{
+  // Arrange
+  const char*            cbor        = "581cd85087c646951407198c27b1b950fd2e99f28586c000ce39f6e6ef92401927101903e8d81e820105581de1cb0ec2692497b458e46812c8a5bfa2931d1a2d965a99893828ec810fd9010281581ccb0ec2692497b458e46812c8a5bfa2931d1a2d965a99893828ec810f8383011913886b6578616d706c652e636f6d8400191770447f000001f682026b6578616d706c652e636f6d827368747470733a2f2f6578616d706c652e636f6d40";
+  cardano_pool_params_t* pool_params = nullptr;
+  cardano_cbor_reader_t* reader      = cardano_cbor_reader_from_hex(cbor, strlen(cbor));
+
+  // Act
+  cardano_error_t error = cardano_pool_params_from_cbor(reader, &pool_params);
+
+  // Assert
+  EXPECT_EQ(error, CARDANO_ERROR_OUT_OF_BOUNDS_MEMORY_READ);
+  EXPECT_EQ(pool_params, (cardano_pool_params_t*)nullptr);
+
+  // Cleanup
+  cardano_cbor_reader_unref(&reader);
+}
+
+TEST(cardano_pool_params_to_cip116_json, writesAnEmptyMetadataHash)
+{
+  // Arrange
+  const char*            cbor        = "581cd85087c646951407198c27b1b950fd2e99f28586c000ce39f6e6ef9258208dd154228946bd12967c12bedb1cb6038b78f8b84a1760b1a788fa72a4af3db01927101903e8d81e820105581de1cb0ec2692497b458e46812c8a5bfa2931d1a2d965a99893828ec810fd9010281581ccb0ec2692497b458e46812c8a5bfa2931d1a2d965a99893828ec810f8383011913886b6578616d706c652e636f6d8400191770447f000001f682026b6578616d706c652e636f6d827368747470733a2f2f6578616d706c652e636f6d40";
+  cardano_pool_params_t* pool_params = nullptr;
+  cardano_cbor_reader_t* reader      = cardano_cbor_reader_from_hex(cbor, strlen(cbor));
+  cardano_json_writer_t* json        = cardano_json_writer_new(CARDANO_JSON_FORMAT_COMPACT);
+
+  ASSERT_EQ(cardano_pool_params_from_cbor(reader, &pool_params), CARDANO_SUCCESS);
+
+  // Act
+  cardano_error_t error    = cardano_pool_params_to_cip116_json(pool_params, json);
+  char*           json_str = encode_json(json);
+
+  // Assert
+  EXPECT_EQ(error, CARDANO_SUCCESS);
+  EXPECT_THAT(json_str, testing::HasSubstr(R"("pool_metadata":{"url":"https://example.com","hash":""})"));
+
+  // Cleanup
+  cardano_pool_params_unref(&pool_params);
+  cardano_cbor_reader_unref(&reader);
+  cardano_json_writer_unref(&json);
+  free(json_str);
+}
+
 TEST(cardano_pool_params_ref, increasesTheReferenceCount)
 {
   // Arrange

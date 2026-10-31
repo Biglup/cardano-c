@@ -695,6 +695,37 @@ TEST(cardano_pool_registration_cert_from_cbor, canDecodeCertWithNullBlsKey)
   free(hex);
 }
 
+TEST(cardano_pool_registration_cert_from_cbor, roundTripsCertWithEmptyMetadataHash)
+{
+  // Arrange
+  const char*                       cbor   = "8a03581cd85087c646951407198c27b1b950fd2e99f28586c000ce39f6e6ef9258208dd154228946bd12967c12bedb1cb6038b78f8b84a1760b1a788fa72a4af3db01927101903e8d81e820105581de1cb0ec2692497b458e46812c8a5bfa2931d1a2d965a99893828ec810fd9010281581ccb0ec2692497b458e46812c8a5bfa2931d1a2d965a99893828ec810f8383011913886b6578616d706c652e636f6d8400191770447f000001f682026b6578616d706c652e636f6d827368747470733a2f2f6578616d706c652e636f6d40";
+  cardano_pool_registration_cert_t* cert   = NULL;
+  cardano_cbor_reader_t*            reader = cardano_cbor_reader_from_hex(cbor, strlen(cbor));
+
+  // Act
+  cardano_error_t result = cardano_pool_registration_cert_from_cbor(reader, &cert);
+
+  // Assert
+  ASSERT_EQ(result, CARDANO_SUCCESS);
+
+  cardano_cbor_writer_t* writer = cardano_cbor_writer_new();
+
+  ASSERT_EQ(cardano_pool_registration_cert_to_cbor(cert, writer), CARDANO_SUCCESS);
+
+  size_t hex_size = cardano_cbor_writer_get_hex_size(writer);
+  char*  hex      = (char*)malloc(hex_size);
+
+  ASSERT_EQ(cardano_cbor_writer_encode_hex(writer, hex, hex_size), CARDANO_SUCCESS);
+
+  EXPECT_STREQ(hex, cbor);
+
+  // Cleanup
+  cardano_pool_registration_cert_unref(&cert);
+  cardano_cbor_reader_unref(&reader);
+  cardano_cbor_writer_unref(&writer);
+  free(hex);
+}
+
 TEST(cardano_pool_registration_cert_from_cbor, returnsErrorIfArrayHasNineElements)
 {
   // Arrange

@@ -375,6 +375,46 @@ TEST(cardano_transaction_to_cbor, canSerializeFromCache)
   free(hex);
 }
 
+TEST(cardano_transaction_from_cbor, roundTripsAPoolRegistrationWithAnEmptyMetadataHash)
+{
+  // Arrange
+  const char*            cbor        = "84a400d90102818258200f3abbc8fc19c2e61bab6059bf8a466e6e754833a08a62a6c56fe0e78f19d9d5000180020004d90102818a03581cd85087c646951407198c27b1b950fd2e99f28586c000ce39f6e6ef9258208dd154228946bd12967c12bedb1cb6038b78f8b84a1760b1a788fa72a4af3db01927101903e8d81e820105581de1cb0ec2692497b458e46812c8a5bfa2931d1a2d965a99893828ec810fd9010281581ccb0ec2692497b458e46812c8a5bfa2931d1a2d965a99893828ec810f8383011913886b6578616d706c652e636f6d8400191770447f000001f682026b6578616d706c652e636f6d827368747470733a2f2f6578616d706c652e636f6d40a0f5f6";
+  cardano_cbor_writer_t* writer      = cardano_cbor_writer_new();
+  cardano_cbor_writer_t* canonical   = cardano_cbor_writer_new();
+  cardano_transaction_t* transaction = new_default_transaction(cbor);
+
+  ASSERT_NE(transaction, nullptr);
+
+  // Act
+  cardano_error_t result = cardano_transaction_to_cbor(transaction, writer);
+
+  cardano_transaction_clear_cbor_cache(transaction);
+
+  cardano_error_t canonical_result = cardano_transaction_to_cbor(transaction, canonical);
+
+  // Assert
+  ASSERT_EQ(result, CARDANO_SUCCESS);
+  ASSERT_EQ(canonical_result, CARDANO_SUCCESS);
+
+  size_t hex_size           = cardano_cbor_writer_get_hex_size(writer);
+  char*  hex                = (char*)malloc(hex_size);
+  size_t canonical_hex_size = cardano_cbor_writer_get_hex_size(canonical);
+  char*  canonical_hex      = (char*)malloc(canonical_hex_size);
+
+  ASSERT_EQ(cardano_cbor_writer_encode_hex(writer, hex, hex_size), CARDANO_SUCCESS);
+  ASSERT_EQ(cardano_cbor_writer_encode_hex(canonical, canonical_hex, canonical_hex_size), CARDANO_SUCCESS);
+
+  EXPECT_STREQ(hex, cbor);
+  EXPECT_STREQ(canonical_hex, cbor);
+
+  // Cleanup
+  cardano_transaction_unref(&transaction);
+  cardano_cbor_writer_unref(&writer);
+  cardano_cbor_writer_unref(&canonical);
+  free(hex);
+  free(canonical_hex);
+}
+
 TEST(cardano_transaction_to_cbor, canSerialize)
 {
   // Arrange

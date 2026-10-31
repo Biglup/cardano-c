@@ -204,6 +204,40 @@ TEST(cardano_credential_from_cbor, returnErrorIfInvalidByteStringSize)
   cardano_cbor_reader_unref(&reader);
 }
 
+TEST(cardano_credential_from_cbor, returnErrorIfKeyHashIsEmpty)
+{
+  // Arrange
+  cardano_cbor_reader_t* reader     = cardano_cbor_reader_from_hex("820040", 6);
+  cardano_credential_t*  credential = nullptr;
+
+  // Act
+  cardano_error_t error = cardano_credential_from_cbor(reader, &credential);
+
+  // Assert
+  EXPECT_EQ(error, CARDANO_ERROR_INVALID_CBOR_VALUE);
+  EXPECT_EQ(credential, (cardano_credential_t*)nullptr);
+
+  // Cleanup
+  cardano_cbor_reader_unref(&reader);
+}
+
+TEST(cardano_credential_from_cbor, returnErrorIfScriptHashIsEmpty)
+{
+  // Arrange
+  cardano_cbor_reader_t* reader     = cardano_cbor_reader_from_hex("820140", 6);
+  cardano_credential_t*  credential = nullptr;
+
+  // Act
+  cardano_error_t error = cardano_credential_from_cbor(reader, &credential);
+
+  // Assert
+  EXPECT_EQ(error, CARDANO_ERROR_INVALID_CBOR_VALUE);
+  EXPECT_EQ(credential, (cardano_credential_t*)nullptr);
+
+  // Cleanup
+  cardano_cbor_reader_unref(&reader);
+}
+
 TEST(cardano_credential_from_cbor, returnsErrorIfReaderIsNull)
 {
   // Arrange

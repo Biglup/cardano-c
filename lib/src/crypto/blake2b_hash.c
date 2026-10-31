@@ -30,6 +30,7 @@
 
 #include "../allocators.h"
 #include "../cbor/cbor_validation.h"
+#include "blake2b_hash_internal.h"
 
 #include <assert.h>
 #include <sodium.h>
@@ -74,6 +75,35 @@ cardano_blake2b_hash_deallocate(void* object)
   }
 
   _cardano_free(hash);
+}
+
+/**
+ * \brief Reads the byte string that holds an encoded hash.
+ *
+ * \param[in] reader The CBOR reader positioned at the byte string.
+ * \param[out] byte_string On success, the bytes of the byte string, owned by the caller.
+ *
+ * \return \ref CARDANO_SUCCESS on success, \ref CARDANO_ERROR_UNEXPECTED_CBOR_TYPE if the next item is
+ *         not a byte string, or the error reported by the reader.
+ */
+static cardano_error_t
+cardano_blake2b_hash_read_byte_string(cardano_cbor_reader_t* reader, cardano_buffer_t** byte_string)
+{
+  cardano_cbor_reader_state_t state = CARDANO_CBOR_READER_STATE_UNDEFINED;
+
+  const cardano_error_t peek_result = cardano_cbor_reader_peek_state(reader, &state);
+
+  if (peek_result != CARDANO_SUCCESS)
+  {
+    return peek_result;
+  }
+
+  if (state != CARDANO_CBOR_READER_STATE_BYTESTRING)
+  {
+    return CARDANO_ERROR_UNEXPECTED_CBOR_TYPE;
+  }
+
+  return cardano_cbor_reader_read_bytestring(reader, byte_string);
 }
 
 /* DEFINITIONS ****************************************************************/
@@ -270,22 +300,8 @@ cardano_blake2b_hash_from_hex(
 cardano_error_t
 cardano_blake2b_hash_from_cbor(cardano_cbor_reader_t* reader, cardano_blake2b_hash_t** blake2b_hash)
 {
-  cardano_cbor_reader_state_t state = CARDANO_CBOR_READER_STATE_UNDEFINED;
-
-  const cardano_error_t peek_result = cardano_cbor_reader_peek_state(reader, &state);
-
-  if (peek_result != CARDANO_SUCCESS)
-  {
-    return peek_result;
-  }
-
-  if (state != CARDANO_CBOR_READER_STATE_BYTESTRING)
-  {
-    return CARDANO_ERROR_UNEXPECTED_CBOR_TYPE;
-  }
-
   cardano_buffer_t*     byte_string             = NULL;
-  const cardano_error_t read_byte_string_result = cardano_cbor_reader_read_bytestring(reader, &byte_string);
+  const cardano_error_t read_byte_string_result = cardano_blake2b_hash_read_byte_string(reader, &byte_string);
 
   if (read_byte_string_result != CARDANO_SUCCESS)
   {
@@ -300,6 +316,56 @@ cardano_blake2b_hash_from_cbor(cardano_cbor_reader_t* reader, cardano_blake2b_ha
   cardano_buffer_unref(&byte_string);
 
   return create_hash_result;
+}
+
+cardano_error_t
+_cardano_blake2b_hash_from_cbor_allow_empty(cardano_cbor_reader_t* reader, cardano_blake2b_hash_t** blake2b_hash)
+{
+  if (blake2b_hash == NULL)
+  {
+    return CARDANO_ERROR_POINTER_IS_NULL;
+  }
+
+  cardano_buffer_t*     byte_string             = NULL;
+  const cardano_error_t read_byte_string_result = cardano_blake2b_hash_read_byte_string(reader, &byte_string);
+
+  if (read_byte_string_result != CARDANO_SUCCESS)
+  {
+    *blake2b_hash = NULL;
+
+    return read_byte_string_result;
+  }
+
+  if (cardano_buffer_get_size(byte_string) > 0U)
+  {
+    const cardano_error_t create_hash_result = cardano_blake2b_hash_from_bytes(
+      cardano_buffer_get_data(byte_string),
+      cardano_buffer_get_size(byte_string),
+      blake2b_hash);
+
+    cardano_buffer_unref(&byte_string);
+
+    return create_hash_result;
+  }
+
+  cardano_blake2b_hash_t* empty_hash = (cardano_blake2b_hash_t*)_cardano_malloc(sizeof(cardano_blake2b_hash_t));
+
+  if (empty_hash == NULL)
+  {
+    cardano_buffer_unref(&byte_string);
+    *blake2b_hash = NULL;
+
+    return CARDANO_ERROR_MEMORY_ALLOCATION_FAILED;
+  }
+
+  empty_hash->base.ref_count     = 1;
+  empty_hash->base.deallocator   = cardano_blake2b_hash_deallocate;
+  empty_hash->base.last_error[0] = '\0';
+  empty_hash->buffer             = byte_string;
+
+  *blake2b_hash = empty_hash;
+
+  return CARDANO_SUCCESS;
 }
 
 cardano_error_t

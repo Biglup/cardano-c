@@ -27,6 +27,7 @@
 
 #include "../allocators.h"
 #include "../cbor/cbor_validation.h"
+#include "../crypto/blake2b_hash_internal.h"
 #include "../string_safe.h"
 
 #include <assert.h>
@@ -215,7 +216,7 @@ cardano_pool_metadata_from_cbor(cardano_cbor_reader_t* reader, cardano_pool_meta
 
   cardano_blake2b_hash_t* hash = NULL;
 
-  const cardano_error_t read_hash_result = cardano_blake2b_hash_from_cbor(reader, &hash);
+  const cardano_error_t read_hash_result = _cardano_blake2b_hash_from_cbor_allow_empty(reader, &hash);
 
   if (read_hash_result != CARDANO_SUCCESS)
   {
