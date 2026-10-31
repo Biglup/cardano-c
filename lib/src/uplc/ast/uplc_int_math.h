@@ -2,7 +2,7 @@
  * \file uplc_int_math.h
  *
  * \author angel.castillo
- * \date   Jun 27, 2026
+ * \date   Oct 31, 2026
  *
  * Copyright 2026 Biglup Labs
  *
@@ -19,78 +19,60 @@
  * limitations under the License.
  */
 
-#ifndef CARDANO_UPLC_INT_MATH_H
-#define CARDANO_UPLC_INT_MATH_H
+#ifndef BIGLUP_LABS_INCLUDE_CARDANO_UPLC_AST_UPLC_INT_MATH_H
+#define BIGLUP_LABS_INCLUDE_CARDANO_UPLC_AST_UPLC_INT_MATH_H
 
-#include <stdbool.h>
-#include <stdint.h>
+/* INCLUDES ******************************************************************/
 
-/**
- * \brief Adds signed integers, returning true on overflow without evaluating an overflowing expression.
- * \param[in] a First operand.
- * \param[in] b Second operand.
- * \param[out] result Result, valid only when false is returned.
- * \return Whether the mathematical result exceeds the int64 range.
- */
-static inline bool
-cardano_uplc_i64_add_overflow(int64_t a, int64_t b, int64_t* result)
-{
-#if defined(_MSC_VER) && !defined(__clang__)
-  if (((b > 0) && (a > INT64_MAX - b)) || ((b < 0) && (a < INT64_MIN - b)))
-    return true;
-  *result = a + b;
-  return false;
-#else
-  return __builtin_add_overflow(a, b, result);
-#endif
-}
+#include <cardano/typedefs.h>
+
+/* DECLARATIONS **************************************************************/
+
+#ifdef __cplusplus
+extern "C" {
+#endif /* __cplusplus */
 
 /**
- * \brief Subtracts signed integers with overflow detection.
- * \param[in] a Minuend.
- * \param[in] b Subtrahend.
- * \param[out] result Result, valid only when false is returned.
- * \return Whether the mathematical result exceeds the int64 range.
+ * \brief Adds two signed 64-bit integers and detects overflow.
+ *
+ * \param[in] a The first operand.
+ * \param[in] b The second operand.
+ * \param[out] result Receives the result when no overflow occurs. Must not be NULL.
+ *
+ * \return true if the mathematical result is outside the int64 range; false
+ *         otherwise. The value of \p result is unspecified on overflow.
  */
-static inline bool
-cardano_uplc_i64_sub_overflow(int64_t a, int64_t b, int64_t* result)
-{
-#if defined(_MSC_VER) && !defined(__clang__)
-  if (((b > 0) && (a < INT64_MIN + b)) || ((b < 0) && (a > INT64_MAX + b)))
-    return true;
-  *result = a - b;
-  return false;
-#else
-  return __builtin_sub_overflow(a, b, result);
-#endif
-}
+bool
+cardano_uplc_i64_add_overflow(int64_t a, int64_t b, int64_t* result);
 
 /**
- * \brief Multiplies signed integers with overflow detection.
- * \param[in] a First operand.
- * \param[in] b Second operand.
- * \param[out] result Result, valid only when false is returned.
- * \return Whether the mathematical result exceeds the int64 range.
+ * \brief Subtracts two signed 64-bit integers and detects overflow.
+ *
+ * \param[in] a The first operand.
+ * \param[in] b The second operand.
+ * \param[out] result Receives the result when no overflow occurs. Must not be NULL.
+ *
+ * \return true if the mathematical result is outside the int64 range; false
+ *         otherwise. The value of \p result is unspecified on overflow.
  */
-static inline bool
-cardano_uplc_i64_mul_overflow(int64_t a, int64_t b, int64_t* result)
-{
-#if defined(_MSC_VER) && !defined(__clang__)
-  if (a > 0)
-  {
-    if (((b > 0) && (a > INT64_MAX / b)) || ((b < 0) && (b < INT64_MIN / a)))
-      return true;
-  }
-  else if (a < 0)
-  {
-    if (((b > 0) && (a < INT64_MIN / b)) || ((b < 0) && (a < INT64_MAX / b)))
-      return true;
-  }
-  *result = a * b;
-  return false;
-#else
-  return __builtin_mul_overflow(a, b, result);
-#endif
-}
+bool
+cardano_uplc_i64_sub_overflow(int64_t a, int64_t b, int64_t* result);
 
-#endif
+/**
+ * \brief Multiplies two signed 64-bit integers and detects overflow.
+ *
+ * \param[in] a The first operand.
+ * \param[in] b The second operand.
+ * \param[out] result Receives the result when no overflow occurs. Must not be NULL.
+ *
+ * \return true if the mathematical result is outside the int64 range; false
+ *         otherwise. The value of \p result is unspecified on overflow.
+ */
+bool
+cardano_uplc_i64_mul_overflow(int64_t a, int64_t b, int64_t* result);
+
+#ifdef __cplusplus
+}
+#endif /* __cplusplus */
+
+#endif /* BIGLUP_LABS_INCLUDE_CARDANO_UPLC_AST_UPLC_INT_MATH_H */
