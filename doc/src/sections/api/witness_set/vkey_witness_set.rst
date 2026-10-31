@@ -45,6 +45,10 @@ VKey Witness Set
 
 ------------
 
+.. doxygenfunction:: cardano_vkey_witness_set_clear_cbor_cache
+
+------------
+
 .. doxygenfunction:: cardano_vkey_witness_set_unref
 
 ------------

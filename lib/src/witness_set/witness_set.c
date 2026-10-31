@@ -1709,11 +1709,8 @@ cardano_witness_set_clear_cbor_cache(cardano_witness_set_t* witness_set)
   result = cardano_plutus_data_set_set_use_tag(witness_set->plutus_data, true);
   CARDANO_UNUSED(result);
 
-  result = cardano_vkey_witness_set_set_use_tag(witness_set->vkey_witnesses, true);
-  CARDANO_UNUSED(result);
-
-  result = cardano_bootstrap_witness_set_set_use_tag(witness_set->bootstrap_witnesses, true);
-  CARDANO_UNUSED(result);
+  cardano_vkey_witness_set_clear_cbor_cache(witness_set->vkey_witnesses);
+  cardano_bootstrap_witness_set_clear_cbor_cache(witness_set->bootstrap_witnesses);
 
   result = cardano_native_script_set_set_use_tag(witness_set->native_scripts, true);
   CARDANO_UNUSED(result);

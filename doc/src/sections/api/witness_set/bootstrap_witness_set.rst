@@ -41,6 +41,10 @@ Bootstrap Witness Set
 
 ------------
 
+.. doxygenfunction:: cardano_bootstrap_witness_set_clear_cbor_cache
+
+------------
+
 .. doxygenfunction:: cardano_bootstrap_witness_set_unref
 
 ------------
