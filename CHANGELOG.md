@@ -1,3 +1,10 @@
+V2.0.0-rc.4
+---------------------
+
+- Reserve a 5 MiB WASM stack for native Plutus evaluation. Cost-model construction exceeds Emscripten 3.1.49's default 64 KiB stack, which could corrupt memory in previous WASM release packages.
+- Enable WASM stack-overflow checks so an exhausted stack traps before writing outside its bounds.
+- Exercise native Plutus evaluation when validating the packaged WASM artifact.
+
 V2.0.0-rc.3
 ---------------------
 
