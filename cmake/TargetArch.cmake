@@ -21,6 +21,8 @@ SET (ARCHDETECT_C_CODE "
     #else
         #error cmake_ARCH arm
     #endif
+#elif defined(__aarch64__) || defined(_M_ARM64)
+    #error cmake_ARCH arm64
 #elif defined(__i386) || defined(__i386__) || defined(_M_IX86)
     #error cmake_ARCH i386
 #elif defined(__x86_64) || defined(__x86_64__) || defined(__amd64) || defined(_M_X64)
@@ -48,6 +50,8 @@ FUNCTION (TARGET_ARCHITECTURE output_var alt_output_var)
         SET (osx_arch_i386 TRUE)
       ELSEIF ("${osx_arch}" STREQUAL "x86_64")
         SET (osx_arch_x86_64 TRUE)
+      ELSEIF ("${osx_arch}" STREQUAL "arm64")
+        SET (osx_arch_arm64 TRUE)
       ELSEIF ("${osx_arch}" STREQUAL "ppc64" AND ppc_support)
         SET (osx_arch_ppc64 TRUE)
       ELSE ()
@@ -67,9 +71,14 @@ FUNCTION (TARGET_ARCHITECTURE output_var alt_output_var)
       LIST (APPEND ARCH x86_64)
     ENDIF ()
 
+    IF (osx_arch_arm64)
+      LIST (APPEND ARCH arm64)
+    ENDIF ()
+
     IF (osx_arch_ppc64)
       LIST (APPEND ARCH ppc64)
     ENDIF ()
+    SET (ALT_ARCH ${ARCH})
   ELSE ()
     FILE (WRITE "${CMAKE_BINARY_DIR}/arch.c" "${ARCHDETECT_C_CODE}")
 
