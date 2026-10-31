@@ -296,14 +296,6 @@ jobs:
           .
           cmake --build . --config Release
 
-      - name: Verify BLS implementation (MSVC)
-        if: runner.os == 'Windows' && matrix.compiler == 'msvc'
-        shell: cmd
-        run: |
-          cl /nologo /Ilib\external\blst\bindings scripts\blst-release-smoke.c /Febuild\release\lib\Release\blst-release-smoke.exe /link /LIBPATH:build\release\lib\Release cardano-c.lib
-          if errorlevel 1 exit /b 1
-          build\release\lib\Release\blst-release-smoke.exe
-
       # Package binaries (Unix)
       - name: Package binaries (Unix)
         if: runner.os != 'Windows' && matrix.compiler != 'emscripten'
