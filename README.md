@@ -26,7 +26,7 @@ Ready to learn? Get the latest documentation at [cardano-c.readthedocs.io](https
 | Channel | Version | Intended use |
 | :------ | :------ | :----------- |
 | Stable | [v1.2.1](https://github.com/Biglup/cardano-c/releases/tag/v1.2.1) | The stable 1.2 series for Conway applications. |
-| Release candidate | [v2.0.0-rc.1](https://github.com/Biglup/cardano-c/releases/tag/v2.0.0-rc.1) | Integration testing of the native Plutus evaluator and Conway/Dijkstra transaction support. |
+| Release candidate | [v2.0.0-rc.2](https://github.com/Biglup/cardano-c/releases/tag/v2.0.0-rc.2) | Integration testing of the native Plutus evaluator and Conway/Dijkstra transaction support. |
 
 Version 2.0 adds native Plutus evaluation and support for Dijkstra transactions. Dijkstra support is experimental until the hardfork rules are finalized. The 1.2 series remains the stable release for Conway.
 
@@ -54,7 +54,7 @@ Here is a list with all the languages/bindings available.
 
 | Name                                                                                     | libcardano-c version | Language                                                             | License              |
 | :--------------------------------------------------------------------------------------- | :------------------: | :------------------------------------------------------------------: | :------------------: |
-| [libcardano-c](https://github.com/Biglup/cardano-c)                                      | **1.2.1 stable / 2.0.0-rc.1**            | [C](https://en.wikipedia.org/wiki/C_(programming_language))          | Apache 2.0           |
+| [libcardano-c](https://github.com/Biglup/cardano-c)                                      | **1.2.1 stable / 2.0.0-rc.2**            | [C](https://en.wikipedia.org/wiki/C_(programming_language))          | Apache 2.0           |
 | [cometa.js](https://github.com/Biglup/cometa.js)                                         | **1.2.0**            | [JavaScript](https://en.wikipedia.org/wiki/JavaScript)               | Apache 2.0           |
 | [cometa.py](https://github.com/Biglup/cometa.py)                                         | **1.2.0**            | [Python](https://www.python.org)                                     | Apache 2.0           |
 
