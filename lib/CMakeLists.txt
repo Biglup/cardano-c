@@ -144,20 +144,24 @@ ELSEIF(CMAKE_C_COMPILER_ID MATCHES "MSVC")
 ENDIF()
 
 # ----------------------------------------------------------------------------
-# Add blst (BLS12-381) as the portable, no-assembly build.
-#
-# Only src/server.c is a compilation unit; it #includes the implementation .c
-# files it needs. __BLST_NO_ASM__ selects the reference C field arithmetic and
-# __BLST_PORTABLE__ disables the runtime-dispatched SHA-256 assembly kernels,
-# so there is no assembly anywhere and the target builds on WASM and the
-# armv6/armv7 cross builds. See lib/external/blst/VERSION.txt.
+# Add blst (BLS12-381).
+# MSVC x64 uses upstream's MASM implementation because its compiler does not
+# support the variable-length arrays in no_asm.h. Other targets retain the
+# portable C implementation. See lib/external/blst/VERSION.txt.
 # ----------------------------------------------------------------------------
 INCLUDE_DIRECTORIES(SYSTEM ${CMAKE_CURRENT_SOURCE_DIR}/external/blst/bindings)
 
-ADD_LIBRARY(blst OBJECT ${CMAKE_CURRENT_SOURCE_DIR}/external/blst/src/server.c)
+IF(MSVC AND CMAKE_SIZEOF_VOID_P EQUAL 8)
+  ENABLE_LANGUAGE(ASM_MASM)
+  FILE(GLOB BLST_ASM_SOURCES ${CMAKE_CURRENT_SOURCE_DIR}/external/blst/build/win64/*-x86_64.asm)
+  ADD_LIBRARY(blst OBJECT ${CMAKE_CURRENT_SOURCE_DIR}/external/blst/src/server.c ${BLST_ASM_SOURCES})
+  TARGET_COMPILE_DEFINITIONS(blst PRIVATE __BLST_PORTABLE__)
+  TARGET_COMPILE_OPTIONS(blst PRIVATE $<$<COMPILE_LANGUAGE:ASM_MASM>:/Cp> $<$<COMPILE_LANGUAGE:ASM_MASM>:/Cx>)
+ELSE()
+  ADD_LIBRARY(blst OBJECT ${CMAKE_CURRENT_SOURCE_DIR}/external/blst/src/server.c)
+  TARGET_COMPILE_DEFINITIONS(blst PRIVATE __BLST_NO_ASM__ __BLST_PORTABLE__)
+ENDIF()
 SET_TARGET_PROPERTIES(blst PROPERTIES POSITION_INDEPENDENT_CODE ON)
-
-TARGET_COMPILE_DEFINITIONS(blst PRIVATE __BLST_NO_ASM__ __BLST_PORTABLE__)
 
 # Suppress warnings for blst
 SET_TARGET_PROPERTIES(blst PROPERTIES C_CLANG_TIDY "")
