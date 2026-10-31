@@ -47,6 +47,10 @@ static const char* COST_MODE_V4_CBOR_HEX = "0398b31a0003236119032c01011903e81902
 static const char* COST_MODEL_DEFINITE_CBOR_HEX   = "0083010203";
 static const char* COST_MODEL_INDEFINITE_CBOR_HEX = "009f010203ff";
 
+static const char* COST_MODEL_LANGUAGE_4_CBOR_HEX   = "0483010203";
+static const char* COST_MODEL_LANGUAGE_24_CBOR_HEX  = "1818820a0b";
+static const char* COST_MODEL_LANGUAGE_255_CBOR_HEX = "18ff8105";
+
 static std::vector<int64_t>
 hex_string_to_costs(const char* hex_string)
 {
@@ -169,6 +173,20 @@ TEST(cardano_cost_model_new, returnErrorIfInvalidCostModel)
 
   error = cardano_cost_model_new((cardano_plutus_language_version_t)99, &costs[0], 4096, &cost_model);
   EXPECT_EQ(error, CARDANO_ERROR_INVALID_PLUTUS_COST_MODEL);
+}
+
+TEST(cardano_cost_model_new, returnErrorIfLanguageIsUnknown)
+{
+  // Arrange
+  cardano_cost_model_t* cost_model = nullptr;
+  const int64_t         costs[]    = { 1, 2, 3 };
+
+  // Act
+  cardano_error_t error = cardano_cost_model_new((cardano_plutus_language_version_t)4, costs, 3, &cost_model);
+
+  // Assert
+  EXPECT_EQ(error, CARDANO_ERROR_INVALID_PLUTUS_COST_MODEL);
+  EXPECT_THAT(cost_model, testing::IsNull());
 }
 
 TEST(cardano_cost_model_new, returnsErrorIfCostModelIsNull)
@@ -424,7 +442,7 @@ TEST(cardano_cost_model_from_cbor, returnsErrorIdInvalidPlutusType)
 {
   // Arrange
   cardano_cost_model_t*  cost_model = nullptr;
-  cardano_cbor_reader_t* reader     = cardano_cbor_reader_from_hex("04", 2);
+  cardano_cbor_reader_t* reader     = cardano_cbor_reader_from_hex("19010083010203", 14);
 
   // Act
   cardano_error_t error = cardano_cost_model_from_cbor(reader, &cost_model);
@@ -434,6 +452,113 @@ TEST(cardano_cost_model_from_cbor, returnsErrorIdInvalidPlutusType)
 
   // Cleanup
   cardano_cbor_reader_unref(&reader);
+}
+
+TEST(cardano_cost_model_from_cbor, canDeserializeUnknownLanguages)
+{
+  const char*   vectors[]      = { COST_MODEL_LANGUAGE_4_CBOR_HEX, COST_MODEL_LANGUAGE_24_CBOR_HEX, COST_MODEL_LANGUAGE_255_CBOR_HEX };
+  const uint8_t language_ids[] = { 4U, 24U, 255U };
+  const size_t  costs_sizes[]  = { 3U, 2U, 1U };
+
+  for (size_t i = 0U; i < 3U; ++i)
+  {
+    // Arrange
+    cardano_cost_model_t*  cost_model = nullptr;
+    cardano_cbor_reader_t* reader     = cardano_cbor_reader_from_hex(vectors[i], strlen(vectors[i]));
+
+    // Act
+    cardano_error_t error = cardano_cost_model_from_cbor(reader, &cost_model);
+
+    // Assert
+    ASSERT_EQ(error, CARDANO_SUCCESS);
+
+    uint8_t language_id = 0U;
+    EXPECT_EQ(cardano_cost_model_get_language_id(cost_model, &language_id), CARDANO_SUCCESS);
+    EXPECT_EQ(language_id, language_ids[i]);
+    EXPECT_EQ(cardano_cost_model_get_costs_size(cost_model), costs_sizes[i]);
+
+    cardano_plutus_language_version_t language = CARDANO_PLUTUS_LANGUAGE_VERSION_V1;
+    EXPECT_EQ(cardano_cost_model_get_language(cost_model, &language), CARDANO_ERROR_INVALID_PLUTUS_COST_MODEL);
+
+    // Cleanup
+    cardano_cost_model_unref(&cost_model);
+    cardano_cbor_reader_unref(&reader);
+  }
+}
+
+TEST(cardano_cost_model_from_cbor, canRoundTripUnknownLanguages)
+{
+  const char* vectors[] = { COST_MODEL_LANGUAGE_4_CBOR_HEX, COST_MODEL_LANGUAGE_24_CBOR_HEX, COST_MODEL_LANGUAGE_255_CBOR_HEX };
+
+  for (size_t i = 0U; i < 3U; ++i)
+  {
+    // Arrange
+    cardano_cost_model_t*  cost_model = nullptr;
+    cardano_cbor_reader_t* reader     = cardano_cbor_reader_from_hex(vectors[i], strlen(vectors[i]));
+    cardano_cbor_writer_t* writer     = cardano_cbor_writer_new();
+
+    ASSERT_EQ(cardano_cost_model_from_cbor(reader, &cost_model), CARDANO_SUCCESS);
+
+    // Act
+    cardano_error_t error = cardano_cost_model_to_cbor(cost_model, writer);
+
+    // Assert
+    EXPECT_EQ(error, CARDANO_SUCCESS);
+
+    size_t hex_size = cardano_cbor_writer_get_hex_size(writer);
+    char*  cbor_hex = (char*)malloc(hex_size);
+
+    EXPECT_EQ(cardano_cbor_writer_encode_hex(writer, cbor_hex, hex_size), CARDANO_SUCCESS);
+    EXPECT_STREQ(cbor_hex, vectors[i]);
+
+    // Cleanup
+    cardano_cost_model_unref(&cost_model);
+    cardano_cbor_reader_unref(&reader);
+    cardano_cbor_writer_unref(&writer);
+    free(cbor_hex);
+  }
+}
+
+TEST(cardano_cost_model_from_cbor, returnsErrorIfLanguageIdIsNotAnUnsignedInteger)
+{
+  // Arrange
+  cardano_cost_model_t*  cost_model = nullptr;
+  cardano_cbor_reader_t* reader     = cardano_cbor_reader_from_hex("2083010203", 10);
+
+  // Act
+  cardano_error_t error = cardano_cost_model_from_cbor(reader, &cost_model);
+
+  // Assert
+  EXPECT_NE(error, CARDANO_SUCCESS);
+  EXPECT_THAT(cost_model, testing::IsNull());
+
+  // Cleanup
+  cardano_cbor_reader_unref(&reader);
+}
+
+TEST(cardano_cost_model_from_cbor, returnsErrorIfMemoryAllocationFailsForUnknownLanguage)
+{
+  for (int i = 0; i < 3; ++i)
+  {
+    // Arrange
+    cardano_cost_model_t*  cost_model = nullptr;
+    cardano_cbor_reader_t* reader     = cardano_cbor_reader_from_hex(COST_MODEL_LANGUAGE_24_CBOR_HEX, strlen(COST_MODEL_LANGUAGE_24_CBOR_HEX));
+
+    reset_allocators_run_count();
+    set_malloc_limit(i);
+    cardano_set_allocators(fail_malloc_at_limit, realloc, free);
+
+    // Act
+    cardano_error_t error = cardano_cost_model_from_cbor(reader, &cost_model);
+
+    // Assert
+    EXPECT_EQ(error, CARDANO_ERROR_MEMORY_ALLOCATION_FAILED);
+    EXPECT_THAT(cost_model, testing::IsNull());
+
+    // Cleanup
+    cardano_set_allocators(malloc, realloc, free);
+    cardano_cbor_reader_unref(&reader);
+  }
 }
 
 TEST(cardano_cost_model_from_cbor, returnsErrorIdInvalidCostsArray)
@@ -906,6 +1031,54 @@ TEST(cardano_cost_model_get_language, returnErrorIfLanguageIsNull)
   // Cleanup
   cardano_cost_model_unref(&cost_model);
   cardano_cbor_reader_unref(&reader);
+}
+
+TEST(cardano_cost_model_get_language_id, canGetLanguageIdOfKnownLanguage)
+{
+  // Arrange
+  cardano_cost_model_t* cost_model = nullptr;
+  const int64_t         costs[]    = { 1, 2, 3 };
+
+  ASSERT_EQ(cardano_cost_model_new(CARDANO_PLUTUS_LANGUAGE_VERSION_V3, costs, 3, &cost_model), CARDANO_SUCCESS);
+
+  // Act
+  uint8_t         language_id = 0U;
+  cardano_error_t error       = cardano_cost_model_get_language_id(cost_model, &language_id);
+
+  // Assert
+  EXPECT_EQ(error, CARDANO_SUCCESS);
+  EXPECT_EQ(language_id, 2U);
+
+  // Cleanup
+  cardano_cost_model_unref(&cost_model);
+}
+
+TEST(cardano_cost_model_get_language_id, returnErrorIfGivenNull)
+{
+  // Act
+  uint8_t         language_id = 0U;
+  cardano_error_t error       = cardano_cost_model_get_language_id(nullptr, &language_id);
+
+  // Assert
+  EXPECT_EQ(error, CARDANO_ERROR_POINTER_IS_NULL);
+}
+
+TEST(cardano_cost_model_get_language_id, returnErrorIfLanguageIdIsNull)
+{
+  // Arrange
+  cardano_cost_model_t* cost_model = nullptr;
+  const int64_t         costs[]    = { 1, 2, 3 };
+
+  ASSERT_EQ(cardano_cost_model_new(CARDANO_PLUTUS_LANGUAGE_VERSION_V1, costs, 3, &cost_model), CARDANO_SUCCESS);
+
+  // Act
+  cardano_error_t error = cardano_cost_model_get_language_id(cost_model, nullptr);
+
+  // Assert
+  EXPECT_EQ(error, CARDANO_ERROR_POINTER_IS_NULL);
+
+  // Cleanup
+  cardano_cost_model_unref(&cost_model);
 }
 
 TEST(cardano_cost_model_to_cip116_json, canConvertToCip116Json)

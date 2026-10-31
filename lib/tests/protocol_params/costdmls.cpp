@@ -31,6 +31,7 @@
 #include "../src/allocators.h"
 
 #include <gmock/gmock.h>
+#include <string>
 
 /* CONSTANTS *****************************************************************/
 
@@ -44,6 +45,8 @@ static const char* COST_MODE_V4_CBOR_HEX      = "0398b31a0003236119032c01011903e
 static const char* COSTMDLS_V4_CBOR           = "a10398b31a0003236119032c01011903e819023b00011903e8195e7104011903e818201a0001ca761928eb041959d818641959d818641959d818641959d818641959d818641959d81864186418641959d81864194c5118201a0002acfa182019b551041a000363151901ff00011a00015c3518201a000797751936f404021a0002ff941a0006ea7818dc0001011903e8196ff604021a0003bd081a00034ec5183e011a00102e0f19312a011a00032e801901a5011a0002da781903e819cf06011a00013a34182019a8f118201903e818201a00013aac0119e143041903e80a1a00030219189c011a00030219189c011a0003207c1901d9011a000330001901ff0119ccf3182019fd40182019ffd5182019581e18201940b318201a00012adf18201a0002ff941a0006ea7818dc0001011a00010f92192da7000119eabb18201a0002ff941a0006ea7818dc0001011a0002ff941a0006ea7818dc0001011a0011b22c1a0005fdde00021a000c504e197712041a001d6af61a0001425b041a00040c660004001a00014fab18201a0003236119032c010119a0de18201a00033d7618201979f41820197fb8182019a95d1820197df718201995aa18201a0223accc0a1a0374f693194a1f0a1a02515e841980b30a01020304";
 static const char* COSTMDLS_CBOR              = "a20098a61a0003236119032c01011903e819023b00011903e8195e7104011903e818201a0001ca761928eb041959d818641959d818641959d818641959d818641959d818641959d81864186418641959d81864194c5118201a0002acfa182019b551041a000363151901ff00011a00015c3518201a000797751936f404021a0002ff941a0006ea7818dc0001011903e8196ff604021a0003bd081a00034ec5183e011a00102e0f19312a011a00032e801901a5011a0002da781903e819cf06011a00013a34182019a8f118201903e818201a00013aac0119e143041903e80a1a00030219189c011a00030219189c011a0003207c1901d9011a000330001901ff0119ccf3182019fd40182019ffd5182019581e18201940b318201a00012adf18201a0002ff941a0006ea7818dc0001011a00010f92192da7000119eabb18201a0002ff941a0006ea7818dc0001011a0002ff941a0006ea7818dc0001011a000c504e197712041a001d6af61a0001425b041a00040c660004001a00014fab18201a0003236119032c010119a0de18201a00033d7618201979f41820197fb8182019a95d1820197df718201995aa18201a0374f693194a1f0a0198af1a0003236119032c01011903e819023b00011903e8195e7104011903e818201a0001ca761928eb041959d818641959d818641959d818641959d818641959d818641959d81864186418641959d81864194c5118201a0002acfa182019b551041a000363151901ff00011a00015c3518201a000797751936f404021a0002ff941a0006ea7818dc0001011903e8196ff604021a0003bd081a00034ec5183e011a00102e0f19312a011a00032e801901a5011a0002da781903e819cf06011a00013a34182019a8f118201903e818201a00013aac0119e143041903e80a1a00030219189c011a00030219189c011a0003207c1901d9011a000330001901ff0119ccf3182019fd40182019ffd5182019581e18201940b318201a00012adf18201a0002ff941a0006ea7818dc0001011a00010f92192da7000119eabb18201a0002ff941a0006ea7818dc0001011a0002ff941a0006ea7818dc0001011a0011b22c1a0005fdde00021a000c504e197712041a001d6af61a0001425b041a00040c660004001a00014fab18201a0003236119032c010119a0de18201a00033d7618201979f41820197fb8182019a95d1820197df718201995aa18201a0223accc0a1a0374f693194a1f0a1a02515e841980b30a";
 static const char* COSTMDLS_ALL_CBOR          = "a30098a61a0003236119032c01011903e819023b00011903e8195e7104011903e818201a0001ca761928eb041959d818641959d818641959d818641959d818641959d818641959d81864186418641959d81864194c5118201a0002acfa182019b551041a000363151901ff00011a00015c3518201a000797751936f404021a0002ff941a0006ea7818dc0001011903e8196ff604021a0003bd081a00034ec5183e011a00102e0f19312a011a00032e801901a5011a0002da781903e819cf06011a00013a34182019a8f118201903e818201a00013aac0119e143041903e80a1a00030219189c011a00030219189c011a0003207c1901d9011a000330001901ff0119ccf3182019fd40182019ffd5182019581e18201940b318201a00012adf18201a0002ff941a0006ea7818dc0001011a00010f92192da7000119eabb18201a0002ff941a0006ea7818dc0001011a0002ff941a0006ea7818dc0001011a000c504e197712041a001d6af61a0001425b041a00040c660004001a00014fab18201a0003236119032c010119a0de18201a00033d7618201979f41820197fb8182019a95d1820197df718201995aa18201a0374f693194a1f0a0198af1a0003236119032c01011903e819023b00011903e8195e7104011903e818201a0001ca761928eb041959d818641959d818641959d818641959d818641959d818641959d81864186418641959d81864194c5118201a0002acfa182019b551041a000363151901ff00011a00015c3518201a000797751936f404021a0002ff941a0006ea7818dc0001011903e8196ff604021a0003bd081a00034ec5183e011a00102e0f19312a011a00032e801901a5011a0002da781903e819cf06011a00013a34182019a8f118201903e818201a00013aac0119e143041903e80a1a00030219189c011a00030219189c011a0003207c1901d9011a000330001901ff0119ccf3182019fd40182019ffd5182019581e18201940b318201a00012adf18201a0002ff941a0006ea7818dc0001011a00010f92192da7000119eabb18201a0002ff941a0006ea7818dc0001011a0002ff941a0006ea7818dc0001011a0011b22c1a0005fdde00021a000c504e197712041a001d6af61a0001425b041a00040c660004001a00014fab18201a0003236119032c010119a0de18201a00033d7618201979f41820197fb8182019a95d1820197df718201995aa18201a0223accc0a1a0374f693194a1f0a1a02515e841980b30a0298b31a0003236119032c01011903e819023b00011903e8195e7104011903e818201a0001ca761928eb041959d818641959d818641959d818641959d818641959d818641959d81864186418641959d81864194c5118201a0002acfa182019b551041a000363151901ff00011a00015c3518201a000797751936f404021a0002ff941a0006ea7818dc0001011903e8196ff604021a0003bd081a00034ec5183e011a00102e0f19312a011a00032e801901a5011a0002da781903e819cf06011a00013a34182019a8f118201903e818201a00013aac0119e143041903e80a1a00030219189c011a00030219189c011a0003207c1901d9011a000330001901ff0119ccf3182019fd40182019ffd5182019581e18201940b318201a00012adf18201a0002ff941a0006ea7818dc0001011a00010f92192da7000119eabb18201a0002ff941a0006ea7818dc0001011a0002ff941a0006ea7818dc0001011a0011b22c1a0005fdde00021a000c504e197712041a001d6af61a0001425b041a00040c660004001a00014fab18201a0003236119032c010119a0de18201a00033d7618201979f41820197fb8182019a95d1820197df718201995aa18201a0223accc0a1a0374f693194a1f0a1a02515e841980b30a01020304";
+static const char* COSTMDLS_UNKNOWN_CBOR      = "a10483010203";
+static const char* COSTMDLS_MIXED_CBOR        = "a5008301020301810704830102031818820a0b18ff8105";
 static const char* PLUTUS_VASIL_LANGUAGE_VIEW = "a20198af1a0003236119032c01011903e819023b00011903e8195e7104011903e818201a0001ca761928eb041959d818641959d818641959d818641959d818641959d818641959d81864186418641959d81864194c5118201a0002acfa182019b551041a000363151901ff00011a00015c3518201a000797751936f404021a0002ff941a0006ea7818dc0001011903e8196ff604021a0003bd081a00034ec5183e011a00102e0f19312a011a00032e801901a5011a0002da781903e819cf06011a00013a34182019a8f118201903e818201a00013aac0119e143041903e80a1a00030219189c011a00030219189c011a0003207c1901d9011a000330001901ff0119ccf3182019fd40182019ffd5182019581e18201940b318201a00012adf18201a0002ff941a0006ea7818dc0001011a00010f92192da7000119eabb18201a0002ff941a0006ea7818dc0001011a0002ff941a0006ea7818dc0001011a0011b22c1a0005fdde00021a000c504e197712041a001d6af61a0001425b041a00040c660004001a00014fab18201a0003236119032c010119a0de18201a00033d7618201979f41820197fb8182019a95d1820197df718201995aa18201a0223accc0a1a0374f693194a1f0a1a02515e841980b30a41005901b69f1a0003236119032c01011903e819023b00011903e8195e7104011903e818201a0001ca761928eb041959d818641959d818641959d818641959d818641959d818641959d81864186418641959d81864194c5118201a0002acfa182019b551041a000363151901ff00011a00015c3518201a000797751936f404021a0002ff941a0006ea7818dc0001011903e8196ff604021a0003bd081a00034ec5183e011a00102e0f19312a011a00032e801901a5011a0002da781903e819cf06011a00013a34182019a8f118201903e818201a00013aac0119e143041903e80a1a00030219189c011a00030219189c011a0003207c1901d9011a000330001901ff0119ccf3182019fd40182019ffd5182019581e18201940b318201a00012adf18201a0002ff941a0006ea7818dc0001011a00010f92192da7000119eabb18201a0002ff941a0006ea7818dc0001011a0002ff941a0006ea7818dc0001011a000c504e197712041a001d6af61a0001425b041a00040c660004001a00014fab18201a0003236119032c010119a0de18201a00033d7618201979f41820197fb8182019a95d1820197df718201995aa18201a0374f693194a1f0aff";
 
 static std::vector<int64_t>
@@ -78,6 +81,68 @@ hex_string_to_costs(const char* hex_string)
   cardano_cbor_reader_unref(&reader);
 
   return costs;
+}
+
+/**
+ * Decodes a costmdls from CBOR and encodes it again.
+ *
+ * @param cbor_hex The CBOR of the costmdls, in hex.
+ * @return The CBOR the decoded costmdls encodes to, in hex.
+ */
+static std::string
+round_trip_costmdls(const char* cbor_hex)
+{
+  cardano_costmdls_t*    costmdls = nullptr;
+  cardano_cbor_reader_t* reader   = cardano_cbor_reader_from_hex(cbor_hex, strlen(cbor_hex));
+  cardano_cbor_writer_t* writer   = cardano_cbor_writer_new();
+
+  EXPECT_EQ(cardano_costmdls_from_cbor(reader, &costmdls), CARDANO_SUCCESS);
+  EXPECT_EQ(cardano_costmdls_to_cbor(costmdls, writer), CARDANO_SUCCESS);
+
+  const size_t hex_size = cardano_cbor_writer_get_hex_size(writer);
+  char*        hex      = (char*)malloc(hex_size);
+
+  EXPECT_EQ(cardano_cbor_writer_encode_hex(writer, hex, hex_size), CARDANO_SUCCESS);
+
+  std::string result(hex);
+
+  free(hex);
+  cardano_cbor_writer_unref(&writer);
+  cardano_cbor_reader_unref(&reader);
+  cardano_costmdls_unref(&costmdls);
+
+  return result;
+}
+
+/**
+ * Decodes a costmdls from CBOR and computes its language views encoding.
+ *
+ * @param cbor_hex The CBOR of the costmdls, in hex.
+ * @return The language views encoding of the decoded costmdls, in hex.
+ */
+static std::string
+get_language_views_hex(const char* cbor_hex)
+{
+  cardano_costmdls_t*    costmdls = nullptr;
+  cardano_cbor_reader_t* reader   = cardano_cbor_reader_from_hex(cbor_hex, strlen(cbor_hex));
+  cardano_buffer_t*      views    = nullptr;
+
+  EXPECT_EQ(cardano_costmdls_from_cbor(reader, &costmdls), CARDANO_SUCCESS);
+  EXPECT_EQ(cardano_costmdls_get_language_views_encoding(costmdls, &views), CARDANO_SUCCESS);
+
+  const size_t hex_size = cardano_buffer_get_hex_size(views);
+  char*        hex      = (char*)malloc(hex_size);
+
+  EXPECT_EQ(cardano_buffer_to_hex(views, hex, hex_size), CARDANO_SUCCESS);
+
+  std::string result(hex);
+
+  free(hex);
+  cardano_buffer_unref(&views);
+  cardano_cbor_reader_unref(&reader);
+  cardano_costmdls_unref(&costmdls);
+
+  return result;
 }
 
 /* UNIT TESTS ****************************************************************/
@@ -1617,4 +1682,308 @@ TEST(cardano_costmdls_to_cip116_json, returnsErrorIfWriterIsNull)
   cardano_error_t error = cardano_costmdls_to_cip116_json(costmdls, nullptr);
   EXPECT_EQ(error, CARDANO_ERROR_POINTER_IS_NULL);
   cardano_costmdls_unref(&costmdls);
+}
+
+TEST(cardano_costmdls_from_cbor, canDeserializeUnknownLanguage)
+{
+  // Arrange
+  cardano_costmdls_t*    costmdls = nullptr;
+  cardano_cbor_reader_t* reader   = cardano_cbor_reader_from_hex(COSTMDLS_UNKNOWN_CBOR, strlen(COSTMDLS_UNKNOWN_CBOR));
+
+  // Act
+  cardano_error_t error = cardano_costmdls_from_cbor(reader, &costmdls);
+
+  // Assert
+  ASSERT_EQ(error, CARDANO_SUCCESS);
+  EXPECT_EQ(cardano_costmdls_has(costmdls, CARDANO_PLUTUS_LANGUAGE_VERSION_V1), false);
+  EXPECT_EQ(cardano_costmdls_has(costmdls, CARDANO_PLUTUS_LANGUAGE_VERSION_V2), false);
+  EXPECT_EQ(cardano_costmdls_has(costmdls, CARDANO_PLUTUS_LANGUAGE_VERSION_V3), false);
+  EXPECT_EQ(cardano_costmdls_has(costmdls, CARDANO_PLUTUS_LANGUAGE_VERSION_V4), false);
+
+  cardano_cost_model_t* model = nullptr;
+  ASSERT_EQ(cardano_costmdls_get_by_language_id(costmdls, 4U, &model), CARDANO_SUCCESS);
+  ASSERT_THAT(model, testing::Not((cardano_cost_model_t*)nullptr));
+  EXPECT_EQ(cardano_cost_model_get_costs_size(model), 3U);
+
+  // Cleanup
+  cardano_cost_model_unref(&model);
+  cardano_costmdls_unref(&costmdls);
+  cardano_cbor_reader_unref(&reader);
+}
+
+TEST(cardano_costmdls_from_cbor, canDeserializeUnknownLanguagesMixedWithKnownOnes)
+{
+  // Arrange
+  cardano_costmdls_t*    costmdls = nullptr;
+  cardano_cbor_reader_t* reader   = cardano_cbor_reader_from_hex(COSTMDLS_MIXED_CBOR, strlen(COSTMDLS_MIXED_CBOR));
+
+  // Act
+  cardano_error_t error = cardano_costmdls_from_cbor(reader, &costmdls);
+
+  // Assert
+  ASSERT_EQ(error, CARDANO_SUCCESS);
+  EXPECT_EQ(cardano_costmdls_has(costmdls, CARDANO_PLUTUS_LANGUAGE_VERSION_V1), true);
+  EXPECT_EQ(cardano_costmdls_has(costmdls, CARDANO_PLUTUS_LANGUAGE_VERSION_V2), true);
+  EXPECT_EQ(cardano_costmdls_has(costmdls, CARDANO_PLUTUS_LANGUAGE_VERSION_V3), false);
+  EXPECT_EQ(cardano_costmdls_has(costmdls, CARDANO_PLUTUS_LANGUAGE_VERSION_V4), false);
+
+  const uint8_t language_ids[] = { 4U, 24U, 255U };
+  const size_t  costs_sizes[]  = { 3U, 2U, 1U };
+
+  for (size_t i = 0U; i < 3U; ++i)
+  {
+    cardano_cost_model_t* model = nullptr;
+    ASSERT_EQ(cardano_costmdls_get_by_language_id(costmdls, language_ids[i], &model), CARDANO_SUCCESS);
+    ASSERT_THAT(model, testing::Not((cardano_cost_model_t*)nullptr));
+    EXPECT_EQ(cardano_cost_model_get_costs_size(model), costs_sizes[i]);
+    cardano_cost_model_unref(&model);
+  }
+
+  // Cleanup
+  cardano_costmdls_unref(&costmdls);
+  cardano_cbor_reader_unref(&reader);
+}
+
+TEST(cardano_costmdls_to_cbor, canRoundTripUnknownLanguages)
+{
+  EXPECT_EQ(round_trip_costmdls(COSTMDLS_UNKNOWN_CBOR), COSTMDLS_UNKNOWN_CBOR);
+  EXPECT_EQ(round_trip_costmdls(COSTMDLS_MIXED_CBOR), COSTMDLS_MIXED_CBOR);
+}
+
+TEST(cardano_costmdls_to_cbor, encodesLanguagesInAscendingOrder)
+{
+  EXPECT_EQ(round_trip_costmdls("a318ff8105048101008102"), "a300810204810118ff8105");
+}
+
+TEST(cardano_costmdls_from_cbor, keepsTheLastEntryOfADuplicatedUnknownLanguage)
+{
+  EXPECT_EQ(round_trip_costmdls("a2048101048102"), "a1048102");
+}
+
+TEST(cardano_costmdls_from_cbor, keepsTheLastEntryOfADuplicatedKnownLanguage)
+{
+  EXPECT_EQ(round_trip_costmdls("a2008101008102"), "a1008102");
+}
+
+TEST(cardano_costmdls_from_cbor, returnErrorIfLanguageIdIsAbove255)
+{
+  // Arrange
+  cardano_costmdls_t*    costmdls = nullptr;
+  cardano_cbor_reader_t* reader   = cardano_cbor_reader_from_hex("a11901008101", 12);
+
+  // Act
+  cardano_error_t error = cardano_costmdls_from_cbor(reader, &costmdls);
+
+  // Assert
+  EXPECT_EQ(error, CARDANO_ERROR_INVALID_CBOR_VALUE);
+  EXPECT_THAT(costmdls, testing::IsNull());
+
+  // Cleanup
+  cardano_cbor_reader_unref(&reader);
+}
+
+TEST(cardano_costmdls_from_cbor, returnErrorIfLanguageIdIsNotAnUnsignedInteger)
+{
+  const char* vectors[] = { "a1208101", "a161618101" };
+
+  for (size_t i = 0U; i < 2U; ++i)
+  {
+    // Arrange
+    cardano_costmdls_t*    costmdls = nullptr;
+    cardano_cbor_reader_t* reader   = cardano_cbor_reader_from_hex(vectors[i], strlen(vectors[i]));
+
+    // Act
+    cardano_error_t error = cardano_costmdls_from_cbor(reader, &costmdls);
+
+    // Assert
+    EXPECT_NE(error, CARDANO_SUCCESS);
+    EXPECT_THAT(costmdls, testing::IsNull());
+
+    // Cleanup
+    cardano_cbor_reader_unref(&reader);
+  }
+}
+
+TEST(cardano_costmdls_insert, canInsertCostModelOfUnknownLanguage)
+{
+  // Arrange
+  cardano_costmdls_t*    costmdls      = nullptr;
+  cardano_cost_model_t*  cost_model_v1 = nullptr;
+  cardano_cost_model_t*  unknown       = nullptr;
+  cardano_cbor_reader_t* reader        = cardano_cbor_reader_from_hex("1818820a0b", 10);
+  cardano_cbor_writer_t* writer        = cardano_cbor_writer_new();
+  const int64_t          costs[]       = { 1, 2, 3 };
+
+  ASSERT_EQ(cardano_costmdls_new(&costmdls), CARDANO_SUCCESS);
+  ASSERT_EQ(cardano_cost_model_from_cbor(reader, &unknown), CARDANO_SUCCESS);
+  ASSERT_EQ(cardano_cost_model_new(CARDANO_PLUTUS_LANGUAGE_VERSION_V1, costs, 3, &cost_model_v1), CARDANO_SUCCESS);
+
+  // Act
+  EXPECT_EQ(cardano_costmdls_insert(costmdls, unknown), CARDANO_SUCCESS);
+  EXPECT_EQ(cardano_costmdls_insert(costmdls, cost_model_v1), CARDANO_SUCCESS);
+
+  // Assert
+  EXPECT_EQ(cardano_costmdls_to_cbor(costmdls, writer), CARDANO_SUCCESS);
+
+  size_t hex_size = cardano_cbor_writer_get_hex_size(writer);
+  char*  cbor_hex = (char*)malloc(hex_size);
+
+  EXPECT_EQ(cardano_cbor_writer_encode_hex(writer, cbor_hex, hex_size), CARDANO_SUCCESS);
+  EXPECT_STREQ(cbor_hex, "a200830102031818820a0b");
+
+  // Cleanup
+  cardano_costmdls_unref(&costmdls);
+  cardano_cost_model_unref(&cost_model_v1);
+  cardano_cost_model_unref(&unknown);
+  cardano_cbor_reader_unref(&reader);
+  cardano_cbor_writer_unref(&writer);
+  free(cbor_hex);
+}
+
+TEST(cardano_costmdls_get_by_language_id, returnsNullIfThereIsNoModelForTheLanguageId)
+{
+  // Arrange
+  cardano_costmdls_t*    costmdls = nullptr;
+  cardano_cbor_reader_t* reader   = cardano_cbor_reader_from_hex(COSTMDLS_UNKNOWN_CBOR, strlen(COSTMDLS_UNKNOWN_CBOR));
+
+  ASSERT_EQ(cardano_costmdls_from_cbor(reader, &costmdls), CARDANO_SUCCESS);
+
+  // Act
+  cardano_cost_model_t* model = nullptr;
+  cardano_error_t       error = cardano_costmdls_get_by_language_id(costmdls, 5U, &model);
+
+  // Assert
+  EXPECT_EQ(error, CARDANO_SUCCESS);
+  EXPECT_THAT(model, testing::IsNull());
+
+  // Cleanup
+  cardano_costmdls_unref(&costmdls);
+  cardano_cbor_reader_unref(&reader);
+}
+
+TEST(cardano_costmdls_get_by_language_id, canGetKnownLanguage)
+{
+  // Arrange
+  cardano_costmdls_t*    costmdls = nullptr;
+  cardano_cbor_reader_t* reader   = cardano_cbor_reader_from_hex(COSTMDLS_MIXED_CBOR, strlen(COSTMDLS_MIXED_CBOR));
+
+  ASSERT_EQ(cardano_costmdls_from_cbor(reader, &costmdls), CARDANO_SUCCESS);
+
+  // Act
+  cardano_cost_model_t* model = nullptr;
+  cardano_error_t       error = cardano_costmdls_get_by_language_id(costmdls, 1U, &model);
+
+  // Assert
+  EXPECT_EQ(error, CARDANO_SUCCESS);
+
+  cardano_plutus_language_version_t language = CARDANO_PLUTUS_LANGUAGE_VERSION_V1;
+  EXPECT_EQ(cardano_cost_model_get_language(model, &language), CARDANO_SUCCESS);
+  EXPECT_EQ(language, CARDANO_PLUTUS_LANGUAGE_VERSION_V2);
+
+  // Cleanup
+  cardano_cost_model_unref(&model);
+  cardano_costmdls_unref(&costmdls);
+  cardano_cbor_reader_unref(&reader);
+}
+
+TEST(cardano_costmdls_get_by_language_id, returnsErrorIfGivenNull)
+{
+  // Arrange
+  cardano_costmdls_t*   costmdls = nullptr;
+  cardano_cost_model_t* model    = nullptr;
+
+  ASSERT_EQ(cardano_costmdls_new(&costmdls), CARDANO_SUCCESS);
+
+  // Act & Assert
+  EXPECT_EQ(cardano_costmdls_get_by_language_id(nullptr, 4U, &model), CARDANO_ERROR_POINTER_IS_NULL);
+  EXPECT_EQ(cardano_costmdls_get_by_language_id(costmdls, 4U, nullptr), CARDANO_ERROR_POINTER_IS_NULL);
+
+  // Cleanup
+  cardano_costmdls_unref(&costmdls);
+}
+
+TEST(cardano_costmdls_get_language_views_encoding, ignoresUnknownLanguages)
+{
+  EXPECT_EQ(get_language_views_hex(COSTMDLS_UNKNOWN_CBOR), "a0");
+  EXPECT_EQ(get_language_views_hex("a2018107048102"), get_language_views_hex("a1018107"));
+  EXPECT_EQ(get_language_views_hex(COSTMDLS_MIXED_CBOR), get_language_views_hex("a20083010203018107"));
+}
+
+TEST(cardano_costmdls_to_cip116_json, omitsUnknownLanguages)
+{
+  // Arrange
+  cardano_costmdls_t*    costmdls = nullptr;
+  cardano_cbor_reader_t* reader   = cardano_cbor_reader_from_hex(COSTMDLS_MIXED_CBOR, strlen(COSTMDLS_MIXED_CBOR));
+
+  ASSERT_EQ(cardano_costmdls_from_cbor(reader, &costmdls), CARDANO_SUCCESS);
+
+  cardano_json_writer_t* json = cardano_json_writer_new(CARDANO_JSON_FORMAT_COMPACT);
+
+  // Act
+  cardano_error_t error    = cardano_costmdls_to_cip116_json(costmdls, json);
+  char*           json_str = encode_json(json);
+
+  // Assert
+  EXPECT_EQ(error, CARDANO_SUCCESS);
+  EXPECT_STREQ(json_str, R"({"plutus_v1":["1","2","3"],"plutus_v2":["7"]})");
+
+  // Cleanup
+  cardano_json_writer_unref(&json);
+  cardano_costmdls_unref(&costmdls);
+  cardano_cbor_reader_unref(&reader);
+  free(json_str);
+}
+
+TEST(cardano_costmdls_from_cbor, canDeserializeAnIndefiniteLengthMap)
+{
+  // Arrange
+  cardano_costmdls_t*    costmdls = nullptr;
+  const char*            cbor_hex = "bf18ff810504830102030081071818820a0bff";
+  cardano_cbor_reader_t* reader   = cardano_cbor_reader_from_hex(cbor_hex, strlen(cbor_hex));
+
+  // Act
+  cardano_error_t error = cardano_costmdls_from_cbor(reader, &costmdls);
+
+  // Assert
+  ASSERT_EQ(error, CARDANO_SUCCESS);
+  EXPECT_EQ(cardano_costmdls_has(costmdls, CARDANO_PLUTUS_LANGUAGE_VERSION_V1), true);
+
+  const uint8_t language_ids[] = { 4U, 24U, 255U };
+  const size_t  costs_sizes[]  = { 3U, 2U, 1U };
+
+  for (size_t i = 0U; i < 3U; ++i)
+  {
+    cardano_cost_model_t* model = nullptr;
+    ASSERT_EQ(cardano_costmdls_get_by_language_id(costmdls, language_ids[i], &model), CARDANO_SUCCESS);
+    ASSERT_THAT(model, testing::Not((cardano_cost_model_t*)nullptr));
+    EXPECT_EQ(cardano_cost_model_get_costs_size(model), costs_sizes[i]);
+    cardano_cost_model_unref(&model);
+  }
+
+  // Cleanup
+  cardano_costmdls_unref(&costmdls);
+  cardano_cbor_reader_unref(&reader);
+}
+
+TEST(cardano_costmdls_to_cbor, encodesAnIndefiniteLengthMapAsADefiniteLengthMap)
+{
+  EXPECT_EQ(round_trip_costmdls("bf18ff810504830102030081071818820a0bff"), "a400810704830102031818820a0b18ff8105");
+  EXPECT_EQ(round_trip_costmdls("bfff"), "a0");
+}
+
+TEST(cardano_costmdls_from_cbor, returnErrorIfIndefiniteLengthMapIsNotTerminated)
+{
+  // Arrange
+  cardano_costmdls_t*    costmdls = nullptr;
+  cardano_cbor_reader_t* reader   = cardano_cbor_reader_from_hex("bf048101", 8);
+
+  // Act
+  cardano_error_t error = cardano_costmdls_from_cbor(reader, &costmdls);
+
+  // Assert
+  EXPECT_NE(error, CARDANO_SUCCESS);
+  EXPECT_THAT(costmdls, testing::IsNull());
+
+  // Cleanup
+  cardano_cbor_reader_unref(&reader);
 }

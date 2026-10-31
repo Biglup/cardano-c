@@ -93,6 +93,10 @@ cardano_costmdls_new(cardano_costmdls_t** costmdls);
  * This function parses CBOR data using a provided \ref cardano_cbor_reader_t and constructs a \ref cardano_costmdls_t object.
  * It assumes that the CBOR reader is set up correctly and that the CBOR data corresponds to the structure expected for a costmdls.
  *
+ * The map may hold cost models for any language id from 0 to 255, as the ledger accepts cost models for languages it
+ * does not know yet. Cost models for unknown languages are kept and encoded back by \ref cardano_costmdls_to_cbor, but
+ * they are never part of the language views. If the map holds the same language id more than once, the last entry wins.
+ *
  * \param[in] reader A pointer to an initialized \ref cardano_cbor_reader_t that is ready to read the CBOR-encoded data.
  * \param[out] costmdls A pointer to a pointer of \ref cardano_costmdls_t that will be set to the address
  *                        of the newly created costmdls object upon successful decoding.
@@ -135,6 +139,8 @@ cardano_costmdls_from_cbor(cardano_cbor_reader_t* reader, cardano_costmdls_t** c
  * \brief Serializes Cost Model into CBOR format using a CBOR writer.
  *
  * This function serializes the given \ref cardano_costmdls_t object using a \ref cardano_cbor_writer_t.
+ * The cost models are written in ascending order of their language id, including the cost models of
+ * languages this library does not know yet.
  *
  * \param[in] costmdls A constant pointer to the \ref cardano_costmdls_t object that is to be serialized.
  * \param[out] writer A pointer to a \ref cardano_cbor_writer_t where the CBOR serialized data will be written.
@@ -177,7 +183,8 @@ CARDANO_EXPORT cardano_error_t cardano_costmdls_to_cbor(
  * \brief Serializes a collection of cost models to CIP-116 JSON.
  *
  * The function writes the full JSON object, including the surrounding braces.
- * Keys are: "plutus_v1", "plutus_v2", "plutus_v3".
+ * Keys are: "plutus_v1", "plutus_v2", "plutus_v3", "plutus_v4". Cost models of languages this library does
+ * not know yet have no CIP-116 representation and are not written.
  *
  * \param[in]  costmdls Pointer to a valid \ref cardano_costmdls_t.
  * \param[in]  writer   Pointer to a valid \ref cardano_json_writer_t.
@@ -196,6 +203,8 @@ CARDANO_EXPORT cardano_error_t cardano_costmdls_to_cip116_json(
  *
  * This function inserts a new Cost Model into the Costmdls map. Each Cost Model is associated with a specific
  * version of the Plutus language and contains the computational cost parameters used for script execution.
+ * The Cost Model is stored under its language id (see \ref cardano_cost_model_get_language_id), replacing any
+ * Cost Model already stored for that id; cost models of languages this library does not know yet are accepted.
  *
  * \param[in] costmdls Pointer to the Costmdls object.
  * \param[in] cost_model Pointer to the Cost Model object to be inserted.
@@ -271,6 +280,44 @@ CARDANO_EXPORT cardano_error_t cardano_costmdls_get(
   cardano_cost_model_t**            cost_model);
 
 /**
+ * \brief Retrieves the Cost Model stored for a raw language id from the Costmdls map.
+ *
+ * Unlike \ref cardano_costmdls_get, this function also reaches the cost models of languages this library does not
+ * know yet (any language id from 4 to 255), which the ledger accepts in cost models. Ids 0 to 3 are the Plutus
+ * language versions of \ref cardano_plutus_language_version_t.
+ *
+ * \param[in] costmdls Pointer to the Costmdls object from which the Cost Model is to be retrieved.
+ * \param[in] language_id The language id for which the Cost Model is required.
+ * \param[out] cost_model On successful retrieval, this will point to the Cost Model object stored for the
+ *             language id, or to NULL if there is none. A non NULL object is a "strong reference" to the Cost Model,
+ *             meaning that it remains valid until the caller releases it using \ref cardano_cost_model_unref.
+ *
+ * \return \ref cardano_error_t indicating the outcome of the operation. Returns \ref CARDANO_SUCCESS
+ *         if the lookup was performed, or \ref CARDANO_ERROR_POINTER_IS_NULL if any of the given pointers is NULL.
+ *
+ * Usage Example:
+ * \code{.c}
+ * cardano_costmdls_t* costmdls = NULL;
+ * cardano_cost_model_t* cost_model = NULL;
+ * // Assume costmdls is initialized properly
+ *
+ * cardano_error_t result = cardano_costmdls_get_by_language_id(costmdls, 4U, &cost_model);
+ *
+ * if ((result == CARDANO_SUCCESS) && (cost_model != NULL))
+ * {
+ *   // Use the cost_model
+ *   // Remember to release the cost_model after use
+ *   cardano_cost_model_unref(&cost_model);
+ * }
+ * \endcode
+ */
+CARDANO_NODISCARD
+CARDANO_EXPORT cardano_error_t cardano_costmdls_get_by_language_id(
+  cardano_costmdls_t*    costmdls,
+  uint8_t                language_id,
+  cardano_cost_model_t** cost_model);
+
+/**
  * \brief Checks if a Cost Model for a specific Plutus language version exists in the Costmdls map.
  *
  * This function determines whether there is a Cost Model associated with a specific version of the
@@ -311,7 +358,8 @@ CARDANO_EXPORT bool cardano_costmdls_has(
  * This function encodes the costs models following the CDDL specification, necessary
  * for computing the script data hash of a transaction. It encodes the costs associated
  * with each Plutus language version in the Costmdls map in the appropriate CBOR format,
- * following the rules defined for each version.
+ * following the rules defined for each version. Cost models of languages this library does not
+ * know yet are left out, as no script can use them.
  *
  * \param[in] costmdls Pointer to the Costmdls object whose language views are to be encoded.
  * \param[out] language_views On successful encoding, this will point to a buffer containing

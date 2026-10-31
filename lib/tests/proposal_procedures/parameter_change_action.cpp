@@ -991,3 +991,35 @@ TEST(cardano_parameter_change_action_to_cip116_json, returnsErrorIfWriterIsNull)
   EXPECT_EQ(error, CARDANO_ERROR_POINTER_IS_NULL);
   cardano_parameter_change_action_unref(&action);
 }
+
+TEST(cardano_parameter_change_action_from_cbor, canRoundTripCostModelsOfUnknownLanguages)
+{
+  // Arrange
+  const char*                        cbor                    = "8400f6a112a5008301020301810704830102031818820a0b18ff8105f6";
+  cardano_cbor_reader_t*             reader                  = cardano_cbor_reader_from_hex(cbor, strlen(cbor));
+  cardano_parameter_change_action_t* parameter_change_action = NULL;
+
+  // Act
+  cardano_error_t result = cardano_parameter_change_action_from_cbor(reader, &parameter_change_action);
+
+  // Assert
+  ASSERT_EQ(result, CARDANO_SUCCESS);
+
+  cardano_cbor_writer_t* writer = cardano_cbor_writer_new();
+
+  result = cardano_parameter_change_action_to_cbor(parameter_change_action, writer);
+  EXPECT_EQ(result, CARDANO_SUCCESS);
+
+  size_t hex_size = cardano_cbor_writer_get_hex_size(writer);
+  char*  hex      = (char*)malloc(hex_size);
+
+  ASSERT_EQ(cardano_cbor_writer_encode_hex(writer, hex, hex_size), CARDANO_SUCCESS);
+
+  EXPECT_STREQ(hex, cbor);
+
+  // Cleanup
+  cardano_parameter_change_action_unref(&parameter_change_action);
+  cardano_cbor_reader_unref(&reader);
+  cardano_cbor_writer_unref(&writer);
+  free(hex);
+}

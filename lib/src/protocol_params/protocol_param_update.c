@@ -518,33 +518,23 @@ pp_encode_drep_thresholds(cardano_drep_voting_thresholds_t* t, cardano_plutus_da
 /**
  * \brief Encodes the cost models as a Map of language id to a list of cost integers.
  *
- * Matches the ledger's \c ToPlutusData CostModels = toPlutusData (Map Word8 [Integer]).
+ * Matches the ledger's \c ToPlutusData CostModels = toPlutusData (Map Word8 [Integer]), which holds the cost
+ * models of every language id, known or not, in ascending order of language id.
  */
 static cardano_error_t
 pp_encode_cost_models(cardano_costmdls_t* costmdls, cardano_plutus_data_t** out)
 {
-  static const cardano_plutus_language_version_t languages[4] = {
-    CARDANO_PLUTUS_LANGUAGE_VERSION_V1,
-    CARDANO_PLUTUS_LANGUAGE_VERSION_V2,
-    CARDANO_PLUTUS_LANGUAGE_VERSION_V3,
-    CARDANO_PLUTUS_LANGUAGE_VERSION_V4
-  };
-
   cardano_plutus_map_t* map    = NULL;
   cardano_error_t       result = cardano_plutus_map_new(&map);
 
-  for (size_t i = 0U; (result == CARDANO_SUCCESS) && (i < 4U); ++i)
+  for (size_t i = 0U; (result == CARDANO_SUCCESS) && (i <= (size_t)UINT8_MAX); ++i)
   {
     cardano_cost_model_t* model = NULL;
 
-    if (!cardano_costmdls_has(costmdls, languages[i]))
-    {
-      continue;
-    }
+    result = cardano_costmdls_get_by_language_id(costmdls, (uint8_t)i, &model);
 
-    if (cardano_costmdls_get(costmdls, languages[i], &model) != CARDANO_SUCCESS)
+    if ((result != CARDANO_SUCCESS) || (model == NULL))
     {
-      cardano_cost_model_unref(&model);
       continue;
     }
 
@@ -578,7 +568,7 @@ pp_encode_cost_models(cardano_costmdls_t* costmdls, cardano_plutus_data_t** out)
 
     if (result == CARDANO_SUCCESS)
     {
-      result = cardano_plutus_data_new_integer_from_uint((uint64_t)languages[i], &key_pd);
+      result = cardano_plutus_data_new_integer_from_uint((uint64_t)i, &key_pd);
     }
 
     if (result == CARDANO_SUCCESS)
