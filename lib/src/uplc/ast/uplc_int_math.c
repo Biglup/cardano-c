@@ -29,7 +29,7 @@ bool
 cardano_uplc_i64_add_overflow(int64_t a, int64_t b, int64_t* result)
 {
 #if defined(_MSC_VER) && !defined(__clang__)
-  if (((b > 0) && (a > INT64_MAX - b)) || ((b < 0) && (a < INT64_MIN - b)))
+  if (((b > 0) && (a > ((int64_t)INT64_MAX - b))) || ((b < 0) && (a < ((int64_t)(INT64_MIN)-b))))
   {
     return true;
   }
@@ -46,7 +46,7 @@ bool
 cardano_uplc_i64_sub_overflow(int64_t a, int64_t b, int64_t* result)
 {
 #if defined(_MSC_VER) && !defined(__clang__)
-  if (((b > 0) && (a < INT64_MIN + b)) || ((b < 0) && (a > INT64_MAX + b)))
+  if (((b > 0) && (a < ((int64_t)(INT64_MIN) + b))) || ((b < 0) && (a > ((int64_t)INT64_MAX + b))))
   {
     return true;
   }
@@ -65,17 +65,23 @@ cardano_uplc_i64_mul_overflow(int64_t a, int64_t b, int64_t* result)
 #if defined(_MSC_VER) && !defined(__clang__)
   if (a > 0)
   {
-    if (((b > 0) && (a > INT64_MAX / b)) || ((b < 0) && (b < INT64_MIN / a)))
+    if (((b > 0) && (a > ((int64_t)INT64_MAX / b))) || ((b < 0) && (b < ((int64_t)(INT64_MIN) / a))))
     {
       return true;
     }
   }
   else if (a < 0)
   {
-    if (((b > 0) && (a < INT64_MIN / b)) || ((b < 0) && (a < INT64_MAX / b)))
+    if (((b > 0) && (a < ((int64_t)(INT64_MIN) / b))) || ((b < 0) && (a < ((int64_t)INT64_MAX / b))))
     {
       return true;
     }
+  }
+  else
+  {
+    *result = 0;
+
+    return false;
   }
 
   *result = a * b;
