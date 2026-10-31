@@ -46,7 +46,7 @@ jobs:
             arch: arm64
             compiler: gcc
           # Windows
-          - os: windows-latest
+          - os: windows-2022
             arch: x86_64
             compiler: msvc
           - os: windows-latest
@@ -232,7 +232,9 @@ jobs:
                 .
               ;;
             x86_64)
+              # Static analysis runs separately; clang-tidy cannot parse GCC's LTO flags.
               cmake -DCMAKE_SYSTEM_PROCESSOR=x86_64 \
+                -DCLANG_TIDY_EXE=CLANG_TIDY_EXE-NOTFOUND \
                 -DCMAKE_OSX_ARCHITECTURES=x86_64 \
                 -DVERSION_MAJOR=${{ env.VERSION_MAJOR }} \
                 -DVERSION_MINOR=${{ env.VERSION_MINOR }} \
