@@ -34,6 +34,8 @@
 
 #include <gmock/gmock.h>
 
+#include <string>
+
 /* CONSTANTS *****************************************************************/
 
 static const char* CBOR            = "8458203d4017c3e843895a92b70aa74d1b7ebc9c982ccf2ec4968cc0cd55f12af4660c58406291d657deec24024827e69c3abe01a30ce548a284743a445e3680d7db5ac3ac18ff9b538d16f290ae67f760984dc6594a7c15e9716ed28dc027beceea1ec40a5820000000000000000000000000000000000000000000000000000000000000000041a0";
@@ -43,6 +45,44 @@ static const char* CHAIN_CODE_CBOR = "000000000000000000000000000000000000000000
 static const char* ATTRIBUTES_CBOR = "A0";
 
 /* STATIC FUNCTIONS **********************************************************/
+
+/**
+ * Creates the CBOR hex of a bootstrap witness whose chain code has the given number of bytes.
+ *
+ * @param length The number of bytes of the chain code.
+ * @return The CBOR hex of the witness.
+ */
+static std::string
+new_cbor_with_chain_code_length(const size_t length)
+{
+  std::string cbor = "8458203d4017c3e843895a92b70aa74d1b7ebc9c982ccf2ec4968cc0cd55f12af4660c58406291d657deec24024827e69c3abe01a30ce548a284743a445e3680d7db5ac3ac18ff9b538d16f290ae67f760984dc6594a7c15e9716ed28dc027beceea1ec40a";
+
+  char header[16] = { 0 };
+
+  if (length < 24U)
+  {
+    snprintf(header, sizeof(header), "%02x", (unsigned int)(0x40U + length));
+  }
+  else if (length < 256U)
+  {
+    snprintf(header, sizeof(header), "58%02x", (unsigned int)length);
+  }
+  else
+  {
+    snprintf(header, sizeof(header), "59%04x", (unsigned int)length);
+  }
+
+  cbor += header;
+
+  for (size_t i = 0; i < length; ++i)
+  {
+    cbor += "ab";
+  }
+
+  cbor += "41a0";
+
+  return cbor;
+}
 
 /**
  * Creates a new default instance of the witness.
@@ -497,40 +537,65 @@ TEST(cardano_bootstrap_witness_from_cbor, returnsErrorIfInvalidChainCode)
   cardano_cbor_reader_unref(&reader);
 }
 
-TEST(cardano_bootstrap_witness_from_cbor, rejectsChainCodeShorterThan32Bytes)
+TEST(cardano_bootstrap_witness_from_cbor, acceptsChainCodeOfAnyLengthAndKeepsIt)
 {
-  // Arrange
-  cardano_bootstrap_witness_t* bootstrap_witness = NULL;
-  const char*                  cbor              = "8458203d4017c3e843895a92b70aa74d1b7ebc9c982ccf2ec4968cc0cd55f12af4660c58406291d657deec24024827e69c3abe01a30ce548a284743a445e3680d7db5ac3ac18ff9b538d16f290ae67f760984dc6594a7c15e9716ed28dc027beceea1ec40a581f0000000000000000000000000000000000000000000000000000000000000041a0";
-  cardano_cbor_reader_t*       reader            = cardano_cbor_reader_from_hex(cbor, strlen(cbor));
+  const size_t lengths[] = { 0U, 1U, 31U, 32U, 33U, 64U, 256U };
 
-  // Act
-  cardano_error_t result = cardano_bootstrap_witness_from_cbor(reader, &bootstrap_witness);
+  for (const size_t length: lengths)
+  {
+    // Arrange
+    const std::string            cbor              = new_cbor_with_chain_code_length(length);
+    cardano_bootstrap_witness_t* bootstrap_witness = NULL;
+    cardano_cbor_reader_t*       reader            = cardano_cbor_reader_from_hex(cbor.c_str(), cbor.size());
 
-  // Assert
-  ASSERT_EQ(result, CARDANO_ERROR_INVALID_CBOR_VALUE);
+    // Act
+    cardano_error_t   result     = cardano_bootstrap_witness_from_cbor(reader, &bootstrap_witness);
+    cardano_buffer_t* chain_code = cardano_bootstrap_witness_get_chain_code(bootstrap_witness);
 
-  // Cleanup
-  cardano_bootstrap_witness_unref(&bootstrap_witness);
-  cardano_cbor_reader_unref(&reader);
+    // Assert
+    ASSERT_EQ(result, CARDANO_SUCCESS);
+    ASSERT_NE(chain_code, nullptr);
+    EXPECT_EQ(cardano_buffer_get_size(chain_code), length);
+
+    // Cleanup
+    cardano_buffer_unref(&chain_code);
+    cardano_bootstrap_witness_unref(&bootstrap_witness);
+    cardano_cbor_reader_unref(&reader);
+  }
 }
 
-TEST(cardano_bootstrap_witness_from_cbor, rejectsChainCodeLongerThan32Bytes)
+TEST(cardano_bootstrap_witness_from_cbor, roundTripsChainCodeOfAnyLengthByteExactAndCanonically)
 {
-  // Arrange
-  cardano_bootstrap_witness_t* bootstrap_witness = NULL;
-  const char*                  cbor              = "8458203d4017c3e843895a92b70aa74d1b7ebc9c982ccf2ec4968cc0cd55f12af4660c58406291d657deec24024827e69c3abe01a30ce548a284743a445e3680d7db5ac3ac18ff9b538d16f290ae67f760984dc6594a7c15e9716ed28dc027beceea1ec40a582100000000000000000000000000000000000000000000000000000000000000000041a0";
-  cardano_cbor_reader_t*       reader            = cardano_cbor_reader_from_hex(cbor, strlen(cbor));
+  const size_t lengths[] = { 0U, 1U, 31U, 32U, 33U, 64U, 256U };
 
-  // Act
-  cardano_error_t result = cardano_bootstrap_witness_from_cbor(reader, &bootstrap_witness);
+  for (const size_t length: lengths)
+  {
+    // Arrange
+    const std::string            cbor              = new_cbor_with_chain_code_length(length);
+    cardano_bootstrap_witness_t* bootstrap_witness = NULL;
+    cardano_cbor_reader_t*       reader            = cardano_cbor_reader_from_hex(cbor.c_str(), cbor.size());
+    cardano_cbor_writer_t*       writer            = cardano_cbor_writer_new();
 
-  // Assert
-  ASSERT_EQ(result, CARDANO_ERROR_INVALID_CBOR_VALUE);
+    ASSERT_EQ(cardano_bootstrap_witness_from_cbor(reader, &bootstrap_witness), CARDANO_SUCCESS);
 
-  // Cleanup
-  cardano_bootstrap_witness_unref(&bootstrap_witness);
-  cardano_cbor_reader_unref(&reader);
+    // Act
+    cardano_error_t result = cardano_bootstrap_witness_to_cbor(bootstrap_witness, writer);
+
+    // Assert
+    ASSERT_EQ(result, CARDANO_SUCCESS);
+
+    const size_t hex_size = cardano_cbor_writer_get_hex_size(writer);
+    char*        hex      = (char*)malloc(hex_size);
+
+    ASSERT_EQ(cardano_cbor_writer_encode_hex(writer, hex, hex_size), CARDANO_SUCCESS);
+    EXPECT_STREQ(hex, cbor.c_str());
+
+    // Cleanup
+    free(hex);
+    cardano_bootstrap_witness_unref(&bootstrap_witness);
+    cardano_cbor_reader_unref(&reader);
+    cardano_cbor_writer_unref(&writer);
+  }
 }
 
 TEST(cardano_bootstrap_witness_from_cbor, returnsErrorIfInvalidAttributes)
@@ -802,38 +867,35 @@ TEST(cardano_bootstrap_witness_get_attributes, returnsErrorIfObjectIsNull)
   EXPECT_EQ(attr, nullptr);
 }
 
-TEST(cardano_bootstrap_witness_set_chain_code, rejectsChainCodeShorterThan32Bytes)
+TEST(cardano_bootstrap_witness_set_chain_code, acceptsChainCodeOfAnyLength)
 {
-  // Arrange
-  cardano_bootstrap_witness_t* bootstrap_witness = new_default_witness();
-  cardano_buffer_t*            cc                = new_default_buffer("00000000000000000000000000000000000000000000000000000000000000");
+  const char* chain_codes[] = {
+    "",
+    "00",
+    "00000000000000000000000000000000000000000000000000000000000000",
+    "000000000000000000000000000000000000000000000000000000000000000000",
+    "0000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000"
+  };
 
-  // Act
-  cardano_error_t result = cardano_bootstrap_witness_set_chain_code(bootstrap_witness, cc);
+  for (const char* chain_code_hex: chain_codes)
+  {
+    // Arrange
+    cardano_bootstrap_witness_t* bootstrap_witness = new_default_witness();
+    cardano_buffer_t*            cc                = new_default_buffer(chain_code_hex);
 
-  // Assert
-  EXPECT_EQ(result, CARDANO_ERROR_INVALID_ARGUMENT);
+    // Act
+    cardano_error_t   result = cardano_bootstrap_witness_set_chain_code(bootstrap_witness, cc);
+    cardano_buffer_t* actual = cardano_bootstrap_witness_get_chain_code(bootstrap_witness);
 
-  // Cleanup
-  cardano_bootstrap_witness_unref(&bootstrap_witness);
-  cardano_buffer_unref(&cc);
-}
+    // Assert
+    EXPECT_EQ(result, CARDANO_SUCCESS);
+    EXPECT_EQ(cardano_buffer_get_size(actual), strlen(chain_code_hex) / 2U);
 
-TEST(cardano_bootstrap_witness_set_chain_code, rejectsChainCodeLongerThan32Bytes)
-{
-  // Arrange
-  cardano_bootstrap_witness_t* bootstrap_witness = new_default_witness();
-  cardano_buffer_t*            cc                = new_default_buffer("000000000000000000000000000000000000000000000000000000000000000000");
-
-  // Act
-  cardano_error_t result = cardano_bootstrap_witness_set_chain_code(bootstrap_witness, cc);
-
-  // Assert
-  EXPECT_EQ(result, CARDANO_ERROR_INVALID_ARGUMENT);
-
-  // Cleanup
-  cardano_bootstrap_witness_unref(&bootstrap_witness);
-  cardano_buffer_unref(&cc);
+    // Cleanup
+    cardano_bootstrap_witness_unref(&bootstrap_witness);
+    cardano_buffer_unref(&cc);
+    cardano_buffer_unref(&actual);
+  }
 }
 
 TEST(cardano_bootstrap_witness_set_attributes, canSetAttributes)

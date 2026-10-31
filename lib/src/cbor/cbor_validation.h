@@ -113,6 +113,50 @@ cardano_error_t
 cardano_cbor_validate_uint_in_range(const char* validator_name, const char* type_name, cardano_cbor_reader_t* reader, uint64_t* type, uint64_t min, uint64_t max);
 
 /**
+ * \brief Validates and reads a byte string of any size from a CBOR stream.
+ *
+ * This function checks if the next element in the CBOR stream, read using the provided \p reader,
+ * is a byte string. If the validation succeeds, the function reads this byte string and returns it via
+ * the \p byte_string parameter.
+ *
+ * \param[in] validator_name A descriptive name for the validator, typically indicating the context or
+ *                           the field name where this byte string is expected, which will be included in
+ *                           any error messages generated.
+ * \param[in,out] reader The \ref cardano_cbor_reader_t object that provides the interface to read
+ *                       and interpret the CBOR encoded data stream. The reader's state will be advanced
+ *                       if the byte string is successfully read.
+ * \param[out] byte_string A pointer to a pointer of \ref cardano_buffer_t that will be allocated and
+ *                         set to point to the new byte string if validation and reading succeed. The caller
+ *                         is responsible for freeing this memory using \ref cardano_buffer_unref when it
+ *                         is no longer needed.
+ *
+ * \return \ref CARDANO_SUCCESS if the next element is a byte string, or \ref CARDANO_ERROR_UNEXPECTED_CBOR_TYPE
+ *         if it is of another type.
+ *
+ * Usage Example:
+ * \code{.c}
+ * cardano_cbor_reader_t* reader = cardano_cbor_reader_new(data, data_size);
+ * cardano_buffer_t* byte_string = NULL;
+ * cardano_error_t result = cardano_cbor_validate_byte_string("field_name", reader, &byte_string);
+ *
+ * if (result == CARDANO_SUCCESS)
+ * {
+ *   // Use the byte string
+ *
+ *   cardano_buffer_unref(&byte_string);
+ * }
+ * else
+ * {
+ *   // Handle error
+ *    fprintf(stderr, "Invalid CBOR format for field_name: %s.\n", cardano_cbor_reader_get_last_error(reader));
+ * }
+ *
+ * \endcode
+ */
+cardano_error_t
+cardano_cbor_validate_byte_string(const char* validator_name, cardano_cbor_reader_t* reader, cardano_buffer_t** byte_string);
+
+/**
  * \brief Validates and reads a byte string of a specified size from a CBOR stream.
  *
  * This function checks if the next element in the CBOR stream, read using the provided \p reader,

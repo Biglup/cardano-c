@@ -170,6 +170,47 @@ TEST(cardano_cbor_validate_uint_in_range, returnErrorIfReaderIsNull)
   ASSERT_EQ(result, CARDANO_ERROR_POINTER_IS_NULL);
 }
 
+TEST(cardano_cbor_validate_byte_string, returnValidIfValidByteStringOfAnySize)
+{
+  // Arrange
+  const byte_t cbor_byte_strings[][4] = { { 0x40, 0x00, 0x00, 0x00 }, { 0x41, 0x01, 0x00, 0x00 }, { 0x43, 0x01, 0x02, 0x03 } };
+  const size_t sizes[]                = { 0, 1, 3 };
+
+  for (size_t i = 0; i < 3; i++)
+  {
+    cardano_cbor_reader_t* reader      = cardano_cbor_reader_new(cbor_byte_strings[i], 1U + sizes[i]);
+    cardano_buffer_t*      byte_string = NULL;
+
+    // Act
+    const cardano_error_t result = cardano_cbor_validate_byte_string("field_name", reader, &byte_string);
+
+    // Assert
+    ASSERT_EQ(result, CARDANO_SUCCESS);
+    ASSERT_EQ(cardano_buffer_get_size(byte_string), sizes[i]);
+
+    // Cleanup
+    cardano_buffer_unref(&byte_string);
+    cardano_cbor_reader_unref(&reader);
+  }
+}
+
+TEST(cardano_cbor_validate_byte_string, returnErrorIfNotAByteString)
+{
+  // Arrange
+  const byte_t           cbor_byte_string[] = { 0x03, 0x01, 0x02, 0x03 };
+  cardano_cbor_reader_t* reader             = cardano_cbor_reader_new(cbor_byte_string, sizeof(cbor_byte_string));
+  cardano_buffer_t*      byte_string        = NULL;
+
+  // Act
+  const cardano_error_t result = cardano_cbor_validate_byte_string("field_name", reader, &byte_string);
+
+  // Assert
+  ASSERT_EQ(result, CARDANO_ERROR_UNEXPECTED_CBOR_TYPE);
+
+  // Cleanup
+  cardano_cbor_reader_unref(&reader);
+}
+
 TEST(cardano_cbor_validate_byte_string_of_size, returnValidIfValidByteString)
 {
   // Arrange
