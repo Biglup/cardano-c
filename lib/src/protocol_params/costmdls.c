@@ -38,6 +38,7 @@
 
 #define COSTMDLS_LANGUAGE_ID_COUNT ((size_t)256U)
 #define KNOWN_LANGUAGE_ID_COUNT    ((size_t)CARDANO_PLUTUS_LANGUAGE_VERSION_V4 + 1U)
+#define PROPERTY_NAME_SIZE         ((size_t)9U)
 
 /* STRUCTURES ****************************************************************/
 
@@ -304,7 +305,7 @@ cardano_costmdls_to_cip116_json(
   {
     if (costmdls->models[i] != NULL)
     {
-      cardano_json_writer_write_property_name(writer, property_names[i], strlen(property_names[i]));
+      cardano_json_writer_write_property_name(writer, property_names[i], PROPERTY_NAME_SIZE);
       cardano_error_t write_model_result = cardano_cost_model_to_cip116_json(costmdls->models[i], writer);
 
       if (write_model_result != CARDANO_SUCCESS)
