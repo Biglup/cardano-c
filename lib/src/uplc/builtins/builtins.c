@@ -21,6 +21,8 @@
 
 /* INCLUDES ******************************************************************/
 
+#include "../ast/uplc_int_math.h"
+
 #include "builtins.h"
 
 #include "../../allocators.h"
@@ -1466,15 +1468,15 @@ body_int_arith(
 
     if (func == CARDANO_UPLC_BUILTIN_ADD_INTEGER)
     {
-      overflow = __builtin_add_overflow(a.small, b.small, &out);
+      overflow = cardano_uplc_i64_add_overflow(a.small, b.small, &out);
     }
     else if (func == CARDANO_UPLC_BUILTIN_SUBTRACT_INTEGER)
     {
-      overflow = __builtin_sub_overflow(a.small, b.small, &out);
+      overflow = cardano_uplc_i64_sub_overflow(a.small, b.small, &out);
     }
     else
     {
-      overflow = __builtin_mul_overflow(a.small, b.small, &out);
+      overflow = cardano_uplc_i64_mul_overflow(a.small, b.small, &out);
     }
 
     if (!overflow)

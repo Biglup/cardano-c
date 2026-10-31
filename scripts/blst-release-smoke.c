@@ -1,4 +1,5 @@
 /* Copyright 2026 Biglup Labs. Licensed under the Apache License, Version 2.0. */
+#include "../lib/src/uplc/ast/uplc_int_math.h"
 #include <blst.h>
 #include <stdbool.h>
 #include <stdio.h>
@@ -26,6 +27,19 @@ main(void)
     return 1;
   if (blst_core_verify_pk_in_g1(&pk_affine, &signature_affine, true, tampered, sizeof(tampered) - 1, dst, sizeof(dst) - 1, NULL, 0) == BLST_SUCCESS)
     return 2;
+  int64_t result = 0;
+  if (!cardano_uplc_i64_add_overflow(INT64_MAX, 1, &result) || !cardano_uplc_i64_add_overflow(INT64_MIN, -1, &result))
+    return 3;
+  if (!cardano_uplc_i64_sub_overflow(INT64_MIN, 1, &result) || !cardano_uplc_i64_sub_overflow(INT64_MAX, -1, &result))
+    return 4;
+  if (!cardano_uplc_i64_mul_overflow(INT64_MIN, -1, &result) || !cardano_uplc_i64_mul_overflow(INT64_MAX, 2, &result))
+    return 5;
+  if (cardano_uplc_i64_mul_overflow(INT64_MIN, 1, &result) || result != INT64_MIN)
+    return 6;
+  if (cardano_uplc_i64_add_overflow(INT64_MIN, INT64_MAX, &result) || result != -1)
+    return 7;
+  if (cardano_uplc_i64_sub_overflow(INT64_MAX, INT64_MAX, &result) || result != 0)
+    return 8;
   puts("BLS sign/verify and tampered-message rejection passed");
   return 0;
 }

@@ -24,6 +24,8 @@
 
 /* INCLUDES ******************************************************************/
 
+#include "../ast/uplc_int_math.h"
+
 #include <cardano/typedefs.h>
 
 #include <stdint.h>
@@ -47,7 +49,7 @@ sat_add(int64_t a, int64_t b)
 {
   int64_t result = 0;
 
-  if (__builtin_add_overflow(a, b, &result) != 0)
+  if (cardano_uplc_i64_add_overflow(a, b, &result) != 0)
   {
     result = (a >= 0) ? (int64_t)INT64_MAX : (int64_t)INT64_MIN;
   }
@@ -68,7 +70,7 @@ sat_sub(int64_t a, int64_t b)
 {
   int64_t result = 0;
 
-  if (__builtin_sub_overflow(a, b, &result) != 0)
+  if (cardano_uplc_i64_sub_overflow(a, b, &result) != 0)
   {
     result = (a >= 0) ? (int64_t)INT64_MAX : (int64_t)INT64_MIN;
   }
@@ -92,7 +94,7 @@ sat_mul(int64_t a, int64_t b)
 {
   int64_t result = 0;
 
-  if (__builtin_mul_overflow(a, b, &result) != 0)
+  if (cardano_uplc_i64_mul_overflow(a, b, &result) != 0)
   {
     result = ((a > 0) == (b > 0)) ? (int64_t)INT64_MAX : (int64_t)INT64_MIN;
   }
