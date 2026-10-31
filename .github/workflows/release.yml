@@ -349,12 +349,50 @@ jobs:
         run: |
           RELEASE_DIR=release/${{ env.RELEASE_NAME }}
           mkdir -p $RELEASE_DIR
-          sed -i 's/_cardano_//g' build/release/lib/*.js
+          # Preserve internal names such as __asyncjs__cardano_* that are WASM imports.
+          python3 - <<'PYTHON'
+          import pathlib
+          import re
+          for path in pathlib.Path('build/release/lib').glob('*.js'):
+              path.write_text(re.sub(r'(?<![A-Za-z0-9_])_cardano_', '', path.read_text()))
+          PYTHON
           cp build/release/lib/*.js  $RELEASE_DIR/ 2>/dev/null || true
           cp build/release/lib/*.wasm $RELEASE_DIR/ 2>/dev/null || true
           cp README.md $RELEASE_DIR/
           cp COPYING   $RELEASE_DIR/LICENSE
           tar -czf "${{ env.RELEASE_NAME }}.tar.gz" -C release/${{ env.RELEASE_NAME }} .
+
+      - name: Validate packaged WASM callbacks
+        if: runner.os != 'Windows' && matrix.compiler == 'emscripten'
+        shell: bash
+        run: |
+          CHECK_DIR=$(mktemp -d)
+          trap 'rm -rf "$CHECK_DIR"' EXIT
+          tar -xzf "${{ env.RELEASE_NAME }}.tar.gz" -C "$CHECK_DIR"
+          node - "$CHECK_DIR/cardano_c.js" "${{ env.VERSION }}" <<'JS'
+          const assert = require('node:assert/strict');
+          const createModule = require(process.argv[2]);
+          (async () => {
+            const module = await createModule();
+            for (const name of ['addFunction', 'removeFunction', 'getTempRet0',
+              'getValue', 'setValue', 'UTF8ToString', 'stringToUTF8', 'lengthBytesUTF8',
+              '_malloc', '_free']) assert.equal(typeof module[name], 'function', name);
+            assert.equal(typeof module.Asyncify, 'object');
+            assert.equal(module.UTF8ToString(module.get_lib_version()), process.argv[3]);
+            assert.equal(module._mallinfo, undefined, 'Allocator statistics must be opt-in');
+            const callbacks = [];
+            try {
+              // Distinct callbacks force table growth beyond the static C function table.
+              for (let i = 0; i < 1024; ++i) {
+                callbacks.push(module.addFunction((context, tx, inputs, redeemer) => i, 'iiiii'));
+              }
+              assert.equal(new Set(callbacks).size, callbacks.length);
+            } finally {
+              for (const callback of callbacks) module.removeFunction(callback);
+            }
+            console.log('Packaged WASM runtime exports and callback registration passed');
+          })().catch(error => { console.error(error); process.exitCode = 1; });
+          JS
 
       # Upload artifacts to GitHub Release (Unix)
       - name: Upload artifacts to GitHub Release (Unix)

@@ -312,10 +312,19 @@ ELSE()
     TARGET_COMPILE_OPTIONS(${LIB_OUTPUT_NAME} PRIVATE ${EMS_BUILD_FLAGS})
   ENDIF()
 
+  # JavaScript bindings use these runtime methods to marshal values and register
+  # callbacks (including deferred redeemers) in the WebAssembly function table.
+  SET(EMS_RUNTIME_METHODS "addFunction,removeFunction,getTempRet0,getValue,setValue,UTF8ToString,stringToUTF8,lengthBytesUTF8,Asyncify")
+  SET(EMS_EXPORTED_FUNCTIONS "_malloc,_free")
+  OPTION(CARDANO_WASM_ALLOCATOR_STATS "Export mallinfo for WASM allocation tests" OFF)
+  IF(CARDANO_WASM_ALLOCATOR_STATS)
+    STRING(APPEND EMS_EXPORTED_FUNCTIONS ",_mallinfo")
+  ENDIF()
+
   SET_TARGET_PROPERTIES(${LIB_OUTPUT_NAME} PROPERTIES
           OUTPUT_NAME "${LIB_JS_OUTPUT_NAME}"
           RUNTIME_OUTPUT_DIRECTORY "${CMAKE_CURRENT_BINARY_DIR}"
-          LINK_FLAGS "-s EXPORT_ALL=1 -s ALLOW_MEMORY_GROWTH=1 -s MODULARIZE=1 --no-entry --whole-archive -s SINGLE_FILE=1 -s ASYNCIFY -s WASM_BIGINT=0 -s ENVIRONMENT=web,node ${EMS_BUILD_FLAGS}"
+          LINK_FLAGS "-s EXPORT_ALL=1 -s EXPORTED_RUNTIME_METHODS=${EMS_RUNTIME_METHODS} -s EXPORTED_FUNCTIONS=${EMS_EXPORTED_FUNCTIONS} -s ALLOW_TABLE_GROWTH=1 -s ALLOW_MEMORY_GROWTH=1 -s MODULARIZE=1 --no-entry --whole-archive -s SINGLE_FILE=1 -s ASYNCIFY -s WASM_BIGINT=0 -s ENVIRONMENT=web,node ${EMS_BUILD_FLAGS}"
   )
 ENDIF()
 
