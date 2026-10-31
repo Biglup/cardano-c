@@ -4,7 +4,7 @@ V2.0.0-rc.2
 - Fixed macOS ARM64 release builds by recognizing Apple Silicon in the architecture detection code.
 - Release builds now run independently, so a failure on one platform does not cancel the others.
 - Added checked int64 arithmetic for MSVC, which does not provide the GCC/Clang overflow builtins used by the Plutus evaluator. Disabled MSVC LTO so CMake can generate the DLL export list.
-- Fixed MSVC x64 compilation of the BLS dependency using the pinned upstream MASM sources; the portable C implementation remains in use on other targets.
+- Fixed MSVC compilation of the portable BLS dependency by replacing variable-length scratch arrays with fixed-capacity buffers while retaining the original active lengths. All platforms use the C implementation.
 - Pinned MSVC release builds to the Windows 2022 runner and disabled automatic clang-tidy in native x86-64 release packaging to avoid incompatible GCC LTO flags. Static analysis still runs in its dedicated workflow.
 - Release preparation PRs now build and package every supported platform before publication.
 

@@ -9,14 +9,7 @@ serialization for the Plutus bls12_381_* builtins (added in a later task).
 This task only vendors and wires the library plus a smoke test; the builtin
 bodies are implemented separately.
 
-Build configuration: portable C except MSVC x64
-  MSVC x64 uses the unmodified build/win64/*-x86_64.asm files from the same
-  pinned upstream commit, assembled with MASM, as in upstream build.bat.
-  __BLST_NO_ASM__ is not defined for this target: MSVC does not support the
-  variable-length arrays used by no_asm.h. __BLST_PORTABLE__ remains defined.
-  All other targets use the portable, no-assembly build described below.
-
-Portable C build:
+Build configuration: portable, no-assembly build
   The library is compiled as a single translation unit, src/server.c, which
   #includes the implementation .c files it needs:
     keygen.c hash_to_field.c e1.c map_to_g1.c e2.c map_to_g2.c fp12_tower.c
@@ -40,7 +33,13 @@ Portable C build:
                         would reference an assembly SHA-256 symbol that the
                         no-asm build does not provide, and the link would fail.
 
-Local change to the vendored source (recorded per the vendoring rules):
+Local changes to the vendored source (recorded per the vendoring rules):
+  src/no_asm.h - replace variable-length scratch arrays with fixed capacity
+    for the largest supported field (384 bits), plus a carry limb or doubled
+    capacity where required. smul_2n receives up to 768 bits. The public
+    wrappers fix n to the field width; loop bounds and copy/zero lengths
+    remain based on n. Remove the VLA compiler restriction so MSVC can use
+    the same portable C implementation. No arithmetic operations changed.
   src/vect.h - the limb-size selection block is reordered so that the
     __BLST_NO_ASM__/__wasm64__ branch (32-bit limbs, the path no_asm.h is
     written for) is tested before the __x86_64__/__aarch64__ branch (64-bit
@@ -52,7 +51,7 @@ Local change to the vendored source (recorded per the vendoring rules):
 
 Removed from the upstream tree to keep this lean (no copyright text altered):
   - src/asm/        - all .pl assembly generators (not used in the no-asm build).
-  - build/          - everything except the MSVC x64 assembly files in win64/.
+  - build/          - assembly.S and per-platform assembly tooling (unused).
   - bindings/blst_t.hpp, bindings/blst.hpp, bindings/blst.swg - C++/SWIG glue.
   - All language bindings: bindings/{go,rust,python,node.js,java,c#,emscripten}
     and bindings/vectors.
@@ -71,5 +70,3 @@ Vendored files:
                             consts.h, point.h, fields.h, ec_ops.h, ec_mult.h,
                             errors.h, bytes.h, sha256.h and the *-addchain.h
                             tables).
-
-  build/win64/*-x86_64.asm - upstream MASM sources, unmodified (MSVC x64 only).

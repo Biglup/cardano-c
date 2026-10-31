@@ -8,9 +8,11 @@
 typedef unsigned long long llimb_t;
 #endif
 
-#if !defined(__STDC_VERSION__) || __STDC_VERSION__<199901 || defined(__STDC_NO_VLA__)
-# error "unsupported compiler"
-#endif
+/* cardano-c: all callers use at most 384-bit fields. Fixed-capacity
+ * scratch buffers keep this C implementation usable with MSVC, which does
+ * not support VLAs. smul_2n uses double-width (768-bit) scratch space.
+ * Copy lengths below remain based on n, not on the buffer capacity. */
+#define BLST_MAX_LIMBS NLIMBS(384)
 
 #if defined(__clang__)
 # pragma GCC diagnostic ignored "-Wstatic-in-inline"
@@ -31,7 +33,7 @@ static void mul_mont_n(limb_t ret[], const limb_t a[], const limb_t b[],
 {
     __builtin_assume(n != 0 && n%2 == 0);
     llimb_t limbx;
-    limb_t mask, borrow, mx, hi, tmp[n+1], carry;
+    limb_t mask, borrow, mx, hi, tmp[BLST_MAX_LIMBS+1], carry;
     size_t i, j;
 
     for (mx=b[0], hi=0, i=0; i<n; i++) {
@@ -106,7 +108,7 @@ static void add_mod_n(limb_t ret[], const limb_t a[], const limb_t b[],
 {
     __builtin_assume(n != 0);
     llimb_t limbx;
-    limb_t mask, carry, borrow, tmp[n];
+    limb_t mask, carry, borrow, tmp[BLST_MAX_LIMBS];
     size_t i;
 
     for (carry=0, i=0; i<n; i++) {
@@ -173,7 +175,7 @@ static void mul_by_3_mod_n(limb_t ret[], const limb_t a[], const limb_t p[],
 {
     __builtin_assume(n != 0);
     llimb_t limbx;
-    limb_t mask, carry, borrow, tmp[n], two_a[n];
+    limb_t mask, carry, borrow, tmp[BLST_MAX_LIMBS], two_a[BLST_MAX_LIMBS];
     size_t i;
 
     for (carry=0, i=0; i<n; i++) {
@@ -227,7 +229,7 @@ static void lshift_mod_n(limb_t ret[], const limb_t a[], size_t count,
     __builtin_assume(count != 0);
     __builtin_assume(n != 0);
     llimb_t limbx;
-    limb_t mask, carry, borrow, tmp[n];
+    limb_t mask, carry, borrow, tmp[BLST_MAX_LIMBS];
     size_t i;
 
     while (count--) {
@@ -266,7 +268,7 @@ static void cneg_mod_n(limb_t ret[], const limb_t a[], bool_t flag,
 {
     __builtin_assume(n != 0);
     llimb_t limbx;
-    limb_t borrow, mask, tmp[n];
+    limb_t borrow, mask, tmp[BLST_MAX_LIMBS];
     size_t i;
 
     for (borrow=0, i=0; i<n; i++) {
@@ -275,7 +277,7 @@ static void cneg_mod_n(limb_t ret[], const limb_t a[], bool_t flag,
         borrow = (limb_t)(limbx >> LIMB_T_BITS) & 1;
     }
 
-    flag &= vec_is_zero(a, sizeof(tmp)) ^ 1;
+    flag &= vec_is_zero(a, n*sizeof(limb_t)) ^ 1;
     mask = (limb_t)0 - flag;
 
     for(i=0; i<n; i++)
@@ -318,15 +320,15 @@ static limb_t add_n_check_mod_n(byte ret[], const byte a[], const byte b[],
                                             const limb_t p[], size_t n)
 {
     __builtin_assume(n != 0);
-    limb_t ret_[n], a_[n], b_[n], zero;
+    limb_t ret_[BLST_MAX_LIMBS], a_[BLST_MAX_LIMBS], b_[BLST_MAX_LIMBS], zero;
 
-    limbs_from_le_bytes(a_, a, sizeof(a_));
-    limbs_from_le_bytes(b_, b, sizeof(b_));
+    limbs_from_le_bytes(a_, a, n*sizeof(limb_t));
+    limbs_from_le_bytes(b_, b, n*sizeof(limb_t));
 
     add_mod_n(ret_, a_, b_, p, n);
-    zero = vec_is_zero(ret_, sizeof(ret_));
+    zero = vec_is_zero(ret_, n*sizeof(limb_t));
 
-    le_bytes_from_limbs(ret, ret_, sizeof(ret_));
+    le_bytes_from_limbs(ret, ret_, n*sizeof(limb_t));
 
     return zero^1;
 }
@@ -342,15 +344,15 @@ static limb_t sub_n_check_mod_n(byte ret[], const byte a[], const byte b[],
                                             const limb_t p[], size_t n)
 {
     __builtin_assume(n != 0);
-    limb_t ret_[n], a_[n], b_[n], zero;
+    limb_t ret_[BLST_MAX_LIMBS], a_[BLST_MAX_LIMBS], b_[BLST_MAX_LIMBS], zero;
 
-    limbs_from_le_bytes(a_, a, sizeof(a_));
-    limbs_from_le_bytes(b_, b, sizeof(b_));
+    limbs_from_le_bytes(a_, a, n*sizeof(limb_t));
+    limbs_from_le_bytes(b_, b, n*sizeof(limb_t));
 
     sub_mod_n(ret_, a_, b_, p, n);
-    zero = vec_is_zero(ret_, sizeof(ret_));
+    zero = vec_is_zero(ret_, n*sizeof(limb_t));
 
-    le_bytes_from_limbs(ret, ret_, sizeof(ret_));
+    le_bytes_from_limbs(ret, ret_, n*sizeof(limb_t));
 
     return zero^1;
 }
@@ -367,7 +369,7 @@ static void from_mont_n(limb_t ret[], const limb_t a[],
 {
     __builtin_assume(n != 0 && n%2 == 0);
     llimb_t limbx;
-    limb_t mask, borrow, mx, hi, tmp[n];
+    limb_t mask, borrow, mx, hi, tmp[BLST_MAX_LIMBS];
     size_t i, j;
 
     for (j=0; j<n; j++) {
@@ -410,7 +412,7 @@ static void redc_mont_n(limb_t ret[], const limb_t a[],
 {
     __builtin_assume(n != 0 && n%2 == 0);
     llimb_t limbx;
-    limb_t mask, carry, borrow, mx, hi, tmp[n];
+    limb_t mask, carry, borrow, mx, hi, tmp[BLST_MAX_LIMBS];
     const limb_t *b = a;
     size_t i, j;
 
@@ -502,7 +504,7 @@ static limb_t sgn0_pty_mod_n(const limb_t a[], const limb_t p[], size_t n)
 {
     __builtin_assume(n != 0);
     llimb_t limbx;
-    limb_t carry, borrow, ret, tmp[n];
+    limb_t carry, borrow, ret, tmp[BLST_MAX_LIMBS];
     size_t i;
 
     ret = a[0] & 1; /* parity */
@@ -588,7 +590,7 @@ static void mul_mont_nonred_n(limb_t ret[], const limb_t a[], const limb_t b[],
 {
     __builtin_assume(n != 0 && n%2 == 0);
     llimb_t limbx;
-    limb_t mx, hi, tmp[n+1];
+    limb_t mx, hi, tmp[BLST_MAX_LIMBS+1];
     size_t i, j;
 
     for (mx=b[0], hi=0, i=0; i<n; i++) {
@@ -621,7 +623,7 @@ static void mul_mont_nonred_n(limb_t ret[], const limb_t a[], const limb_t b[],
         tmp[i] = hi;
     }
 
-    vec_copy(ret, tmp, sizeof(tmp)-sizeof(limb_t));
+    vec_copy(ret, tmp, n*sizeof(limb_t));
 }
 
 void sqr_n_mul_mont_383(vec384 ret, const vec384 a, size_t count,
@@ -879,7 +881,7 @@ static limb_t smul_n_shift_n(limb_t ret[], const limb_t a[], limb_t *f_,
                                            size_t n)
 {
     __builtin_assume(n != 0);
-    limb_t a_[n+1], b_[n+1], f, g, neg, carry, hi;
+    limb_t a_[BLST_MAX_LIMBS+1], b_[BLST_MAX_LIMBS+1], f, g, neg, carry, hi;
     size_t i;
 
     /* |a|*|f_| */
@@ -921,7 +923,7 @@ static limb_t smul_2n(limb_t ret[], const limb_t u[], limb_t f,
                                     const limb_t v[], limb_t g, size_t n)
 {
     __builtin_assume(n != 0);
-    limb_t u_[n], v_[n], neg, hi;
+    limb_t u_[2*BLST_MAX_LIMBS], v_[2*BLST_MAX_LIMBS], neg, hi;
 
     /* |u|*|f_| */
     neg = 0 - MSB(f);
@@ -946,25 +948,25 @@ static void ct_inverse_mod_n(limb_t ret[], const limb_t inp[],
 {
     __builtin_assume(n != 0 && n%2 == 0);
     llimb_t limbx;
-    limb_t a[n], b[n], u[2*n], v[2*n], t[2*n];
+    limb_t a[BLST_MAX_LIMBS], b[BLST_MAX_LIMBS], u[2*BLST_MAX_LIMBS], v[2*BLST_MAX_LIMBS], t[2*BLST_MAX_LIMBS];
     limb_t a_[2], b_[2], sign, carry, top;
     factors fg;
     size_t i;
 
-    vec_copy(a, inp, sizeof(a));
-    vec_copy(b, mod, sizeof(b));
-    vec_zero(u, sizeof(u)); u[0] = 1;
-    vec_zero(v, sizeof(v));
+    vec_copy(a, inp, n*sizeof(limb_t));
+    vec_copy(b, mod, n*sizeof(limb_t));
+    vec_zero(u, 2*n*sizeof(limb_t)); u[0] = 1;
+    vec_zero(v, 2*n*sizeof(limb_t));
 
     for (i=0; i<(2*n*LIMB_T_BITS)/(LIMB_T_BITS-2); i++) {
         ab_approximation_n(a_, a, b_, b, n);
         inner_loop_n(&fg, a_, b_, LIMB_T_BITS-2);
         (void)smul_n_shift_n(t, a, &fg.f0, b, &fg.g0, n);
         (void)smul_n_shift_n(b, a, &fg.f1, b, &fg.g1, n);
-        vec_copy(a, t, sizeof(a));
+        vec_copy(a, t, n*sizeof(limb_t));
         smul_2n(t, u, fg.f0, v, fg.g0, 2*n);
         smul_2n(v, u, fg.f1, v, fg.g1, 2*n);
-        vec_copy(u, t, sizeof(u));
+        vec_copy(u, t, 2*n*sizeof(limb_t));
     }
 
     inner_loop_n(&fg, a, b, (2*n*LIMB_T_BITS)%(LIMB_T_BITS-2));
@@ -1062,20 +1064,20 @@ static limb_t legendre_loop_n(limb_t L, factors *fg, const limb_t a_[2],
 static bool_t ct_is_sqr_mod_n(const limb_t inp[], const limb_t mod[], size_t n)
 {
     __builtin_assume(n != 0 && n%2 == 0);
-    limb_t a[n], b[n], t[n];
+    limb_t a[BLST_MAX_LIMBS], b[BLST_MAX_LIMBS], t[BLST_MAX_LIMBS];
     limb_t a_[2], b_[2], neg, L = 0;
     factors fg;
     size_t i;
 
-    vec_copy(a, inp, sizeof(a));
-    vec_copy(b, mod, sizeof(b));
+    vec_copy(a, inp, n*sizeof(limb_t));
+    vec_copy(b, mod, n*sizeof(limb_t));
 
     for (i=0; i<(2*n*LIMB_T_BITS)/(LIMB_T_BITS-2); i++) {
         ab_approximation_n(a_, a, b_, b, n);
         L = legendre_loop_n(L, &fg, a_, b_, LIMB_T_BITS-2);
         neg = smul_n_shift_n(t, a, &fg.f0, b, &fg.g0, n);
         (void)smul_n_shift_n(b, a, &fg.f1, b, &fg.g1, n);
-        vec_copy(a, t, sizeof(a));
+        vec_copy(a, t, n*sizeof(limb_t));
         L += (b[0] >> 1) & neg;
     }
 
@@ -1157,7 +1159,7 @@ static limb_t quot_rem_n(limb_t *div_rem, const limb_t *divisor,
 {
     __builtin_assume(n != 0 && n%2 == 0);
     llimb_t limbx;
-    limb_t tmp[n+1], carry, mask, borrow;
+    limb_t tmp[BLST_MAX_LIMBS+1], carry, mask, borrow;
     size_t i;
 
     /* divisor*quotient */
