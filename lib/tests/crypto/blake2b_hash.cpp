@@ -30,6 +30,7 @@
 
 #include "../allocators_helpers.h"
 #include "../src/allocators.h"
+#include "../src/crypto/blake2b_hash_internal.h"
 
 #include <gmock/gmock.h>
 
@@ -611,6 +612,166 @@ TEST(cardano_blake2b_hash_from_cbor, canDecodeHashFromValidCbor)
   // Cleanup
   cardano_blake2b_hash_unref(&hash);
   cardano_cbor_reader_unref(&reader);
+}
+
+TEST(cardano_blake2b_hash_from_cbor, returnsErrorIfByteStringIsEmpty)
+{
+  // Arrange
+  cardano_cbor_reader_t*  reader = cardano_cbor_reader_from_hex("40", 2);
+  cardano_blake2b_hash_t* hash   = nullptr;
+
+  // Act
+  cardano_error_t error = cardano_blake2b_hash_from_cbor(reader, &hash);
+
+  // Assert
+  EXPECT_EQ(error, CARDANO_ERROR_OUT_OF_BOUNDS_MEMORY_READ);
+  EXPECT_EQ(hash, (cardano_blake2b_hash_t*)nullptr);
+
+  // Cleanup
+  cardano_cbor_reader_unref(&reader);
+}
+
+TEST(_cardano_blake2b_hash_from_cbor_allow_empty, canDecodeAnEmptyByteString)
+{
+  // Arrange
+  cardano_cbor_reader_t*  reader = cardano_cbor_reader_from_hex("40", 2);
+  cardano_blake2b_hash_t* hash   = nullptr;
+  cardano_cbor_writer_t*  writer = cardano_cbor_writer_new();
+  cardano_json_writer_t*  json   = cardano_json_writer_new(CARDANO_JSON_FORMAT_COMPACT);
+
+  // Act
+  cardano_error_t error = _cardano_blake2b_hash_from_cbor_allow_empty(reader, &hash);
+
+  // Assert
+  ASSERT_EQ(error, CARDANO_SUCCESS);
+  EXPECT_EQ(cardano_blake2b_hash_get_bytes_size(hash), 0U);
+  EXPECT_EQ(cardano_blake2b_hash_get_hex_size(hash), 1U);
+  ASSERT_EQ(cardano_blake2b_hash_to_cbor(hash, writer), CARDANO_SUCCESS);
+
+  char cbor_hex[3] = { 0 };
+
+  ASSERT_EQ(cardano_cbor_writer_encode_hex(writer, cbor_hex, sizeof(cbor_hex)), CARDANO_SUCCESS);
+  EXPECT_STREQ(cbor_hex, "40");
+
+  ASSERT_EQ(cardano_blake2b_hash_to_cip116_json(hash, json), CARDANO_SUCCESS);
+
+  const size_t json_size = cardano_json_writer_get_encoded_size(json);
+  char*        json_str  = (char*)malloc(json_size);
+
+  ASSERT_EQ(cardano_json_writer_encode(json, json_str, json_size), CARDANO_SUCCESS);
+  EXPECT_STREQ(json_str, "\"\"");
+
+  // Cleanup
+  cardano_blake2b_hash_unref(&hash);
+  cardano_cbor_reader_unref(&reader);
+  cardano_cbor_writer_unref(&writer);
+  cardano_json_writer_unref(&json);
+  free(json_str);
+}
+
+TEST(_cardano_blake2b_hash_from_cbor_allow_empty, comparesAnEmptyHashBeforeAnyOtherHash)
+{
+  // Arrange
+  cardano_cbor_reader_t*  empty_reader = cardano_cbor_reader_from_hex("40", 2);
+  cardano_cbor_reader_t*  reader       = cardano_cbor_reader_from_hex(HASH_CBOR, strlen(HASH_CBOR));
+  cardano_blake2b_hash_t* empty_hash   = nullptr;
+  cardano_blake2b_hash_t* hash         = nullptr;
+
+  ASSERT_EQ(_cardano_blake2b_hash_from_cbor_allow_empty(empty_reader, &empty_hash), CARDANO_SUCCESS);
+  ASSERT_EQ(cardano_blake2b_hash_from_cbor(reader, &hash), CARDANO_SUCCESS);
+
+  // Act
+  const bool    equals  = cardano_blake2b_hash_equals(empty_hash, hash);
+  const int32_t compare = cardano_blake2b_hash_compare(empty_hash, hash);
+
+  // Assert
+  EXPECT_FALSE(equals);
+  EXPECT_LT(compare, 0);
+
+  // Cleanup
+  cardano_blake2b_hash_unref(&empty_hash);
+  cardano_blake2b_hash_unref(&hash);
+  cardano_cbor_reader_unref(&empty_reader);
+  cardano_cbor_reader_unref(&reader);
+}
+
+TEST(_cardano_blake2b_hash_from_cbor_allow_empty, canDecodeANonEmptyByteString)
+{
+  // Arrange
+  cardano_cbor_reader_t*  reader = cardano_cbor_reader_from_hex(HASH_CBOR, strlen(HASH_CBOR));
+  cardano_blake2b_hash_t* hash   = nullptr;
+
+  // Act
+  cardano_error_t error = _cardano_blake2b_hash_from_cbor_allow_empty(reader, &hash);
+
+  // Assert
+  ASSERT_EQ(error, CARDANO_SUCCESS);
+  EXPECT_EQ(cardano_blake2b_hash_get_bytes_size(hash), 28U);
+
+  // Cleanup
+  cardano_blake2b_hash_unref(&hash);
+  cardano_cbor_reader_unref(&reader);
+}
+
+TEST(_cardano_blake2b_hash_from_cbor_allow_empty, returnsErrorIfGivenNull)
+{
+  // Arrange
+  cardano_cbor_reader_t*  reader = cardano_cbor_reader_from_hex("40", 2);
+  cardano_blake2b_hash_t* hash   = nullptr;
+
+  // Act
+  cardano_error_t null_hash_error   = _cardano_blake2b_hash_from_cbor_allow_empty(reader, nullptr);
+  cardano_error_t null_reader_error = _cardano_blake2b_hash_from_cbor_allow_empty(nullptr, &hash);
+
+  // Assert
+  EXPECT_EQ(null_hash_error, CARDANO_ERROR_POINTER_IS_NULL);
+  EXPECT_EQ(null_reader_error, CARDANO_ERROR_POINTER_IS_NULL);
+  EXPECT_EQ(hash, (cardano_blake2b_hash_t*)nullptr);
+
+  // Cleanup
+  cardano_cbor_reader_unref(&reader);
+}
+
+TEST(_cardano_blake2b_hash_from_cbor_allow_empty, returnsErrorIfNotAByteString)
+{
+  // Arrange
+  cardano_cbor_reader_t*  reader = cardano_cbor_reader_from_hex("00", 2);
+  cardano_blake2b_hash_t* hash   = nullptr;
+
+  // Act
+  cardano_error_t error = _cardano_blake2b_hash_from_cbor_allow_empty(reader, &hash);
+
+  // Assert
+  EXPECT_EQ(error, CARDANO_ERROR_UNEXPECTED_CBOR_TYPE);
+  EXPECT_EQ(hash, (cardano_blake2b_hash_t*)nullptr);
+
+  // Cleanup
+  cardano_cbor_reader_unref(&reader);
+}
+
+TEST(_cardano_blake2b_hash_from_cbor_allow_empty, returnsErrorIfMemoryAllocationFails)
+{
+  for (int i = 0; i < 3; ++i)
+  {
+    // Arrange
+    cardano_cbor_reader_t*  reader = cardano_cbor_reader_from_hex("40", 2);
+    cardano_blake2b_hash_t* hash   = nullptr;
+
+    reset_allocators_run_count();
+    set_malloc_limit(i);
+    cardano_set_allocators(fail_malloc_at_limit, realloc, free);
+
+    // Act
+    cardano_error_t error = _cardano_blake2b_hash_from_cbor_allow_empty(reader, &hash);
+
+    // Assert
+    EXPECT_EQ(error, CARDANO_ERROR_MEMORY_ALLOCATION_FAILED);
+    EXPECT_EQ(hash, (cardano_blake2b_hash_t*)nullptr);
+
+    // Cleanup
+    cardano_set_allocators(malloc, realloc, free);
+    cardano_cbor_reader_unref(&reader);
+  }
 }
 
 TEST(cardano_blake2b_hash_to_cbor, returnsErrorIfHashIsNull)

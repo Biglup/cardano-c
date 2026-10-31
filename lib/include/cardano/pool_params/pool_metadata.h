@@ -160,6 +160,9 @@ cardano_pool_metadata_from_hash_hex(
  * This function parses CBOR data using a provided \ref cardano_cbor_reader_t and constructs a \ref cardano_pool_metadata_t object.
  * It assumes that the CBOR reader is set up correctly and that the CBOR data corresponds to the structure expected for a pool_metadata.
  *
+ * The ledger stores the metadata hash as an arbitrary byte string, so a hash of any length is accepted, including an
+ * empty one. An empty hash is kept as a hash of zero bytes and is encoded back as an empty byte string.
+ *
  * \param[in] reader A pointer to an initialized \ref cardano_cbor_reader_t that is ready to read the CBOR-encoded data.
  * \param[out] pool_metadata A pointer to a pointer of \ref cardano_pool_metadata_t that will be set to the address
  *                        of the newly created pool_metadata object upon successful decoding.
@@ -363,6 +366,9 @@ CARDANO_EXPORT cardano_error_t cardano_pool_metadata_set_url(
  *
  * This function provides access to the Blake2b hash stored within a
  * \ref cardano_pool_metadata_t object.
+ *
+ * The hash of pool metadata decoded from CBOR may be empty, in which case \ref cardano_blake2b_hash_get_bytes_size
+ * reports zero bytes and its hexadecimal form is an empty string.
  *
  * \param[in] pool_metadata A pointer to an initialized \ref cardano_pool_metadata_t object.
  * \param[out] hash On successful retrieval, this will point to a newly created
