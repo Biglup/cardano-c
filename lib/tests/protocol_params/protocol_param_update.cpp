@@ -10297,3 +10297,72 @@ TEST(cardano_protocol_param_update, roundTripsTheIntegerParametersOfTheLedgerGol
   cardano_protocol_param_update_unref(&protocol_param_update);
   cardano_json_object_unref(&golden);
 }
+
+TEST(cardano_protocol_param_update_from_cbor, canRoundTripCostModelsOfUnknownLanguages)
+{
+  // Arrange
+  const char*                      cbor   = "a112a5008301020301810704830102031818820a0b18ff8105";
+  cardano_cbor_reader_t*           reader = cardano_cbor_reader_from_hex(cbor, strlen(cbor));
+  cardano_cbor_writer_t*           writer = cardano_cbor_writer_new();
+  cardano_protocol_param_update_t* update = nullptr;
+
+  // Act
+  cardano_error_t error = cardano_protocol_param_update_from_cbor(reader, &update);
+
+  // Assert
+  ASSERT_EQ(error, CARDANO_SUCCESS);
+  ASSERT_EQ(cardano_protocol_param_update_to_cbor(update, writer), CARDANO_SUCCESS);
+
+  size_t hex_size = cardano_cbor_writer_get_hex_size(writer);
+  char*  hex      = (char*)malloc(hex_size);
+
+  ASSERT_EQ(cardano_cbor_writer_encode_hex(writer, hex, hex_size), CARDANO_SUCCESS);
+  EXPECT_STREQ(hex, cbor);
+
+  // Cleanup
+  cardano_protocol_param_update_unref(&update);
+  cardano_cbor_reader_unref(&reader);
+  cardano_cbor_writer_unref(&writer);
+  free(hex);
+}
+
+TEST(cardano_protocol_param_update_to_plutus_data, encodesCostModelsOfUnknownLanguages)
+{
+  const char*                      cbor   = "a112a5008301020301810704830102031818820a0b18ff8105";
+  cardano_cbor_reader_t*           reader = cardano_cbor_reader_from_hex(cbor, strlen(cbor));
+  cardano_protocol_param_update_t* update = nullptr;
+  ASSERT_EQ(cardano_protocol_param_update_from_cbor(reader, &update), CARDANO_SUCCESS);
+  cardano_cbor_reader_unref(&reader);
+
+  cardano_plutus_data_t* pd = nullptr;
+  ASSERT_EQ(cardano_protocol_param_update_to_plutus_data(update, &pd), CARDANO_SUCCESS);
+
+  cardano_plutus_data_t* cost_models = pd_map_get_tag(pd, 18U);
+
+  cardano_plutus_map_t* cm_map = nullptr;
+  ASSERT_EQ(cardano_plutus_data_to_map(cost_models, &cm_map), CARDANO_SUCCESS);
+  EXPECT_EQ(cardano_plutus_map_get_length(cm_map), 5U);
+  cardano_plutus_map_unref(&cm_map);
+
+  EXPECT_TRUE(pd_map_has_tag(cost_models, 0U));
+  EXPECT_TRUE(pd_map_has_tag(cost_models, 1U));
+
+  cardano_plutus_data_t* language_4 = pd_map_get_tag(cost_models, 4U);
+  EXPECT_EQ(pd_list_i64(language_4, 0U), 1);
+  EXPECT_EQ(pd_list_i64(language_4, 1U), 2);
+  EXPECT_EQ(pd_list_i64(language_4, 2U), 3);
+  cardano_plutus_data_unref(&language_4);
+
+  cardano_plutus_data_t* language_24 = pd_map_get_tag(cost_models, 24U);
+  EXPECT_EQ(pd_list_i64(language_24, 0U), 10);
+  EXPECT_EQ(pd_list_i64(language_24, 1U), 11);
+  cardano_plutus_data_unref(&language_24);
+
+  cardano_plutus_data_t* language_255 = pd_map_get_tag(cost_models, 255U);
+  EXPECT_EQ(pd_list_i64(language_255, 0U), 5);
+  cardano_plutus_data_unref(&language_255);
+
+  cardano_plutus_data_unref(&cost_models);
+  cardano_plutus_data_unref(&pd);
+  cardano_protocol_param_update_unref(&update);
+}

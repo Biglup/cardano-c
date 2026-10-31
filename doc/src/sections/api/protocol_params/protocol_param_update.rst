@@ -17,6 +17,10 @@ Protocol Parameter Update
 
 ------------
 
+.. doxygenfunction:: cardano_protocol_param_update_to_plutus_data
+
+------------
+
 .. doxygenfunction:: cardano_protocol_param_update_to_cip116_json
 
 ------------

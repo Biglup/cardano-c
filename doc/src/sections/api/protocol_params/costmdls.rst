@@ -29,6 +29,10 @@ Cost Models
 
 ------------
 
+.. doxygenfunction:: cardano_costmdls_get_by_language_id
+
+------------
+
 .. doxygenfunction:: cardano_costmdls_has
 
 ------------

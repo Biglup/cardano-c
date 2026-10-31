@@ -32,17 +32,34 @@
 #include <assert.h>
 #include <string.h>
 
+/* CONSTANTS *****************************************************************/
+
+/**
+ * \brief The Plutus language versions known to this library, indexed by their language id.
+ */
+static const cardano_plutus_language_version_t KNOWN_LANGUAGES[] = {
+  CARDANO_PLUTUS_LANGUAGE_VERSION_V1,
+  CARDANO_PLUTUS_LANGUAGE_VERSION_V2,
+  CARDANO_PLUTUS_LANGUAGE_VERSION_V3,
+  CARDANO_PLUTUS_LANGUAGE_VERSION_V4,
+};
+
+static const size_t KNOWN_LANGUAGES_COUNT = sizeof(KNOWN_LANGUAGES) / sizeof(KNOWN_LANGUAGES[0]);
+
 /* STRUCTURES ****************************************************************/
 
 /**
  * \brief Represents a Cardano cost model.
+ *
+ * The language is kept as its raw language id, so cost models for language ids this library does not know
+ * yet (the ledger accepts any id from 0 to 255) are preserved and re-encoded unchanged.
  */
 typedef struct cardano_cost_model_t
 {
-    cardano_object_t                  base;
-    cardano_plutus_language_version_t language_version;
-    int64_t*                          costs;
-    size_t                            size;
+    cardano_object_t base;
+    uint8_t          language_id;
+    int64_t*         costs;
+    size_t           size;
 } cardano_cost_model_t;
 
 /* STATIC FUNCTIONS **********************************************************/
@@ -75,20 +92,23 @@ cardano_cost_model_deallocate(void* object)
   _cardano_free(object);
 }
 
-/* DEFINITIONS ****************************************************************/
-
-cardano_error_t
-cardano_cost_model_new(
-  cardano_plutus_language_version_t language,
-  const int64_t*                    cost_array,
-  size_t                            costs_size,
-  cardano_cost_model_t**            cost_model)
+/**
+ * \brief Creates a cost model for the given raw language id.
+ *
+ * \param[in] language_id The language id of the cost model, known or not.
+ * \param[in] cost_array The costs of the cost model.
+ * \param[in] costs_size The number of costs in \p cost_array.
+ * \param[out] cost_model On success, points to the new cost model.
+ *
+ * \return \ref CARDANO_SUCCESS on success, or an appropriate error code on failure.
+ */
+static cardano_error_t
+create_cost_model(
+  const uint8_t          language_id,
+  const int64_t*         cost_array,
+  const size_t           costs_size,
+  cardano_cost_model_t** cost_model)
 {
-  if (cost_model == NULL)
-  {
-    return CARDANO_ERROR_POINTER_IS_NULL;
-  }
-
   *cost_model = _cardano_malloc(sizeof(cardano_cost_model_t));
 
   if (*cost_model == NULL)
@@ -116,7 +136,7 @@ cardano_cost_model_new(
     return CARDANO_ERROR_MEMORY_ALLOCATION_FAILED;
   }
 
-  (*cost_model)->language_version   = language;
+  (*cost_model)->language_id        = language_id;
   (*cost_model)->base.deallocator   = cardano_cost_model_deallocate;
   (*cost_model)->base.ref_count     = 1;
   (*cost_model)->base.last_error[0] = '\0';
@@ -127,6 +147,33 @@ cardano_cost_model_new(
   }
 
   return CARDANO_SUCCESS;
+}
+
+/* DEFINITIONS ****************************************************************/
+
+cardano_error_t
+cardano_cost_model_new(
+  cardano_plutus_language_version_t language,
+  const int64_t*                    cost_array,
+  size_t                            costs_size,
+  cardano_cost_model_t**            cost_model)
+{
+  if (cost_model == NULL)
+  {
+    return CARDANO_ERROR_POINTER_IS_NULL;
+  }
+
+  for (size_t i = 0U; i < KNOWN_LANGUAGES_COUNT; ++i)
+  {
+    if (KNOWN_LANGUAGES[i] == language)
+    {
+      return create_cost_model((uint8_t)i, cost_array, costs_size, cost_model);
+    }
+  }
+
+  *cost_model = NULL;
+
+  return CARDANO_ERROR_INVALID_PLUTUS_COST_MODEL;
 }
 
 cardano_error_t
@@ -151,8 +198,8 @@ cardano_cost_model_from_cbor(cardano_cbor_reader_t* reader, cardano_cost_model_t
     "language_version",
     reader,
     &language_version,
-    (uint64_t)CARDANO_PLUTUS_LANGUAGE_VERSION_V1,
-    (uint64_t)CARDANO_PLUTUS_LANGUAGE_VERSION_V4);
+    0U,
+    UINT8_MAX);
 
   if (read_minor_result != CARDANO_SUCCESS)
   {
@@ -232,7 +279,7 @@ cardano_cost_model_from_cbor(cardano_cbor_reader_t* reader, cardano_cost_model_t
     return expect_end_array_result;
   }
 
-  cardano_error_t new_model_result = cardano_cost_model_new(language_version, costs, costs_count, cost_model);
+  cardano_error_t new_model_result = create_cost_model((uint8_t)language_version, costs, costs_count, cost_model);
   _cardano_free(costs);
 
   return new_model_result;
@@ -251,7 +298,7 @@ cardano_cost_model_to_cbor(const cardano_cost_model_t* cost_model, cardano_cbor_
     return CARDANO_ERROR_POINTER_IS_NULL;
   }
 
-  cardano_error_t write_uint_result = cardano_cbor_writer_write_uint(writer, cost_model->language_version);
+  cardano_error_t write_uint_result = cardano_cbor_writer_write_uint(writer, cost_model->language_id);
 
   if (write_uint_result != CARDANO_SUCCESS)
   {
@@ -393,7 +440,32 @@ cardano_cost_model_get_language(
     return CARDANO_ERROR_POINTER_IS_NULL;
   }
 
-  *language = cost_model->language_version;
+  if ((size_t)cost_model->language_id >= KNOWN_LANGUAGES_COUNT)
+  {
+    return CARDANO_ERROR_INVALID_PLUTUS_COST_MODEL;
+  }
+
+  *language = KNOWN_LANGUAGES[cost_model->language_id];
+
+  return CARDANO_SUCCESS;
+}
+
+cardano_error_t
+cardano_cost_model_get_language_id(
+  const cardano_cost_model_t* cost_model,
+  uint8_t*                    language_id)
+{
+  if (cost_model == NULL)
+  {
+    return CARDANO_ERROR_POINTER_IS_NULL;
+  }
+
+  if (language_id == NULL)
+  {
+    return CARDANO_ERROR_POINTER_IS_NULL;
+  }
+
+  *language_id = cost_model->language_id;
 
   return CARDANO_SUCCESS;
 }

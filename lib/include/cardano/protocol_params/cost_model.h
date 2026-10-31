@@ -56,7 +56,8 @@ typedef struct cardano_cost_model_t cardano_cost_model_t;
  * This function allocates and initializes a new instance of the Cost Model based on the specified Plutus language version,
  * which is used to predict and control the computational cost of executing Plutus scripts on the Cardano blockchain.
  *
- * \param[in] language The Plutus language version for which the cost model is being created.
+ * \param[in] language The Plutus language version for which the cost model is being created. It must be one of
+ *                     the versions of \ref cardano_plutus_language_version_t.
  * \param[in] cost_array An array of integers representing the cost associated with each operation in the Plutus script.
  * \param[in] costs_size The size of the cost_array, indicating the number of operations covered by the cost model.
  * \param[out] cost_model On successful initialization, this will point to a newly created
@@ -67,8 +68,9 @@ typedef struct cardano_cost_model_t cardano_cost_model_t;
  *                        by calling \ref cardano_cost_model_unref.
  *
  * \return \ref cardano_error_t indicating the outcome of the operation. Returns \ref CARDANO_SUCCESS
- *         if the Cost Model was successfully created, or an appropriate error code
- *         indicating the failure reason.
+ *         if the Cost Model was successfully created, \ref CARDANO_ERROR_INVALID_PLUTUS_COST_MODEL if the
+ *         language is not a known Plutus language version or there are more than 2048 costs, or an appropriate
+ *         error code indicating the failure reason.
  *
  * Usage Example:
  * \code{.c}
@@ -101,6 +103,10 @@ cardano_cost_model_new(
  *
  * This function parses CBOR data using a provided \ref cardano_cbor_reader_t and constructs a \ref cardano_cost_model_t object.
  * It assumes that the CBOR reader is set up correctly and that the CBOR data corresponds to the structure expected for a cost_model.
+ *
+ * The language id may be any value from 0 to 255, as the ledger accepts cost models for languages it does not know yet.
+ * A cost model for an unknown language keeps its language id and costs, and encodes back unchanged; its language id
+ * can be read with \ref cardano_cost_model_get_language_id.
  *
  * \param[in] reader A pointer to an initialized \ref cardano_cbor_reader_t that is ready to read the CBOR-encoded data.
  * \param[out] cost_model A pointer to a pointer of \ref cardano_cost_model_t that will be set to the address
@@ -339,7 +345,8 @@ CARDANO_EXPORT const int64_t* cardano_cost_model_get_costs(const cardano_cost_mo
  * \param[out] language   Pointer to a variable where the language version will be stored upon successful return.
  *
  * \return \ref cardano_error_t indicating the outcome of the operation. Returns \ref CARDANO_SUCCESS
- *         if the language version was successfully retrieved, or an appropriate error code
+ *         if the language version was successfully retrieved, \ref CARDANO_ERROR_INVALID_PLUTUS_COST_MODEL if the
+ *         cost model is for a language id that is not a known Plutus language version, or an appropriate error code
  *         indicating the failure reason.
  *
  * Usage Example:
@@ -364,6 +371,39 @@ CARDANO_NODISCARD
 CARDANO_EXPORT cardano_error_t cardano_cost_model_get_language(
   const cardano_cost_model_t*        cost_model,
   cardano_plutus_language_version_t* language);
+
+/**
+ * \brief Retrieves the raw language id of the Cost Model.
+ *
+ * The language id is the key of the cost model in the cost models map. Ids 0 to 3 are the Plutus language versions
+ * of \ref cardano_plutus_language_version_t; any other id up to 255 is a language this library does not know yet,
+ * which the ledger accepts in cost models.
+ *
+ * \param[in]  cost_model  Pointer to the Cost Model object.
+ * \param[out] language_id Pointer to a variable where the language id will be stored upon successful return.
+ *
+ * \return \ref cardano_error_t indicating the outcome of the operation. Returns \ref CARDANO_SUCCESS
+ *         if the language id was successfully retrieved, or \ref CARDANO_ERROR_POINTER_IS_NULL if any of
+ *         the given pointers is NULL.
+ *
+ * Usage Example:
+ * \code{.c}
+ * cardano_cost_model_t* cost_model = NULL;
+ * uint8_t language_id = 0U;
+ *
+ * // Assume cost_model is initialized properly
+ * cardano_error_t result = cardano_cost_model_get_language_id(cost_model, &language_id);
+ *
+ * if (result == CARDANO_SUCCESS)
+ * {
+ *   printf("Language id: %u\n", language_id);
+ * }
+ * \endcode
+ */
+CARDANO_NODISCARD
+CARDANO_EXPORT cardano_error_t cardano_cost_model_get_language_id(
+  const cardano_cost_model_t* cost_model,
+  uint8_t*                    language_id);
 
 /**
  * \brief Decrements the reference count of a cardano_cost_model_t object.

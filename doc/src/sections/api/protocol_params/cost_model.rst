@@ -41,6 +41,10 @@ Cost Model
 
 ------------
 
+.. doxygenfunction:: cardano_cost_model_get_language_id
+
+------------
+
 .. doxygenfunction:: cardano_cost_model_unref
 
 ------------
