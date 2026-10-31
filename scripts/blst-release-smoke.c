@@ -1,5 +1,6 @@
 /* Copyright 2026 Biglup Labs. Licensed under the Apache License, Version 2.0. */
 #include <blst.h>
+#include <stdbool.h>
 #include <stdio.h>
 
 int
