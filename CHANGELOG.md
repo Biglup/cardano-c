@@ -1,3 +1,10 @@
+V2.0.0-rc.2
+---------------------
+
+- Fixed macOS ARM64 release builds by recognizing Apple Silicon in the architecture detection code.
+- Release builds now run independently, so a failure on one platform does not cancel the others.
+- Release preparation PRs now build and package every supported platform before publication.
+
 V2.0.0-rc.1
 ---------------------
 
