@@ -420,7 +420,7 @@ cardano_cbor_validate_uint_in_range(const char* validator_name, const char* type
 }
 
 cardano_error_t
-cardano_cbor_validate_byte_string_of_size(const char* validator_name, cardano_cbor_reader_t* reader, cardano_buffer_t** byte_string, const uint32_t size)
+cardano_cbor_validate_byte_string(const char* validator_name, cardano_cbor_reader_t* reader, cardano_buffer_t** byte_string)
 {
   cardano_cbor_reader_state_t state = CARDANO_CBOR_READER_STATE_UNDEFINED;
 
@@ -445,6 +445,19 @@ cardano_cbor_validate_byte_string_of_size(const char* validator_name, cardano_cb
   }
 
   cardano_error_t read_byte_string_result = cardano_cbor_reader_read_bytestring(reader, byte_string);
+
+  if (read_byte_string_result != CARDANO_SUCCESS)
+  {
+    return read_byte_string_result;
+  }
+
+  return CARDANO_SUCCESS;
+}
+
+cardano_error_t
+cardano_cbor_validate_byte_string_of_size(const char* validator_name, cardano_cbor_reader_t* reader, cardano_buffer_t** byte_string, const uint32_t size)
+{
+  cardano_error_t read_byte_string_result = cardano_cbor_validate_byte_string(validator_name, reader, byte_string);
 
   if (read_byte_string_result != CARDANO_SUCCESS)
   {

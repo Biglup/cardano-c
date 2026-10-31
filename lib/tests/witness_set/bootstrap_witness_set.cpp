@@ -31,6 +31,8 @@
 
 #include <gmock/gmock.h>
 
+#include <string>
+
 /* CONSTANTS *****************************************************************/
 
 static const char* CBOR                    = "d90102848458203d4017c3e843895a92b70aa74d1b7ebc9c982ccf2ec4968cc0cd55f12af4660c58406291d657deec24024827e69c3abe01a30ce548a284743a445e3680d7db5ac3ac18ff9b538d16f290ae67f760984dc6594a7c15e9716ed28dc027beceea1ec40a5820000000000000000000000000000000000000000000000000000000000000000041a08458203d4017c3e843895a92b70aa74d1b7ebc9c982ccf2ec4968cc0cd55f12af4660c58406291d657deec24024827e69c3abe01a30ce548a284743a445e3680d7db5ac3ac18ff9b538d16f290ae67f760984dc6594a7c15e9716ed28dc027beceea1ec40a5820000000000000000000000000000000000000000000000000000000000000000041a08458203d4017c3e843895a92b70aa74d1b7ebc9c982ccf2ec4968cc0cd55f12af4660c58406291d657deec24024827e69c3abe01a30ce548a284743a445e3680d7db5ac3ac18ff9b538d16f290ae67f760984dc6594a7c15e9716ed28dc027beceea1ec40a5820000000000000000000000000000000000000000000000000000000000000000041a08458203d4017c3e843895a92b70aa74d1b7ebc9c982ccf2ec4968cc0cd55f12af4660c58406291d657deec24024827e69c3abe01a30ce548a284743a445e3680d7db5ac3ac18ff9b538d16f290ae67f760984dc6594a7c15e9716ed28dc027beceea1ec40a5820000000000000000000000000000000000000000000000000000000000000000041a0";
@@ -1173,4 +1175,33 @@ TEST(cardano_bootstrap_witness_set_add, encodesOneWitnessPerAddressRootOfADecode
   cardano_bootstrap_witness_set_unref(&bootstrap_witness_set);
   cardano_bootstrap_witness_unref(&bootstrap_witness);
   free(hex);
+}
+
+TEST(cardano_bootstrap_witness_set_clear_cbor_cache, encodesWitnessesWithChainCodesOfAnyLengthOncePerAddressRoot)
+{
+  // Arrange
+  const std::string prefix = "8458203d4017c3e843895a92b70aa74d1b7ebc9c982ccf2ec4968cc0cd55f12af4660c58406291d657deec24024827e69c3abe01a30ce548a284743a445e3680d7db5ac3ac18ff9b538d16f290ae67f760984dc6594a7c15e9716ed28dc027beceea1ec40a";
+  const std::string empty  = prefix + "4041a0";
+  const std::string long33 = prefix + "5821" + std::string(66, 'a') + "41a0";
+  const std::string input  = "d9010285" + empty + long33 + empty + long33 + empty;
+  const std::string output = "d9010282" + long33 + empty;
+
+  cardano_bootstrap_witness_set_t* bootstrap_witness_set = decode_bootstrap_witness_set_hex(input.c_str());
+
+  // Act
+  EXPECT_EQ(cardano_bootstrap_witness_set_get_length(bootstrap_witness_set), 5U);
+
+  char* original = encode_bootstrap_witness_set_hex(bootstrap_witness_set);
+
+  cardano_bootstrap_witness_set_clear_cbor_cache(bootstrap_witness_set);
+  char* canonical = encode_bootstrap_witness_set_hex(bootstrap_witness_set);
+
+  // Assert
+  EXPECT_STREQ(original, input.c_str());
+  EXPECT_STREQ(canonical, output.c_str());
+
+  // Cleanup
+  cardano_bootstrap_witness_set_unref(&bootstrap_witness_set);
+  free(original);
+  free(canonical);
 }
