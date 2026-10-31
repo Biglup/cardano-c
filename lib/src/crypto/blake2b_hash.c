@@ -404,18 +404,7 @@ cardano_blake2b_hash_to_cip116_json(const cardano_blake2b_hash_t* blake2b_hash, 
     return CARDANO_ERROR_POINTER_IS_NULL;
   }
 
-  const size_t hex_size = cardano_buffer_get_hex_size(blake2b_hash->buffer);
-  char         hex[129] = { 0 };
-
-  const cardano_error_t to_hex_result = cardano_buffer_to_hex(
-    blake2b_hash->buffer,
-    hex,
-    hex_size);
-
-  assert(to_hex_result == CARDANO_SUCCESS);
-  CARDANO_UNUSED(to_hex_result);
-
-  cardano_json_writer_write_string(writer, hex, hex_size - 1U);
+  cardano_json_writer_write_buffer_as_hex(writer, blake2b_hash->buffer);
 
   return CARDANO_SUCCESS;
 }

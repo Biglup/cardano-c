@@ -262,9 +262,9 @@ CARDANO_EXPORT cardano_error_t cardano_blake2b_hash_to_cbor(
   cardano_cbor_writer_t*        writer);
 
 /**
- * \brief Serializes a BLAKE2b-256 hash to CIP-116 JSON.
+ * \brief Serializes a BLAKE2b hash to CIP-116 JSON.
  *
- * Writes exactly one JSON string (64 lowercase hex characters) to \p writer:
+ * Writes the hash as exactly one JSON string of lowercase hex characters to \p writer:
  *
  * \code{.json}
  * "0000000000000000000000000000000000000000000000000000000000000000"

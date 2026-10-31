@@ -34,6 +34,9 @@
 
 #include <gmock/gmock.h>
 
+#include <string>
+#include <vector>
+
 /* CONSTANTS *****************************************************************/
 
 static const char* HASH_CBOR = "581c00000000000000000000000000000000000000000000000000000000";
@@ -1075,6 +1078,100 @@ TEST(cardano_blake2b_hash_to_cip116_json, canSerializeBlake2bHash)
 
   // Cleanup
   free(json_str);
+  cardano_blake2b_hash_unref(&hash);
+  cardano_json_writer_unref(&json);
+}
+
+TEST(cardano_blake2b_hash_to_cip116_json, writesTheFullHexForHashesOfAnyLength)
+{
+  const size_t sizes[] = { 0, 28, 32, 64, 65, 128, 1000 };
+
+  for (const size_t size: sizes)
+  {
+    // Arrange
+    std::vector<byte_t> bytes(size);
+
+    for (size_t i = 0; i < size; ++i)
+    {
+      bytes[i] = (byte_t)(i % 251U);
+    }
+
+    std::string hex;
+
+    for (size_t i = 0; i < size; ++i)
+    {
+      char pair[3] = { 0 };
+      snprintf(pair, sizeof(pair), "%02x", bytes[i]);
+      hex += pair;
+    }
+
+    char header[8] = { 0 };
+
+    if (size < 24U)
+    {
+      snprintf(header, sizeof(header), "%02x", (unsigned int)(0x40U + size));
+    }
+    else if (size < 256U)
+    {
+      snprintf(header, sizeof(header), "58%02x", (unsigned int)size);
+    }
+    else
+    {
+      snprintf(header, sizeof(header), "59%04x", (unsigned int)size);
+    }
+
+    const std::string cbor     = std::string(header) + hex;
+    const std::string expected = "\"" + hex + "\"";
+
+    cardano_json_writer_t*  json   = cardano_json_writer_new(CARDANO_JSON_FORMAT_COMPACT);
+    cardano_cbor_reader_t*  reader = cardano_cbor_reader_from_hex(cbor.c_str(), cbor.size());
+    cardano_blake2b_hash_t* hash   = nullptr;
+
+    ASSERT_EQ(_cardano_blake2b_hash_from_cbor_allow_empty(reader, &hash), CARDANO_SUCCESS);
+
+    // Act
+    cardano_error_t error = cardano_blake2b_hash_to_cip116_json(hash, json);
+
+    // Assert
+    EXPECT_EQ(error, CARDANO_SUCCESS);
+
+    size_t json_size = cardano_json_writer_get_encoded_size(json);
+    char*  json_str  = (char*)malloc(json_size);
+
+    ASSERT_EQ(cardano_json_writer_encode(json, json_str, json_size), CARDANO_SUCCESS);
+    EXPECT_STREQ(json_str, expected.c_str());
+
+    // Cleanup
+    free(json_str);
+    cardano_blake2b_hash_unref(&hash);
+    cardano_cbor_reader_unref(&reader);
+    cardano_json_writer_unref(&json);
+  }
+}
+
+TEST(cardano_blake2b_hash_to_cip116_json, reportsAnErrorInTheWriterIfMemoryAllocationFails)
+{
+  // Arrange
+  cardano_json_writer_t*  json = cardano_json_writer_new(CARDANO_JSON_FORMAT_COMPACT);
+  cardano_blake2b_hash_t* hash = nullptr;
+
+  ASSERT_EQ(cardano_blake2b_compute_hash((const byte_t*)"data", 4, CARDANO_BLAKE2B_HASH_SIZE_512, &hash), CARDANO_SUCCESS);
+
+  reset_allocators_run_count();
+  cardano_set_allocators(fail_right_away_malloc, realloc, free);
+
+  // Act
+  cardano_error_t error = cardano_blake2b_hash_to_cip116_json(hash, json);
+
+  cardano_set_allocators(malloc, realloc, free);
+
+  char buffer[256] = { 0 };
+
+  // Assert
+  EXPECT_EQ(error, CARDANO_SUCCESS);
+  EXPECT_EQ(cardano_json_writer_encode(json, buffer, sizeof(buffer)), CARDANO_ERROR_POINTER_IS_NULL);
+
+  // Cleanup
   cardano_blake2b_hash_unref(&hash);
   cardano_json_writer_unref(&json);
 }

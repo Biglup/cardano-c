@@ -32,6 +32,8 @@
 
 #include <gmock/gmock.h>
 
+#include <string>
+
 /* CONSTANTS *****************************************************************/
 
 static const char* CBOR = "827368747470733a2f2f6578616d706c652e636f6d58200f3abbc8fc19c2e61bab6059bf8a466e6e754833a08a62a6c56fe0e78f19d9d5";
@@ -974,6 +976,34 @@ TEST(cardano_pool_metadata_to_cip116_json, writesAnEmptyStringForAnEmptyHash)
   // Assert
   EXPECT_EQ(error, CARDANO_SUCCESS);
   EXPECT_STREQ(json_str, R"({"url":"https://example.com","hash":""})");
+
+  // Cleanup
+  cardano_json_writer_unref(&json);
+  cardano_pool_metadata_unref(&metadata);
+  cardano_cbor_reader_unref(&reader);
+  free(json_str);
+}
+
+TEST(cardano_pool_metadata_to_cip116_json, writesTheFullHexForAHashLongerThan64Bytes)
+{
+  // Arrange
+  const std::string hash_hex(200, 'a');
+  const std::string cbor = "827368747470733a2f2f6578616d706c652e636f6d5864" + std::string(200, 'a');
+
+  cardano_pool_metadata_t* metadata = nullptr;
+  cardano_cbor_reader_t*   reader   = cardano_cbor_reader_from_hex(cbor.c_str(), cbor.size());
+
+  ASSERT_EQ(cardano_pool_metadata_from_cbor(reader, &metadata), CARDANO_SUCCESS);
+
+  cardano_json_writer_t* json = cardano_json_writer_new(CARDANO_JSON_FORMAT_COMPACT);
+
+  // Act
+  cardano_error_t error    = cardano_pool_metadata_to_cip116_json(metadata, json);
+  char*           json_str = encode_json(json);
+
+  // Assert
+  EXPECT_EQ(error, CARDANO_SUCCESS);
+  EXPECT_STREQ(json_str, (R"({"url":"https://example.com","hash":")" + hash_hex + R"("})").c_str());
 
   // Cleanup
   cardano_json_writer_unref(&json);
