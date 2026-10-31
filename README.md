@@ -26,7 +26,7 @@ Ready to learn? Get the latest documentation at [cardano-c.readthedocs.io](https
 | Channel | Version | Intended use |
 | :------ | :------ | :----------- |
 | Stable | [v1.2.1](https://github.com/Biglup/cardano-c/releases/tag/v1.2.1) | The stable 1.2 series for Conway applications. |
-| Release candidate | [v2.0.0-rc.2](https://github.com/Biglup/cardano-c/releases/tag/v2.0.0-rc.2) | Integration testing of the native Plutus evaluator and Conway/Dijkstra transaction support. |
+| Release candidate | [v2.0.0-rc.3](https://github.com/Biglup/cardano-c/releases/tag/v2.0.0-rc.3) | Integration testing of the native Plutus evaluator and Conway/Dijkstra transaction support. |
 
 Version 2.0 adds native Plutus evaluation and support for Dijkstra transactions. Dijkstra support is experimental until the hardfork rules are finalized. The 1.2 series remains the stable release for Conway.
 
@@ -54,7 +54,7 @@ Here is a list with all the languages/bindings available.
 
 | Name                                                                                     | libcardano-c version | Language                                                             | License              |
 | :--------------------------------------------------------------------------------------- | :------------------: | :------------------------------------------------------------------: | :------------------: |
-| [libcardano-c](https://github.com/Biglup/cardano-c)                                      | **1.2.1 stable / 2.0.0-rc.2**            | [C](https://en.wikipedia.org/wiki/C_(programming_language))          | Apache 2.0           |
+| [libcardano-c](https://github.com/Biglup/cardano-c)                                      | **1.2.1 stable / 2.0.0-rc.3**            | [C](https://en.wikipedia.org/wiki/C_(programming_language))          | Apache 2.0           |
 | [cometa.js](https://github.com/Biglup/cometa.js)                                         | **1.2.0**            | [JavaScript](https://en.wikipedia.org/wiki/JavaScript)               | Apache 2.0           |
 | [cometa.py](https://github.com/Biglup/cometa.py)                                         | **1.2.0**            | [Python](https://www.python.org)                                     | Apache 2.0           |
 
@@ -202,6 +202,12 @@ When the reference count drops to zero-typically when the `*_unref` function is 
 holding a reference-the object gets deallocated.
 
 Note that **all** getter functions will consistently increment the reference count of the object they return. Thus, it's the caller's responsibility to invoke `*_unref` once they're done using the result.
+
+## WebAssembly builds
+
+The WASM release exports the Emscripten runtime methods used by JavaScript bindings, including `addFunction` and `removeFunction`. Function-table growth is enabled so bindings can register deferred redeemer callbacks. Remove registered callbacks when their owning builder is released.
+
+For allocation tests, configure an Emscripten build with `-DCARDANO_WASM_ALLOCATOR_STATS=ON` to export `mallinfo`. This option is off by default and does not affect native builds.
 
 ## Set up the Git hooks custom directory
 

@@ -1,3 +1,10 @@
+V2.0.0-rc.3
+---------------------
+
+- Export the Emscripten runtime methods required by JavaScript bindings and enable function-table growth for deferred redeemer callbacks.
+- Add the optional `CARDANO_WASM_ALLOCATOR_STATS` CMake flag (off by default) to export `mallinfo` for WASM allocation tests.
+- Preserve internal Asyncify import names when normalizing public WASM export names during packaging, and validate callback registration in the packaged WASM artifact before uploading it.
+
 V2.0.0-rc.2
 ---------------------
 
