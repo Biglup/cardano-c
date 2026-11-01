@@ -24,6 +24,7 @@
 #include "json_helpers.h"
 #include <cardano/cardano.h>
 
+#include <algorithm>
 #include <cstdlib>
 #include <cstring>
 #include <filesystem>
@@ -523,17 +524,15 @@ verify_primitive_fixture(const cardano_json_object_t* item)
     cardano_blake2b_hash_t* raw     = nullptr;
     const auto              result  = cardano_blake2b_compute_hash(
       message.empty() ? &empty : message.data(), message.size(), get_json_uint(input.get(), "size"), &raw);
+    auto hash = make_scoped_object(raw, cardano_blake2b_hash_unref);
+
     if (cardano_json_object_has_property(expected.get(), "error", 5))
     {
-      auto output = make_scoped_object(raw, cardano_blake2b_hash_unref);
-
       EXPECT_EQ(static_cast<uint64_t>(result), get_json_uint(expected.get(), "native_error"));
 
       return;
     }
     check_result(result);
-
-    auto hash = make_scoped_object(raw, cardano_blake2b_hash_unref);
 
     EXPECT_EQ(
       encode_hex(cardano_blake2b_hash_get_data(hash.get()), cardano_blake2b_hash_get_bytes_size(hash.get())),
@@ -1129,11 +1128,8 @@ build_recipe(
 
   const auto error   = api::build(builder.get(), &raw);
   auto       result  = make_scoped_object(raw, api::result_unref);
-  bool       invoked = false;
-  for (const auto& cb: callbacks)
-  {
-    invoked = invoked || cb->calls > 0;
-  }
+  const bool invoked = std::any_of(callbacks.begin(), callbacks.end(), [](const auto& callback)
+                                   { return callback->calls > 0; });
   if (error != CARDANO_SUCCESS)
   {
     return { error, "", "", invoked };

@@ -52,8 +52,7 @@ class binding_conformance : public testing::Test
     cardano_ed25519_public_key_t*  public_key        = nullptr;
     cardano_ed25519_signature_t*   signature         = nullptr;
 
-    void
-    TearDown() override
+    ~binding_conformance() override
     {
       cardano_ed25519_signature_unref(&signature);
       cardano_ed25519_public_key_unref(&public_key);
