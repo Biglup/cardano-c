@@ -32,6 +32,9 @@ jobs:
         with:
           submodules: "true"
 
+      - name: Test binding conformance checker
+        run: python3 -m unittest discover -s scripts/tests -v
+
       - name: Build
         run: |
           ./scripts/create-debug-makefiles.sh

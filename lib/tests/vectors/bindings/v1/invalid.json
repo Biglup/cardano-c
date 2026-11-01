@@ -1,0 +1,591 @@
+{
+  "schema_version": 1,
+  "native_version": "2.0.0-rc.6",
+  "cases": [
+    {
+      "id": "sub_transaction-sub_transaction-two-element-cbor",
+      "operation": "cbor",
+      "type": "sub_transaction",
+      "source": "lib/tests/transaction/sub_transaction.cpp#TWO_ELEMENT_CBOR",
+      "input": {
+        "cbor": "82a200d90102800180a0"
+      },
+      "expected": {
+        "error": "decode_error",
+        "native_error": 302
+      }
+    },
+    {
+      "id": "sub_transaction-sub_transaction-four-element-cbor",
+      "operation": "cbor",
+      "type": "sub_transaction",
+      "source": "lib/tests/transaction/sub_transaction.cpp#FOUR_ELEMENT_CBOR",
+      "input": {
+        "cbor": "84a200d90102800180a0f5f6"
+      },
+      "expected": {
+        "error": "decode_error",
+        "native_error": 302
+      }
+    },
+    {
+      "id": "sub_transaction-sub_transaction-invalid-aux-data-cbor",
+      "operation": "cbor",
+      "type": "sub_transaction",
+      "source": "lib/tests/transaction/sub_transaction.cpp#INVALID_AUX_DATA_CBOR",
+      "input": {
+        "cbor": "83a200d90102800180a087"
+      },
+      "expected": {
+        "error": "decode_error",
+        "native_error": 11
+      }
+    },
+    {
+      "id": "proposal_procedure-proposal_procedure-invalid-parameter-change-proposal-cbor",
+      "operation": "cbor",
+      "type": "proposal_procedure",
+      "source": "lib/tests/proposal_procedures/proposal_procedure.cpp#INVALID_PARAMETER_CHANGE_PROPOSAL_CBOR",
+      "input": {
+        "cbor": "841a000f4240581de1cb0ec2692497b458e46812c8a5bfa2931d1a2d965a99893828ec810f8400ef5820000000000000000000000000000000000000000000000000000000000000000003b81f0018640118c80219012c03190190041901f4051a001e8480061a0bebc200071903200819038409d81e8201020ad81e8201030bd81e8201040cd81e8201050d820158200000000000000000000000000000000000000000000000000000000000000000101903e8111988b812a20098a61a0003236119032c01011903e819023b00011903e8195e7104011903e818201a0001ca761928eb041959d818641959d818641959d818641959d818641959d818641959d81864186418641959d81864194c5118201a0002acfa182019b551041a000363151901ff00011a00015c3518201a000797751936f404021a0002ff941a0006ea7818dc0001011903e8196ff604021a0003bd081a00034ec5183e011a00102e0f19312a011a00032e801901a5011a0002da781903e819cf06011a00013a34182019a8f118201903e818201a00013aac0119e143041903e80a1a00030219189c011a00030219189c011a0003207c1901d9011a000330001901ff0119ccf3182019fd40182019ffd5182019581e18201940b318201a00012adf18201a0002ff941a0006ea7818dc0001011a00010f92192da7000119eabb18201a0002ff941a0006ea7818dc0001011a0002ff941a0006ea7818dc0001011a000c504e197712041a001d6af61a0001425b041a00040c660004001a00014fab18201a0003236119032c010119a0de18201a00033d7618201979f41820197fb8182019a95d1820197df718201995aa18201a0374f693194a1f0a0198af1a0003236119032c01011903e819023b00011903e8195e7104011903e818201a0001ca761928eb041959d818641959d818641959d818641959d818641959d818641959d81864186418641959d81864194c5118201a0002acfa182019b551041a000363151901ff00011a00015c3518201a000797751936f404021a0002ff941a0006ea7818dc0001011903e8196ff604021a0003bd081a00034ec5183e011a00102e0f19312a011a00032e801901a5011a0002da781903e819cf06011a00013a34182019a8f118201903e818201a00013aac0119e143041903e80a1a00030219189c011a00030219189c011a0003207c1901d9011a000330001901ff0119ccf3182019fd40182019ffd5182019581e18201940b318201a00012adf18201a0002ff941a0006ea7818dc0001011a00010f92192da7000119eabb18201a0002ff941a0006ea7818dc0001011a0002ff941a0006ea7818dc0001011a0011b22c1a0005fdde00021a000c504e197712041a001d6af61a0001425b041a00040c660004001a00014fab18201a0003236119032c010119a0de18201a00033d7618201979f41820197fb8182019a95d1820197df718201995aa18201a0223accc0a1a0374f693194a1f0a1a02515e841980b30a1382d81e820102d81e82010214821b00000001000000001b000000010000000015821b00000001000000001b0000000100000000161903ba1719035418181864181985d81e820000d81e820101d81e820202d81e820303d81e820101181a8ad81e820000d81e820101d81e820202d81e820303d81e820404d81e820505d81e820606d81e820707d81e820808d81e820909181b1864181c18c8181d19012c181e1903e8181f1907d01820191388581c8293d319ef5b3ac72366dd28006bd315b715f7e7cfcbd3004129b80d827668747470733a2f2f7777772e736f6d6575726c2e696f58200000000000000000000000000000000000000000000000000000000000000000"
+      },
+      "expected": {
+        "error": "decode_error",
+        "native_error": 300
+      }
+    },
+    {
+      "id": "proposal_procedure-proposal_procedure-invalid-hard-fork-initiation-proposal-cbor",
+      "operation": "cbor",
+      "type": "proposal_procedure",
+      "source": "lib/tests/proposal_procedures/proposal_procedure.cpp#INVALID_HARD_FORK_INITIATION_PROPOSAL_CBOR",
+      "input": {
+        "cbor": "841a000f4240581de1cb0ec2692497b458e46812c8a5bfa2931d1a2d965a99893828ec810f8301ef5820000000000000000000000000000000000000000000000000000000000000000003820103827668747470733a2f2f7777772e736f6d6575726c2e696f58200000000000000000000000000000000000000000000000000000000000000000"
+      },
+      "expected": {
+        "error": "decode_error",
+        "native_error": 300
+      }
+    },
+    {
+      "id": "proposal_procedure-proposal_procedure-invalid-treasury-withdrawals-proposal-cbor",
+      "operation": "cbor",
+      "type": "proposal_procedure",
+      "source": "lib/tests/proposal_procedures/proposal_procedure.cpp#INVALID_TREASURY_WITHDRAWALS_PROPOSAL_CBOR",
+      "input": {
+        "cbor": "841a000f4240581de1cb0ec2692497b458e46812c8a5bfa2931d1a2d965a99893828ec810f8302ef581de1cb0ec2692497b458e46812c8a5bfa2931d1a2d965a99893828ec810f01581c8293d319ef5b3ac72366dd28006bd315b715f7e7cfcbd3004129b80d827668747470733a2f2f7777772e736f6d6575726c2e696f58200000000000000000000000000000000000000000000000000000000000000000"
+      },
+      "expected": {
+        "error": "decode_error",
+        "native_error": 300
+      }
+    },
+    {
+      "id": "proposal_procedure-proposal_procedure-invalid-no-confidence-proposal-cbor",
+      "operation": "cbor",
+      "type": "proposal_procedure",
+      "source": "lib/tests/proposal_procedures/proposal_procedure.cpp#INVALID_NO_CONFIDENCE_PROPOSAL_CBOR",
+      "input": {
+        "cbor": "841a000f4240581de1cb0ec2692497b458e46812c8a5bfa2931d1a2d965a99893828ec810f8203ef5820000000000000000000000000000000000000000000000000000000000000000003827668747470733a2f2f7777772e736f6d6575726c2e696f58200000000000000000000000000000000000000000000000000000000000000000"
+      },
+      "expected": {
+        "error": "decode_error",
+        "native_error": 300
+      }
+    },
+    {
+      "id": "proposal_procedure-proposal_procedure-invalid-update-committee-proposal-cbor",
+      "operation": "cbor",
+      "type": "proposal_procedure",
+      "source": "lib/tests/proposal_procedures/proposal_procedure.cpp#INVALID_UPDATE_COMMITTEE_PROPOSAL_CBOR",
+      "input": {
+        "cbor": "841a000f4240581de1cb0ec2692497b458e46812c8a5bfa2931d1a2d965a99893828ec810f8504ef5820000000000000000000000000000000000000000000000000000000000000000003d90102828200581c000000000000000000000000000000000000000000000000000000008200581c20000000000000000000000000000000000000000000000000000000a28200581c30000000000000000000000000000000000000000000000000000000018200581c4000000000000000000000000000000000000000000000000000000002d81e820105827668747470733a2f2f7777772e736f6d6575726c2e696f58200000000000000000000000000000000000000000000000000000000000000000"
+      },
+      "expected": {
+        "error": "decode_error",
+        "native_error": 300
+      }
+    },
+    {
+      "id": "proposal_procedure-proposal_procedure-invalid-new-constitution-proposal-cbor",
+      "operation": "cbor",
+      "type": "proposal_procedure",
+      "source": "lib/tests/proposal_procedures/proposal_procedure.cpp#INVALID_NEW_CONSTITUTION_PROPOSAL_CBOR",
+      "input": {
+        "cbor": "841a000f4240581de1cb0ec2692497b458e46812c8a5bfa2931d1a2d965a99893828ec810f8305ef582000000000000000000000000000000000000000000000000000000000000000000382827668747470733a2f2f7777772e736f6d6575726c2e696f58200000000000000000000000000000000000000000000000000000000000000000f6827668747470733a2f2f7777772e736f6d6575726c2e696f58200000000000000000000000000000000000000000000000000000000000000000"
+      },
+      "expected": {
+        "error": "decode_error",
+        "native_error": 300
+      }
+    },
+    {
+      "id": "proposal_procedure-proposal_procedure-invalid-info-proposal-cbor",
+      "operation": "cbor",
+      "type": "proposal_procedure",
+      "source": "lib/tests/proposal_procedures/proposal_procedure.cpp#INVALID_INFO_PROPOSAL_CBOR",
+      "input": {
+        "cbor": "841a000f4240581de1cb0ec2692497b458e46812c8a5bfa2931d1a2d965a99893828ec810f8106ef7668747470733a2f2f7777772e736f6d6575726c2e696f58200000000000000000000000000000000000000000000000000000000000000000"
+      },
+      "expected": {
+        "error": "decode_error",
+        "native_error": 300
+      }
+    },
+    {
+      "id": "proposal_procedure-proposal_procedure-invalid-deposit-cbor",
+      "operation": "cbor",
+      "type": "proposal_procedure",
+      "source": "lib/tests/proposal_procedures/proposal_procedure.cpp#INVALID_DEPOSIT_CBOR",
+      "input": {
+        "cbor": "84ef000f4240581de1cb0ec2692497b458e46812c8a5bfa2931d1a2d965a99893828ec810f8106827668747470733a2f2f7777772e736f6d6575726c2e696f58200000000000000000000000000000000000000000000000000000000000000000"
+      },
+      "expected": {
+        "error": "decode_error",
+        "native_error": 11
+      }
+    },
+    {
+      "id": "proposal_procedure-proposal_procedure-invalid-reward-address-cbor",
+      "operation": "cbor",
+      "type": "proposal_procedure",
+      "source": "lib/tests/proposal_procedures/proposal_procedure.cpp#INVALID_REWARD_ADDRESS_CBOR",
+      "input": {
+        "cbor": "841a000f4240ef1de1cb0ec2692497b458e46812c8a5bfa2931d1a2d965a99893828ec810f8106827668747470733a2f2f7777772e736f6d6575726c2e696f58200000000000000000000000000000000000000000000000000000000000000000"
+      },
+      "expected": {
+        "error": "decode_error",
+        "native_error": 11
+      }
+    },
+    {
+      "id": "account_balance_interval-account_balance_interval-both-nil-cbor",
+      "operation": "cbor",
+      "type": "account_balance_interval",
+      "source": "lib/tests/transaction_body/account_balance_interval.cpp#BOTH_NIL_CBOR",
+      "input": {
+        "cbor": "82f6f6"
+      },
+      "expected": {
+        "error": "decode_error",
+        "native_error": 7
+      }
+    },
+    {
+      "id": "account_balance_interval-account_balance_interval-one-element-cbor",
+      "operation": "cbor",
+      "type": "account_balance_interval",
+      "source": "lib/tests/transaction_body/account_balance_interval.cpp#ONE_ELEMENT_CBOR",
+      "input": {
+        "cbor": "811864"
+      },
+      "expected": {
+        "error": "decode_error",
+        "native_error": 302
+      }
+    },
+    {
+      "id": "account_balance_interval-account_balance_interval-three-elements-cbor",
+      "operation": "cbor",
+      "type": "account_balance_interval",
+      "source": "lib/tests/transaction_body/account_balance_interval.cpp#THREE_ELEMENTS_CBOR",
+      "input": {
+        "cbor": "8318641913880a"
+      },
+      "expected": {
+        "error": "decode_error",
+        "native_error": 302
+      }
+    },
+    {
+      "id": "account_balance_interval-account_balance_interval-text-string-cbor",
+      "operation": "cbor",
+      "type": "account_balance_interval",
+      "source": "lib/tests/transaction_body/account_balance_interval.cpp#TEXT_STRING_CBOR",
+      "input": {
+        "cbor": "6161"
+      },
+      "expected": {
+        "error": "decode_error",
+        "native_error": 300
+      }
+    },
+    {
+      "id": "account_balance_interval-account_balance_interval-negative-integer-cbor",
+      "operation": "cbor",
+      "type": "account_balance_interval",
+      "source": "lib/tests/transaction_body/account_balance_interval.cpp#NEGATIVE_INTEGER_CBOR",
+      "input": {
+        "cbor": "20"
+      },
+      "expected": {
+        "error": "decode_error",
+        "native_error": 300
+      }
+    },
+    {
+      "id": "account_balance_interval-wrong-type",
+      "operation": "cbor",
+      "type": "account_balance_interval",
+      "source": "synthetic decode rejection",
+      "input": {
+        "cbor": "f5"
+      },
+      "expected": {
+        "error": "decode_error",
+        "native_error": 300
+      }
+    },
+    {
+      "id": "account_balance_interval-truncated",
+      "operation": "cbor",
+      "type": "account_balance_interval",
+      "source": "synthetic decode rejection",
+      "input": {
+        "cbor": "8218641913"
+      },
+      "expected": {
+        "error": "decode_error",
+        "native_error": 11
+      }
+    },
+    {
+      "id": "certificate-wrong-type",
+      "operation": "cbor",
+      "type": "certificate",
+      "source": "synthetic decode rejection",
+      "input": {
+        "cbor": "f5"
+      },
+      "expected": {
+        "error": "decode_error",
+        "native_error": 11
+      }
+    },
+    {
+      "id": "certificate-truncated",
+      "operation": "cbor",
+      "type": "certificate",
+      "source": "synthetic decode rejection",
+      "input": {
+        "cbor": "830e8200581c000000000000000000000000000000000000000000000000000000008200581c000000000000000000000000000000000000000000000000000000"
+      },
+      "expected": {
+        "error": "decode_error",
+        "native_error": 11
+      }
+    },
+    {
+      "id": "credential-wrong-type",
+      "operation": "cbor",
+      "type": "credential",
+      "source": "synthetic decode rejection",
+      "input": {
+        "cbor": "f5"
+      },
+      "expected": {
+        "error": "decode_error",
+        "native_error": 300
+      }
+    },
+    {
+      "id": "credential-truncated",
+      "operation": "cbor",
+      "type": "credential",
+      "source": "synthetic decode rejection",
+      "input": {
+        "cbor": "8200581c000000000000000000000000000000000000000000000000000000"
+      },
+      "expected": {
+        "error": "decode_error",
+        "native_error": 11
+      }
+    },
+    {
+      "id": "native_script-wrong-type",
+      "operation": "cbor",
+      "type": "native_script",
+      "source": "synthetic decode rejection",
+      "input": {
+        "cbor": "f5"
+      },
+      "expected": {
+        "error": "decode_error",
+        "native_error": 11
+      }
+    },
+    {
+      "id": "native_script-truncated",
+      "operation": "cbor",
+      "type": "native_script",
+      "source": "synthetic decode rejection",
+      "input": {
+        "cbor": "82068200581c00112233445566778899aabbccddeeff00112233445566778899aa"
+      },
+      "expected": {
+        "error": "decode_error",
+        "native_error": 11
+      }
+    },
+    {
+      "id": "plutus_data-wrong-type",
+      "operation": "cbor",
+      "type": "plutus_data",
+      "source": "synthetic decode rejection",
+      "input": {
+        "cbor": "f5"
+      },
+      "expected": {
+        "error": "decode_error",
+        "native_error": 11
+      }
+    },
+    {
+      "id": "plutus_data-truncated",
+      "operation": "cbor",
+      "type": "plutus_data",
+      "source": "synthetic decode rejection",
+      "input": {
+        "cbor": "9f01029f0102030405ff9f0102030405ff05"
+      },
+      "expected": {
+        "error": "decode_error",
+        "native_error": 11
+      }
+    },
+    {
+      "id": "proposal_procedure-wrong-type",
+      "operation": "cbor",
+      "type": "proposal_procedure",
+      "source": "synthetic decode rejection",
+      "input": {
+        "cbor": "f5"
+      },
+      "expected": {
+        "error": "decode_error",
+        "native_error": 300
+      }
+    },
+    {
+      "id": "proposal_procedure-truncated",
+      "operation": "cbor",
+      "type": "proposal_procedure",
+      "source": "synthetic decode rejection",
+      "input": {
+        "cbor": "841a000f4240581de1cb0ec2692497b458e46812c8a5bfa2931d1a2d965a99893828ec810f8400825820000000000000000000000000000000000000000000000000000000000000000003b81f0018640118c80219012c03190190041901f4051a001e8480061a0bebc200071903200819038409d81e8201020ad81e8201030bd81e8201040cd81e8201050d820158200000000000000000000000000000000000000000000000000000000000000000101903e8111988b812a20098a61a0003236119032c01011903e819023b00011903e8195e7104011903e818201a0001ca761928eb041959d818641959d818641959d818641959d818641959d818641959d81864186418641959d81864194c5118201a0002acfa182019b551041a000363151901ff00011a00015c3518201a000797751936f404021a0002ff941a0006ea7818dc0001011903e8196ff604021a0003bd081a00034ec5183e011a00102e0f19312a011a00032e801901a5011a0002da781903e819cf06011a00013a34182019a8f118201903e818201a00013aac0119e143041903e80a1a00030219189c011a00030219189c011a0003207c1901d9011a000330001901ff0119ccf3182019fd40182019ffd5182019581e18201940b318201a00012adf18201a0002ff941a0006ea7818dc0001011a00010f92192da7000119eabb18201a0002ff941a0006ea7818dc0001011a0002ff941a0006ea7818dc0001011a000c504e197712041a001d6af61a0001425b041a00040c660004001a00014fab18201a0003236119032c010119a0de18201a00033d7618201979f41820197fb8182019a95d1820197df718201995aa18201a0374f693194a1f0a0198af1a0003236119032c01011903e819023b00011903e8195e7104011903e818201a0001ca761928eb041959d818641959d818641959d818641959d818641959d818641959d81864186418641959d81864194c5118201a0002acfa182019b551041a000363151901ff00011a00015c3518201a000797751936f404021a0002ff941a0006ea7818dc0001011903e8196ff604021a0003bd081a00034ec5183e011a00102e0f19312a011a00032e801901a5011a0002da781903e819cf06011a00013a34182019a8f118201903e818201a00013aac0119e143041903e80a1a00030219189c011a00030219189c011a0003207c1901d9011a000330001901ff0119ccf3182019fd40182019ffd5182019581e18201940b318201a00012adf18201a0002ff941a0006ea7818dc0001011a00010f92192da7000119eabb18201a0002ff941a0006ea7818dc0001011a0002ff941a0006ea7818dc0001011a0011b22c1a0005fdde00021a000c504e197712041a001d6af61a0001425b041a00040c660004001a00014fab18201a0003236119032c010119a0de18201a00033d7618201979f41820197fb8182019a95d1820197df718201995aa18201a0223accc0a1a0374f693194a1f0a1a02515e841980b30a1382d81e820102d81e82010214821b00000001000000001b000000010000000015821b00000001000000001b0000000100000000161903ba1719035418181864181985d81e820000d81e820101d81e820202d81e820303d81e820101181a8ad81e820000d81e820101d81e820202d81e820303d81e820404d81e820505d81e820606d81e820707d81e820808d81e820909181b1864181c18c8181d19012c181e1903e8181f1907d01820191388581c8293d319ef5b3ac72366dd28006bd315b715f7e7cfcbd3004129b80d827668747470733a2f2f7777772e736f6d6575726c2e696f582000000000000000000000000000000000000000000000000000000000000000"
+      },
+      "expected": {
+        "error": "decode_error",
+        "native_error": 11
+      }
+    },
+    {
+      "id": "script-wrong-type",
+      "operation": "cbor",
+      "type": "script",
+      "source": "synthetic decode rejection",
+      "input": {
+        "cbor": "f5"
+      },
+      "expected": {
+        "error": "decode_error",
+        "native_error": 300
+      }
+    },
+    {
+      "id": "script-truncated",
+      "operation": "cbor",
+      "type": "script",
+      "source": "synthetic decode rejection",
+      "input": {
+        "cbor": "82014e4d010000332222200512001200"
+      },
+      "expected": {
+        "error": "decode_error",
+        "native_error": 11
+      }
+    },
+    {
+      "id": "sub_transaction-wrong-type",
+      "operation": "cbor",
+      "type": "sub_transaction",
+      "source": "synthetic decode rejection",
+      "input": {
+        "cbor": "f5"
+      },
+      "expected": {
+        "error": "decode_error",
+        "native_error": 300
+      }
+    },
+    {
+      "id": "sub_transaction-truncated",
+      "operation": "cbor",
+      "type": "sub_transaction",
+      "source": "synthetic decode rejection",
+      "input": {
+        "cbor": "83a200d90102800180a0"
+      },
+      "expected": {
+        "error": "decode_error",
+        "native_error": 11
+      }
+    },
+    {
+      "id": "transaction-wrong-type",
+      "operation": "cbor",
+      "type": "transaction",
+      "source": "synthetic decode rejection",
+      "input": {
+        "cbor": "f5"
+      },
+      "expected": {
+        "error": "decode_error",
+        "native_error": 11
+      }
+    },
+    {
+      "id": "transaction-truncated",
+      "operation": "cbor",
+      "type": "transaction",
+      "source": "synthetic decode rejection",
+      "input": {
+        "cbor": "84af00d90102818258200f3abbc8fc19c2e61bab6059bf8a466e6e754833a08a62a6c56fe0e78f19d9d5000181a2005839009493315cd92eb5d8c4304e67b7e16ae36d61d34502694657811a2c8e32c728d3861e164cab28cb8f006448139c8f1740ffb8e7aa9e5232dc01820aa3581c2a286ad895d091f2b3d168a6091ad2627d30a72761a5bc36eef00740a14014581c659f2917fb63f12b33667463ee575eeac1845bbc736b9c0bbc40ba82a14454534c411832581c7eae28af2208be856f7a119668ae52a49b73725e326dc16579dcc373a240182846504154415445181e020a031903e804d90102828304581c26b17b78de4f035dc0bfce60d1d3c3a8085c38dcce5fb8767e518bed1901f48405581c0d94e174732ef9aae73f395ab44507bfa983d65023c11a951f0c32e4581ca646474b8f5431261506b6c273d307c7569a4eb6c96b42dd4a29520a582003170a2e7597b7b7e3d84c05391d139a62b157e78786d8c082f29dcf4c11131405a1581de013cf55d175ea848b87deb3e914febd7e028e2bf6534475d52fb9c3d0050758202ceb364d93225b4a0f004a0975a13eb50c3cc6348474b4fe9121f8dc72ca0cfa08186409a3581c2a286ad895d091f2b3d168a6091ad2627d30a72761a5bc36eef00740a14014581c659f2917fb63f12b33667463ee575eeac1845bbc736b9c0bbc40ba82a14454534c413831581c7eae28af2208be856f7a119668ae52a49b73725e326dc16579dcc373a240182846504154415445181e0b58206199186adb51974690d7247d2646097d2c62763b16fb7ed3f9f55d38abc123de0dd90102818258200f3abbc8fc19c2e61bab6059bf8a466e6e754833a08a62a6c56fe0e78f19d9d5010ed9010281581c6199186adb51974690d7247d2646097d2c62763b16fb7ed3f9f55d3910a2005839009493315cd92eb5d8c4304e67b7e16ae36d61d34502694657811a2c8e32c728d3861e164cab28cb8f006448139c8f1740ffb8e7aa9e5232dc01820aa3581c2a286ad895d091f2b3d168a6091ad2627d30a72761a5bc36eef00740a14014581c659f2917fb63f12b33667463ee575eeac1845bbc736b9c0bbc40ba82a14454534c411832581c7eae28af2208be856f7a119668ae52a49b73725e326dc16579dcc373a240182846504154415445181e11186412d90102818258200f3abbc8fc19c2e61bab6059bf8a466e6e754833a08a62a6c56fe0e78f19d9d500a700d90102818258206199186adb51974690d7247d2646097d2c62763b767b528816fb7ed3f9f55d395840bdea87fca1b4b4df8a9b8fb4183c0fab2f8261eb6c5e4bc42c800bb9c8918755bdea87fca1b4b4df8a9b8fb4183c0fab2f8261eb6c5e4bc42c800bb9c891875501d90102868205186482041901f48200581cb5ae663aaea8e500157bdf4baafd6f5ba0ce5759f7cd4101fc132f548201818200581cb5ae663aaea8e500157bdf4baafd6f5ba0ce5759f7cd4101fc132f548202818200581cb5ae663aaea8e500157bdf4baafd6f5ba0ce5759f7cd4101fc132f54830301818200581cb5ae663aaea8e500157bdf4baafd6f5ba0ce5759f7cd4101fc132f5402d9010281845820deeb8f82f2af5836ebbc1b450b6dbf0b03c93afe5696f10d49e8a8304ebfac01584064676273786767746f6768646a7074657476746b636f6376796669647171676775726a687268716169697370717275656c6876797071786565777072796676775820b6dbf0b03c93afe5696f10d49e8a8304ebfac01deeb8f82f2af5836ebbc1b45041a003d90102815820b6dbf0b03c93afe5696f10d49e8a8304ebfac01deeb8f82f2af5836ebbc1b45004d9010281187b05a282010082d87a9f187bff82190bb8191b5882020182d87a9f187bff821913881907d006d90102815820b6dbf0b03c93afe5696f10d49e8a8304ebfac01deeb8f82f2af5836ebbc1b450f5d90103a100a6011904d20263737472039f1904d263737472ff0445627974657305a2667374726b6579187b9f676c6973746b6579ff6873747276616c756506"
+      },
+      "expected": {
+        "error": "decode_error",
+        "native_error": 11
+      }
+    },
+    {
+      "id": "transaction_body-wrong-type",
+      "operation": "cbor",
+      "type": "transaction_body",
+      "source": "synthetic decode rejection",
+      "input": {
+        "cbor": "f5"
+      },
+      "expected": {
+        "error": "decode_error",
+        "native_error": 11
+      }
+    },
+    {
+      "id": "transaction_body-truncated",
+      "operation": "cbor",
+      "type": "transaction_body",
+      "source": "synthetic decode rejection",
+      "input": {
+        "cbor": "b100818258200f3abbc8fc19c2e61bab6059bf8a466e6e754833a08a62a6c56fe0e78f19d9d5000181825839009493315cd92eb5d8c4304e67b7e16ae36d61d34502694657811a2c8e32c728d3861e164cab28cb8f006448139c8f1740ffb8e7aa9e5232dc820aa3581c2a286ad895d091f2b3d168a6091ad2627d30a72761a5bc36eef00740a14014581c659f2917fb63f12b33667463ee575eeac1845bbc736b9c0bbc40ba82a14454534c411832581c7eae28af2208be856f7a119668ae52a49b73725e326dc16579dcc373a240182846504154415445181e020a031903e804828304581c26b17b78de4f035dc0bfce60d1d3c3a8085c38dcce5fb8767e518bed1901f48405581c0d94e174732ef9aae73f395ab44507bfa983d65023c11a951f0c32e4581ca646474b8f5431261506b6c273d307c7569a4eb6c96b42dd4a29520a582003170a2e7597b7b7e3d84c05391d139a62b157e78786d8c082f29dcf4c11131405a2581de013cf55d175ea848b87deb3e914febd7e028e2bf6534475d52fb9c3d005581de0404b5a4088ae9abcf486a7e7b8f82069e6fcfe1bf226f1851ce72570030682a3581c00000000000000000000000000000000000000000000000000000001b60018640118c80219012c03190190041901f4051a001e8480061a0bebc200071903200819038409d81e8201020ad81e8201030bd81e8201040cd81e8201050d8201582000000000000000000000000000000000000000000000000000000000000000000e820103101903e8111988b812a10098a61a0003236119032c01011903e819023b00011903e8195e7104011903e818201a0001ca761928eb041959d818641959d818641959d818641959d818641959d818641959d81864186418641959d81864194c5118201a0002acfa182019b551041a000363151901ff00011a00015c3518201a000797751936f404021a0002ff941a0006ea7818dc0001011903e8196ff604021a0003bd081a00034ec5183e011a00102e0f19312a011a00032e801901a5011a0002da781903e819cf06011a00013a34182019a8f118201903e818201a00013aac0119e143041903e80a1a00030219189c011a00030219189c011a0003207c1901d9011a000330001901ff0119ccf3182019fd40182019ffd5182019581e18201940b318201a00012adf18201a0002ff941a0006ea7818dc0001011a00010f92192da7000119eabb18201a0002ff941a0006ea7818dc0001011a0002ff941a0006ea7818dc0001011a000c504e197712041a001d6af61a0001425b041a00040c660004001a00014fab18201a0003236119032c010119a0de18201a00033d7618201979f41820197fb8182019a95d1820197df718201995aa18201a0374f693194a1f0a1382d81e820102d81e82010214821b00000001000000001b000000010000000015821b00000001000000001b0000000100000000161903ba581c00000000000000000000000000000000000000000000000000000002b60018640118c80219012c03190190041901f4051a001e8480061a0bebc200071903200819038409d81e8201020ad81e8201030bd81e8201040cd81e8201050d8201582000000000000000000000000000000000000000000000000000000000000000000e820103101903e8111988b812a10098a61a0003236119032c01011903e819023b00011903e8195e7104011903e818201a0001ca761928eb041959d818641959d818641959d818641959d818641959d818641959d81864186418641959d81864194c5118201a0002acfa182019b551041a000363151901ff00011a00015c3518201a000797751936f404021a0002ff941a0006ea7818dc0001011903e8196ff604021a0003bd081a00034ec5183e011a00102e0f19312a011a00032e801901a5011a0002da781903e819cf06011a00013a34182019a8f118201903e818201a00013aac0119e143041903e80a1a00030219189c011a00030219189c011a0003207c1901d9011a000330001901ff0119ccf3182019fd40182019ffd5182019581e18201940b318201a00012adf18201a0002ff941a0006ea7818dc0001011a00010f92192da7000119eabb18201a0002ff941a0006ea7818dc0001011a0002ff941a0006ea7818dc0001011a000c504e197712041a001d6af61a0001425b041a00040c660004001a00014fab18201a0003236119032c010119a0de18201a00033d7618201979f41820197fb8182019a95d1820197df718201995aa18201a0374f693194a1f0a1382d81e820102d81e82010214821b00000001000000001b000000010000000015821b00000001000000001b0000000100000000161903ba581c00000000000000000000000000000000000000000000000000000003b60018640118c80219012c03190190041901f4051a001e8480061a0bebc200071903200819038409d81e8201020ad81e8201030bd81e8201040cd81e8201050d8201582000000000000000000000000000000000000000000000000000000000000000000e820103101903e8111988b812a10098a61a0003236119032c01011903e819023b00011903e8195e7104011903e818201a0001ca761928eb041959d818641959d818641959d818641959d818641959d818641959d81864186418641959d81864194c5118201a0002acfa182019b551041a000363151901ff00011a00015c3518201a000797751936f404021a0002ff941a0006ea7818dc0001011903e8196ff604021a0003bd081a00034ec5183e011a00102e0f19312a011a00032e801901a5011a0002da781903e819cf06011a00013a34182019a8f118201903e818201a00013aac0119e143041903e80a1a00030219189c011a00030219189c011a0003207c1901d9011a000330001901ff0119ccf3182019fd40182019ffd5182019581e18201940b318201a00012adf18201a0002ff941a0006ea7818dc0001011a00010f92192da7000119eabb18201a0002ff941a0006ea7818dc0001011a0002ff941a0006ea7818dc0001011a000c504e197712041a001d6af61a0001425b041a00040c660004001a00014fab18201a0003236119032c010119a0de18201a00033d7618201979f41820197fb8182019a95d1820197df718201995aa18201a0374f693194a1f0a1382d81e820102d81e82010214821b00000001000000001b000000010000000015821b00000001000000001b0000000100000000161903ba19020b0758202ceb364d93225b4a0f004a0975a13eb50c3cc6348474b4fe9121f8dc72ca0cfa08186409a3581c2a286ad895d091f2b3d168a6091ad2627d30a72761a5bc36eef00740a14014581c659f2917fb63f12b33667463ee575eeac1845bbc736b9c0bbc40ba82a14454534c413831581c7eae28af2208be856f7a119668ae52a49b73725e326dc16579dcc373a240182846504154415445181e0b58206199186adb51974690d7247d2646097d2c62763b16fb7ed3f9f55d38abc123de0d818258200f3abbc8fc19c2e61bab6059bf8a466e6e754833a08a62a6c56fe0e78f19d9d5010e81581c6199186adb51974690d7247d2646097d2c62763b16fb7ed3f9f55d390f0110825839009493315cd92eb5d8c4304e67b7e16ae36d61d34502694657811a2c8e32c728d3861e164cab28cb8f006448139c8f1740ffb8e7aa9e5232dc820aa3581c2a286ad895d091f2b3d168a6091ad2627d30a72761a5bc36eef00740a14014581c659f2917fb63f12b33667463ee575eeac1845bbc736b9c0bbc40ba82a14454534c411832581c7eae28af2208be856f7a119668ae52a49b73725e326dc16579dcc373a240182846504154415445181e11186412818258200f3abbc8fc19c2e61bab6059bf8a466e6e754833a08a62a6c56fe0e78f19d9d5"
+      },
+      "expected": {
+        "error": "decode_error",
+        "native_error": 11
+      }
+    },
+    {
+      "id": "transaction_input-wrong-type",
+      "operation": "cbor",
+      "type": "transaction_input",
+      "source": "synthetic decode rejection",
+      "input": {
+        "cbor": "f5"
+      },
+      "expected": {
+        "error": "decode_error",
+        "native_error": 300
+      }
+    },
+    {
+      "id": "transaction_input-truncated",
+      "operation": "cbor",
+      "type": "transaction_input",
+      "source": "synthetic decode rejection",
+      "input": {
+        "cbor": "8258200102030405060708090a0b0c0d0e0f0e0d0c0b0a090807060504030201001020"
+      },
+      "expected": {
+        "error": "decode_error",
+        "native_error": 11
+      }
+    },
+    {
+      "id": "transaction_output-wrong-type",
+      "operation": "cbor",
+      "type": "transaction_output",
+      "source": "synthetic decode rejection",
+      "input": {
+        "cbor": "f5"
+      },
+      "expected": {
+        "error": "decode_error",
+        "native_error": 11
+      }
+    },
+    {
+      "id": "transaction_output-truncated",
+      "operation": "cbor",
+      "type": "transaction_output",
+      "source": "synthetic decode rejection",
+      "input": {
+        "cbor": "a400583900537ba48a023f0a3c65e54977ffc2d78c143fb418ef6db058e006d78a7c16240714ea0e12b41a914f2945784ac494bb19573f0ca61a08afa801821a000f4240a2581c00000000000000000000000000000000000000000000000000000000a3443031323218644433343536186344404142420a581c11111111111111111111111111111111111111111111111111111111a3443031323218644433343536186344404142420a028201d81849d8799f0102030405ff03d8185182014e4d010000332222200512001200"
+      },
+      "expected": {
+        "error": "decode_error",
+        "native_error": 11
+      }
+    },
+    {
+      "id": "value-wrong-type",
+      "operation": "cbor",
+      "type": "value",
+      "source": "synthetic decode rejection",
+      "input": {
+        "cbor": "f5"
+      },
+      "expected": {
+        "error": "decode_error",
+        "native_error": 300
+      }
+    },
+    {
+      "id": "value-truncated",
+      "operation": "cbor",
+      "type": "value",
+      "source": "synthetic decode rejection",
+      "input": {
+        "cbor": "821a000f4240a2581c00000000000000000000000000000000000000000000000000000000a3443031323218644433343536186344404142420a581c11111111111111111111111111111111111111111111111111111111a344303132321864443334353618634440414242"
+      },
+      "expected": {
+        "error": "decode_error",
+        "native_error": 11
+      }
+    },
+    {
+      "id": "voting_procedures-wrong-type",
+      "operation": "cbor",
+      "type": "voting_procedures",
+      "source": "synthetic decode rejection",
+      "input": {
+        "cbor": "f5"
+      },
+      "expected": {
+        "error": "decode_error",
+        "native_error": 11
+      }
+    },
+    {
+      "id": "voting_procedures-truncated",
+      "operation": "cbor",
+      "type": "voting_procedures",
+      "source": "synthetic decode rejection",
+      "input": {
+        "cbor": "a28202581c10000000000000000000000000000000000000000000000000000000a38258201000000000000000000000000000000000000000000000000000000000000000038200827668747470733a2f2f7777772e736f6d6575726c2e696f582000000000000000000000000000000000000000000000000000000000000000008258202000000000000000000000000000000000000000000000000000000000000000038200827668747470733a2f2f7777772e736f6d6575726c2e696f582000000000000000000000000000000000000000000000000000000000000000008258203000000000000000000000000000000000000000000000000000000000000000038200827668747470733a2f2f7777772e736f6d6575726c2e696f582000000000000000000000000000000000000000000000000000000000000000008203581c20000000000000000000000000000000000000000000000000000000a28258201000000000000000000000000000000000000000000000000000000000000000038200827668747470733a2f2f7777772e736f6d6575726c2e696f582000000000000000000000000000000000000000000000000000000000000000008258203000000000000000000000000000000000000000000000000000000000000000038200827668747470733a2f2f7777772e736f6d6575726c2e696f582000000000000000000000000000000000000000000000000000000000000000"
+      },
+      "expected": {
+        "error": "decode_error",
+        "native_error": 11
+      }
+    }
+  ]
+}

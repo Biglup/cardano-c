@@ -1,7 +1,7 @@
 Unreleased
 ---------------------
 
-- Add a binding author guide covering idiomatic APIs, native ownership, callbacks, and lifecycle conformance, with shared transaction vectors checked by native tests.
+- Add a binding author guide covering idiomatic APIs, native ownership, callbacks, and lifecycle conformance, with a shared conformance corpus, deterministic builder recipes, native checks, and a portable binding-adapter runner.
 
 V2.0.0-rc.6
 ---------------------
