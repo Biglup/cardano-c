@@ -228,19 +228,17 @@ CARDANO_EXPORT cardano_error_t cardano_transaction_body_to_cbor(
  *
  * This function takes a Cardano transaction body structure and converts all its
  * components (inputs, outputs, fees, optional fields like collateral, mint, and governance data)
- * into a single JSON object string compliant with the CIP-116 specification.
+ * into a single JSON object using CIP-116 conventions and the Dijkstra guard representation.
  *
- * The \c required_signers field lists the key hash guards of the body. It is omitted when the body has
- * no key hash guard, so an empty guards set, or one that holds only script guards, adds no field.
+ * The \c guards field lists every guard as a credential tagged pubkey_hash or script_hash.
+ * It is omitted when the guards set is absent or empty. This representation is used for both
+ * Conway key-only guards and Dijkstra guards; the legacy required_signers JSON field is not emitted.
  *
  * Dijkstra fields include sub_transactions, required_top_level_guards, direct_deposits,
- * account_balance_intervals and starting_account_balance_intervals. Nested bodies retain
+ * account_balance_intervals and starting_account_balance_intervals. Nested transactions retain
  * their own witnesses and auxiliary data. Maps use arrays of key/value objects and lovelace
  * amounts use decimal strings. Balance intervals use tagged exact/range objects with null
  * bounds when unbounded.
- *
- * Key-hash guards retain the required_signers view for Conway compatibility. When script
- * guards are present, guards also contains the complete credential set.
  *
  * \param[in]  body    Pointer to the valid \ref cardano_transaction_body_t object to be serialized.
  * \param[in]  writer  Pointer to the active \ref cardano_json_writer_t instance where the JSON output will be written.

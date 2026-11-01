@@ -2248,27 +2248,8 @@ cardano_transaction_body_to_cip116_json(const cardano_transaction_body_t* transa
 
   if (cardano_body_has_guards(transaction_body->guards))
   {
-    cardano_blake2b_hash_set_t* required_signers = get_key_hash_guards(transaction_body->guards);
-
-    if (required_signers == NULL)
-    {
-      return CARDANO_ERROR_MEMORY_ALLOCATION_FAILED;
-    }
-
-    if (cardano_blake2b_hash_set_get_length(required_signers) > 0U)
-    {
-      cardano_json_writer_write_property_name(writer, "required_signers", 16);
-      result = cardano_blake2b_hash_set_to_cip116_json(required_signers, writer);
-    }
-
-    const bool has_script_guards = cardano_blake2b_hash_set_get_length(required_signers) != cardano_guard_set_get_length(transaction_body->guards);
-    cardano_blake2b_hash_set_unref(&required_signers);
-
-    if ((result == CARDANO_SUCCESS) && has_script_guards)
-    {
-      cardano_json_writer_write_property_name(writer, "guards", 6);
-      result = cardano_guard_set_to_cip116_json(transaction_body->guards, writer);
-    }
+    cardano_json_writer_write_property_name(writer, "guards", 6);
+    result = cardano_guard_set_to_cip116_json(transaction_body->guards, writer);
 
     if (result != CARDANO_SUCCESS)
     {
