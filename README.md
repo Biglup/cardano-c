@@ -205,8 +205,6 @@ holding a reference-the object gets deallocated.
 
 Note that **all** getter functions will consistently increment the reference count of the object they return. Thus, it's the caller's responsibility to invoke `*_unref` once they're done using the result.
 
-For independent copies of native values, see the [deep-copy API guide](DEEP_CLONE.md).
-
 ## WebAssembly builds
 
 The WASM release exports the Emscripten runtime methods used by JavaScript bindings, including `addFunction` and `removeFunction`. Function-table growth is enabled so bindings can register deferred redeemer callbacks. WASM builds reserve a 5 MiB stack for native Plutus evaluation and check for stack overflow. Remove registered callbacks when their owning builder is released.
