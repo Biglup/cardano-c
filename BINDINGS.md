@@ -4,11 +4,15 @@
 
 Cometa bindings must feel like libraries written in their target language.
 Use that language's naming, value types, collections, errors, concurrency model,
-and established design patterns. C declarations are an internal implementation
-layer, not the public API design.
+and established design patterns. The public cardano-c API defines the coverage
+baseline: provide an idiomatic equivalent of each public domain type, enum, and
+operation. C naming and calling conventions do not dictate the public API design.
 
-Transactions, addresses, assets, protocol parameters, and inspection results
-should be language-owned values. Preserve integers exactly, including unsigned
+Represent domain types using the target language's classes, structs, enums,
+tagged unions, records, or plain objects as appropriate. A class that encapsulates
+a native object is valid when its ownership is automatic and its interface is
+natural in that language. Plain objects with internal marshaling are equally
+valid where they fit the language better. Preserve integers exactly, including unsigned
 64-bit amounts and arbitrary-precision Plutus integers. Use appropriate integer
 or decimal types; never route these through floating-point numbers. Distinguish
 missing values, null values, zero, and empty collections when the protocol does.
@@ -22,9 +26,11 @@ Use builders for constructing transactions, with explicit validation and errors.
 
 Users must not manage C pointers, reference counts, or native allocations.
 Do not require disposal of ordinary domain values or builders merely because
-cardano-c is used underneath. Prefer builders that accumulate language-owned
-state and marshal during build. Native allocations belong to an internal scope
-that is cleaned up on success, error, exception, or cancellation.
+cardano-c is used underneath. Builders may own native state internally or
+accumulate language-owned state and marshal during build. Choose according to
+the language's lifetime model and API conventions. Encapsulate persistent native
+ownership and clean up operation-scoped allocations on success, error, exception,
+or cancellation.
 
 Language conventions still apply: C++ RAII, Ada controlled types, and Zig/Odin
 allocators and scoped cleanup can express ownership naturally. Managed-language
@@ -49,9 +55,41 @@ native release and test the actual binaries distributed to users. Share the
 conformance corpus across bindings; do not generate expected results using the
 binding under test during its test run.
 
-The existing Cometa.js and Cometa.py implementations provide behavioral examples
-and regression cases. They are not normative public API templates: new bindings
-must not reproduce their historical pointer wrappers or cleanup requirements.
+Cometa.py is the closer structural reference for organizing bindings around
+cardano-c types, enums, and their operations. Adapt that structure to the target
+language rather than copying Python syntax or assuming its implementation is
+complete. Cometa.js illustrates an alternative for languages where domain values
+are better represented as plain objects with marshaling hidden underneath.
+Neither binding overrides the native API contract or the ownership requirements
+in this guide.
+
+## API coverage
+
+Inventory the public headers for the pinned native release. Map every public
+domain type, enum, and function to a target-language API and its behavioral tests.
+Keep this inventory with the binding and update it when the native dependency
+changes. Record supported, intentionally internal, and unsupported entries, with
+a reason for every omission. Passing the conformance corpus does not establish
+complete API coverage.
+
+Preserve the capabilities of each type while adapting their presentation:
+constructors and parsers may become constructors or factories; getters and setters
+may become properties; collection operations may become standard collection
+interfaces; related functions may become methods, traits, or module functions.
+Several C functions may map to one idiomatic operation. Cover every enum variant
+and preserve its meaning, with an explicit policy for unknown values encountered
+when decoding newer data.
+
+Reference counting, raw buffer allocation, pointer access, and ABI callback
+registration belong inside the binding. They do not need public equivalents.
+Translate error codes and error-message access into the language's normal error
+mechanism. Document these internal mappings in the inventory so that hiding
+memory management is distinguishable from missing domain functionality.
+
+Use Cometa.py and Cometa.js as implementation references and sources of regression
+cases, not as the list of features a new binding must support. A convenience
+builder API must not become the only route to functionality that cardano-c makes
+available through its domain types.
 
 ## The native memory model
 
@@ -255,6 +293,8 @@ fixture pass must not be advertised as lifecycle conformance.
 
 * Pin the native release, fixture revision, compiler/runtime versions, and native
   artifact checksums. Test installed packages on every supported platform.
+* Review the API coverage inventory against the pinned public headers. Include
+  types, enum variants, and operations beyond those exercised by the corpus.
 * Run the shared fixtures through the public API and the lifecycle scenarios.
   Report unsupported features explicitly; do not silently skip them.
 * Verify symbols and callback layouts against the shipped binary, including
@@ -285,5 +325,7 @@ reference counts to users. Add tests for the runtime's GC, exceptions, async
 cancellation, concurrency, and packaging. See the
 [porting checklist](lib/tests/vectors/bindings/v1/FORMAT.md#porting-unit-tests).
 
-The corpus is a release gate for covered behavior, not proof that every feature
-or input is correct. Keep the binding's own unit suite and integration tests.
+The corpus is a release gate for covered behavior, not proof of complete API
+coverage or correctness for every input. Use the API coverage inventory to find
+untested types and operations, port their behavioral tests, and keep the binding's
+own unit suite and integration tests.

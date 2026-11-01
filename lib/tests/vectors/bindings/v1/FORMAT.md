@@ -177,6 +177,9 @@ cleanup or retained-value test. Add target-language tests for exceptions, async
 cancellation, GC, thread boundaries, packaging, and integer conversions.
 
 Golden vectors establish agreement with cardano-c for the covered operations.
-They do not replace the native unit suite, prove every possible input correct,
-or establish ledger acceptance. A new public binding feature should bring its
+They do not prove complete API coverage, replace the native unit suite, prove
+every possible input correct, or establish ledger acceptance. Maintain a mapping
+from public cardano-c types, enum variants, and functions to idiomatic binding
+APIs and tests, including operations absent from this corpus. Record intentional
+internal mappings and unsupported features explicitly. A new public binding feature should bring its
 behavioral tests and, where portable, an additional corpus case.
