@@ -1,0 +1,1129 @@
+{
+  "schema_version": 1,
+  "native_version": "2.0.0-rc.6",
+  "config": {
+    "parameters": {
+      "min_fee_a": "44",
+      "min_fee_b": "155381",
+      "max_tx_size": "16384",
+      "max_value_size": "5000",
+      "ada_per_utxo_byte": "4310",
+      "collateral_percentage": "150",
+      "max_collateral_inputs": "3",
+      "key_deposit": "2000000",
+      "pool_deposit": "500000000"
+    },
+    "protocol_version": [
+      12,
+      0
+    ],
+    "max_tx_ex_units": {
+      "memory": "14000000",
+      "steps": "10000000000"
+    },
+    "execution_prices": {
+      "memory": [
+        "1",
+        "1"
+      ],
+      "steps": [
+        "2",
+        "1"
+      ]
+    },
+    "plutus_v4_costs": [
+      205665,
+      812,
+      1,
+      1,
+      1000,
+      571,
+      0,
+      1,
+      1000,
+      24177,
+      4,
+      1,
+      1000,
+      32,
+      117366,
+      10475,
+      4,
+      23000,
+      100,
+      23000,
+      100,
+      23000,
+      100,
+      23000,
+      100,
+      23000,
+      100,
+      23000,
+      100,
+      100,
+      100,
+      23000,
+      100,
+      19537,
+      32,
+      175354,
+      32,
+      46417,
+      4,
+      221973,
+      511,
+      0,
+      1,
+      89141,
+      32,
+      497525,
+      14068,
+      4,
+      2,
+      196500,
+      453240,
+      220,
+      0,
+      1,
+      1,
+      1000,
+      28662,
+      4,
+      2,
+      245000,
+      216773,
+      62,
+      1,
+      1060367,
+      12586,
+      1,
+      208512,
+      421,
+      1,
+      187000,
+      1000,
+      52998,
+      1,
+      80436,
+      32,
+      43249,
+      32,
+      1000,
+      32,
+      80556,
+      1,
+      57667,
+      4,
+      1000,
+      10,
+      197145,
+      156,
+      1,
+      197145,
+      156,
+      1,
+      204924,
+      473,
+      1,
+      208896,
+      511,
+      1,
+      52467,
+      32,
+      64832,
+      32,
+      65493,
+      32,
+      22558,
+      32,
+      16563,
+      32,
+      76511,
+      32,
+      196500,
+      453240,
+      220,
+      0,
+      1,
+      1,
+      69522,
+      11687,
+      0,
+      1,
+      60091,
+      32,
+      196500,
+      453240,
+      220,
+      0,
+      1,
+      1,
+      196500,
+      453240,
+      220,
+      0,
+      1,
+      1,
+      1159724,
+      392670,
+      0,
+      2,
+      806990,
+      30482,
+      4,
+      1927926,
+      82523,
+      4,
+      265318,
+      0,
+      4,
+      0,
+      85931,
+      32,
+      205665,
+      812,
+      1,
+      1,
+      41182,
+      32,
+      212342,
+      32,
+      31220,
+      32,
+      32696,
+      32,
+      43357,
+      32,
+      32247,
+      32,
+      38314,
+      32,
+      35892428,
+      10,
+      57996947,
+      18975,
+      10,
+      38887044,
+      32947,
+      10,
+      1,
+      2,
+      3,
+      4
+    ],
+    "slot_config": {
+      "zero_time": "1666656000000",
+      "zero_slot": "0",
+      "slot_length": "1000"
+    }
+  },
+  "cases": [
+    {
+      "id": "conway-payment",
+      "operation": "build",
+      "type": "transaction",
+      "input": {
+        "steps": [
+          {
+            "op": "send",
+            "address": "addr_test1vqg3zyg3zyg3zyg3zyg3zyg3zyg3zyg3zyg3zyg3zyg3zygxrcya6",
+            "amount": "2000000"
+          }
+        ],
+        "utxos": [
+          {
+            "tx_id": "0101010101010101010101010101010101010101010101010101010101010101",
+            "index": 0,
+            "address": "addr_test1vqg3zyg3zyg3zyg3zyg3zyg3zyg3zyg3zyg3zyg3zyg3zygxrcya6",
+            "coins": "100000000"
+          }
+        ],
+        "change_address": "addr_test1vqg3zyg3zyg3zyg3zyg3zyg3zyg3zyg3zyg3zyg3zyg3zygxrcya6",
+        "protocol_version": [
+          9,
+          0
+        ]
+      },
+      "expected": {
+        "cbor": "84a300d90102818258200101010101010101010101010101010101010101010101010101010101010101000182a200581d6011111111111111111111111111111111111111111111111111111111011a001e8480a200581d6011111111111111111111111111111111111111111111111111111111011a05d4d4a3021a000287dda0f5f6",
+        "inspection": {
+          "body": {
+            "inputs": [
+              {
+                "transaction_id": "0101010101010101010101010101010101010101010101010101010101010101",
+                "index": 0
+              }
+            ],
+            "outputs": [
+              {
+                "address": "addr_test1vqg3zyg3zyg3zyg3zyg3zyg3zyg3zyg3zyg3zyg3zyg3zygxrcya6",
+                "amount": {
+                  "coin": "2000000"
+                }
+              },
+              {
+                "address": "addr_test1vqg3zyg3zyg3zyg3zyg3zyg3zyg3zyg3zyg3zyg3zyg3zygxrcya6",
+                "amount": {
+                  "coin": "97834147"
+                }
+              }
+            ],
+            "fee": "165853"
+          },
+          "is_valid": true,
+          "witness_set": {}
+        },
+        "callback_invoked": false
+      }
+    },
+    {
+      "id": "account-deposit",
+      "operation": "build",
+      "type": "transaction",
+      "input": {
+        "steps": [
+          {
+            "op": "send",
+            "address": "addr_test1vqg3zyg3zyg3zyg3zyg3zyg3zyg3zyg3zyg3zyg3zyg3zygxrcya6",
+            "amount": "2000000"
+          },
+          {
+            "op": "deposit",
+            "address": "stake_test1uqg3zyg3zyg3zyg3zyg3zyg3zyg3zyg3zyg3zyg3zyg3zygxtxu2s",
+            "amount": "1000000"
+          }
+        ],
+        "utxos": [
+          {
+            "tx_id": "0101010101010101010101010101010101010101010101010101010101010101",
+            "index": 0,
+            "address": "addr_test1vqg3zyg3zyg3zyg3zyg3zyg3zyg3zyg3zyg3zyg3zyg3zygxrcya6",
+            "coins": "100000000"
+          }
+        ],
+        "change_address": "addr_test1vqg3zyg3zyg3zyg3zyg3zyg3zyg3zyg3zyg3zyg3zyg3zygxrcya6"
+      },
+      "expected": {
+        "cbor": "84a400d90102818258200101010101010101010101010101010101010101010101010101010101010101000182a200581d6011111111111111111111111111111111111111111111111111111111011a001e8480a200581d6011111111111111111111111111111111111111111111111111111111011a05c58baf021a00028e911819a1581de0111111111111111111111111111111111111111111111111111111111a000f4240a0f5f6",
+        "inspection": {
+          "body": {
+            "inputs": [
+              {
+                "transaction_id": "0101010101010101010101010101010101010101010101010101010101010101",
+                "index": 0
+              }
+            ],
+            "outputs": [
+              {
+                "address": "addr_test1vqg3zyg3zyg3zyg3zyg3zyg3zyg3zyg3zyg3zyg3zyg3zygxrcya6",
+                "amount": {
+                  "coin": "2000000"
+                }
+              },
+              {
+                "address": "addr_test1vqg3zyg3zyg3zyg3zyg3zyg3zyg3zyg3zyg3zyg3zyg3zygxrcya6",
+                "amount": {
+                  "coin": "96832431"
+                }
+              }
+            ],
+            "fee": "167569",
+            "direct_deposits": [
+              {
+                "key": "stake_test1uqg3zyg3zyg3zyg3zyg3zyg3zyg3zyg3zyg3zyg3zyg3zygxtxu2s",
+                "value": "1000000"
+              }
+            ]
+          },
+          "is_valid": true,
+          "witness_set": {}
+        },
+        "callback_invoked": false
+      }
+    },
+    {
+      "id": "account-transfer",
+      "operation": "build",
+      "type": "transaction",
+      "input": {
+        "steps": [
+          {
+            "op": "withdraw",
+            "address": "stake_test1uqg3zyg3zyg3zyg3zyg3zyg3zyg3zyg3zyg3zyg3zyg3zygxtxu2s",
+            "amount": "1000000"
+          },
+          {
+            "op": "deposit",
+            "address": "stake_test1uq3zyg3zyg3zyg3zyg3zyg3zyg3zyg3zyg3zyg3zyg3zygsw4fsh7",
+            "amount": "1000000"
+          }
+        ],
+        "utxos": [
+          {
+            "tx_id": "0101010101010101010101010101010101010101010101010101010101010101",
+            "index": 0,
+            "address": "addr_test1vqg3zyg3zyg3zyg3zyg3zyg3zyg3zyg3zyg3zyg3zyg3zygxrcya6",
+            "coins": "100000000"
+          }
+        ],
+        "change_address": "addr_test1vqg3zyg3zyg3zyg3zyg3zyg3zyg3zyg3zyg3zyg3zyg3zygxrcya6"
+      },
+      "expected": {
+        "cbor": "84a500d90102818258200101010101010101010101010101010101010101010101010101010101010101000181a200581d6011111111111111111111111111111111111111111111111111111111011a05f3529b021a00028e6505a1581de0111111111111111111111111111111111111111111111111111111111a000f42401819a1581de0222222222222222222222222222222222222222222222222222222221a000f4240a0f5f6",
+        "inspection": {
+          "body": {
+            "inputs": [
+              {
+                "transaction_id": "0101010101010101010101010101010101010101010101010101010101010101",
+                "index": 0
+              }
+            ],
+            "outputs": [
+              {
+                "address": "addr_test1vqg3zyg3zyg3zyg3zyg3zyg3zyg3zyg3zyg3zyg3zyg3zygxrcya6",
+                "amount": {
+                  "coin": "99832475"
+                }
+              }
+            ],
+            "fee": "167525",
+            "withdrawals": [
+              {
+                "key": "stake_test1uqg3zyg3zyg3zyg3zyg3zyg3zyg3zyg3zyg3zyg3zyg3zygxtxu2s",
+                "value": "1000000"
+              }
+            ],
+            "direct_deposits": [
+              {
+                "key": "stake_test1uq3zyg3zyg3zyg3zyg3zyg3zyg3zyg3zyg3zyg3zyg3zygsw4fsh7",
+                "value": "1000000"
+              }
+            ]
+          },
+          "is_valid": true,
+          "witness_set": {}
+        },
+        "callback_invoked": false
+      }
+    },
+    {
+      "id": "account-balances",
+      "operation": "build",
+      "type": "transaction",
+      "input": {
+        "steps": [
+          {
+            "op": "send",
+            "address": "addr_test1vqg3zyg3zyg3zyg3zyg3zyg3zyg3zyg3zyg3zyg3zyg3zygxrcya6",
+            "amount": "2000000"
+          },
+          {
+            "op": "balance",
+            "address": "stake_test1uqg3zyg3zyg3zyg3zyg3zyg3zyg3zyg3zyg3zyg3zyg3zygxtxu2s",
+            "lower": "0",
+            "upper": "100000000"
+          },
+          {
+            "op": "starting_balance",
+            "address": "stake_test1uqg3zyg3zyg3zyg3zyg3zyg3zyg3zyg3zyg3zyg3zyg3zygxtxu2s",
+            "exact": "0"
+          }
+        ],
+        "utxos": [
+          {
+            "tx_id": "0101010101010101010101010101010101010101010101010101010101010101",
+            "index": 0,
+            "address": "addr_test1vqg3zyg3zyg3zyg3zyg3zyg3zyg3zyg3zyg3zyg3zyg3zygxrcya6",
+            "coins": "100000000"
+          }
+        ],
+        "change_address": "addr_test1vqg3zyg3zyg3zyg3zyg3zyg3zyg3zyg3zyg3zyg3zyg3zygxrcya6"
+      },
+      "expected": {
+        "cbor": "84a500d90102818258200101010101010101010101010101010101010101010101010101010101010101000182a200581d6011111111111111111111111111111111111111111111111111111111011a001e8480a200581d6011111111111111111111111111111111111111111111111111111111011a05d4c793021a000294ed181aa1581de01111111111111111111111111111111111111111111111111111111182001a05f5e100181ba1581de01111111111111111111111111111111111111111111111111111111100a0f5f6",
+        "inspection": {
+          "body": {
+            "inputs": [
+              {
+                "transaction_id": "0101010101010101010101010101010101010101010101010101010101010101",
+                "index": 0
+              }
+            ],
+            "outputs": [
+              {
+                "address": "addr_test1vqg3zyg3zyg3zyg3zyg3zyg3zyg3zyg3zyg3zyg3zyg3zygxrcya6",
+                "amount": {
+                  "coin": "2000000"
+                }
+              },
+              {
+                "address": "addr_test1vqg3zyg3zyg3zyg3zyg3zyg3zyg3zyg3zyg3zyg3zyg3zygxrcya6",
+                "amount": {
+                  "coin": "97830803"
+                }
+              }
+            ],
+            "fee": "169197",
+            "account_balance_intervals": [
+              {
+                "key": "stake_test1uqg3zyg3zyg3zyg3zyg3zyg3zyg3zyg3zyg3zyg3zyg3zygxtxu2s",
+                "value": {
+                  "tag": "range",
+                  "inclusive_lower_bound": "0",
+                  "exclusive_upper_bound": "100000000"
+                }
+              }
+            ],
+            "starting_account_balance_intervals": [
+              {
+                "key": "stake_test1uqg3zyg3zyg3zyg3zyg3zyg3zyg3zyg3zyg3zyg3zyg3zygxtxu2s",
+                "value": {
+                  "tag": "exact",
+                  "value": "0"
+                }
+              }
+            ]
+          },
+          "is_valid": true,
+          "witness_set": {}
+        },
+        "callback_invoked": false
+      }
+    },
+    {
+      "id": "guard-sub",
+      "operation": "build",
+      "type": "sub_transaction",
+      "input": {
+        "steps": [
+          {
+            "op": "send",
+            "address": "addr_test1vqg3zyg3zyg3zyg3zyg3zyg3zyg3zyg3zyg3zyg3zyg3zygxrcya6",
+            "amount": "2000000"
+          },
+          {
+            "op": "guard",
+            "kind": "key",
+            "hash": "11111111111111111111111111111111111111111111111111111111"
+          },
+          {
+            "op": "require_guard",
+            "kind": "key",
+            "hash": "11111111111111111111111111111111111111111111111111111111"
+          }
+        ],
+        "signing_seed": "000102030405060708090a0b0c0d0e0f101112131415161718191a1b1c1d1e1f"
+      },
+      "expected": {
+        "cbor": "83a400d90102800181a200581d6011111111111111111111111111111111111111111111111111111111011a001e84800ed9010281581c111111111111111111111111111111111111111111111111111111111818a18200581c11111111111111111111111111111111111111111111111111111111f6a100d901028182582003a107bff3ce10be1d70dd18e74bc09967e4d6309ba50d5f1ddc8664125531b85840a243107e4214cf8d509831308dc17b33ccc44b75228d4129203fe6a9ccf4d7732c8649bce8ad1fedc79ddf34e22db7902d4d9c45fda8d07902bd4bdb6d07f601f6",
+        "inspection": {
+          "body": {
+            "inputs": [],
+            "outputs": [
+              {
+                "address": "addr_test1vqg3zyg3zyg3zyg3zyg3zyg3zyg3zyg3zyg3zyg3zyg3zygxrcya6",
+                "amount": {
+                  "coin": "2000000"
+                }
+              }
+            ],
+            "guards": [
+              {
+                "tag": "pubkey_hash",
+                "value": "11111111111111111111111111111111111111111111111111111111"
+              }
+            ],
+            "required_top_level_guards": [
+              {
+                "key": {
+                  "tag": "pubkey_hash",
+                  "value": "11111111111111111111111111111111111111111111111111111111"
+                },
+                "value": null
+              }
+            ]
+          },
+          "witness_set": {
+            "vkey_witnesses": [
+              {
+                "vkey": "03a107bff3ce10be1d70dd18e74bc09967e4d6309ba50d5f1ddc8664125531b8",
+                "signature": "a243107e4214cf8d509831308dc17b33ccc44b75228d4129203fe6a9ccf4d7732c8649bce8ad1fedc79ddf34e22db7902d4d9c45fda8d07902bd4bdb6d07f601"
+              }
+            ]
+          }
+        },
+        "callback_invoked": false
+      }
+    },
+    {
+      "id": "guard-sub-second",
+      "operation": "build",
+      "type": "sub_transaction",
+      "input": {
+        "steps": [
+          {
+            "op": "send",
+            "address": "addr_test1vqg3zyg3zyg3zyg3zyg3zyg3zyg3zyg3zyg3zyg3zyg3zygxrcya6",
+            "amount": "3000000"
+          },
+          {
+            "op": "guard",
+            "kind": "key",
+            "hash": "11111111111111111111111111111111111111111111111111111111"
+          },
+          {
+            "op": "require_guard",
+            "kind": "key",
+            "hash": "11111111111111111111111111111111111111111111111111111111"
+          }
+        ],
+        "signing_seed": "0102030405060708090a0b0c0d0e0f101112131415161718191a1b1c1d1e1f20"
+      },
+      "expected": {
+        "cbor": "83a400d90102800181a200581d6011111111111111111111111111111111111111111111111111111111011a002dc6c00ed9010281581c111111111111111111111111111111111111111111111111111111111818a18200581c11111111111111111111111111111111111111111111111111111111f6a100d901028182582079b5562e8fe654f94078b112e8a98ba7901f853ae695bed7e0e3910bad04966458400f7563d0639dfcdb479f681c1255545f839305af9da99f4ab05b3338c8a1411dfcdff963e3625378e4c301d4f9a9145865199df8c446614f563dba1a844db905f6",
+        "inspection": {
+          "body": {
+            "inputs": [],
+            "outputs": [
+              {
+                "address": "addr_test1vqg3zyg3zyg3zyg3zyg3zyg3zyg3zyg3zyg3zyg3zyg3zygxrcya6",
+                "amount": {
+                  "coin": "3000000"
+                }
+              }
+            ],
+            "guards": [
+              {
+                "tag": "pubkey_hash",
+                "value": "11111111111111111111111111111111111111111111111111111111"
+              }
+            ],
+            "required_top_level_guards": [
+              {
+                "key": {
+                  "tag": "pubkey_hash",
+                  "value": "11111111111111111111111111111111111111111111111111111111"
+                },
+                "value": null
+              }
+            ]
+          },
+          "witness_set": {
+            "vkey_witnesses": [
+              {
+                "vkey": "79b5562e8fe654f94078b112e8a98ba7901f853ae695bed7e0e3910bad049664",
+                "signature": "0f7563d0639dfcdb479f681c1255545f839305af9da99f4ab05b3338c8a1411dfcdff963e3625378e4c301d4f9a9145865199df8c446614f563dba1a844db905"
+              }
+            ]
+          }
+        },
+        "callback_invoked": false
+      }
+    },
+    {
+      "id": "signed-batch",
+      "operation": "build",
+      "type": "transaction",
+      "input": {
+        "steps": [
+          {
+            "op": "guard",
+            "kind": "key",
+            "hash": "11111111111111111111111111111111111111111111111111111111"
+          },
+          {
+            "op": "sub_transaction",
+            "recipe": "guard-sub"
+          },
+          {
+            "op": "sub_transaction",
+            "recipe": "guard-sub-second"
+          }
+        ],
+        "utxos": [
+          {
+            "tx_id": "0101010101010101010101010101010101010101010101010101010101010101",
+            "index": 0,
+            "address": "addr_test1vqg3zyg3zyg3zyg3zyg3zyg3zyg3zyg3zyg3zyg3zyg3zygxrcya6",
+            "coins": "100000000"
+          }
+        ],
+        "change_address": "addr_test1vqg3zyg3zyg3zyg3zyg3zyg3zyg3zyg3zyg3zyg3zyg3zygxrcya6"
+      },
+      "expected": {
+        "cbor": "84a500d90102818258200101010101010101010101010101010101010101010101010101010101010101000181a200581d6011111111111111111111111111111111111111111111111111111111011a05a6bfaf021a0002d6110ed9010281581c1111111111111111111111111111111111111111111111111111111117d901028283a400d90102800181a200581d6011111111111111111111111111111111111111111111111111111111011a001e84800ed9010281581c111111111111111111111111111111111111111111111111111111111818a18200581c11111111111111111111111111111111111111111111111111111111f6a100d901028182582003a107bff3ce10be1d70dd18e74bc09967e4d6309ba50d5f1ddc8664125531b85840a243107e4214cf8d509831308dc17b33ccc44b75228d4129203fe6a9ccf4d7732c8649bce8ad1fedc79ddf34e22db7902d4d9c45fda8d07902bd4bdb6d07f601f683a400d90102800181a200581d6011111111111111111111111111111111111111111111111111111111011a002dc6c00ed9010281581c111111111111111111111111111111111111111111111111111111111818a18200581c11111111111111111111111111111111111111111111111111111111f6a100d901028182582079b5562e8fe654f94078b112e8a98ba7901f853ae695bed7e0e3910bad04966458400f7563d0639dfcdb479f681c1255545f839305af9da99f4ab05b3338c8a1411dfcdff963e3625378e4c301d4f9a9145865199df8c446614f563dba1a844db905f6a0f5f6",
+        "inspection": {
+          "body": {
+            "inputs": [
+              {
+                "transaction_id": "0101010101010101010101010101010101010101010101010101010101010101",
+                "index": 0
+              }
+            ],
+            "outputs": [
+              {
+                "address": "addr_test1vqg3zyg3zyg3zyg3zyg3zyg3zyg3zyg3zyg3zyg3zyg3zygxrcya6",
+                "amount": {
+                  "coin": "94814127"
+                }
+              }
+            ],
+            "fee": "185873",
+            "guards": [
+              {
+                "tag": "pubkey_hash",
+                "value": "11111111111111111111111111111111111111111111111111111111"
+              }
+            ],
+            "sub_transactions": [
+              {
+                "body": {
+                  "inputs": [],
+                  "outputs": [
+                    {
+                      "address": "addr_test1vqg3zyg3zyg3zyg3zyg3zyg3zyg3zyg3zyg3zyg3zyg3zygxrcya6",
+                      "amount": {
+                        "coin": "2000000"
+                      }
+                    }
+                  ],
+                  "guards": [
+                    {
+                      "tag": "pubkey_hash",
+                      "value": "11111111111111111111111111111111111111111111111111111111"
+                    }
+                  ],
+                  "required_top_level_guards": [
+                    {
+                      "key": {
+                        "tag": "pubkey_hash",
+                        "value": "11111111111111111111111111111111111111111111111111111111"
+                      },
+                      "value": null
+                    }
+                  ]
+                },
+                "witness_set": {
+                  "vkey_witnesses": [
+                    {
+                      "vkey": "03a107bff3ce10be1d70dd18e74bc09967e4d6309ba50d5f1ddc8664125531b8",
+                      "signature": "a243107e4214cf8d509831308dc17b33ccc44b75228d4129203fe6a9ccf4d7732c8649bce8ad1fedc79ddf34e22db7902d4d9c45fda8d07902bd4bdb6d07f601"
+                    }
+                  ]
+                }
+              },
+              {
+                "body": {
+                  "inputs": [],
+                  "outputs": [
+                    {
+                      "address": "addr_test1vqg3zyg3zyg3zyg3zyg3zyg3zyg3zyg3zyg3zyg3zyg3zygxrcya6",
+                      "amount": {
+                        "coin": "3000000"
+                      }
+                    }
+                  ],
+                  "guards": [
+                    {
+                      "tag": "pubkey_hash",
+                      "value": "11111111111111111111111111111111111111111111111111111111"
+                    }
+                  ],
+                  "required_top_level_guards": [
+                    {
+                      "key": {
+                        "tag": "pubkey_hash",
+                        "value": "11111111111111111111111111111111111111111111111111111111"
+                      },
+                      "value": null
+                    }
+                  ]
+                },
+                "witness_set": {
+                  "vkey_witnesses": [
+                    {
+                      "vkey": "79b5562e8fe654f94078b112e8a98ba7901f853ae695bed7e0e3910bad049664",
+                      "signature": "0f7563d0639dfcdb479f681c1255545f839305af9da99f4ab05b3338c8a1411dfcdff963e3625378e4c301d4f9a9145865199df8c446614f563dba1a844db905"
+                    }
+                  ]
+                }
+              }
+            ]
+          },
+          "is_valid": true,
+          "witness_set": {}
+        },
+        "callback_invoked": false
+      }
+    },
+    {
+      "id": "deferred-spend",
+      "operation": "build",
+      "type": "sub_transaction",
+      "input": {
+        "steps": [
+          {
+            "op": "script",
+            "language": "plutus_v4",
+            "bytes": "450100002499"
+          },
+          {
+            "op": "input",
+            "utxo": {
+              "tx_id": "0101010101010101010101010101010101010101010101010101010101010101",
+              "index": 0,
+              "address": "addr_test1wq0aqxg0rqt0v63gyzxwtqm0vn65mxdac2sg3lhgu9z50mgen4d8l",
+              "coins": "100000000"
+            },
+            "callback": {
+              "kind": "constant_integer",
+              "value": "0"
+            }
+          },
+          {
+            "op": "send",
+            "address": "addr_test1vqg3zyg3zyg3zyg3zyg3zyg3zyg3zyg3zyg3zyg3zyg3zygxrcya6",
+            "amount": "2000000"
+          }
+        ]
+      },
+      "expected": {
+        "cbor": "83a300d90102818258200101010101010101010101010101010101010101010101010101010101010101000181a200581d6011111111111111111111111111111111111111111111111111111111011a001e84800b5820a3e496a84464991abb866e75f49fcb99b3fd76289313741b87a758d7fa9bcffda205a18200008200821901f41a000167c408d901028146450100002499f6",
+        "inspection": {
+          "body": {
+            "inputs": [
+              {
+                "transaction_id": "0101010101010101010101010101010101010101010101010101010101010101",
+                "index": 0
+              }
+            ],
+            "outputs": [
+              {
+                "address": "addr_test1vqg3zyg3zyg3zyg3zyg3zyg3zyg3zyg3zyg3zyg3zyg3zygxrcya6",
+                "amount": {
+                  "coin": "2000000"
+                }
+              }
+            ],
+            "script_data_hash": "a3e496a84464991abb866e75f49fcb99b3fd76289313741b87a758d7fa9bcffd"
+          },
+          "witness_set": {
+            "plutus_scripts": [
+              {
+                "language": "plutus_v4",
+                "bytes": "450100002499"
+              }
+            ],
+            "redeemers": [
+              {
+                "tag": "spend",
+                "index": "0",
+                "data": {
+                  "tag": "integer",
+                  "value": "0"
+                },
+                "ex_units": {
+                  "mem": "500",
+                  "steps": "92100"
+                }
+              }
+            ]
+          }
+        },
+        "callback_invoked": true
+      }
+    },
+    {
+      "id": "deferred-mint",
+      "operation": "build",
+      "type": "sub_transaction",
+      "input": {
+        "steps": [
+          {
+            "op": "script",
+            "language": "plutus_v4",
+            "bytes": "450100002499"
+          },
+          {
+            "op": "mint",
+            "asset_id": "1fd0190f1816f66a28208ce5836f64f54d99bdc2a088fee8e14547edaa",
+            "amount": "1",
+            "callback": {
+              "kind": "constant_integer",
+              "value": "0"
+            }
+          }
+        ]
+      },
+      "expected": {
+        "cbor": "83a400d9010280018009a1581c1fd0190f1816f66a28208ce5836f64f54d99bdc2a088fee8e14547eda141aa010b582048e1df37d961dd656b3021bb68a1bb92b62cb17c093a705f5a92e6879603d495a205a18201008200821901f41a000167c408d901028146450100002499f6",
+        "inspection": {
+          "body": {
+            "inputs": [],
+            "outputs": [],
+            "mint": [
+              {
+                "script_hash": "1fd0190f1816f66a28208ce5836f64f54d99bdc2a088fee8e14547ed",
+                "assets": {
+                  "aa": "1"
+                }
+              }
+            ],
+            "script_data_hash": "48e1df37d961dd656b3021bb68a1bb92b62cb17c093a705f5a92e6879603d495"
+          },
+          "witness_set": {
+            "plutus_scripts": [
+              {
+                "language": "plutus_v4",
+                "bytes": "450100002499"
+              }
+            ],
+            "redeemers": [
+              {
+                "tag": "mint",
+                "index": "0",
+                "data": {
+                  "tag": "integer",
+                  "value": "0"
+                },
+                "ex_units": {
+                  "mem": "500",
+                  "steps": "92100"
+                }
+              }
+            ]
+          }
+        },
+        "callback_invoked": true
+      }
+    },
+    {
+      "id": "script-guard",
+      "operation": "build",
+      "type": "sub_transaction",
+      "input": {
+        "steps": [
+          {
+            "op": "script",
+            "language": "plutus_v4",
+            "bytes": "450100002499"
+          },
+          {
+            "op": "guard",
+            "kind": "script",
+            "hash": "1fd0190f1816f66a28208ce5836f64f54d99bdc2a088fee8e14547ed",
+            "redeemer": "0"
+          }
+        ]
+      },
+      "expected": {
+        "cbor": "83a400d901028001800b5820c0600f4bfcf672129bf236830be2242f13cdda2598c759045ce5c0e454a1d51b0ed90102818201581c1fd0190f1816f66a28208ce5836f64f54d99bdc2a088fee8e14547eda205a18206008200821901f41a000167c408d901028146450100002499f6",
+        "inspection": {
+          "body": {
+            "inputs": [],
+            "outputs": [],
+            "script_data_hash": "c0600f4bfcf672129bf236830be2242f13cdda2598c759045ce5c0e454a1d51b",
+            "guards": [
+              {
+                "tag": "script_hash",
+                "value": "1fd0190f1816f66a28208ce5836f64f54d99bdc2a088fee8e14547ed"
+              }
+            ]
+          },
+          "witness_set": {
+            "plutus_scripts": [
+              {
+                "language": "plutus_v4",
+                "bytes": "450100002499"
+              }
+            ],
+            "redeemers": [
+              {
+                "tag": "guarding",
+                "index": "0",
+                "data": {
+                  "tag": "integer",
+                  "value": "0"
+                },
+                "ex_units": {
+                  "mem": "500",
+                  "steps": "92100"
+                }
+              }
+            ]
+          }
+        },
+        "callback_invoked": false
+      }
+    },
+    {
+      "id": "native-guard-mint",
+      "operation": "build",
+      "type": "transaction",
+      "input": {
+        "steps": [
+          {
+            "op": "native_script",
+            "cbor": "82068200581c11111111111111111111111111111111111111111111111111111111"
+          },
+          {
+            "op": "guard",
+            "kind": "key",
+            "hash": "11111111111111111111111111111111111111111111111111111111"
+          },
+          {
+            "op": "native_mint",
+            "asset_name": "aa",
+            "amount": "1"
+          }
+        ],
+        "utxos": [
+          {
+            "tx_id": "0101010101010101010101010101010101010101010101010101010101010101",
+            "index": 0,
+            "address": "addr_test1vqg3zyg3zyg3zyg3zyg3zyg3zyg3zyg3zyg3zyg3zyg3zygxrcya6",
+            "coins": "100000000"
+          }
+        ],
+        "change_address": "addr_test1vqg3zyg3zyg3zyg3zyg3zyg3zyg3zyg3zyg3zyg3zyg3zygxrcya6"
+      },
+      "expected": {
+        "cbor": "84a500d90102818258200101010101010101010101010101010101010101010101010101010101010101000181a200581d601111111111111111111111111111111111111111111111111111111101821a05f346bfa1581c7c11fec0e82c325085e055b9d3e829f12d1bcb41c3e2dd6dec8e8f54a141aa01021a00029a4109a1581c7c11fec0e82c325085e055b9d3e829f12d1bcb41c3e2dd6dec8e8f54a141aa010ed9010281581c11111111111111111111111111111111111111111111111111111111a101d901028182068200581c11111111111111111111111111111111111111111111111111111111f5f6",
+        "inspection": {
+          "body": {
+            "inputs": [
+              {
+                "transaction_id": "0101010101010101010101010101010101010101010101010101010101010101",
+                "index": 0
+              }
+            ],
+            "outputs": [
+              {
+                "address": "addr_test1vqg3zyg3zyg3zyg3zyg3zyg3zyg3zyg3zyg3zyg3zyg3zygxrcya6",
+                "amount": {
+                  "coin": "99829439",
+                  "assets": {
+                    "7c11fec0e82c325085e055b9d3e829f12d1bcb41c3e2dd6dec8e8f54": {
+                      "aa": "1"
+                    }
+                  }
+                }
+              }
+            ],
+            "fee": "170561",
+            "mint": [
+              {
+                "script_hash": "7c11fec0e82c325085e055b9d3e829f12d1bcb41c3e2dd6dec8e8f54",
+                "assets": {
+                  "aa": "1"
+                }
+              }
+            ],
+            "guards": [
+              {
+                "tag": "pubkey_hash",
+                "value": "11111111111111111111111111111111111111111111111111111111"
+              }
+            ]
+          },
+          "is_valid": true,
+          "witness_set": {
+            "native_scripts": [
+              {
+                "tag": "require_guard",
+                "credential": {
+                  "tag": "pubkey_hash",
+                  "value": "11111111111111111111111111111111111111111111111111111111"
+                }
+              }
+            ]
+          }
+        },
+        "callback_invoked": false
+      }
+    },
+    {
+      "id": "insufficient-funds",
+      "operation": "build",
+      "type": "transaction",
+      "input": {
+        "steps": [
+          {
+            "op": "send",
+            "address": "addr_test1vqg3zyg3zyg3zyg3zyg3zyg3zyg3zyg3zyg3zyg3zyg3zygxrcya6",
+            "amount": "200000000"
+          }
+        ],
+        "utxos": [
+          {
+            "tx_id": "0101010101010101010101010101010101010101010101010101010101010101",
+            "index": 0,
+            "address": "addr_test1vqg3zyg3zyg3zyg3zyg3zyg3zyg3zyg3zyg3zyg3zyg3zygxrcya6",
+            "coins": "100000000"
+          }
+        ],
+        "change_address": "addr_test1vqg3zyg3zyg3zyg3zyg3zyg3zyg3zyg3zyg3zyg3zyg3zygxrcya6"
+      },
+      "expected": {
+        "error": "build_error",
+        "native_error": 1100,
+        "callback_invoked": false
+      }
+    },
+    {
+      "id": "deferred-error",
+      "operation": "build",
+      "type": "sub_transaction",
+      "input": {
+        "steps": [
+          {
+            "op": "script",
+            "language": "plutus_v4",
+            "bytes": "450100002499"
+          },
+          {
+            "op": "mint",
+            "asset_id": "1fd0190f1816f66a28208ce5836f64f54d99bdc2a088fee8e14547edaa",
+            "amount": "1",
+            "callback": {
+              "kind": "error"
+            }
+          }
+        ]
+      },
+      "expected": {
+        "error": "build_error",
+        "native_error": 1,
+        "callback_invoked": true
+      }
+    },
+    {
+      "id": "deferred-null",
+      "operation": "build",
+      "type": "sub_transaction",
+      "input": {
+        "steps": [
+          {
+            "op": "script",
+            "language": "plutus_v4",
+            "bytes": "450100002499"
+          },
+          {
+            "op": "mint",
+            "asset_id": "1fd0190f1816f66a28208ce5836f64f54d99bdc2a088fee8e14547edaa",
+            "amount": "1",
+            "callback": {
+              "kind": "null"
+            }
+          }
+        ]
+      },
+      "expected": {
+        "error": "build_error",
+        "native_error": 3,
+        "callback_invoked": true
+      }
+    }
+  ]
+}

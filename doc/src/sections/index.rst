@@ -67,6 +67,7 @@ See `APACHE LICENSE, VERSION 2.0`_
 
     getting_started
     deep_clone
+    binding_guide
 
 .. toctree::
     :caption: API Reference

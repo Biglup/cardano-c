@@ -1,0 +1,53 @@
+{
+  "schema_version": 1,
+  "files": [
+    {
+      "file": "conway-key-guard.json",
+      "suite": "transactions",
+      "format": "transaction",
+      "case_count": 1
+    },
+    {
+      "file": "dijkstra-account-balances.json",
+      "suite": "transactions",
+      "format": "transaction",
+      "case_count": 1
+    },
+    {
+      "file": "dijkstra-signed-subtransaction.json",
+      "suite": "transactions",
+      "format": "transaction",
+      "case_count": 1
+    },
+    {
+      "file": "serialization.json",
+      "suite": "serialization",
+      "format": "cases",
+      "case_count": 114
+    },
+    {
+      "file": "invalid.json",
+      "suite": "invalid",
+      "format": "cases",
+      "case_count": 45
+    },
+    {
+      "file": "primitives.json",
+      "suite": "primitives",
+      "format": "cases",
+      "case_count": 45
+    },
+    {
+      "file": "builders.json",
+      "suite": "builders",
+      "format": "cases",
+      "case_count": 14
+    },
+    {
+      "file": "lifecycle.json",
+      "suite": "lifecycle",
+      "format": "cases",
+      "case_count": 8
+    }
+  ]
+}
