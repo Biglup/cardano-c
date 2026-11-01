@@ -1,0 +1,57 @@
+{
+  "schema_version": 1,
+  "id": "dijkstra-account-balances",
+  "native_version": "2.0.0-rc.6",
+  "transaction_cbor": "84a600d90102818258203b40265111d8bb3c3c608d95b3a0bf83461ace32d79336579a1939b3aad1c0b70a0181a2005839009493315cd92eb5d8c4304e67b7e16ae36d61d34502694657811a2c8e32c728d3861e164cab28cb8f006448139c8f1740ffb8e7aa9e5232dc011a02d9d0e3021a00029b1d1819a1581de013cf55d175ea848b87deb3e914febd7e028e2bf6534475d52fb9c3d01a001e8480181aa1581de013cf55d175ea848b87deb3e914febd7e028e2bf6534475d52fb9c3d0821a000f4240f6181ba1581de013cf55d175ea848b87deb3e914febd7e028e2bf6534475d52fb9c3d01bffffffffffffffffa0f5f6",
+  "body_cbor": "a600d90102818258203b40265111d8bb3c3c608d95b3a0bf83461ace32d79336579a1939b3aad1c0b70a0181a2005839009493315cd92eb5d8c4304e67b7e16ae36d61d34502694657811a2c8e32c728d3861e164cab28cb8f006448139c8f1740ffb8e7aa9e5232dc011a02d9d0e3021a00029b1d1819a1581de013cf55d175ea848b87deb3e914febd7e028e2bf6534475d52fb9c3d01a001e8480181aa1581de013cf55d175ea848b87deb3e914febd7e028e2bf6534475d52fb9c3d0821a000f4240f6181ba1581de013cf55d175ea848b87deb3e914febd7e028e2bf6534475d52fb9c3d01bffffffffffffffff",
+  "transaction_id": "d18c70cee8050036c4addc22fefd953a3a37c5050ad6b72735ca926121e3e82b",
+  "signing_seed": "000102030405060708090a0b0c0d0e0f101112131415161718191a1b1c1d1e1f",
+  "verification_key": "03a107bff3ce10be1d70dd18e74bc09967e4d6309ba50d5f1ddc8664125531b8",
+  "signature": "0d2069d3b733f9fd5f1f55bb7a8c66913a31731feeaa617ef923ef3b54c8d713aa2d2faacd0e718d023e1105b93f57208f13ecea74bdba47cf9f1296a9b06b02",
+  "inspection": {
+    "body": {
+      "inputs": [
+        {
+          "transaction_id": "3b40265111d8bb3c3c608d95b3a0bf83461ace32d79336579a1939b3aad1c0b7",
+          "index": 10
+        }
+      ],
+      "outputs": [
+        {
+          "address": "addr_test1qz2fxv2umyhttkxyxp8x0dlpdt3k6cwng5pxj3jhsydzer3jcu5d8ps7zex2k2xt3uqxgjqnnj83ws8lhrn648jjxtwq2ytjqp",
+          "amount": {
+            "coin": "47829219"
+          }
+        }
+      ],
+      "fee": "170781",
+      "direct_deposits": [
+        {
+          "key": "stake_test1uqfu74w3wh4gfzu8m6e7j987h4lq9r3t7ef5gaw497uu85qsqfy27",
+          "value": "2000000"
+        }
+      ],
+      "account_balance_intervals": [
+        {
+          "key": "stake_test1uqfu74w3wh4gfzu8m6e7j987h4lq9r3t7ef5gaw497uu85qsqfy27",
+          "value": {
+            "tag": "range",
+            "inclusive_lower_bound": "1000000",
+            "exclusive_upper_bound": null
+          }
+        }
+      ],
+      "starting_account_balance_intervals": [
+        {
+          "key": "stake_test1uqfu74w3wh4gfzu8m6e7j987h4lq9r3t7ef5gaw497uu85qsqfy27",
+          "value": {
+            "tag": "exact",
+            "value": "18446744073709551615"
+          }
+        }
+      ]
+    },
+    "is_valid": true,
+    "witness_set": {}
+  }
+}
