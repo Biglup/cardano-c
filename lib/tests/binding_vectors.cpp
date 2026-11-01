@@ -10,6 +10,7 @@
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
+ *     www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -32,68 +33,105 @@
 #include <memory>
 #include <stdexcept>
 #include <string>
+#include <type_traits>
 #include <vector>
 
-/* HELPERS *******************************************************************/
+/* STATIC FUNCTIONS **********************************************************/
 
-namespace
-{
+/**
+ * Owns one native reference and releases it when the test scope exits.
+ */
 template<typename T>
-auto
-own(T* ptr, void (*release)(T**))
+static auto
+make_scoped_object(T* ptr, void (*release)(T**))
 {
-  return std::unique_ptr<T, std::function<void(T*)>>(ptr, [release](T* value)
-                                                     { release(&value); });
+  const auto deleter = [release](T* value)
+  { release(&value); };
+
+  return std::unique_ptr<T, std::function<void(T*)>>(ptr, deleter);
 }
 
-void
-success(cardano_error_t error)
+/**
+ * Stops fixture processing when a native operation fails unexpectedly.
+ */
+static void
+check_result(cardano_error_t error)
 {
   if (error != CARDANO_SUCCESS)
+  {
     throw std::runtime_error("Native error " + std::to_string(error));
+  }
 }
 
-auto
-member(const cardano_json_object_t* object, const char* key)
+/**
+ * Gets an owned JSON member, rejecting incomplete fixture data.
+ */
+static auto
+get_json_member(const cardano_json_object_t* object, const char* key)
 {
   cardano_json_object_t* value = nullptr;
   if (!cardano_json_object_get(object, key, std::strlen(key), &value))
+  {
     throw std::runtime_error(std::string("Missing fixture field: ") + key);
-  return own(value, cardano_json_object_unref);
+  }
+
+  return make_scoped_object(value, cardano_json_object_unref);
 }
 
-std::string
-text(const cardano_json_object_t* object, const char* key)
+/**
+ * Reads a required string from a fixture object.
+ */
+static std::string
+get_json_string(const cardano_json_object_t* object, const char* key)
 {
-  auto        value  = member(object, key);
+  auto        value  = get_json_member(object, key);
   const char* result = cardano_json_object_get_string(value.get(), nullptr);
   if (result == nullptr)
+  {
     throw std::runtime_error(std::string("Expected string: ") + key);
+  }
+
   return result;
 }
 
-uint64_t
-number(const cardano_json_object_t* object, const char* key)
+/**
+ * Reads a required unsigned integer from a fixture object.
+ */
+static uint64_t
+get_json_uint(const cardano_json_object_t* object, const char* key)
 {
-  auto     value  = member(object, key);
+  auto     value  = get_json_member(object, key);
   uint64_t result = 0;
-  success(cardano_json_object_get_uint(value.get(), &result));
+  check_result(cardano_json_object_get_uint(value.get(), &result));
+
   return result;
 }
 
-std::vector<byte_t>
-bytes(const std::string& hex)
+/**
+ * Decodes a fixture hex string into bytes.
+ */
+static std::vector<byte_t>
+decode_hex(const std::string& hex)
 {
   if (hex.size() % 2 != 0 || hex.find_first_not_of("0123456789abcdef") != std::string::npos)
+  {
     throw std::runtime_error("Invalid fixture hex");
+  }
+
   std::vector<byte_t> result;
   for (size_t i = 0; i < hex.size(); i += 2)
+  {
     result.push_back(static_cast<byte_t>(std::stoul(hex.substr(i, 2), nullptr, 16)));
+  }
+
   return result;
 }
 
-std::string
-hex(const byte_t* data, size_t size)
+/**
+ * Encodes bytes as lowercase hexadecimal.
+ */
+static std::string
+encode_hex(const byte_t* data, size_t size)
 {
   const char* digits = "0123456789abcdef";
   std::string result;
@@ -102,249 +140,445 @@ hex(const byte_t* data, size_t size)
     result += digits[data[i] >> 4];
     result += digits[data[i] & 15];
   }
+
   return result;
 }
 
-std::string
-encoded(cardano_cbor_writer_t* writer)
+/**
+ * Returns the CBOR writer output as a hex string.
+ */
+static std::string
+encode_cbor(cardano_cbor_writer_t* writer)
 {
   std::vector<char> output(cardano_cbor_writer_get_hex_size(writer));
-  success(cardano_cbor_writer_encode_hex(writer, output.data(), output.size()));
+  check_result(cardano_cbor_writer_encode_hex(writer, output.data(), output.size()));
+
   return output.data();
 }
 
-void
-inspect(const cardano_json_object_t* expected, cardano_json_writer_t* writer)
+/**
+ * Compares native inspection output with the fixture JSON.
+ */
+static void
+verify_inspection(const cardano_json_object_t* expected, cardano_json_writer_t* writer)
 {
-  auto  wanted = member(expected, "inspection");
+  auto  wanted = get_json_member(expected, "inspection");
   char* output = encode_json(writer);
-  auto  actual = own(cardano_json_object_parse(output, std::strlen(output)), cardano_json_object_unref);
+  auto  actual = make_scoped_object(cardano_json_object_parse(output, std::strlen(output)), cardano_json_object_unref);
   std::free(output);
+
   ASSERT_NE(actual, nullptr);
-  EXPECT_STREQ(cardano_json_object_to_json_string(actual.get(), CARDANO_JSON_FORMAT_COMPACT, nullptr), cardano_json_object_to_json_string(wanted.get(), CARDANO_JSON_FORMAT_COMPACT, nullptr));
+  EXPECT_STREQ(
+    cardano_json_object_to_json_string(actual.get(), CARDANO_JSON_FORMAT_COMPACT, nullptr),
+    cardano_json_object_to_json_string(wanted.get(), CARDANO_JSON_FORMAT_COMPACT, nullptr));
 }
 
-void
-signing(const std::string& seed, const std::vector<byte_t>& message, const cardano_json_object_t* expected, const char* public_field)
+/**
+ * Checks deterministic signing and rejects a modified message.
+ */
+static void
+verify_signature(
+  const std::string&           seed,
+  const std::vector<byte_t>&   message,
+  const cardano_json_object_t* expected,
+  const char*                  public_field)
 {
   cardano_ed25519_private_key_t* raw_key = nullptr;
-  success(cardano_ed25519_private_key_from_normal_hex(seed.data(), seed.size(), &raw_key));
-  auto                          key        = own(raw_key, cardano_ed25519_private_key_unref);
+  check_result(cardano_ed25519_private_key_from_normal_hex(seed.data(), seed.size(), &raw_key));
+
+  auto                          key        = make_scoped_object(raw_key, cardano_ed25519_private_key_unref);
   cardano_ed25519_public_key_t* raw_public = nullptr;
-  success(cardano_ed25519_private_key_get_public_key(key.get(), &raw_public));
-  auto public_key     = own(raw_public, cardano_ed25519_public_key_unref);
+  check_result(cardano_ed25519_private_key_get_public_key(key.get(), &raw_public));
+
+  auto public_key     = make_scoped_object(raw_public, cardano_ed25519_public_key_unref);
   char public_hex[65] = { 0 };
-  success(cardano_ed25519_public_key_to_hex(public_key.get(), public_hex, sizeof(public_hex)));
-  EXPECT_EQ(text(expected, public_field), public_hex);
+  check_result(cardano_ed25519_public_key_to_hex(public_key.get(), public_hex, sizeof(public_hex)));
+
+  EXPECT_EQ(get_json_string(expected, public_field), public_hex);
+
   cardano_ed25519_signature_t* raw_signature = nullptr;
   // A non-null pointer represents an empty message for APIs which validate pointers.
   const byte_t  empty = 0;
   const byte_t* data  = message.empty() ? &empty : message.data();
-  success(cardano_ed25519_private_key_sign(key.get(), data, message.size(), &raw_signature));
-  auto signature          = own(raw_signature, cardano_ed25519_signature_unref);
+  check_result(cardano_ed25519_private_key_sign(key.get(), data, message.size(), &raw_signature));
+
+  auto signature          = make_scoped_object(raw_signature, cardano_ed25519_signature_unref);
   char signature_hex[129] = { 0 };
-  success(cardano_ed25519_signature_to_hex(signature.get(), signature_hex, sizeof(signature_hex)));
-  EXPECT_EQ(text(expected, "signature"), signature_hex);
+  check_result(cardano_ed25519_signature_to_hex(signature.get(), signature_hex, sizeof(signature_hex)));
+
+  EXPECT_EQ(get_json_string(expected, "signature"), signature_hex);
   EXPECT_TRUE(cardano_ed25519_public_verify(public_key.get(), signature.get(), data, message.size()));
+
   auto changed = message;
   if (changed.empty())
+  {
     changed.push_back(1);
+  }
   else
+  {
     changed[0] ^= 1;
+  }
+
   EXPECT_FALSE(cardano_ed25519_public_verify(public_key.get(), signature.get(), changed.data(), changed.size()));
 }
 
+/**
+ * Checks decoding, re-encoding, and inspection for one native type.
+ */
 template<typename T>
-void
-cbor_case(const cardano_json_object_t* item, cardano_error_t (*decode)(cardano_cbor_reader_t*, T**), cardano_error_t (*encode)(const T*, cardano_cbor_writer_t*), void (*release)(T**), cardano_error_t (*json)(const T*, cardano_json_writer_t*))
+static void
+verify_cbor_case(
+  const cardano_json_object_t* item,
+  cardano_error_t (*decode)(cardano_cbor_reader_t*, T**),
+  cardano_error_t (*encode)(const T*, cardano_cbor_writer_t*),
+  void (*release)(T**),
+  cardano_error_t (*json)(const T*, cardano_json_writer_t*))
 {
-  auto       input    = member(item, "input");
-  auto       expected = member(item, "expected");
-  const auto value    = text(input.get(), "cbor");
-  auto       reader   = own(cardano_cbor_reader_from_hex(value.data(), value.size()), cardano_cbor_reader_unref);
+  auto       input    = get_json_member(item, "input");
+  auto       expected = get_json_member(item, "expected");
+  const auto value    = get_json_string(input.get(), "cbor");
+  auto       reader   = make_scoped_object(cardano_cbor_reader_from_hex(value.data(), value.size()), cardano_cbor_reader_unref);
+
   ASSERT_NE(reader, nullptr);
-  T*         raw    = nullptr;
+
+  T* raw = nullptr;
+
   const auto result = decode(reader.get(), &raw);
-  auto       object = own(raw, release);
+  auto       object = make_scoped_object(raw, release);
   if (cardano_json_object_has_property(expected.get(), "error", 5))
   {
     EXPECT_NE(result, CARDANO_SUCCESS);
-    EXPECT_EQ(static_cast<uint64_t>(result), number(expected.get(), "native_error"));
+    EXPECT_EQ(static_cast<uint64_t>(result), get_json_uint(expected.get(), "native_error"));
+
     return;
   }
+
   ASSERT_EQ(result, CARDANO_SUCCESS);
   ASSERT_NE(object, nullptr);
-  auto writer = own(cardano_cbor_writer_new(), cardano_cbor_writer_unref);
-  success(encode(object.get(), writer.get()));
-  EXPECT_EQ(encoded(writer.get()), text(expected.get(), "cbor"));
+
+  auto writer = make_scoped_object(cardano_cbor_writer_new(), cardano_cbor_writer_unref);
+  check_result(encode(object.get(), writer.get()));
+
+  EXPECT_EQ(encode_cbor(writer.get()), get_json_string(expected.get(), "cbor"));
+
   if (cardano_json_object_has_property(expected.get(), "inspection", 10))
   {
     ASSERT_NE(json, nullptr);
-    auto output = own(cardano_json_writer_new(CARDANO_JSON_FORMAT_COMPACT), cardano_json_writer_unref);
-    success(json(object.get(), output.get()));
-    inspect(expected.get(), output.get());
+
+    auto output = make_scoped_object(cardano_json_writer_new(CARDANO_JSON_FORMAT_COMPACT), cardano_json_writer_unref);
+    check_result(json(object.get(), output.get()));
+    verify_inspection(expected.get(), output.get());
   }
 }
 
-void
-cbor_dispatch(const cardano_json_object_t* item)
+/**
+ * Selects the native decoder for a serialization fixture.
+ */
+static void
+verify_cbor_fixture(const cardano_json_object_t* item)
 {
-  const auto type = text(item, "type");
+  const auto type = get_json_string(item, "type");
   if (type == "account_balance_interval")
-    return cbor_case<cardano_account_balance_interval_t>(item, cardano_account_balance_interval_from_cbor, cardano_account_balance_interval_to_cbor, cardano_account_balance_interval_unref, cardano_account_balance_interval_to_cip116_json);
+  {
+    return verify_cbor_case<cardano_account_balance_interval_t>(
+      item,
+      cardano_account_balance_interval_from_cbor,
+      cardano_account_balance_interval_to_cbor,
+      cardano_account_balance_interval_unref,
+      cardano_account_balance_interval_to_cip116_json);
+  }
   if (type == "certificate")
-    return cbor_case<cardano_certificate_t>(item, cardano_certificate_from_cbor, cardano_certificate_to_cbor, cardano_certificate_unref, cardano_certificate_to_cip116_json);
+  {
+    return verify_cbor_case<cardano_certificate_t>(
+      item,
+      cardano_certificate_from_cbor,
+      cardano_certificate_to_cbor,
+      cardano_certificate_unref,
+      cardano_certificate_to_cip116_json);
+  }
   if (type == "credential")
-    return cbor_case<cardano_credential_t>(item, cardano_credential_from_cbor, cardano_credential_to_cbor, cardano_credential_unref, cardano_credential_to_cip116_json);
+  {
+    return verify_cbor_case<cardano_credential_t>(
+      item,
+      cardano_credential_from_cbor,
+      cardano_credential_to_cbor,
+      cardano_credential_unref,
+      cardano_credential_to_cip116_json);
+  }
   if (type == "native_script")
-    return cbor_case<cardano_native_script_t>(item, cardano_native_script_from_cbor, cardano_native_script_to_cbor, cardano_native_script_unref, cardano_native_script_to_cip116_json);
+  {
+    return verify_cbor_case<cardano_native_script_t>(
+      item,
+      cardano_native_script_from_cbor,
+      cardano_native_script_to_cbor,
+      cardano_native_script_unref,
+      cardano_native_script_to_cip116_json);
+  }
   if (type == "plutus_data")
-    return cbor_case<cardano_plutus_data_t>(item, cardano_plutus_data_from_cbor, cardano_plutus_data_to_cbor, cardano_plutus_data_unref, cardano_plutus_data_to_cip116_json);
+  {
+    return verify_cbor_case<cardano_plutus_data_t>(
+      item,
+      cardano_plutus_data_from_cbor,
+      cardano_plutus_data_to_cbor,
+      cardano_plutus_data_unref,
+      cardano_plutus_data_to_cip116_json);
+  }
   if (type == "proposal_procedure")
-    return cbor_case<cardano_proposal_procedure_t>(item, cardano_proposal_procedure_from_cbor, cardano_proposal_procedure_to_cbor, cardano_proposal_procedure_unref, cardano_proposal_procedure_to_cip116_json);
+  {
+    return verify_cbor_case<cardano_proposal_procedure_t>(
+      item,
+      cardano_proposal_procedure_from_cbor,
+      cardano_proposal_procedure_to_cbor,
+      cardano_proposal_procedure_unref,
+      cardano_proposal_procedure_to_cip116_json);
+  }
   if (type == "script")
-    return cbor_case<cardano_script_t>(item, cardano_script_from_cbor, cardano_script_to_cbor, cardano_script_unref, cardano_script_to_cip116_json);
+  {
+    return verify_cbor_case<cardano_script_t>(
+      item, cardano_script_from_cbor, cardano_script_to_cbor, cardano_script_unref, cardano_script_to_cip116_json);
+  }
   if (type == "sub_transaction")
-    return cbor_case<cardano_sub_transaction_t>(item, cardano_sub_transaction_from_cbor, cardano_sub_transaction_to_cbor, cardano_sub_transaction_unref, cardano_sub_transaction_to_cip116_json);
+  {
+    return verify_cbor_case<cardano_sub_transaction_t>(
+      item,
+      cardano_sub_transaction_from_cbor,
+      cardano_sub_transaction_to_cbor,
+      cardano_sub_transaction_unref,
+      cardano_sub_transaction_to_cip116_json);
+  }
   if (type == "transaction")
-    return cbor_case<cardano_transaction_t>(item, cardano_transaction_from_cbor, cardano_transaction_to_cbor, cardano_transaction_unref, cardano_transaction_to_cip116_json);
+  {
+    return verify_cbor_case<cardano_transaction_t>(
+      item,
+      cardano_transaction_from_cbor,
+      cardano_transaction_to_cbor,
+      cardano_transaction_unref,
+      cardano_transaction_to_cip116_json);
+  }
   if (type == "transaction_body")
-    return cbor_case<cardano_transaction_body_t>(item, cardano_transaction_body_from_cbor, cardano_transaction_body_to_cbor, cardano_transaction_body_unref, cardano_transaction_body_to_cip116_json);
+  {
+    return verify_cbor_case<cardano_transaction_body_t>(
+      item,
+      cardano_transaction_body_from_cbor,
+      cardano_transaction_body_to_cbor,
+      cardano_transaction_body_unref,
+      cardano_transaction_body_to_cip116_json);
+  }
   if (type == "transaction_input")
-    return cbor_case<cardano_transaction_input_t>(item, cardano_transaction_input_from_cbor, cardano_transaction_input_to_cbor, cardano_transaction_input_unref, cardano_transaction_input_to_cip116_json);
+  {
+    return verify_cbor_case<cardano_transaction_input_t>(
+      item,
+      cardano_transaction_input_from_cbor,
+      cardano_transaction_input_to_cbor,
+      cardano_transaction_input_unref,
+      cardano_transaction_input_to_cip116_json);
+  }
   if (type == "transaction_output")
-    return cbor_case<cardano_transaction_output_t>(item, cardano_transaction_output_from_cbor, cardano_transaction_output_to_cbor, cardano_transaction_output_unref, cardano_transaction_output_to_cip116_json);
+  {
+    return verify_cbor_case<cardano_transaction_output_t>(
+      item,
+      cardano_transaction_output_from_cbor,
+      cardano_transaction_output_to_cbor,
+      cardano_transaction_output_unref,
+      cardano_transaction_output_to_cip116_json);
+  }
   if (type == "value")
-    return cbor_case<cardano_value_t>(item, cardano_value_from_cbor, cardano_value_to_cbor, cardano_value_unref, cardano_value_to_cip116_json);
+  {
+    return verify_cbor_case<cardano_value_t>(
+      item, cardano_value_from_cbor, cardano_value_to_cbor, cardano_value_unref, cardano_value_to_cip116_json);
+  }
   if (type == "voting_procedures")
-    return cbor_case<cardano_voting_procedures_t>(item, cardano_voting_procedures_from_cbor, cardano_voting_procedures_to_cbor, cardano_voting_procedures_unref, cardano_voting_procedures_to_cip116_json);
+  {
+    return verify_cbor_case<cardano_voting_procedures_t>(
+      item,
+      cardano_voting_procedures_from_cbor,
+      cardano_voting_procedures_to_cbor,
+      cardano_voting_procedures_unref,
+      cardano_voting_procedures_to_cip116_json);
+  }
   FAIL() << "Unsupported fixture type: " << type;
 }
 
-void
-extra_cbor_checks(const cardano_json_object_t* item)
+/**
+ * Checks script hashes and transaction body hashes and signatures.
+ */
+static void
+verify_cbor_hash_and_signature(const cardano_json_object_t* item)
 {
-  const auto type     = text(item, "type");
-  auto       input    = member(item, "input");
-  auto       expected = member(item, "expected");
+  const auto type     = get_json_string(item, "type");
+  auto       input    = get_json_member(item, "input");
+  auto       expected = get_json_member(item, "expected");
   if (!cardano_json_object_has_property(expected.get(), "hash", 4))
+  {
     return;
-  const auto              cbor     = text(input.get(), "cbor");
-  auto                    reader   = own(cardano_cbor_reader_from_hex(cbor.data(), cbor.size()), cardano_cbor_reader_unref);
+  }
+
+  const auto              cbor     = get_json_string(input.get(), "cbor");
+  auto                    reader   = make_scoped_object(cardano_cbor_reader_from_hex(cbor.data(), cbor.size()), cardano_cbor_reader_unref);
   cardano_blake2b_hash_t* raw_hash = nullptr;
   if (type == "script")
   {
     cardano_script_t* raw = nullptr;
-    success(cardano_script_from_cbor(reader.get(), &raw));
-    auto object = own(raw, cardano_script_unref);
+    check_result(cardano_script_from_cbor(reader.get(), &raw));
+
+    auto object = make_scoped_object(raw, cardano_script_unref);
     raw_hash    = cardano_script_get_hash(object.get());
   }
   else if (type == "native_script")
   {
     cardano_native_script_t* raw = nullptr;
-    success(cardano_native_script_from_cbor(reader.get(), &raw));
-    auto object = own(raw, cardano_native_script_unref);
+    check_result(cardano_native_script_from_cbor(reader.get(), &raw));
+
+    auto object = make_scoped_object(raw, cardano_native_script_unref);
     raw_hash    = cardano_native_script_get_hash(object.get());
   }
   else if (type == "transaction")
   {
     cardano_transaction_t* raw = nullptr;
-    success(cardano_transaction_from_cbor(reader.get(), &raw));
-    auto object = own(raw, cardano_transaction_unref);
+    check_result(cardano_transaction_from_cbor(reader.get(), &raw));
+
+    auto object = make_scoped_object(raw, cardano_transaction_unref);
     raw_hash    = cardano_transaction_get_id(object.get());
-    auto body   = own(cardano_transaction_get_body(object.get()), cardano_transaction_body_unref);
-    auto writer = own(cardano_cbor_writer_new(), cardano_cbor_writer_unref);
-    success(cardano_transaction_body_to_cbor(body.get(), writer.get()));
-    EXPECT_EQ(encoded(writer.get()), text(expected.get(), "body_cbor"));
+
+    auto body   = make_scoped_object(cardano_transaction_get_body(object.get()), cardano_transaction_body_unref);
+    auto writer = make_scoped_object(cardano_cbor_writer_new(), cardano_cbor_writer_unref);
+    check_result(cardano_transaction_body_to_cbor(body.get(), writer.get()));
+
+    EXPECT_EQ(encode_cbor(writer.get()), get_json_string(expected.get(), "body_cbor"));
   }
   else if (type == "sub_transaction")
   {
     cardano_sub_transaction_t* raw = nullptr;
-    success(cardano_sub_transaction_from_cbor(reader.get(), &raw));
-    auto object = own(raw, cardano_sub_transaction_unref);
+    check_result(cardano_sub_transaction_from_cbor(reader.get(), &raw));
+
+    auto object = make_scoped_object(raw, cardano_sub_transaction_unref);
     raw_hash    = cardano_sub_transaction_get_id(object.get());
-    auto body   = own(cardano_sub_transaction_get_body(object.get()), cardano_sub_transaction_body_unref);
-    auto writer = own(cardano_cbor_writer_new(), cardano_cbor_writer_unref);
-    success(cardano_sub_transaction_body_to_cbor(body.get(), writer.get()));
-    EXPECT_EQ(encoded(writer.get()), text(expected.get(), "body_cbor"));
+
+    auto body   = make_scoped_object(cardano_sub_transaction_get_body(object.get()), cardano_sub_transaction_body_unref);
+    auto writer = make_scoped_object(cardano_cbor_writer_new(), cardano_cbor_writer_unref);
+    check_result(cardano_sub_transaction_body_to_cbor(body.get(), writer.get()));
+
+    EXPECT_EQ(encode_cbor(writer.get()), get_json_string(expected.get(), "body_cbor"));
   }
-  auto hash = own(raw_hash, cardano_blake2b_hash_unref);
+  auto hash = make_scoped_object(raw_hash, cardano_blake2b_hash_unref);
+
   ASSERT_NE(hash, nullptr);
-  EXPECT_EQ(hex(cardano_blake2b_hash_get_data(hash.get()), cardano_blake2b_hash_get_bytes_size(hash.get())), text(expected.get(), "hash"));
+  EXPECT_EQ(
+    encode_hex(cardano_blake2b_hash_get_data(hash.get()), cardano_blake2b_hash_get_bytes_size(hash.get())),
+    get_json_string(expected.get(), "hash"));
+
   if (cardano_json_object_has_property(input.get(), "signing_seed", 12))
-    signing(text(input.get(), "signing_seed"), bytes(text(expected.get(), "hash")), expected.get(), "verification_key");
+  {
+    verify_signature(
+      get_json_string(input.get(), "signing_seed"),
+      decode_hex(get_json_string(expected.get(), "hash")),
+      expected.get(),
+      "verification_key");
+  }
 }
 
-void
-primitive(const cardano_json_object_t* item)
+/**
+ * Checks a cryptographic, address, or script-parameter fixture.
+ */
+static void
+verify_primitive_fixture(const cardano_json_object_t* item)
 {
-  const auto operation = text(item, "operation");
-  auto       input     = member(item, "input");
-  auto       expected  = member(item, "expected");
+  const auto operation = get_json_string(item, "operation");
+  auto       input     = get_json_member(item, "input");
+  auto       expected  = get_json_member(item, "expected");
   if (operation == "ed25519")
-    return signing(text(input.get(), "seed"), bytes(text(input.get(), "message")), expected.get(), "public_key");
+  {
+    return verify_signature(
+      get_json_string(input.get(), "seed"),
+      decode_hex(get_json_string(input.get(), "message")),
+      expected.get(),
+      "public_key");
+  }
   if (operation == "verify_ed25519")
   {
-    const auto                    public_hex    = text(input.get(), "public_key");
-    const auto                    signature_hex = text(input.get(), "signature");
-    const auto                    message       = bytes(text(input.get(), "message"));
+    const auto                    public_hex    = get_json_string(input.get(), "public_key");
+    const auto                    signature_hex = get_json_string(input.get(), "signature");
+    const auto                    message       = decode_hex(get_json_string(input.get(), "message"));
     cardano_ed25519_public_key_t* raw_public    = nullptr;
-    success(cardano_ed25519_public_key_from_hex(public_hex.data(), public_hex.size(), &raw_public));
-    auto                         public_key    = own(raw_public, cardano_ed25519_public_key_unref);
+    check_result(cardano_ed25519_public_key_from_hex(public_hex.data(), public_hex.size(), &raw_public));
+
+    auto                         public_key    = make_scoped_object(raw_public, cardano_ed25519_public_key_unref);
     cardano_ed25519_signature_t* raw_signature = nullptr;
-    success(cardano_ed25519_signature_from_hex(signature_hex.data(), signature_hex.size(), &raw_signature));
-    auto signature      = own(raw_signature, cardano_ed25519_signature_unref);
-    auto valid          = member(expected.get(), "valid");
+    check_result(cardano_ed25519_signature_from_hex(signature_hex.data(), signature_hex.size(), &raw_signature));
+
+    auto signature      = make_scoped_object(raw_signature, cardano_ed25519_signature_unref);
+    auto valid          = get_json_member(expected.get(), "valid");
     bool expected_valid = false;
-    success(cardano_json_object_get_boolean(valid.get(), &expected_valid));
-    EXPECT_EQ(cardano_ed25519_public_verify(public_key.get(), signature.get(), message.data(), message.size()), expected_valid);
+    check_result(cardano_json_object_get_boolean(valid.get(), &expected_valid));
+
+    EXPECT_EQ(
+      cardano_ed25519_public_verify(public_key.get(), signature.get(), message.data(), message.size()), expected_valid);
+
     return;
   }
   if (operation == "blake2b")
   {
-    auto                    message = bytes(text(input.get(), "message"));
+    auto                    message = decode_hex(get_json_string(input.get(), "message"));
     const byte_t            empty   = 0;
     cardano_blake2b_hash_t* raw     = nullptr;
-    const auto              result  = cardano_blake2b_compute_hash(message.empty() ? &empty : message.data(), message.size(), number(input.get(), "size"), &raw);
+    const auto              result  = cardano_blake2b_compute_hash(
+      message.empty() ? &empty : message.data(), message.size(), get_json_uint(input.get(), "size"), &raw);
     if (cardano_json_object_has_property(expected.get(), "error", 5))
     {
-      auto output = own(raw, cardano_blake2b_hash_unref);
-      EXPECT_EQ(static_cast<uint64_t>(result), number(expected.get(), "native_error"));
+      auto output = make_scoped_object(raw, cardano_blake2b_hash_unref);
+
+      EXPECT_EQ(static_cast<uint64_t>(result), get_json_uint(expected.get(), "native_error"));
+
       return;
     }
-    success(result);
-    auto hash = own(raw, cardano_blake2b_hash_unref);
-    EXPECT_EQ(hex(cardano_blake2b_hash_get_data(hash.get()), cardano_blake2b_hash_get_bytes_size(hash.get())), text(expected.get(), "hash"));
+    check_result(result);
+
+    auto hash = make_scoped_object(raw, cardano_blake2b_hash_unref);
+
+    EXPECT_EQ(
+      encode_hex(cardano_blake2b_hash_get_data(hash.get()), cardano_blake2b_hash_get_bytes_size(hash.get())),
+      get_json_string(expected.get(), "hash"));
+
     return;
   }
   if (operation == "address")
   {
-    auto               data = bytes(text(input.get(), "bytes"));
+    auto               data = decode_hex(get_json_string(input.get(), "bytes"));
     cardano_address_t* raw  = nullptr;
-    success(cardano_address_from_bytes(data.data(), data.size(), &raw));
-    auto address = own(raw, cardano_address_unref);
-    EXPECT_EQ(std::string(cardano_address_get_string(address.get())), text(expected.get(), "address"));
-    const auto         value  = text(expected.get(), "address");
+    check_result(cardano_address_from_bytes(data.data(), data.size(), &raw));
+
+    auto address = make_scoped_object(raw, cardano_address_unref);
+
+    EXPECT_EQ(std::string(cardano_address_get_string(address.get())), get_json_string(expected.get(), "address"));
+
+    const auto         value  = get_json_string(expected.get(), "address");
     cardano_address_t* parsed = nullptr;
-    success(cardano_address_from_string(value.data(), value.size(), &parsed));
-    auto roundtrip = own(parsed, cardano_address_unref);
-    EXPECT_EQ(hex(cardano_address_get_bytes(roundtrip.get()), cardano_address_get_bytes_size(roundtrip.get())), text(input.get(), "bytes"));
+    check_result(cardano_address_from_string(value.data(), value.size(), &parsed));
+
+    auto roundtrip = make_scoped_object(parsed, cardano_address_unref);
+
+    EXPECT_EQ(
+      encode_hex(cardano_address_get_bytes(roundtrip.get()), cardano_address_get_bytes_size(roundtrip.get())),
+      get_json_string(input.get(), "bytes"));
+
     return;
   }
   if (operation == "bip32")
   {
-    auto                         entropy  = bytes(text(input.get(), "entropy"));
-    auto                         password = bytes(text(input.get(), "password"));
+    auto                         entropy  = decode_hex(get_json_string(input.get(), "entropy"));
+    auto                         password = decode_hex(get_json_string(input.get(), "password"));
     cardano_bip32_private_key_t* raw      = nullptr;
-    success(cardano_bip32_private_key_from_bip39_entropy(password.data(), password.size(), entropy.data(), entropy.size(), &raw));
-    auto                  root = own(raw, cardano_bip32_private_key_unref);
-    auto                  path = member(input.get(), "path");
+    check_result(cardano_bip32_private_key_from_bip39_entropy(
+      password.data(), password.size(), entropy.data(), entropy.size(), &raw));
+
+    auto                  root = make_scoped_object(raw, cardano_bip32_private_key_unref);
+    auto                  path = get_json_member(input.get(), "path");
     std::vector<uint32_t> indices;
     for (size_t i = 0; i < cardano_json_object_array_get_length(path.get()); ++i)
     {
-      auto     element = own(cardano_json_object_array_get(path.get(), i), cardano_json_object_unref);
+      auto     element = make_scoped_object(cardano_json_object_array_get(path.get(), i), cardano_json_object_unref);
       uint64_t index   = 0;
-      success(cardano_json_object_get_uint(element.get(), &index));
+      check_result(cardano_json_object_get_uint(element.get(), &index));
       indices.push_back(static_cast<uint32_t>(index));
     }
     cardano_bip32_private_key_t* derived = nullptr;
@@ -354,100 +588,151 @@ primitive(const cardano_json_object_t* item)
       cardano_bip32_private_key_ref(derived);
     }
     else
-      success(cardano_bip32_private_key_derive(root.get(), indices.data(), indices.size(), &derived));
-    auto key = own(derived, cardano_bip32_private_key_unref);
-    EXPECT_EQ(hex(cardano_bip32_private_key_get_data(key.get()), cardano_bip32_private_key_get_bytes_size(key.get())), text(expected.get(), "private_key"));
+    {
+      check_result(cardano_bip32_private_key_derive(root.get(), indices.data(), indices.size(), &derived));
+    }
+
+    auto key = make_scoped_object(derived, cardano_bip32_private_key_unref);
+
+    EXPECT_EQ(
+      encode_hex(cardano_bip32_private_key_get_data(key.get()), cardano_bip32_private_key_get_bytes_size(key.get())),
+      get_json_string(expected.get(), "private_key"));
+
     cardano_bip32_public_key_t* pub = nullptr;
-    success(cardano_bip32_private_key_get_public_key(key.get(), &pub));
-    auto public_key = own(pub, cardano_bip32_public_key_unref);
-    EXPECT_EQ(hex(cardano_bip32_public_key_get_data(public_key.get()), cardano_bip32_public_key_get_bytes_size(public_key.get())), text(expected.get(), "public_key"));
+    check_result(cardano_bip32_private_key_get_public_key(key.get(), &pub));
+
+    auto public_key = make_scoped_object(pub, cardano_bip32_public_key_unref);
+
+    EXPECT_EQ(
+      encode_hex(
+        cardano_bip32_public_key_get_data(public_key.get()), cardano_bip32_public_key_get_bytes_size(public_key.get())),
+      get_json_string(expected.get(), "public_key"));
+
     cardano_ed25519_public_key_t* ed = nullptr;
-    success(cardano_bip32_public_key_to_ed25519_key(public_key.get(), &ed));
-    auto ed_key     = own(ed, cardano_ed25519_public_key_unref);
+    check_result(cardano_bip32_public_key_to_ed25519_key(public_key.get(), &ed));
+
+    auto ed_key     = make_scoped_object(ed, cardano_ed25519_public_key_unref);
     char output[65] = { 0 };
-    success(cardano_ed25519_public_key_to_hex(ed_key.get(), output, sizeof(output)));
-    EXPECT_EQ(std::string(output), text(expected.get(), "ed25519_public_key"));
+    check_result(cardano_ed25519_public_key_to_hex(ed_key.get(), output, sizeof(output)));
+
+    EXPECT_EQ(std::string(output), get_json_string(expected.get(), "ed25519_public_key"));
+
     return;
   }
   if (operation == "apply_params")
   {
-    auto                   script = bytes(text(input.get(), "script"));
-    const auto             cbor   = text(input.get(), "parameters_cbor");
-    auto                   reader = own(cardano_cbor_reader_from_hex(cbor.data(), cbor.size()), cardano_cbor_reader_unref);
+    auto                   script = decode_hex(get_json_string(input.get(), "script"));
+    const auto             cbor   = get_json_string(input.get(), "parameters_cbor");
+    auto                   reader = make_scoped_object(cardano_cbor_reader_from_hex(cbor.data(), cbor.size()), cardano_cbor_reader_unref);
     cardano_plutus_list_t* raw    = nullptr;
-    success(cardano_plutus_list_from_cbor(reader.get(), &raw));
-    auto              params = own(raw, cardano_plutus_list_unref);
+    check_result(cardano_plutus_list_from_cbor(reader.get(), &raw));
+
+    auto              params = make_scoped_object(raw, cardano_plutus_list_unref);
     cardano_buffer_t* output = nullptr;
-    success(cardano_uplc_apply_params_to_script(params.get(), script.data(), script.size(), &output));
-    auto applied = own(output, cardano_buffer_unref);
-    EXPECT_EQ(hex(cardano_buffer_get_data(applied.get()), cardano_buffer_get_size(applied.get())), text(expected.get(), "script"));
+    check_result(cardano_uplc_apply_params_to_script(params.get(), script.data(), script.size(), &output));
+
+    auto applied = make_scoped_object(output, cardano_buffer_unref);
+
+    EXPECT_EQ(
+      encode_hex(cardano_buffer_get_data(applied.get()), cardano_buffer_get_size(applied.get())),
+      get_json_string(expected.get(), "script"));
+
     return;
   }
   FAIL() << "Unsupported operation: " << operation;
 }
 
+/**
+ * Constructs a native object and adopts its returned reference.
+ */
 template<typename T, typename F, typename... Args>
-auto
-make(void (*release)(T**), F function, Args... args)
+static auto
+create_scoped_object(void (*release)(T**), F function, Args... args)
 {
-  T*         raw    = nullptr;
+  T* raw = nullptr;
+
   const auto error  = function(args..., &raw);
-  auto       result = own(raw, release);
-  success(error);
+  auto       result = make_scoped_object(raw, release);
+  check_result(error);
+
   return result;
 }
 
+/**
+ * Decodes a native object and adopts its returned reference.
+ */
 template<typename T>
-auto
-read(const std::string& cbor, cardano_error_t (*decode)(cardano_cbor_reader_t*, T**), void (*release)(T**))
+static auto
+read_cbor(const std::string& cbor, cardano_error_t (*decode)(cardano_cbor_reader_t*, T**), void (*release)(T**))
 {
-  auto reader = own(cardano_cbor_reader_from_hex(cbor.data(), cbor.size()), cardano_cbor_reader_unref);
-  return make(release, decode, reader.get());
+  auto reader = make_scoped_object(cardano_cbor_reader_from_hex(cbor.data(), cbor.size()), cardano_cbor_reader_unref);
+
+  return create_scoped_object(release, decode, reader.get());
 }
 
-uint64_t
-amount(const cardano_json_object_t* value, const char* key)
+/**
+ * Reads an exact unsigned amount stored as a decimal string.
+ */
+static uint64_t
+get_json_amount(const cardano_json_object_t* value, const char* key)
 {
-  return std::stoull(text(value, key));
+  return std::stoull(get_json_string(value, key));
 }
 
-auto
-make_utxo(const cardano_json_object_t* value)
+/**
+ * Constructs a UTxO from a builder recipe.
+ */
+static auto
+create_utxo(const cardano_json_object_t* value)
 {
-  const auto address = text(value, "address");
-  const auto tx_id   = text(value, "tx_id");
-  auto       addr    = make(cardano_address_unref, cardano_address_from_string, address.data(), address.size());
-  auto       hash    = make(cardano_blake2b_hash_unref, cardano_blake2b_hash_from_hex, tx_id.data(), tx_id.size());
-  auto       input   = make(cardano_transaction_input_unref, cardano_transaction_input_new, hash.get(), number(value, "index"));
-  auto       output  = make(cardano_transaction_output_unref, cardano_transaction_output_new, addr.get(), amount(value, "coins"));
-  return make(cardano_utxo_unref, cardano_utxo_new, input.get(), output.get());
+  const auto address = get_json_string(value, "address");
+  const auto tx_id   = get_json_string(value, "tx_id");
+  auto       addr    = create_scoped_object(cardano_address_unref, cardano_address_from_string, address.data(), address.size());
+  auto
+       hash  = create_scoped_object(cardano_blake2b_hash_unref, cardano_blake2b_hash_from_hex, tx_id.data(), tx_id.size());
+  auto input = create_scoped_object(
+    cardano_transaction_input_unref, cardano_transaction_input_new, hash.get(), get_json_uint(value, "index"));
+  auto output = create_scoped_object(
+    cardano_transaction_output_unref, cardano_transaction_output_new, addr.get(), get_json_amount(value, "coins"));
+
+  return create_scoped_object(cardano_utxo_unref, cardano_utxo_new, input.get(), output.get());
 }
 
 struct callback_probe
 {
     std::string kind;
     int64_t     value;
-    size_t      calls = 0;
+
+    size_t calls = 0;
 };
 
-cardano_error_t
+/**
+ * Records callback invocations and returns the configured redeemer result.
+ */
+static cardano_error_t
 deferred_callback(void* context, cardano_transaction_t*, cardano_utxo_list_t*, cardano_plutus_data_t** output)
 {
   auto* probe = static_cast<callback_probe*>(context);
   ++probe->calls;
   if (probe->kind == "error")
+  {
     return CARDANO_ERROR_GENERIC;
+  }
   if (probe->kind == "null")
+  {
     return CARDANO_SUCCESS;
+  }
+
   return cardano_plutus_data_new_integer_from_int(probe->value, output);
 }
 
 struct built_result
 {
     cardano_error_t error;
-    std::string     cbor;
-    std::string     inspection;
-    bool            callback_invoked;
+
+    std::string cbor;
+    std::string inspection;
+    bool        callback_invoked;
 };
 template<typename T>
 struct builder_api;
@@ -455,7 +740,8 @@ struct builder_api;
 template<>
 struct builder_api<cardano_tx_builder_t>
 {
-    using result_type                                       = cardano_transaction_t;
+    using result_type = cardano_transaction_t;
+
     static constexpr auto create                            = cardano_tx_builder_new;
     static constexpr auto unref                             = cardano_tx_builder_unref;
     static constexpr auto send_lovelace_ex                  = cardano_tx_builder_send_lovelace_ex;
@@ -474,7 +760,8 @@ struct builder_api<cardano_tx_builder_t>
 template<>
 struct builder_api<cardano_sub_tx_builder_t>
 {
-    using result_type                                       = cardano_sub_transaction_t;
+    using result_type = cardano_sub_transaction_t;
+
     static constexpr auto create                            = cardano_sub_tx_builder_new;
     static constexpr auto unref                             = cardano_sub_tx_builder_unref;
     static constexpr auto send_lovelace_ex                  = cardano_sub_tx_builder_send_lovelace_ex;
@@ -490,374 +777,569 @@ struct builder_api<cardano_sub_tx_builder_t>
     static constexpr auto result_to_cip116_json             = cardano_sub_transaction_to_cip116_json;
 };
 
-built_result build_dispatch(const cardano_json_object_t* config, const cardano_json_object_t* cases, const cardano_json_object_t* recipe, size_t depth);
+static built_result build_fixture(
+  const cardano_json_object_t* config,
+  const cardano_json_object_t* cases,
+  const cardano_json_object_t* recipe,
+  size_t                       depth);
 
+/**
+ * Executes an ordered builder recipe using only fixture inputs.
+ */
 template<typename T>
-built_result
-build_recipe(const cardano_json_object_t* config, const cardano_json_object_t* cases, const cardano_json_object_t* recipe, size_t depth)
+static built_result
+build_recipe(
+  const cardano_json_object_t* config,
+  const cardano_json_object_t* cases,
+  const cardano_json_object_t* recipe,
+  size_t                       depth)
 {
   using api = builder_api<T>;
   if (depth > 8)
+  {
     throw std::runtime_error("Cyclic or excessive recipe nesting");
-  auto input      = member(recipe, "input");
-  auto parameters = make(cardano_protocol_parameters_unref, cardano_protocol_parameters_new);
-  auto numeric    = member(config, "parameters");
-  success(cardano_protocol_parameters_set_min_fee_a(parameters.get(), amount(numeric.get(), "min_fee_a")));
-  success(cardano_protocol_parameters_set_min_fee_b(parameters.get(), amount(numeric.get(), "min_fee_b")));
-  success(cardano_protocol_parameters_set_max_tx_size(parameters.get(), amount(numeric.get(), "max_tx_size")));
-  success(cardano_protocol_parameters_set_max_value_size(parameters.get(), amount(numeric.get(), "max_value_size")));
-  success(cardano_protocol_parameters_set_ada_per_utxo_byte(parameters.get(), amount(numeric.get(), "ada_per_utxo_byte")));
-  success(cardano_protocol_parameters_set_collateral_percentage(parameters.get(), amount(numeric.get(), "collateral_percentage")));
-  success(cardano_protocol_parameters_set_max_collateral_inputs(parameters.get(), amount(numeric.get(), "max_collateral_inputs")));
-  success(cardano_protocol_parameters_set_key_deposit(parameters.get(), amount(numeric.get(), "key_deposit")));
-  success(cardano_protocol_parameters_set_pool_deposit(parameters.get(), amount(numeric.get(), "pool_deposit")));
-  auto     pv    = member(cardano_json_object_has_property(input.get(), "protocol_version", 16) ? input.get() : config, "protocol_version");
-  auto     major = own(cardano_json_object_array_get(pv.get(), 0), cardano_json_object_unref);
-  auto     minor = own(cardano_json_object_array_get(pv.get(), 1), cardano_json_object_unref);
-  uint64_t maj = 0, min = 0;
-  success(cardano_json_object_get_uint(major.get(), &maj));
-  success(cardano_json_object_get_uint(minor.get(), &min));
-  auto version = make(cardano_protocol_version_unref, cardano_protocol_version_new, maj, min);
-  success(cardano_protocol_parameters_set_protocol_version(parameters.get(), version.get()));
-  auto limits = member(config, "max_tx_ex_units");
-  auto units  = make(cardano_ex_units_unref, cardano_ex_units_new, amount(limits.get(), "memory"), amount(limits.get(), "steps"));
-  success(cardano_protocol_parameters_set_max_tx_ex_units(parameters.get(), units.get()));
-  auto prices = member(config, "execution_prices");
+  }
+
+  auto input      = get_json_member(recipe, "input");
+  auto parameters = create_scoped_object(cardano_protocol_parameters_unref, cardano_protocol_parameters_new);
+  auto numeric    = get_json_member(config, "parameters");
+  check_result(
+    cardano_protocol_parameters_set_min_fee_a(parameters.get(), get_json_amount(numeric.get(), "min_fee_a")));
+  check_result(
+    cardano_protocol_parameters_set_min_fee_b(parameters.get(), get_json_amount(numeric.get(), "min_fee_b")));
+  check_result(
+    cardano_protocol_parameters_set_max_tx_size(parameters.get(), get_json_amount(numeric.get(), "max_tx_size")));
+  check_result(
+    cardano_protocol_parameters_set_max_value_size(parameters.get(), get_json_amount(numeric.get(), "max_value_size")));
+  check_result(cardano_protocol_parameters_set_ada_per_utxo_byte(
+    parameters.get(), get_json_amount(numeric.get(), "ada_per_utxo_byte")));
+  check_result(cardano_protocol_parameters_set_collateral_percentage(
+    parameters.get(), get_json_amount(numeric.get(), "collateral_percentage")));
+  check_result(cardano_protocol_parameters_set_max_collateral_inputs(
+    parameters.get(), get_json_amount(numeric.get(), "max_collateral_inputs")));
+  check_result(
+    cardano_protocol_parameters_set_key_deposit(parameters.get(), get_json_amount(numeric.get(), "key_deposit")));
+  check_result(
+    cardano_protocol_parameters_set_pool_deposit(parameters.get(), get_json_amount(numeric.get(), "pool_deposit")));
+
+  auto pv = get_json_member(
+    cardano_json_object_has_property(input.get(), "protocol_version", 16) ? input.get() : config, "protocol_version");
+  auto     major         = make_scoped_object(cardano_json_object_array_get(pv.get(), 0), cardano_json_object_unref);
+  auto     minor         = make_scoped_object(cardano_json_object_array_get(pv.get(), 1), cardano_json_object_unref);
+  uint64_t major_version = 0;
+  uint64_t minor_version = 0;
+  check_result(cardano_json_object_get_uint(major.get(), &major_version));
+  check_result(cardano_json_object_get_uint(minor.get(), &minor_version));
+
+  auto version =
+    create_scoped_object(cardano_protocol_version_unref, cardano_protocol_version_new, major_version, minor_version);
+  check_result(cardano_protocol_parameters_set_protocol_version(parameters.get(), version.get()));
+
+  auto limits = get_json_member(config, "max_tx_ex_units");
+  auto units  = create_scoped_object(
+    cardano_ex_units_unref,
+    cardano_ex_units_new,
+    get_json_amount(limits.get(), "memory"),
+    get_json_amount(limits.get(), "steps"));
+  check_result(cardano_protocol_parameters_set_max_tx_ex_units(parameters.get(), units.get()));
+
+  auto prices = get_json_member(config, "execution_prices");
   auto price  = [&](const char* kind)
   {
-    auto pair = member(prices.get(), kind);
-    auto n    = own(cardano_json_object_array_get(pair.get(), 0), cardano_json_object_unref);
-    auto d    = own(cardano_json_object_array_get(pair.get(), 1), cardano_json_object_unref);
-    return make(cardano_unit_interval_unref, cardano_unit_interval_new, std::stoull(cardano_json_object_get_string(n.get(), nullptr)), std::stoull(cardano_json_object_get_string(d.get(), nullptr)));
+    auto pair = get_json_member(prices.get(), kind);
+    auto n    = make_scoped_object(cardano_json_object_array_get(pair.get(), 0), cardano_json_object_unref);
+    auto d    = make_scoped_object(cardano_json_object_array_get(pair.get(), 1), cardano_json_object_unref);
+
+    return create_scoped_object(
+      cardano_unit_interval_unref,
+      cardano_unit_interval_new,
+      std::stoull(cardano_json_object_get_string(n.get(), nullptr)),
+      std::stoull(cardano_json_object_get_string(d.get(), nullptr)));
   };
-  auto memory    = price("memory");
-  auto steps     = price("steps");
-  auto execution = make(cardano_ex_unit_prices_unref, cardano_ex_unit_prices_new, memory.get(), steps.get());
-  success(cardano_protocol_parameters_set_execution_costs(parameters.get(), execution.get()));
-  auto                 values = member(config, "plutus_v4_costs");
+
+  auto memory = price("memory");
+  auto steps  = price("steps");
+  auto execution =
+    create_scoped_object(cardano_ex_unit_prices_unref, cardano_ex_unit_prices_new, memory.get(), steps.get());
+  check_result(cardano_protocol_parameters_set_execution_costs(parameters.get(), execution.get()));
+
+  auto                 values = get_json_member(config, "plutus_v4_costs");
   std::vector<int64_t> costs;
   for (size_t i = 0; i < cardano_json_object_array_get_length(values.get()); ++i)
   {
-    auto    v    = own(cardano_json_object_array_get(values.get(), i), cardano_json_object_unref);
+    auto    v    = make_scoped_object(cardano_json_object_array_get(values.get(), i), cardano_json_object_unref);
     int64_t cost = 0;
-    success(cardano_json_object_get_signed_int(v.get(), &cost));
+    check_result(cardano_json_object_get_signed_int(v.get(), &cost));
     costs.push_back(cost);
   }
-  auto model  = make(cardano_cost_model_unref, cardano_cost_model_new, CARDANO_PLUTUS_LANGUAGE_VERSION_V4, costs.data(), costs.size());
-  auto models = make(cardano_costmdls_unref, cardano_costmdls_new);
-  success(cardano_costmdls_insert(models.get(), model.get()));
-  success(cardano_protocol_parameters_set_cost_models(parameters.get(), models.get()));
-  auto                                         slot        = member(config, "slot_config");
-  cardano_slot_config_t                        slot_config = { amount(slot.get(), "zero_time"), amount(slot.get(), "zero_slot"), amount(slot.get(), "slot_length") };
+  auto model = create_scoped_object(
+    cardano_cost_model_unref, cardano_cost_model_new, CARDANO_PLUTUS_LANGUAGE_VERSION_V4, costs.data(), costs.size());
+  auto models = create_scoped_object(cardano_costmdls_unref, cardano_costmdls_new);
+  check_result(cardano_costmdls_insert(models.get(), model.get()));
+  check_result(cardano_protocol_parameters_set_cost_models(parameters.get(), models.get()));
+
+  auto                  slot        = get_json_member(config, "slot_config");
+  cardano_slot_config_t slot_config = {
+    get_json_amount(slot.get(), "zero_time"),
+    get_json_amount(slot.get(), "zero_slot"),
+    get_json_amount(slot.get(), "slot_length")
+  };
+
   std::vector<std::unique_ptr<callback_probe>> callbacks;
-  auto                                         builder = own(api::create(parameters.get(), &slot_config), api::unref);
+  auto                                         builder = make_scoped_object(api::create(parameters.get(), &slot_config), api::unref);
   if (!builder)
+  {
     throw std::runtime_error("Builder allocation failed");
+  }
   if constexpr (std::is_same_v<T, cardano_tx_builder_t>)
   {
-    auto utxos = member(input.get(), "utxos");
-    auto list  = make(cardano_utxo_list_unref, cardano_utxo_list_new);
+    auto utxos = get_json_member(input.get(), "utxos");
+    auto list  = create_scoped_object(cardano_utxo_list_unref, cardano_utxo_list_new);
     for (size_t i = 0; i < cardano_json_object_array_get_length(utxos.get()); ++i)
     {
-      auto v    = own(cardano_json_object_array_get(utxos.get(), i), cardano_json_object_unref);
-      auto utxo = make_utxo(v.get());
-      success(cardano_utxo_list_add(list.get(), utxo.get()));
+      auto v    = make_scoped_object(cardano_json_object_array_get(utxos.get(), i), cardano_json_object_unref);
+      auto utxo = create_utxo(v.get());
+      check_result(cardano_utxo_list_add(list.get(), utxo.get()));
     }
     cardano_tx_builder_set_utxos(builder.get(), list.get());
-    const auto address = text(input.get(), "change_address");
+
+    const auto address = get_json_string(input.get(), "change_address");
     cardano_tx_builder_set_change_address_ex(builder.get(), address.data(), address.size());
   }
-  auto        operations = member(input.get(), "steps");
+  auto        operations = get_json_member(input.get(), "steps");
   std::string native_hash;
   for (size_t i = 0; i < cardano_json_object_array_get_length(operations.get()); ++i)
   {
-    auto       step = own(cardano_json_object_array_get(operations.get(), i), cardano_json_object_unref);
-    const auto op   = text(step.get(), "op");
+    auto       step = make_scoped_object(cardano_json_object_array_get(operations.get(), i), cardano_json_object_unref);
+    const auto op   = get_json_string(step.get(), "op");
     if (op == "send")
     {
-      const auto address = text(step.get(), "address");
-      api::send_lovelace_ex(builder.get(), address.data(), address.size(), amount(step.get(), "amount"));
+      const auto address = get_json_string(step.get(), "address");
+      api::send_lovelace_ex(builder.get(), address.data(), address.size(), get_json_amount(step.get(), "amount"));
     }
     else if (op == "script")
     {
-      if (text(step.get(), "language") != "plutus_v4")
+      if (get_json_string(step.get(), "language") != "plutus_v4")
+      {
         throw std::runtime_error("Unsupported recipe language");
-      const auto value   = text(step.get(), "bytes");
-      auto       script  = make(cardano_plutus_v4_script_unref, cardano_plutus_v4_script_new_bytes_from_hex, value.data(), value.size());
-      auto       wrapper = make(cardano_script_unref, cardano_script_new_plutus_v4, script.get());
+      }
+
+      const auto value  = get_json_string(step.get(), "bytes");
+      auto       script = create_scoped_object(
+        cardano_plutus_v4_script_unref, cardano_plutus_v4_script_new_bytes_from_hex, value.data(), value.size());
+      auto wrapper = create_scoped_object(cardano_script_unref, cardano_script_new_plutus_v4, script.get());
       api::add_script(builder.get(), wrapper.get());
     }
     else if (op == "native_script")
     {
-      auto script  = read(text(step.get(), "cbor"), cardano_native_script_from_cbor, cardano_native_script_unref);
-      auto hash    = own(cardano_native_script_get_hash(script.get()), cardano_blake2b_hash_unref);
-      native_hash  = hex(cardano_blake2b_hash_get_data(hash.get()), cardano_blake2b_hash_get_bytes_size(hash.get()));
-      auto wrapper = make(cardano_script_unref, cardano_script_new_native, script.get());
+      auto script =
+        read_cbor(get_json_string(step.get(), "cbor"), cardano_native_script_from_cbor, cardano_native_script_unref);
+      auto hash = make_scoped_object(cardano_native_script_get_hash(script.get()), cardano_blake2b_hash_unref);
+      native_hash =
+        encode_hex(cardano_blake2b_hash_get_data(hash.get()), cardano_blake2b_hash_get_bytes_size(hash.get()));
+
+      auto wrapper = create_scoped_object(cardano_script_unref, cardano_script_new_native, script.get());
       api::add_script(builder.get(), wrapper.get());
     }
     else if (op == "native_mint")
     {
-      const auto asset = native_hash + text(step.get(), "asset_name");
-      api::mint_token_with_id_ex(builder.get(), asset.data(), asset.size(), std::stoll(text(step.get(), "amount")), nullptr);
+      const auto asset = native_hash + get_json_string(step.get(), "asset_name");
+      api::mint_token_with_id_ex(
+        builder.get(), asset.data(), asset.size(), std::stoll(get_json_string(step.get(), "amount")), nullptr);
     }
     else if (op == "guard" || op == "require_guard")
     {
-      const auto hash = text(step.get(), "hash");
-      const auto kind = text(step.get(), "kind");
+      const auto hash = get_json_string(step.get(), "hash");
+      const auto kind = get_json_string(step.get(), "kind");
       if (kind != "key" && kind != "script")
+      {
         throw std::runtime_error("Unknown guard kind");
+      }
+
       const auto type       = kind == "key" ? CARDANO_CREDENTIAL_TYPE_KEY_HASH : CARDANO_CREDENTIAL_TYPE_SCRIPT_HASH;
-      auto       credential = read(std::string(type == CARDANO_CREDENTIAL_TYPE_KEY_HASH ? "8200581c" : "8201581c") + hash, cardano_credential_from_cbor, cardano_credential_unref);
-      auto       data       = own(static_cast<cardano_plutus_data_t*>(nullptr), cardano_plutus_data_unref);
+      auto       credential = read_cbor(
+        std::string(type == CARDANO_CREDENTIAL_TYPE_KEY_HASH ? "8200581c" : "8201581c") + hash,
+        cardano_credential_from_cbor,
+        cardano_credential_unref);
+      auto data = make_scoped_object(static_cast<cardano_plutus_data_t*>(nullptr), cardano_plutus_data_unref);
       if (cardano_json_object_has_property(step.get(), "redeemer", 8))
-        data = make(cardano_plutus_data_unref, cardano_plutus_data_new_integer_from_int, std::stoll(text(step.get(), "redeemer")));
+      {
+        data = create_scoped_object(
+          cardano_plutus_data_unref,
+          cardano_plutus_data_new_integer_from_int,
+          std::stoll(get_json_string(step.get(), "redeemer")));
+      }
       if (op == "require_guard")
       {
         if constexpr (std::is_same_v<T, cardano_sub_tx_builder_t>)
+        {
           cardano_sub_tx_builder_require_top_level_guard_ex(builder.get(), hash.data(), hash.size(), type, data.get());
+        }
         else
+        {
           throw std::runtime_error("Top-level guard requirement belongs to a subtransaction");
+        }
       }
       else if (kind == "key")
+      {
         api::add_guard_ex(builder.get(), hash.data(), hash.size(), type);
+      }
       else
+      {
         api::add_guard_with_redeemer(builder.get(), credential.get(), data.get());
+      }
     }
     else if (op == "input" || op == "mint")
     {
-      auto       cb   = member(step.get(), "callback");
-      const auto kind = text(cb.get(), "kind");
+      auto       cb   = get_json_member(step.get(), "callback");
+      const auto kind = get_json_string(cb.get(), "kind");
       if (kind != "constant_integer" && kind != "error" && kind != "null")
+      {
         throw std::runtime_error("Unknown callback kind");
-      auto probe    = std::make_unique<callback_probe>();
-      probe->kind   = kind;
-      probe->value  = kind == "constant_integer" ? std::stoll(text(cb.get(), "value")) : 0;
+      }
+
+      auto probe   = std::make_unique<callback_probe>();
+      probe->kind  = kind;
+      probe->value = kind == "constant_integer" ? std::stoll(get_json_string(cb.get(), "value")) : 0;
+
       auto* context = probe.get();
       callbacks.push_back(std::move(probe));
       if (op == "input")
       {
-        auto v    = member(step.get(), "utxo");
-        auto utxo = make_utxo(v.get());
+        auto v    = get_json_member(step.get(), "utxo");
+        auto utxo = create_utxo(v.get());
         api::add_input_with_deferred_redeemer(builder.get(), utxo.get(), deferred_callback, context, nullptr);
       }
       else
       {
-        const auto asset = text(step.get(), "asset_id");
-        auto       hash  = make(cardano_blake2b_hash_unref, cardano_blake2b_hash_from_hex, asset.data(), size_t(56));
-        auto       name  = make(cardano_asset_name_unref, cardano_asset_name_from_hex, asset.data() + 56, asset.size() - 56);
-        api::mint_token_with_deferred_redeemer(builder.get(), hash.get(), name.get(), std::stoll(text(step.get(), "amount")), deferred_callback, context);
+        const auto asset = get_json_string(step.get(), "asset_id");
+        auto       hash =
+          create_scoped_object(cardano_blake2b_hash_unref, cardano_blake2b_hash_from_hex, asset.data(), size_t(56));
+        auto name = create_scoped_object(
+          cardano_asset_name_unref, cardano_asset_name_from_hex, asset.data() + 56, asset.size() - 56);
+        api::mint_token_with_deferred_redeemer(
+          builder.get(),
+          hash.get(),
+          name.get(),
+          std::stoll(get_json_string(step.get(), "amount")),
+          deferred_callback,
+          context);
       }
     }
     else if constexpr (std::is_same_v<T, cardano_tx_builder_t>)
     {
       if (op == "deposit" || op == "withdraw")
       {
-        const auto address = text(step.get(), "address");
+        const auto address = get_json_string(step.get(), "address");
         if (op == "deposit")
-          cardano_tx_builder_add_direct_deposit_ex(builder.get(), address.data(), address.size(), amount(step.get(), "amount"));
+        {
+          cardano_tx_builder_add_direct_deposit_ex(
+            builder.get(), address.data(), address.size(), get_json_amount(step.get(), "amount"));
+        }
         else
-          cardano_tx_builder_withdraw_rewards_ex(builder.get(), address.data(), address.size(), std::stoll(text(step.get(), "amount")), nullptr);
+        {
+          cardano_tx_builder_withdraw_rewards_ex(
+            builder.get(), address.data(), address.size(), std::stoll(get_json_string(step.get(), "amount")), nullptr);
+        }
       }
       else if (op == "balance" || op == "starting_balance")
       {
-        const auto address  = text(step.get(), "address");
-        auto       interval = own(static_cast<cardano_account_balance_interval_t*>(nullptr), cardano_account_balance_interval_unref);
+        const auto address  = get_json_string(step.get(), "address");
+        auto       interval = make_scoped_object(
+          static_cast<cardano_account_balance_interval_t*>(nullptr), cardano_account_balance_interval_unref);
         if (cardano_json_object_has_property(step.get(), "exact", 5))
-          interval = make(cardano_account_balance_interval_unref, cardano_account_balance_interval_new_exact, amount(step.get(), "exact"));
+        {
+          interval = create_scoped_object(
+            cardano_account_balance_interval_unref,
+            cardano_account_balance_interval_new_exact,
+            get_json_amount(step.get(), "exact"));
+        }
         else
         {
-          uint64_t   lower = 0, upper = 0;
-          const bool lo = cardano_json_object_has_property(step.get(), "lower", 5), hi = cardano_json_object_has_property(step.get(), "upper", 5);
-          if (lo)
-            lower = amount(step.get(), "lower");
-          if (hi)
-            upper = amount(step.get(), "upper");
-          interval = make(cardano_account_balance_interval_unref, cardano_account_balance_interval_new, lo ? &lower : nullptr, hi ? &upper : nullptr);
+          uint64_t   lower     = 0;
+          uint64_t   upper     = 0;
+          const bool has_lower = cardano_json_object_has_property(step.get(), "lower", 5);
+          const bool has_upper = cardano_json_object_has_property(step.get(), "upper", 5);
+          if (has_lower)
+          {
+            lower = get_json_amount(step.get(), "lower");
+          }
+          if (has_upper)
+          {
+            upper = get_json_amount(step.get(), "upper");
+          }
+          interval = create_scoped_object(
+            cardano_account_balance_interval_unref,
+            cardano_account_balance_interval_new,
+            has_lower ? &lower : nullptr,
+            has_upper ? &upper : nullptr);
         }
         if (op == "balance")
-          cardano_tx_builder_add_account_balance_interval_ex(builder.get(), address.data(), address.size(), interval.get());
+        {
+          cardano_tx_builder_add_account_balance_interval_ex(
+            builder.get(), address.data(), address.size(), interval.get());
+        }
         else
-          cardano_tx_builder_add_starting_account_balance_interval_ex(builder.get(), address.data(), address.size(), interval.get());
+        {
+          cardano_tx_builder_add_starting_account_balance_interval_ex(
+            builder.get(), address.data(), address.size(), interval.get());
+        }
       }
       else if (op == "sub_transaction")
       {
-        const auto name  = text(step.get(), "recipe");
+        const auto name  = get_json_string(step.get(), "recipe");
         bool       found = false;
         for (size_t c = 0; c < cardano_json_object_array_get_length(cases); ++c)
         {
-          auto child = own(cardano_json_object_array_get(cases, c), cardano_json_object_unref);
-          if (text(child.get(), "id") != name)
+          auto child = make_scoped_object(cardano_json_object_array_get(cases, c), cardano_json_object_unref);
+          if (get_json_string(child.get(), "id") != name)
+          {
             continue;
-          if (text(child.get(), "type") != "sub_transaction")
+          }
+          if (get_json_string(child.get(), "type") != "sub_transaction")
+          {
             throw std::runtime_error("Batch child must be a subtransaction recipe");
-          const auto result = build_dispatch(config, cases, child.get(), depth + 1);
-          success(result.error);
-          auto sub      = read(result.cbor, cardano_sub_transaction_from_cbor, cardano_sub_transaction_unref);
-          auto resolved = make(cardano_utxo_list_unref, cardano_utxo_list_new);
+          }
+
+          const auto result = build_fixture(config, cases, child.get(), depth + 1);
+          check_result(result.error);
+
+          auto sub      = read_cbor(result.cbor, cardano_sub_transaction_from_cbor, cardano_sub_transaction_unref);
+          auto resolved = create_scoped_object(cardano_utxo_list_unref, cardano_utxo_list_new);
           cardano_tx_builder_add_sub_transaction(builder.get(), sub.get(), resolved.get());
           found = true;
           break;
         }
         if (!found)
+        {
           throw std::runtime_error("Missing subtransaction recipe");
+        }
       }
       else
+      {
         throw std::runtime_error("Unsupported builder step: " + op);
+      }
     }
     else
+    {
       throw std::runtime_error("Unsupported subtransaction step: " + op);
+    }
   }
-  typename api::result_type* raw     = nullptr;
-  const auto                 error   = api::build(builder.get(), &raw);
-  auto                       result  = own(raw, api::result_unref);
-  bool                       invoked = false;
+  typename api::result_type* raw = nullptr;
+
+  const auto error   = api::build(builder.get(), &raw);
+  auto       result  = make_scoped_object(raw, api::result_unref);
+  bool       invoked = false;
   for (const auto& cb: callbacks)
+  {
     invoked = invoked || cb->calls > 0;
+  }
   if (error != CARDANO_SUCCESS)
+  {
     return { error, "", "", invoked };
+  }
   if constexpr (std::is_same_v<T, cardano_sub_tx_builder_t>)
   {
     if (cardano_json_object_has_property(input.get(), "signing_seed", 12))
     {
-      const auto seed      = text(input.get(), "signing_seed");
-      auto       key       = make(cardano_ed25519_private_key_unref, cardano_ed25519_private_key_from_normal_hex, seed.data(), seed.size());
-      auto       hash      = own(cardano_sub_transaction_get_id(result.get()), cardano_blake2b_hash_unref);
-      auto       signature = make(cardano_ed25519_signature_unref, cardano_ed25519_private_key_sign, key.get(), cardano_blake2b_hash_get_data(hash.get()), cardano_blake2b_hash_get_bytes_size(hash.get()));
-      auto       pub       = make(cardano_ed25519_public_key_unref, cardano_ed25519_private_key_get_public_key, key.get());
-      auto       witness   = make(cardano_vkey_witness_unref, cardano_vkey_witness_new, pub.get(), signature.get());
-      auto       witnesses = make(cardano_vkey_witness_set_unref, cardano_vkey_witness_set_new);
-      success(cardano_vkey_witness_set_add(witnesses.get(), witness.get()));
-      success(cardano_sub_transaction_apply_vkey_witnesses(result.get(), witnesses.get()));
+      const auto seed = get_json_string(input.get(), "signing_seed");
+      auto       key  = create_scoped_object(
+        cardano_ed25519_private_key_unref, cardano_ed25519_private_key_from_normal_hex, seed.data(), seed.size());
+      auto hash      = make_scoped_object(cardano_sub_transaction_get_id(result.get()), cardano_blake2b_hash_unref);
+      auto signature = create_scoped_object(
+        cardano_ed25519_signature_unref,
+        cardano_ed25519_private_key_sign,
+        key.get(),
+        cardano_blake2b_hash_get_data(hash.get()),
+        cardano_blake2b_hash_get_bytes_size(hash.get()));
+      auto pub =
+        create_scoped_object(cardano_ed25519_public_key_unref, cardano_ed25519_private_key_get_public_key, key.get());
+      auto witness =
+        create_scoped_object(cardano_vkey_witness_unref, cardano_vkey_witness_new, pub.get(), signature.get());
+      auto witnesses = create_scoped_object(cardano_vkey_witness_set_unref, cardano_vkey_witness_set_new);
+      check_result(cardano_vkey_witness_set_add(witnesses.get(), witness.get()));
+      check_result(cardano_sub_transaction_apply_vkey_witnesses(result.get(), witnesses.get()));
     }
   }
-  auto writer = own(cardano_cbor_writer_new(), cardano_cbor_writer_unref);
-  success(api::result_to_cbor(result.get(), writer.get()));
-  auto json = own(cardano_json_writer_new(CARDANO_JSON_FORMAT_COMPACT), cardano_json_writer_unref);
-  success(api::result_to_cip116_json(result.get(), json.get()));
+  auto writer = make_scoped_object(cardano_cbor_writer_new(), cardano_cbor_writer_unref);
+  check_result(api::result_to_cbor(result.get(), writer.get()));
+
+  auto json = make_scoped_object(cardano_json_writer_new(CARDANO_JSON_FORMAT_COMPACT), cardano_json_writer_unref);
+  check_result(api::result_to_cip116_json(result.get(), json.get()));
+
   char*             output    = encode_json(json.get());
   const std::string inspected = output;
   std::free(output);
-  return { CARDANO_SUCCESS, encoded(writer.get()), inspected, invoked };
+
+  return { CARDANO_SUCCESS, encode_cbor(writer.get()), inspected, invoked };
 }
 
-built_result
-build_dispatch(const cardano_json_object_t* config, const cardano_json_object_t* cases, const cardano_json_object_t* recipe, size_t depth)
+/**
+ * Selects the transaction or subtransaction builder for a recipe.
+ */
+static built_result
+build_fixture(
+  const cardano_json_object_t* config,
+  const cardano_json_object_t* cases,
+  const cardano_json_object_t* recipe,
+  size_t                       depth)
 {
-  if (text(recipe, "type") == "transaction")
+  if (get_json_string(recipe, "type") == "transaction")
+  {
     return build_recipe<cardano_tx_builder_t>(config, cases, recipe, depth);
-  if (text(recipe, "type") == "sub_transaction")
+  }
+  if (get_json_string(recipe, "type") == "sub_transaction")
+  {
     return build_recipe<cardano_sub_tx_builder_t>(config, cases, recipe, depth);
+  }
   throw std::runtime_error("Unsupported builder type");
 }
 
-void
-check_builder(const cardano_json_object_t* config, const cardano_json_object_t* cases, const cardano_json_object_t* recipe)
+/**
+ * Compares a built transaction or failure with the expected fixture result.
+ */
+static void
+verify_builder_fixture(
+  const cardano_json_object_t* config,
+  const cardano_json_object_t* cases,
+  const cardano_json_object_t* recipe)
 {
-  auto       expected      = member(recipe, "expected");
-  const auto actual        = build_dispatch(config, cases, recipe, 0);
-  auto       invoked       = member(expected.get(), "callback_invoked");
+  auto       expected      = get_json_member(recipe, "expected");
+  const auto actual        = build_fixture(config, cases, recipe, 0);
+  auto       invoked       = get_json_member(expected.get(), "callback_invoked");
   bool       should_invoke = false;
-  success(cardano_json_object_get_boolean(invoked.get(), &should_invoke));
+  check_result(cardano_json_object_get_boolean(invoked.get(), &should_invoke));
+
   EXPECT_EQ(actual.callback_invoked, should_invoke);
+
   if (cardano_json_object_has_property(expected.get(), "error", 5))
   {
     EXPECT_NE(actual.error, CARDANO_SUCCESS);
-    EXPECT_EQ(static_cast<uint64_t>(actual.error), number(expected.get(), "native_error"));
+    EXPECT_EQ(static_cast<uint64_t>(actual.error), get_json_uint(expected.get(), "native_error"));
+
     return;
   }
+
   ASSERT_EQ(actual.error, CARDANO_SUCCESS);
-  EXPECT_EQ(actual.cbor, text(expected.get(), "cbor"));
-  auto inspection = member(expected.get(), "inspection");
-  auto parsed     = own(cardano_json_object_parse(actual.inspection.data(), actual.inspection.size()), cardano_json_object_unref);
-  EXPECT_STREQ(cardano_json_object_to_json_string(parsed.get(), CARDANO_JSON_FORMAT_COMPACT, nullptr), cardano_json_object_to_json_string(inspection.get(), CARDANO_JSON_FORMAT_COMPACT, nullptr));
+  EXPECT_EQ(actual.cbor, get_json_string(expected.get(), "cbor"));
+
+  auto inspection = get_json_member(expected.get(), "inspection");
+  auto parsed     = make_scoped_object(
+    cardano_json_object_parse(actual.inspection.data(), actual.inspection.size()), cardano_json_object_unref);
+
+  EXPECT_STREQ(
+    cardano_json_object_to_json_string(parsed.get(), CARDANO_JSON_FORMAT_COMPACT, nullptr),
+    cardano_json_object_to_json_string(inspection.get(), CARDANO_JSON_FORMAT_COMPACT, nullptr));
 }
 
-void
-run(const char* file)
+/**
+ * Loads and checks every case in a conformance suite.
+ */
+static void
+run_fixture_suite(const char* file)
 {
   const auto    path = std::filesystem::path(__FILE__).parent_path() / "vectors" / "bindings" / "v1" / file;
   std::ifstream stream(path);
+
   ASSERT_TRUE(stream.is_open());
+
   const std::string content((std::istreambuf_iterator<char>(stream)), std::istreambuf_iterator<char>());
-  auto              root = own(cardano_json_object_parse(content.data(), content.size()), cardano_json_object_unref);
+  auto              root = make_scoped_object(cardano_json_object_parse(content.data(), content.size()), cardano_json_object_unref);
+
   ASSERT_NE(root, nullptr);
-  ASSERT_EQ(number(root.get(), "schema_version"), 1U);
-  auto cases = member(root.get(), "cases");
+  ASSERT_EQ(get_json_uint(root.get(), "schema_version"), 1U);
+
+  auto cases = get_json_member(root.get(), "cases");
+
   ASSERT_GT(cardano_json_object_array_get_length(cases.get()), 0U);
+
   for (size_t i = 0; i < cardano_json_object_array_get_length(cases.get()); ++i)
   {
-    auto item = own(cardano_json_object_array_get(cases.get(), i), cardano_json_object_unref);
-    SCOPED_TRACE(text(item.get(), "id"));
-    if (text(item.get(), "operation") == "cbor")
+    auto item = make_scoped_object(cardano_json_object_array_get(cases.get(), i), cardano_json_object_unref);
+    SCOPED_TRACE(get_json_string(item.get(), "id"));
+    if (get_json_string(item.get(), "operation") == "cbor")
     {
-      ASSERT_NO_THROW(cbor_dispatch(item.get()));
+      ASSERT_NO_THROW(verify_cbor_fixture(item.get()));
+
       if (!testing::Test::HasFatalFailure())
       {
-        ASSERT_NO_THROW(extra_cbor_checks(item.get()));
+        ASSERT_NO_THROW(verify_cbor_hash_and_signature(item.get()));
       }
     }
-    else if (text(item.get(), "operation") == "build")
+    else if (get_json_string(item.get(), "operation") == "build")
     {
-      auto config = member(root.get(), "config");
-      ASSERT_NO_THROW(check_builder(config.get(), cases.get(), item.get()));
+      auto config = get_json_member(root.get(), "config");
+
+      ASSERT_NO_THROW(verify_builder_fixture(config.get(), cases.get(), item.get()));
     }
     else
     {
-      ASSERT_NO_THROW(primitive(item.get()));
+      ASSERT_NO_THROW(verify_primitive_fixture(item.get()));
     }
   }
 }
-} // namespace
 
-/* TESTS *********************************************************************/
+/* UNIT TESTS ****************************************************************/
 
 TEST(binding_vectors, serialization)
 {
-  run("serialization.json");
+  run_fixture_suite("serialization.json");
 }
 
 TEST(binding_vectors, invalidInputs)
 {
-  run("invalid.json");
+  run_fixture_suite("invalid.json");
 }
 
 TEST(binding_vectors, primitives)
 {
-  run("primitives.json");
+  run_fixture_suite("primitives.json");
 }
 
 TEST(binding_vectors, builders)
 {
-  run("builders.json");
+  run_fixture_suite("builders.json");
 }
 
 TEST(binding_memory, releasingOneReferenceDoesNotConsumeAnotherOwner)
 {
-  auto owner = make(cardano_plutus_data_unref, cardano_plutus_data_new_integer_from_int, int64_t(42));
+  auto owner = create_scoped_object(cardano_plutus_data_unref, cardano_plutus_data_new_integer_from_int, int64_t(42));
+
   EXPECT_EQ(cardano_plutus_data_refcount(owner.get()), 1U);
+
   cardano_plutus_data_t* alias = owner.get();
   cardano_plutus_data_ref(alias);
+
   EXPECT_EQ(cardano_plutus_data_refcount(owner.get()), 2U);
+
   cardano_plutus_data_unref(&alias);
+
   EXPECT_EQ(alias, owner.get());
   EXPECT_EQ(cardano_plutus_data_refcount(owner.get()), 1U);
+
   // The binding has released its reference even though another owner keeps it alive.
   alias = nullptr;
   cardano_plutus_data_unref(&alias);
+
   EXPECT_EQ(cardano_plutus_data_refcount(owner.get()), 1U);
 }
 
 TEST(binding_memory, ownedGetterSurvivesParentRelease)
 {
-  auto transaction = read("84a3008001800200a0f5f6", cardano_transaction_from_cbor, cardano_transaction_unref);
-  auto body        = own(cardano_transaction_get_body(transaction.get()), cardano_transaction_body_unref);
+  auto transaction = read_cbor("84a3008001800200a0f5f6", cardano_transaction_from_cbor, cardano_transaction_unref);
+  auto body        = make_scoped_object(cardano_transaction_get_body(transaction.get()), cardano_transaction_body_unref);
+
   ASSERT_NE(body, nullptr);
   EXPECT_EQ(cardano_transaction_body_refcount(body.get()), 2U);
+
   transaction.reset();
+
   EXPECT_EQ(cardano_transaction_body_refcount(body.get()), 1U);
-  auto writer = own(cardano_cbor_writer_new(), cardano_cbor_writer_unref);
-  success(cardano_transaction_body_to_cbor(body.get(), writer.get()));
-  EXPECT_EQ(encoded(writer.get()), "a3008001800200");
+
+  auto writer = make_scoped_object(cardano_cbor_writer_new(), cardano_cbor_writer_unref);
+  check_result(cardano_transaction_body_to_cbor(body.get(), writer.get()));
+
+  EXPECT_EQ(encode_cbor(writer.get()), "a3008001800200");
 }
 
 TEST(binding_memory, builderScopesReleaseAfterSuccessAndCallbackFailure)
@@ -867,6 +1349,6 @@ TEST(binding_memory, builderScopesReleaseAfterSuccessAndCallbackFailure)
   for (size_t iteration = 0; iteration < 16; ++iteration)
   {
     SCOPED_TRACE(iteration);
-    run("builders.json");
+    run_fixture_suite("builders.json");
   }
 }
