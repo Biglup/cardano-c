@@ -394,3 +394,38 @@ cardano_asset_name_get_last_error(const cardano_asset_name_t* asset_name)
 {
   return cardano_object_get_last_error(&asset_name->base);
 }
+
+cardano_error_t
+cardano_asset_name_deep_clone(const cardano_asset_name_t* source, cardano_asset_name_t** clone)
+{
+  if (clone == NULL)
+  {
+    return CARDANO_ERROR_POINTER_IS_NULL;
+  }
+
+  *clone = NULL;
+
+  if (source == NULL)
+  {
+    return CARDANO_ERROR_POINTER_IS_NULL;
+  }
+
+  cardano_asset_name_t* copy = _cardano_malloc(sizeof(cardano_asset_name_t));
+
+  if (copy == NULL)
+  {
+    return CARDANO_ERROR_MEMORY_ALLOCATION_FAILED;
+  }
+
+  copy->base.ref_count     = 1U;
+  copy->base.deallocator   = source->base.deallocator;
+  copy->base.last_error[0] = '\0';
+  CARDANO_UNUSED(memcpy(copy->data, source->data, sizeof(copy->data)));
+  copy->size = source->size;
+  CARDANO_UNUSED(memcpy(copy->hex, source->hex, sizeof(copy->hex)));
+  copy->hex_size = source->hex_size;
+
+  *clone = copy;
+
+  return CARDANO_SUCCESS;
+}

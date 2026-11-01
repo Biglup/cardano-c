@@ -385,3 +385,36 @@ cardano_bls_key_get_last_error(const cardano_bls_key_t* bls_key)
 {
   return cardano_object_get_last_error(&bls_key->base);
 }
+
+cardano_error_t
+cardano_bls_key_deep_clone(const cardano_bls_key_t* source, cardano_bls_key_t** clone)
+{
+  if (clone == NULL)
+  {
+    return CARDANO_ERROR_POINTER_IS_NULL;
+  }
+
+  *clone = NULL;
+
+  if (source == NULL)
+  {
+    return CARDANO_ERROR_POINTER_IS_NULL;
+  }
+
+  cardano_bls_key_t* copy = _cardano_malloc(sizeof(cardano_bls_key_t));
+
+  if (copy == NULL)
+  {
+    return CARDANO_ERROR_MEMORY_ALLOCATION_FAILED;
+  }
+
+  copy->base.ref_count     = 1U;
+  copy->base.deallocator   = source->base.deallocator;
+  copy->base.last_error[0] = '\0';
+  CARDANO_UNUSED(memcpy(copy->public_key, source->public_key, sizeof(copy->public_key)));
+  CARDANO_UNUSED(memcpy(copy->possession_proof, source->possession_proof, sizeof(copy->possession_proof)));
+
+  *clone = copy;
+
+  return CARDANO_SUCCESS;
+}

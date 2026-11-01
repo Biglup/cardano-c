@@ -1397,3 +1397,144 @@ cardano_proposal_procedure_get_last_error(const cardano_proposal_procedure_t* pr
 {
   return cardano_object_get_last_error(&proposal_procedure->base);
 }
+
+cardano_error_t
+cardano_proposal_procedure_deep_clone(const cardano_proposal_procedure_t* source, cardano_proposal_procedure_t** clone)
+{
+  if (clone == NULL)
+  {
+    return CARDANO_ERROR_POINTER_IS_NULL;
+  }
+
+  *clone = NULL;
+
+  if (source == NULL)
+  {
+    return CARDANO_ERROR_POINTER_IS_NULL;
+  }
+
+  cardano_proposal_procedure_t* copy = _cardano_malloc(sizeof(cardano_proposal_procedure_t));
+
+  if (copy == NULL)
+  {
+    return CARDANO_ERROR_MEMORY_ALLOCATION_FAILED;
+  }
+
+  copy->base.ref_count              = 1U;
+  copy->base.deallocator            = source->base.deallocator;
+  copy->base.last_error[0]          = '\0';
+  copy->hard_fork_initiation_action = NULL;
+  copy->info_action                 = NULL;
+  copy->new_constitution_action     = NULL;
+  copy->no_confidence_action        = NULL;
+  copy->parameter_change_action     = NULL;
+  copy->treasury_withdrawals_action = NULL;
+  copy->update_committee_action     = NULL;
+  copy->action_type                 = source->action_type;
+  copy->reward_address              = NULL;
+  copy->deposit                     = source->deposit;
+  copy->anchor                      = NULL;
+
+  if (source->hard_fork_initiation_action != NULL)
+  {
+    const cardano_error_t result = cardano_hard_fork_initiation_action_deep_clone(source->hard_fork_initiation_action, &copy->hard_fork_initiation_action);
+
+    if (result != CARDANO_SUCCESS)
+    {
+      copy->base.deallocator(copy);
+      return result;
+    }
+  }
+
+  if (source->info_action != NULL)
+  {
+    const cardano_error_t result = cardano_info_action_deep_clone(source->info_action, &copy->info_action);
+
+    if (result != CARDANO_SUCCESS)
+    {
+      copy->base.deallocator(copy);
+      return result;
+    }
+  }
+
+  if (source->new_constitution_action != NULL)
+  {
+    const cardano_error_t result = cardano_new_constitution_action_deep_clone(source->new_constitution_action, &copy->new_constitution_action);
+
+    if (result != CARDANO_SUCCESS)
+    {
+      copy->base.deallocator(copy);
+      return result;
+    }
+  }
+
+  if (source->no_confidence_action != NULL)
+  {
+    const cardano_error_t result = cardano_no_confidence_action_deep_clone(source->no_confidence_action, &copy->no_confidence_action);
+
+    if (result != CARDANO_SUCCESS)
+    {
+      copy->base.deallocator(copy);
+      return result;
+    }
+  }
+
+  if (source->parameter_change_action != NULL)
+  {
+    const cardano_error_t result = cardano_parameter_change_action_deep_clone(source->parameter_change_action, &copy->parameter_change_action);
+
+    if (result != CARDANO_SUCCESS)
+    {
+      copy->base.deallocator(copy);
+      return result;
+    }
+  }
+
+  if (source->treasury_withdrawals_action != NULL)
+  {
+    const cardano_error_t result = cardano_treasury_withdrawals_action_deep_clone(source->treasury_withdrawals_action, &copy->treasury_withdrawals_action);
+
+    if (result != CARDANO_SUCCESS)
+    {
+      copy->base.deallocator(copy);
+      return result;
+    }
+  }
+
+  if (source->update_committee_action != NULL)
+  {
+    const cardano_error_t result = cardano_update_committee_action_deep_clone(source->update_committee_action, &copy->update_committee_action);
+
+    if (result != CARDANO_SUCCESS)
+    {
+      copy->base.deallocator(copy);
+      return result;
+    }
+  }
+
+  if (source->reward_address != NULL)
+  {
+    const cardano_error_t result = cardano_reward_address_deep_clone(source->reward_address, &copy->reward_address);
+
+    if (result != CARDANO_SUCCESS)
+    {
+      copy->base.deallocator(copy);
+      return result;
+    }
+  }
+
+  if (source->anchor != NULL)
+  {
+    const cardano_error_t result = cardano_anchor_deep_clone(source->anchor, &copy->anchor);
+
+    if (result != CARDANO_SUCCESS)
+    {
+      copy->base.deallocator(copy);
+      return result;
+    }
+  }
+
+  *clone = copy;
+
+  return CARDANO_SUCCESS;
+}

@@ -90,3 +90,7 @@ Multi Asset
 ------------
 
 .. doxygenfunction:: cardano_multi_asset_get_last_error
+
+------------
+
+.. doxygenfunction:: cardano_multi_asset_deep_clone

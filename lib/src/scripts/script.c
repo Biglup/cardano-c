@@ -810,3 +810,95 @@ cardano_script_get_last_error(const cardano_script_t* script)
 {
   return cardano_object_get_last_error(&script->base);
 }
+
+cardano_error_t
+cardano_script_deep_clone(const cardano_script_t* source, cardano_script_t** clone)
+{
+  if (clone == NULL)
+  {
+    return CARDANO_ERROR_POINTER_IS_NULL;
+  }
+
+  *clone = NULL;
+
+  if (source == NULL)
+  {
+    return CARDANO_ERROR_POINTER_IS_NULL;
+  }
+
+  cardano_script_t* copy = _cardano_malloc(sizeof(cardano_script_t));
+
+  if (copy == NULL)
+  {
+    return CARDANO_ERROR_MEMORY_ALLOCATION_FAILED;
+  }
+
+  copy->base.ref_count     = 1U;
+  copy->base.deallocator   = source->base.deallocator;
+  copy->base.last_error[0] = '\0';
+  copy->language           = source->language;
+  copy->native_script      = NULL;
+  copy->plutus_v1_script   = NULL;
+  copy->plutus_v2_script   = NULL;
+  copy->plutus_v3_script   = NULL;
+  copy->plutus_v4_script   = NULL;
+
+  if (source->native_script != NULL)
+  {
+    const cardano_error_t result = cardano_native_script_deep_clone(source->native_script, &copy->native_script);
+
+    if (result != CARDANO_SUCCESS)
+    {
+      copy->base.deallocator(copy);
+      return result;
+    }
+  }
+
+  if (source->plutus_v1_script != NULL)
+  {
+    const cardano_error_t result = cardano_plutus_v1_script_deep_clone(source->plutus_v1_script, &copy->plutus_v1_script);
+
+    if (result != CARDANO_SUCCESS)
+    {
+      copy->base.deallocator(copy);
+      return result;
+    }
+  }
+
+  if (source->plutus_v2_script != NULL)
+  {
+    const cardano_error_t result = cardano_plutus_v2_script_deep_clone(source->plutus_v2_script, &copy->plutus_v2_script);
+
+    if (result != CARDANO_SUCCESS)
+    {
+      copy->base.deallocator(copy);
+      return result;
+    }
+  }
+
+  if (source->plutus_v3_script != NULL)
+  {
+    const cardano_error_t result = cardano_plutus_v3_script_deep_clone(source->plutus_v3_script, &copy->plutus_v3_script);
+
+    if (result != CARDANO_SUCCESS)
+    {
+      copy->base.deallocator(copy);
+      return result;
+    }
+  }
+
+  if (source->plutus_v4_script != NULL)
+  {
+    const cardano_error_t result = cardano_plutus_v4_script_deep_clone(source->plutus_v4_script, &copy->plutus_v4_script);
+
+    if (result != CARDANO_SUCCESS)
+    {
+      copy->base.deallocator(copy);
+      return result;
+    }
+  }
+
+  *clone = copy;
+
+  return CARDANO_SUCCESS;
+}

@@ -82,3 +82,7 @@ Byron Address
 ------------
 
 .. doxygenfunction:: cardano_byron_address_get_last_error
+
+------------
+
+.. doxygenfunction:: cardano_byron_address_deep_clone

@@ -619,3 +619,52 @@ cardano_costmdls_get_last_error(const cardano_costmdls_t* costmdls)
 {
   return cardano_object_get_last_error(&costmdls->base);
 }
+
+cardano_error_t
+cardano_costmdls_deep_clone(const cardano_costmdls_t* source, cardano_costmdls_t** clone)
+{
+  if (clone == NULL)
+  {
+    return CARDANO_ERROR_POINTER_IS_NULL;
+  }
+
+  *clone = NULL;
+
+  if (source == NULL)
+  {
+    return CARDANO_ERROR_POINTER_IS_NULL;
+  }
+
+  cardano_costmdls_t* copy = _cardano_malloc(sizeof(cardano_costmdls_t));
+
+  if (copy == NULL)
+  {
+    return CARDANO_ERROR_MEMORY_ALLOCATION_FAILED;
+  }
+
+  copy->base.ref_count     = 1U;
+  copy->base.deallocator   = source->base.deallocator;
+  copy->base.last_error[0] = '\0';
+  for (size_t i = 0U; i < COSTMDLS_LANGUAGE_ID_COUNT; ++i)
+  {
+    copy->models[i] = NULL;
+  }
+
+  for (size_t i = 0U; i < COSTMDLS_LANGUAGE_ID_COUNT; ++i)
+  {
+    if (source->models[i] != NULL)
+    {
+      const cardano_error_t result = cardano_cost_model_deep_clone(source->models[i], &copy->models[i]);
+
+      if (result != CARDANO_SUCCESS)
+      {
+        copy->base.deallocator(copy);
+        return result;
+      }
+    }
+  }
+
+  *clone = copy;
+
+  return CARDANO_SUCCESS;
+}

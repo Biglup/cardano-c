@@ -50,3 +50,7 @@ Credential Set
 ------------
 
 .. doxygenfunction:: cardano_credential_set_get_last_error
+
+------------
+
+.. doxygenfunction:: cardano_credential_set_deep_clone

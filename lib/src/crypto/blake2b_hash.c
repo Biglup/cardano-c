@@ -550,3 +550,46 @@ cardano_blake2b_hash_to_hex(
 
   return cardano_buffer_to_hex(blake2b_hash->buffer, hex_hash, hash_len);
 }
+
+cardano_error_t
+cardano_blake2b_hash_deep_clone(const cardano_blake2b_hash_t* source, cardano_blake2b_hash_t** clone)
+{
+  if (clone == NULL)
+  {
+    return CARDANO_ERROR_POINTER_IS_NULL;
+  }
+
+  *clone = NULL;
+
+  if (source == NULL)
+  {
+    return CARDANO_ERROR_POINTER_IS_NULL;
+  }
+
+  cardano_blake2b_hash_t* copy = _cardano_malloc(sizeof(cardano_blake2b_hash_t));
+
+  if (copy == NULL)
+  {
+    return CARDANO_ERROR_MEMORY_ALLOCATION_FAILED;
+  }
+
+  copy->base.ref_count     = 1U;
+  copy->base.deallocator   = source->base.deallocator;
+  copy->base.last_error[0] = '\0';
+  copy->buffer             = NULL;
+
+  if (source->buffer != NULL)
+  {
+    const cardano_error_t result = cardano_buffer_deep_clone(source->buffer, &copy->buffer);
+
+    if (result != CARDANO_SUCCESS)
+    {
+      copy->base.deallocator(copy);
+      return result;
+    }
+  }
+
+  *clone = copy;
+
+  return CARDANO_SUCCESS;
+}

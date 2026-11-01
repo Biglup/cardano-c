@@ -58,3 +58,7 @@ Native Script - Require Time Before
 ------------
 
 .. doxygenfunction:: cardano_script_invalid_after_get_last_error
+
+------------
+
+.. doxygenfunction:: cardano_script_invalid_after_deep_clone

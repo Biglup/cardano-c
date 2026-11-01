@@ -86,3 +86,7 @@ Datum
 ------------
 
 .. doxygenfunction:: cardano_datum_get_last_error
+
+------------
+
+.. doxygenfunction:: cardano_datum_deep_clone

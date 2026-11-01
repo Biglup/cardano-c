@@ -58,3 +58,7 @@ BLS Key
 ------------
 
 .. doxygenfunction:: cardano_bls_key_get_last_error
+
+------------
+
+.. doxygenfunction:: cardano_bls_key_deep_clone

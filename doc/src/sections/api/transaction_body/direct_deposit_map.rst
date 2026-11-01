@@ -70,3 +70,7 @@ Direct Deposit Map
 ------------
 
 .. doxygenfunction:: cardano_direct_deposit_map_get_last_error
+
+------------
+
+.. doxygenfunction:: cardano_direct_deposit_map_deep_clone

@@ -54,3 +54,7 @@ BIP32 Public Key
 ------------
 
 .. doxygenfunction:: cardano_bip32_public_key_to_hash
+
+------------
+
+.. doxygenfunction:: cardano_bip32_public_key_deep_clone

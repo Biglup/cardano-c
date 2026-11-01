@@ -1633,3 +1633,95 @@ cardano_metadatum_get_last_error(const cardano_metadatum_t* metadatum)
 {
   return cardano_object_get_last_error(&metadatum->base);
 }
+
+cardano_error_t
+cardano_metadatum_deep_clone(const cardano_metadatum_t* source, cardano_metadatum_t** clone)
+{
+  if (clone == NULL)
+  {
+    return CARDANO_ERROR_POINTER_IS_NULL;
+  }
+
+  *clone = NULL;
+
+  if (source == NULL)
+  {
+    return CARDANO_ERROR_POINTER_IS_NULL;
+  }
+
+  cardano_metadatum_t* copy = _cardano_malloc(sizeof(cardano_metadatum_t));
+
+  if (copy == NULL)
+  {
+    return CARDANO_ERROR_MEMORY_ALLOCATION_FAILED;
+  }
+
+  copy->base.ref_count     = 1U;
+  copy->base.deallocator   = source->base.deallocator;
+  copy->base.last_error[0] = '\0';
+  copy->map                = NULL;
+  copy->list               = NULL;
+  copy->integer            = NULL;
+  copy->bytes              = NULL;
+  copy->text               = NULL;
+  copy->kind               = source->kind;
+
+  if (source->map != NULL)
+  {
+    const cardano_error_t result = cardano_metadatum_map_deep_clone(source->map, &copy->map);
+
+    if (result != CARDANO_SUCCESS)
+    {
+      copy->base.deallocator(copy);
+      return result;
+    }
+  }
+
+  if (source->list != NULL)
+  {
+    const cardano_error_t result = cardano_metadatum_list_deep_clone(source->list, &copy->list);
+
+    if (result != CARDANO_SUCCESS)
+    {
+      copy->base.deallocator(copy);
+      return result;
+    }
+  }
+
+  if (source->integer != NULL)
+  {
+    const cardano_error_t result = cardano_bigint_deep_clone(source->integer, &copy->integer);
+
+    if (result != CARDANO_SUCCESS)
+    {
+      copy->base.deallocator(copy);
+      return result;
+    }
+  }
+
+  if (source->bytes != NULL)
+  {
+    const cardano_error_t result = cardano_buffer_deep_clone(source->bytes, &copy->bytes);
+
+    if (result != CARDANO_SUCCESS)
+    {
+      copy->base.deallocator(copy);
+      return result;
+    }
+  }
+
+  if (source->text != NULL)
+  {
+    const cardano_error_t result = cardano_buffer_deep_clone(source->text, &copy->text);
+
+    if (result != CARDANO_SUCCESS)
+    {
+      copy->base.deallocator(copy);
+      return result;
+    }
+  }
+
+  *clone = copy;
+
+  return CARDANO_SUCCESS;
+}

@@ -58,3 +58,7 @@ Pool Metadata
 ------------
 
 .. doxygenfunction:: cardano_pool_metadata_get_last_error
+
+------------
+
+.. doxygenfunction:: cardano_pool_metadata_deep_clone

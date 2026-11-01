@@ -54,3 +54,7 @@ Constitution
 ------------
 
 .. doxygenfunction:: cardano_constitution_get_last_error
+
+------------
+
+.. doxygenfunction:: cardano_constitution_deep_clone

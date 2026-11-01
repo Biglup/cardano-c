@@ -63,3 +63,6 @@ Bootstrap Witness Set
 
 .. doxygenfunction:: cardano_bootstrap_witness_set_get_last_error
 
+------------
+
+.. doxygenfunction:: cardano_bootstrap_witness_set_deep_clone

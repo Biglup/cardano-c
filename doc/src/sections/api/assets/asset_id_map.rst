@@ -67,3 +67,6 @@ Asset ID Map
 
 .. doxygenfunction:: cardano_asset_id_map_get_last_error
 
+------------
+
+.. doxygenfunction:: cardano_asset_id_map_deep_clone

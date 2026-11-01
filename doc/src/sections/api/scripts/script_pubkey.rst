@@ -59,3 +59,6 @@ Native Script - Require Signature
 
 .. doxygenfunction:: cardano_script_pubkey_get_last_error
 
+------------
+
+.. doxygenfunction:: cardano_script_pubkey_deep_clone

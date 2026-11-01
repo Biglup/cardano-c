@@ -54,3 +54,7 @@ Metadatum List
 ------------
 
 .. doxygenfunction:: cardano_metadatum_list_get_last_error
+
+------------
+
+.. doxygenfunction:: cardano_metadatum_list_deep_clone

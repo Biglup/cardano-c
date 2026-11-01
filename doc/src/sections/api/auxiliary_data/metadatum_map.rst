@@ -66,3 +66,7 @@ Metadatum Map
 ------------
 
 .. doxygenfunction:: cardano_metadatum_map_get_last_error
+
+------------
+
+.. doxygenfunction:: cardano_metadatum_map_deep_clone

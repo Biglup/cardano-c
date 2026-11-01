@@ -62,3 +62,7 @@ Unit Interval
 ------------
 
 .. doxygenfunction:: cardano_unit_interval_get_last_error
+
+------------
+
+.. doxygenfunction:: cardano_unit_interval_deep_clone

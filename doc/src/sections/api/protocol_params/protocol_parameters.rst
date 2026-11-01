@@ -474,3 +474,7 @@ Protocol Parameters
 ------------
 
 .. doxygenfunction:: cardano_protocol_parameters_get_last_error
+
+------------
+
+.. doxygenfunction:: cardano_protocol_parameters_deep_clone

@@ -122,3 +122,7 @@ Pool Parameters
 ------------
 
 .. doxygenfunction:: cardano_pool_params_get_last_error
+
+------------
+
+.. doxygenfunction:: cardano_pool_params_deep_clone

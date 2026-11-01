@@ -54,3 +54,7 @@ Protocol Version
 ------------
 
 .. doxygenfunction:: cardano_protocol_version_get_last_error
+
+------------
+
+.. doxygenfunction:: cardano_protocol_version_deep_clone

@@ -352,3 +352,20 @@ cardano_reward_address_get_last_error(const cardano_reward_address_t* address)
 {
   return cardano_address_get_last_error(_cardano_from_reward_to_address_const(address));
 }
+
+cardano_error_t
+cardano_reward_address_deep_clone(const cardano_reward_address_t* source, cardano_reward_address_t** clone)
+{
+  if (clone == NULL)
+  {
+    return CARDANO_ERROR_POINTER_IS_NULL;
+  }
+
+  *clone                       = NULL;
+  cardano_address_t*    copy   = NULL;
+  const cardano_error_t result = cardano_address_deep_clone((const cardano_address_t*)((const void*)source), &copy);
+
+  *clone = (cardano_reward_address_t*)((void*)copy);
+
+  return result;
+}

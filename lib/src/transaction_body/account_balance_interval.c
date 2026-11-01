@@ -494,3 +494,40 @@ cardano_account_balance_interval_get_last_error(const cardano_account_balance_in
 {
   return cardano_object_get_last_error(&account_balance_interval->base);
 }
+
+cardano_error_t
+cardano_account_balance_interval_deep_clone(const cardano_account_balance_interval_t* source, cardano_account_balance_interval_t** clone)
+{
+  if (clone == NULL)
+  {
+    return CARDANO_ERROR_POINTER_IS_NULL;
+  }
+
+  *clone = NULL;
+
+  if (source == NULL)
+  {
+    return CARDANO_ERROR_POINTER_IS_NULL;
+  }
+
+  cardano_account_balance_interval_t* copy = _cardano_malloc(sizeof(cardano_account_balance_interval_t));
+
+  if (copy == NULL)
+  {
+    return CARDANO_ERROR_MEMORY_ALLOCATION_FAILED;
+  }
+
+  copy->base.ref_count            = 1U;
+  copy->base.deallocator          = source->base.deallocator;
+  copy->base.last_error[0]        = '\0';
+  copy->has_inclusive_lower_bound = source->has_inclusive_lower_bound;
+  copy->inclusive_lower_bound     = source->inclusive_lower_bound;
+  copy->has_exclusive_upper_bound = source->has_exclusive_upper_bound;
+  copy->exclusive_upper_bound     = source->exclusive_upper_bound;
+  copy->is_exact                  = source->is_exact;
+  copy->exact_balance             = source->exact_balance;
+
+  *clone = copy;
+
+  return CARDANO_SUCCESS;
+}

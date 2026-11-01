@@ -234,3 +234,7 @@ Buffer
 ------------
 
 .. doxygenfunction:: cardano_memzero
+
+------------
+
+.. doxygenfunction:: cardano_buffer_deep_clone

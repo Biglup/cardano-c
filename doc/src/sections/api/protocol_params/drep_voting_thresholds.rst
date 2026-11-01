@@ -118,3 +118,7 @@ DREP Voting Thresholds
 ------------
 
 .. doxygenfunction:: cardano_drep_voting_thresholds_get_last_error
+
+------------
+
+.. doxygenfunction:: cardano_drep_voting_thresholds_deep_clone

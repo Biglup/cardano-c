@@ -94,3 +94,7 @@ Auxiliary Data
 ------------
 
 .. doxygenfunction:: cardano_auxiliary_data_get_last_error
+
+------------
+
+.. doxygenfunction:: cardano_auxiliary_data_deep_clone

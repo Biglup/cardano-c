@@ -86,3 +86,7 @@ Script
 ------------
 
 .. doxygenfunction:: cardano_script_get_last_error
+
+------------
+
+.. doxygenfunction:: cardano_script_deep_clone

@@ -54,3 +54,7 @@ Vote Delegation Certificate
 ------------
 
 .. doxygenfunction:: cardano_vote_delegation_cert_get_last_error
+
+------------
+
+.. doxygenfunction:: cardano_vote_delegation_cert_deep_clone

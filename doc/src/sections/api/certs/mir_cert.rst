@@ -54,3 +54,7 @@ Move Instantaneous Rewards Certificate (MIR)
 ------------
 
 .. doxygenfunction:: cardano_mir_cert_get_last_error
+
+------------
+
+.. doxygenfunction:: cardano_mir_cert_deep_clone

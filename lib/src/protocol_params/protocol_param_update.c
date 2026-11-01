@@ -7216,3 +7216,852 @@ cardano_protocol_param_update_get_last_error(const cardano_protocol_param_update
 {
   return cardano_object_get_last_error(&protocol_param_update->base);
 }
+
+cardano_error_t
+cardano_protocol_param_update_deep_clone(const cardano_protocol_param_update_t* source, cardano_protocol_param_update_t** clone)
+{
+  if (clone == NULL)
+  {
+    return CARDANO_ERROR_POINTER_IS_NULL;
+  }
+
+  *clone = NULL;
+
+  if (source == NULL)
+  {
+    return CARDANO_ERROR_POINTER_IS_NULL;
+  }
+
+  cardano_protocol_param_update_t* copy = _cardano_malloc(sizeof(cardano_protocol_param_update_t));
+
+  if (copy == NULL)
+  {
+    return CARDANO_ERROR_MEMORY_ALLOCATION_FAILED;
+  }
+
+  copy->base.ref_count                         = 1U;
+  copy->base.deallocator                       = source->base.deallocator;
+  copy->base.last_error[0]                     = '\0';
+  copy->min_fee_a                              = NULL;
+  copy->min_fee_b                              = NULL;
+  copy->max_block_body_size                    = NULL;
+  copy->max_tx_size                            = NULL;
+  copy->max_block_header_size                  = NULL;
+  copy->key_deposit                            = NULL;
+  copy->pool_deposit                           = NULL;
+  copy->max_epoch                              = NULL;
+  copy->n_opt                                  = NULL;
+  copy->pool_pledge_influence                  = NULL;
+  copy->expansion_rate                         = NULL;
+  copy->treasury_growth_rate                   = NULL;
+  copy->d                                      = NULL;
+  copy->extra_entropy                          = NULL;
+  copy->protocol_version                       = NULL;
+  copy->min_pool_cost                          = NULL;
+  copy->ada_per_utxo_byte                      = NULL;
+  copy->cost_models                            = NULL;
+  copy->execution_costs                        = NULL;
+  copy->max_tx_ex_units                        = NULL;
+  copy->max_block_ex_units                     = NULL;
+  copy->max_value_size                         = NULL;
+  copy->collateral_percentage                  = NULL;
+  copy->max_collateral_inputs                  = NULL;
+  copy->pool_voting_thresholds                 = NULL;
+  copy->drep_voting_thresholds                 = NULL;
+  copy->min_committee_size                     = NULL;
+  copy->committee_term_limit                   = NULL;
+  copy->governance_action_validity_period      = NULL;
+  copy->governance_action_deposit              = NULL;
+  copy->drep_deposit                           = NULL;
+  copy->drep_inactivity_period                 = NULL;
+  copy->ref_script_cost_per_byte               = NULL;
+  copy->max_ref_script_size_per_block          = NULL;
+  copy->max_ref_script_size_per_tx             = NULL;
+  copy->ref_script_cost_stride                 = NULL;
+  copy->ref_script_cost_multiplier             = NULL;
+  copy->has_max_pledge_leverage                = source->has_max_pledge_leverage;
+  copy->max_pledge_leverage                    = NULL;
+  copy->min_pool_margin                        = NULL;
+  copy->leios_announcement_period_length       = NULL;
+  copy->leios_vote_period_length               = NULL;
+  copy->leios_diffusion_period_length          = NULL;
+  copy->leios_committee_size                   = NULL;
+  copy->leios_quorum_stake_threshold           = NULL;
+  copy->max_endorser_block_references_size     = NULL;
+  copy->max_endorser_block_txs_size            = NULL;
+  copy->max_endorser_block_execution_units     = NULL;
+  copy->max_ref_script_size_per_endorser_block = NULL;
+  copy->peras_min_candidate_block_age          = NULL;
+  copy->peras_healing_factor                   = NULL;
+  copy->peras_cert_boost                       = NULL;
+  copy->peras_target_committee_size            = NULL;
+  copy->has_peras_bootstrap_round              = source->has_peras_bootstrap_round;
+  copy->peras_bootstrap_round                  = NULL;
+  copy->peras_quorum_threshold_safety_margin   = NULL;
+  copy->ref_inputs_cost_per_multi_asset_policy = NULL;
+  copy->ref_inputs_cost_per_datum_byte         = NULL;
+
+  if (source->min_fee_a != NULL)
+  {
+    const size_t size = sizeof(uint64_t);
+
+    copy->min_fee_a = _cardano_malloc((size > 0U) ? size : 1U);
+
+    if (copy->min_fee_a == NULL)
+    {
+      copy->base.deallocator(copy);
+      return CARDANO_ERROR_MEMORY_ALLOCATION_FAILED;
+    }
+
+    CARDANO_UNUSED(memcpy(copy->min_fee_a, source->min_fee_a, size));
+  }
+
+  if (source->min_fee_b != NULL)
+  {
+    const size_t size = sizeof(uint64_t);
+
+    copy->min_fee_b = _cardano_malloc((size > 0U) ? size : 1U);
+
+    if (copy->min_fee_b == NULL)
+    {
+      copy->base.deallocator(copy);
+      return CARDANO_ERROR_MEMORY_ALLOCATION_FAILED;
+    }
+
+    CARDANO_UNUSED(memcpy(copy->min_fee_b, source->min_fee_b, size));
+  }
+
+  if (source->max_block_body_size != NULL)
+  {
+    const size_t size = sizeof(uint64_t);
+
+    copy->max_block_body_size = _cardano_malloc((size > 0U) ? size : 1U);
+
+    if (copy->max_block_body_size == NULL)
+    {
+      copy->base.deallocator(copy);
+      return CARDANO_ERROR_MEMORY_ALLOCATION_FAILED;
+    }
+
+    CARDANO_UNUSED(memcpy(copy->max_block_body_size, source->max_block_body_size, size));
+  }
+
+  if (source->max_tx_size != NULL)
+  {
+    const size_t size = sizeof(uint64_t);
+
+    copy->max_tx_size = _cardano_malloc((size > 0U) ? size : 1U);
+
+    if (copy->max_tx_size == NULL)
+    {
+      copy->base.deallocator(copy);
+      return CARDANO_ERROR_MEMORY_ALLOCATION_FAILED;
+    }
+
+    CARDANO_UNUSED(memcpy(copy->max_tx_size, source->max_tx_size, size));
+  }
+
+  if (source->max_block_header_size != NULL)
+  {
+    const size_t size = sizeof(uint64_t);
+
+    copy->max_block_header_size = _cardano_malloc((size > 0U) ? size : 1U);
+
+    if (copy->max_block_header_size == NULL)
+    {
+      copy->base.deallocator(copy);
+      return CARDANO_ERROR_MEMORY_ALLOCATION_FAILED;
+    }
+
+    CARDANO_UNUSED(memcpy(copy->max_block_header_size, source->max_block_header_size, size));
+  }
+
+  if (source->key_deposit != NULL)
+  {
+    const size_t size = sizeof(uint64_t);
+
+    copy->key_deposit = _cardano_malloc((size > 0U) ? size : 1U);
+
+    if (copy->key_deposit == NULL)
+    {
+      copy->base.deallocator(copy);
+      return CARDANO_ERROR_MEMORY_ALLOCATION_FAILED;
+    }
+
+    CARDANO_UNUSED(memcpy(copy->key_deposit, source->key_deposit, size));
+  }
+
+  if (source->pool_deposit != NULL)
+  {
+    const size_t size = sizeof(uint64_t);
+
+    copy->pool_deposit = _cardano_malloc((size > 0U) ? size : 1U);
+
+    if (copy->pool_deposit == NULL)
+    {
+      copy->base.deallocator(copy);
+      return CARDANO_ERROR_MEMORY_ALLOCATION_FAILED;
+    }
+
+    CARDANO_UNUSED(memcpy(copy->pool_deposit, source->pool_deposit, size));
+  }
+
+  if (source->max_epoch != NULL)
+  {
+    const size_t size = sizeof(uint64_t);
+
+    copy->max_epoch = _cardano_malloc((size > 0U) ? size : 1U);
+
+    if (copy->max_epoch == NULL)
+    {
+      copy->base.deallocator(copy);
+      return CARDANO_ERROR_MEMORY_ALLOCATION_FAILED;
+    }
+
+    CARDANO_UNUSED(memcpy(copy->max_epoch, source->max_epoch, size));
+  }
+
+  if (source->n_opt != NULL)
+  {
+    const size_t size = sizeof(uint64_t);
+
+    copy->n_opt = _cardano_malloc((size > 0U) ? size : 1U);
+
+    if (copy->n_opt == NULL)
+    {
+      copy->base.deallocator(copy);
+      return CARDANO_ERROR_MEMORY_ALLOCATION_FAILED;
+    }
+
+    CARDANO_UNUSED(memcpy(copy->n_opt, source->n_opt, size));
+  }
+
+  if (source->pool_pledge_influence != NULL)
+  {
+    const cardano_error_t result = cardano_unit_interval_deep_clone(source->pool_pledge_influence, &copy->pool_pledge_influence);
+
+    if (result != CARDANO_SUCCESS)
+    {
+      copy->base.deallocator(copy);
+      return result;
+    }
+  }
+
+  if (source->expansion_rate != NULL)
+  {
+    const cardano_error_t result = cardano_unit_interval_deep_clone(source->expansion_rate, &copy->expansion_rate);
+
+    if (result != CARDANO_SUCCESS)
+    {
+      copy->base.deallocator(copy);
+      return result;
+    }
+  }
+
+  if (source->treasury_growth_rate != NULL)
+  {
+    const cardano_error_t result = cardano_unit_interval_deep_clone(source->treasury_growth_rate, &copy->treasury_growth_rate);
+
+    if (result != CARDANO_SUCCESS)
+    {
+      copy->base.deallocator(copy);
+      return result;
+    }
+  }
+
+  if (source->d != NULL)
+  {
+    const cardano_error_t result = cardano_unit_interval_deep_clone(source->d, &copy->d);
+
+    if (result != CARDANO_SUCCESS)
+    {
+      copy->base.deallocator(copy);
+      return result;
+    }
+  }
+
+  if (source->extra_entropy != NULL)
+  {
+    const cardano_error_t result = cardano_buffer_deep_clone(source->extra_entropy, &copy->extra_entropy);
+
+    if (result != CARDANO_SUCCESS)
+    {
+      copy->base.deallocator(copy);
+      return result;
+    }
+  }
+
+  if (source->protocol_version != NULL)
+  {
+    const cardano_error_t result = cardano_protocol_version_deep_clone(source->protocol_version, &copy->protocol_version);
+
+    if (result != CARDANO_SUCCESS)
+    {
+      copy->base.deallocator(copy);
+      return result;
+    }
+  }
+
+  if (source->min_pool_cost != NULL)
+  {
+    const size_t size = sizeof(uint64_t);
+
+    copy->min_pool_cost = _cardano_malloc((size > 0U) ? size : 1U);
+
+    if (copy->min_pool_cost == NULL)
+    {
+      copy->base.deallocator(copy);
+      return CARDANO_ERROR_MEMORY_ALLOCATION_FAILED;
+    }
+
+    CARDANO_UNUSED(memcpy(copy->min_pool_cost, source->min_pool_cost, size));
+  }
+
+  if (source->ada_per_utxo_byte != NULL)
+  {
+    const size_t size = sizeof(uint64_t);
+
+    copy->ada_per_utxo_byte = _cardano_malloc((size > 0U) ? size : 1U);
+
+    if (copy->ada_per_utxo_byte == NULL)
+    {
+      copy->base.deallocator(copy);
+      return CARDANO_ERROR_MEMORY_ALLOCATION_FAILED;
+    }
+
+    CARDANO_UNUSED(memcpy(copy->ada_per_utxo_byte, source->ada_per_utxo_byte, size));
+  }
+
+  if (source->cost_models != NULL)
+  {
+    const cardano_error_t result = cardano_costmdls_deep_clone(source->cost_models, &copy->cost_models);
+
+    if (result != CARDANO_SUCCESS)
+    {
+      copy->base.deallocator(copy);
+      return result;
+    }
+  }
+
+  if (source->execution_costs != NULL)
+  {
+    const cardano_error_t result = cardano_ex_unit_prices_deep_clone(source->execution_costs, &copy->execution_costs);
+
+    if (result != CARDANO_SUCCESS)
+    {
+      copy->base.deallocator(copy);
+      return result;
+    }
+  }
+
+  if (source->max_tx_ex_units != NULL)
+  {
+    const cardano_error_t result = cardano_ex_units_deep_clone(source->max_tx_ex_units, &copy->max_tx_ex_units);
+
+    if (result != CARDANO_SUCCESS)
+    {
+      copy->base.deallocator(copy);
+      return result;
+    }
+  }
+
+  if (source->max_block_ex_units != NULL)
+  {
+    const cardano_error_t result = cardano_ex_units_deep_clone(source->max_block_ex_units, &copy->max_block_ex_units);
+
+    if (result != CARDANO_SUCCESS)
+    {
+      copy->base.deallocator(copy);
+      return result;
+    }
+  }
+
+  if (source->max_value_size != NULL)
+  {
+    const size_t size = sizeof(uint64_t);
+
+    copy->max_value_size = _cardano_malloc((size > 0U) ? size : 1U);
+
+    if (copy->max_value_size == NULL)
+    {
+      copy->base.deallocator(copy);
+      return CARDANO_ERROR_MEMORY_ALLOCATION_FAILED;
+    }
+
+    CARDANO_UNUSED(memcpy(copy->max_value_size, source->max_value_size, size));
+  }
+
+  if (source->collateral_percentage != NULL)
+  {
+    const size_t size = sizeof(uint64_t);
+
+    copy->collateral_percentage = _cardano_malloc((size > 0U) ? size : 1U);
+
+    if (copy->collateral_percentage == NULL)
+    {
+      copy->base.deallocator(copy);
+      return CARDANO_ERROR_MEMORY_ALLOCATION_FAILED;
+    }
+
+    CARDANO_UNUSED(memcpy(copy->collateral_percentage, source->collateral_percentage, size));
+  }
+
+  if (source->max_collateral_inputs != NULL)
+  {
+    const size_t size = sizeof(uint64_t);
+
+    copy->max_collateral_inputs = _cardano_malloc((size > 0U) ? size : 1U);
+
+    if (copy->max_collateral_inputs == NULL)
+    {
+      copy->base.deallocator(copy);
+      return CARDANO_ERROR_MEMORY_ALLOCATION_FAILED;
+    }
+
+    CARDANO_UNUSED(memcpy(copy->max_collateral_inputs, source->max_collateral_inputs, size));
+  }
+
+  if (source->pool_voting_thresholds != NULL)
+  {
+    const cardano_error_t result = cardano_pool_voting_thresholds_deep_clone(source->pool_voting_thresholds, &copy->pool_voting_thresholds);
+
+    if (result != CARDANO_SUCCESS)
+    {
+      copy->base.deallocator(copy);
+      return result;
+    }
+  }
+
+  if (source->drep_voting_thresholds != NULL)
+  {
+    const cardano_error_t result = cardano_drep_voting_thresholds_deep_clone(source->drep_voting_thresholds, &copy->drep_voting_thresholds);
+
+    if (result != CARDANO_SUCCESS)
+    {
+      copy->base.deallocator(copy);
+      return result;
+    }
+  }
+
+  if (source->min_committee_size != NULL)
+  {
+    const size_t size = sizeof(uint64_t);
+
+    copy->min_committee_size = _cardano_malloc((size > 0U) ? size : 1U);
+
+    if (copy->min_committee_size == NULL)
+    {
+      copy->base.deallocator(copy);
+      return CARDANO_ERROR_MEMORY_ALLOCATION_FAILED;
+    }
+
+    CARDANO_UNUSED(memcpy(copy->min_committee_size, source->min_committee_size, size));
+  }
+
+  if (source->committee_term_limit != NULL)
+  {
+    const size_t size = sizeof(uint64_t);
+
+    copy->committee_term_limit = _cardano_malloc((size > 0U) ? size : 1U);
+
+    if (copy->committee_term_limit == NULL)
+    {
+      copy->base.deallocator(copy);
+      return CARDANO_ERROR_MEMORY_ALLOCATION_FAILED;
+    }
+
+    CARDANO_UNUSED(memcpy(copy->committee_term_limit, source->committee_term_limit, size));
+  }
+
+  if (source->governance_action_validity_period != NULL)
+  {
+    const size_t size = sizeof(uint64_t);
+
+    copy->governance_action_validity_period = _cardano_malloc((size > 0U) ? size : 1U);
+
+    if (copy->governance_action_validity_period == NULL)
+    {
+      copy->base.deallocator(copy);
+      return CARDANO_ERROR_MEMORY_ALLOCATION_FAILED;
+    }
+
+    CARDANO_UNUSED(memcpy(copy->governance_action_validity_period, source->governance_action_validity_period, size));
+  }
+
+  if (source->governance_action_deposit != NULL)
+  {
+    const size_t size = sizeof(uint64_t);
+
+    copy->governance_action_deposit = _cardano_malloc((size > 0U) ? size : 1U);
+
+    if (copy->governance_action_deposit == NULL)
+    {
+      copy->base.deallocator(copy);
+      return CARDANO_ERROR_MEMORY_ALLOCATION_FAILED;
+    }
+
+    CARDANO_UNUSED(memcpy(copy->governance_action_deposit, source->governance_action_deposit, size));
+  }
+
+  if (source->drep_deposit != NULL)
+  {
+    const size_t size = sizeof(uint64_t);
+
+    copy->drep_deposit = _cardano_malloc((size > 0U) ? size : 1U);
+
+    if (copy->drep_deposit == NULL)
+    {
+      copy->base.deallocator(copy);
+      return CARDANO_ERROR_MEMORY_ALLOCATION_FAILED;
+    }
+
+    CARDANO_UNUSED(memcpy(copy->drep_deposit, source->drep_deposit, size));
+  }
+
+  if (source->drep_inactivity_period != NULL)
+  {
+    const size_t size = sizeof(uint64_t);
+
+    copy->drep_inactivity_period = _cardano_malloc((size > 0U) ? size : 1U);
+
+    if (copy->drep_inactivity_period == NULL)
+    {
+      copy->base.deallocator(copy);
+      return CARDANO_ERROR_MEMORY_ALLOCATION_FAILED;
+    }
+
+    CARDANO_UNUSED(memcpy(copy->drep_inactivity_period, source->drep_inactivity_period, size));
+  }
+
+  if (source->ref_script_cost_per_byte != NULL)
+  {
+    const cardano_error_t result = cardano_unit_interval_deep_clone(source->ref_script_cost_per_byte, &copy->ref_script_cost_per_byte);
+
+    if (result != CARDANO_SUCCESS)
+    {
+      copy->base.deallocator(copy);
+      return result;
+    }
+  }
+
+  if (source->max_ref_script_size_per_block != NULL)
+  {
+    const size_t size = sizeof(uint64_t);
+
+    copy->max_ref_script_size_per_block = _cardano_malloc((size > 0U) ? size : 1U);
+
+    if (copy->max_ref_script_size_per_block == NULL)
+    {
+      copy->base.deallocator(copy);
+      return CARDANO_ERROR_MEMORY_ALLOCATION_FAILED;
+    }
+
+    CARDANO_UNUSED(memcpy(copy->max_ref_script_size_per_block, source->max_ref_script_size_per_block, size));
+  }
+
+  if (source->max_ref_script_size_per_tx != NULL)
+  {
+    const size_t size = sizeof(uint64_t);
+
+    copy->max_ref_script_size_per_tx = _cardano_malloc((size > 0U) ? size : 1U);
+
+    if (copy->max_ref_script_size_per_tx == NULL)
+    {
+      copy->base.deallocator(copy);
+      return CARDANO_ERROR_MEMORY_ALLOCATION_FAILED;
+    }
+
+    CARDANO_UNUSED(memcpy(copy->max_ref_script_size_per_tx, source->max_ref_script_size_per_tx, size));
+  }
+
+  if (source->ref_script_cost_stride != NULL)
+  {
+    const size_t size = sizeof(uint64_t);
+
+    copy->ref_script_cost_stride = _cardano_malloc((size > 0U) ? size : 1U);
+
+    if (copy->ref_script_cost_stride == NULL)
+    {
+      copy->base.deallocator(copy);
+      return CARDANO_ERROR_MEMORY_ALLOCATION_FAILED;
+    }
+
+    CARDANO_UNUSED(memcpy(copy->ref_script_cost_stride, source->ref_script_cost_stride, size));
+  }
+
+  if (source->ref_script_cost_multiplier != NULL)
+  {
+    const cardano_error_t result = cardano_unit_interval_deep_clone(source->ref_script_cost_multiplier, &copy->ref_script_cost_multiplier);
+
+    if (result != CARDANO_SUCCESS)
+    {
+      copy->base.deallocator(copy);
+      return result;
+    }
+  }
+
+  if (source->max_pledge_leverage != NULL)
+  {
+    const cardano_error_t result = cardano_unit_interval_deep_clone(source->max_pledge_leverage, &copy->max_pledge_leverage);
+
+    if (result != CARDANO_SUCCESS)
+    {
+      copy->base.deallocator(copy);
+      return result;
+    }
+  }
+
+  if (source->min_pool_margin != NULL)
+  {
+    const cardano_error_t result = cardano_unit_interval_deep_clone(source->min_pool_margin, &copy->min_pool_margin);
+
+    if (result != CARDANO_SUCCESS)
+    {
+      copy->base.deallocator(copy);
+      return result;
+    }
+  }
+
+  if (source->leios_announcement_period_length != NULL)
+  {
+    const size_t size = sizeof(uint64_t);
+
+    copy->leios_announcement_period_length = _cardano_malloc((size > 0U) ? size : 1U);
+
+    if (copy->leios_announcement_period_length == NULL)
+    {
+      copy->base.deallocator(copy);
+      return CARDANO_ERROR_MEMORY_ALLOCATION_FAILED;
+    }
+
+    CARDANO_UNUSED(memcpy(copy->leios_announcement_period_length, source->leios_announcement_period_length, size));
+  }
+
+  if (source->leios_vote_period_length != NULL)
+  {
+    const size_t size = sizeof(uint64_t);
+
+    copy->leios_vote_period_length = _cardano_malloc((size > 0U) ? size : 1U);
+
+    if (copy->leios_vote_period_length == NULL)
+    {
+      copy->base.deallocator(copy);
+      return CARDANO_ERROR_MEMORY_ALLOCATION_FAILED;
+    }
+
+    CARDANO_UNUSED(memcpy(copy->leios_vote_period_length, source->leios_vote_period_length, size));
+  }
+
+  if (source->leios_diffusion_period_length != NULL)
+  {
+    const size_t size = sizeof(uint64_t);
+
+    copy->leios_diffusion_period_length = _cardano_malloc((size > 0U) ? size : 1U);
+
+    if (copy->leios_diffusion_period_length == NULL)
+    {
+      copy->base.deallocator(copy);
+      return CARDANO_ERROR_MEMORY_ALLOCATION_FAILED;
+    }
+
+    CARDANO_UNUSED(memcpy(copy->leios_diffusion_period_length, source->leios_diffusion_period_length, size));
+  }
+
+  if (source->leios_committee_size != NULL)
+  {
+    const size_t size = sizeof(uint64_t);
+
+    copy->leios_committee_size = _cardano_malloc((size > 0U) ? size : 1U);
+
+    if (copy->leios_committee_size == NULL)
+    {
+      copy->base.deallocator(copy);
+      return CARDANO_ERROR_MEMORY_ALLOCATION_FAILED;
+    }
+
+    CARDANO_UNUSED(memcpy(copy->leios_committee_size, source->leios_committee_size, size));
+  }
+
+  if (source->leios_quorum_stake_threshold != NULL)
+  {
+    const cardano_error_t result = cardano_unit_interval_deep_clone(source->leios_quorum_stake_threshold, &copy->leios_quorum_stake_threshold);
+
+    if (result != CARDANO_SUCCESS)
+    {
+      copy->base.deallocator(copy);
+      return result;
+    }
+  }
+
+  if (source->max_endorser_block_references_size != NULL)
+  {
+    const size_t size = sizeof(uint64_t);
+
+    copy->max_endorser_block_references_size = _cardano_malloc((size > 0U) ? size : 1U);
+
+    if (copy->max_endorser_block_references_size == NULL)
+    {
+      copy->base.deallocator(copy);
+      return CARDANO_ERROR_MEMORY_ALLOCATION_FAILED;
+    }
+
+    CARDANO_UNUSED(memcpy(copy->max_endorser_block_references_size, source->max_endorser_block_references_size, size));
+  }
+
+  if (source->max_endorser_block_txs_size != NULL)
+  {
+    const size_t size = sizeof(uint64_t);
+
+    copy->max_endorser_block_txs_size = _cardano_malloc((size > 0U) ? size : 1U);
+
+    if (copy->max_endorser_block_txs_size == NULL)
+    {
+      copy->base.deallocator(copy);
+      return CARDANO_ERROR_MEMORY_ALLOCATION_FAILED;
+    }
+
+    CARDANO_UNUSED(memcpy(copy->max_endorser_block_txs_size, source->max_endorser_block_txs_size, size));
+  }
+
+  if (source->max_endorser_block_execution_units != NULL)
+  {
+    const cardano_error_t result = cardano_ex_units_deep_clone(source->max_endorser_block_execution_units, &copy->max_endorser_block_execution_units);
+
+    if (result != CARDANO_SUCCESS)
+    {
+      copy->base.deallocator(copy);
+      return result;
+    }
+  }
+
+  if (source->max_ref_script_size_per_endorser_block != NULL)
+  {
+    const size_t size = sizeof(uint64_t);
+
+    copy->max_ref_script_size_per_endorser_block = _cardano_malloc((size > 0U) ? size : 1U);
+
+    if (copy->max_ref_script_size_per_endorser_block == NULL)
+    {
+      copy->base.deallocator(copy);
+      return CARDANO_ERROR_MEMORY_ALLOCATION_FAILED;
+    }
+
+    CARDANO_UNUSED(memcpy(copy->max_ref_script_size_per_endorser_block, source->max_ref_script_size_per_endorser_block, size));
+  }
+
+  if (source->peras_min_candidate_block_age != NULL)
+  {
+    const size_t size = sizeof(uint64_t);
+
+    copy->peras_min_candidate_block_age = _cardano_malloc((size > 0U) ? size : 1U);
+
+    if (copy->peras_min_candidate_block_age == NULL)
+    {
+      copy->base.deallocator(copy);
+      return CARDANO_ERROR_MEMORY_ALLOCATION_FAILED;
+    }
+
+    CARDANO_UNUSED(memcpy(copy->peras_min_candidate_block_age, source->peras_min_candidate_block_age, size));
+  }
+
+  if (source->peras_healing_factor != NULL)
+  {
+    const cardano_error_t result = cardano_unit_interval_deep_clone(source->peras_healing_factor, &copy->peras_healing_factor);
+
+    if (result != CARDANO_SUCCESS)
+    {
+      copy->base.deallocator(copy);
+      return result;
+    }
+  }
+
+  if (source->peras_cert_boost != NULL)
+  {
+    const size_t size = sizeof(uint64_t);
+
+    copy->peras_cert_boost = _cardano_malloc((size > 0U) ? size : 1U);
+
+    if (copy->peras_cert_boost == NULL)
+    {
+      copy->base.deallocator(copy);
+      return CARDANO_ERROR_MEMORY_ALLOCATION_FAILED;
+    }
+
+    CARDANO_UNUSED(memcpy(copy->peras_cert_boost, source->peras_cert_boost, size));
+  }
+
+  if (source->peras_target_committee_size != NULL)
+  {
+    const size_t size = sizeof(uint64_t);
+
+    copy->peras_target_committee_size = _cardano_malloc((size > 0U) ? size : 1U);
+
+    if (copy->peras_target_committee_size == NULL)
+    {
+      copy->base.deallocator(copy);
+      return CARDANO_ERROR_MEMORY_ALLOCATION_FAILED;
+    }
+
+    CARDANO_UNUSED(memcpy(copy->peras_target_committee_size, source->peras_target_committee_size, size));
+  }
+
+  if (source->peras_bootstrap_round != NULL)
+  {
+    const size_t size = sizeof(uint64_t);
+
+    copy->peras_bootstrap_round = _cardano_malloc((size > 0U) ? size : 1U);
+
+    if (copy->peras_bootstrap_round == NULL)
+    {
+      copy->base.deallocator(copy);
+      return CARDANO_ERROR_MEMORY_ALLOCATION_FAILED;
+    }
+
+    CARDANO_UNUSED(memcpy(copy->peras_bootstrap_round, source->peras_bootstrap_round, size));
+  }
+
+  if (source->peras_quorum_threshold_safety_margin != NULL)
+  {
+    const cardano_error_t result = cardano_unit_interval_deep_clone(source->peras_quorum_threshold_safety_margin, &copy->peras_quorum_threshold_safety_margin);
+
+    if (result != CARDANO_SUCCESS)
+    {
+      copy->base.deallocator(copy);
+      return result;
+    }
+  }
+
+  if (source->ref_inputs_cost_per_multi_asset_policy != NULL)
+  {
+    const size_t size = sizeof(uint64_t);
+
+    copy->ref_inputs_cost_per_multi_asset_policy = _cardano_malloc((size > 0U) ? size : 1U);
+
+    if (copy->ref_inputs_cost_per_multi_asset_policy == NULL)
+    {
+      copy->base.deallocator(copy);
+      return CARDANO_ERROR_MEMORY_ALLOCATION_FAILED;
+    }
+
+    CARDANO_UNUSED(memcpy(copy->ref_inputs_cost_per_multi_asset_policy, source->ref_inputs_cost_per_multi_asset_policy, size));
+  }
+
+  if (source->ref_inputs_cost_per_datum_byte != NULL)
+  {
+    const size_t size = sizeof(uint64_t);
+
+    copy->ref_inputs_cost_per_datum_byte = _cardano_malloc((size > 0U) ? size : 1U);
+
+    if (copy->ref_inputs_cost_per_datum_byte == NULL)
+    {
+      copy->base.deallocator(copy);
+      return CARDANO_ERROR_MEMORY_ALLOCATION_FAILED;
+    }
+
+    CARDANO_UNUSED(memcpy(copy->ref_inputs_cost_per_datum_byte, source->ref_inputs_cost_per_datum_byte, size));
+  }
+
+  *clone = copy;
+
+  return CARDANO_SUCCESS;
+}

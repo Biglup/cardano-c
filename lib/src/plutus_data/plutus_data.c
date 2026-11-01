@@ -1230,3 +1230,107 @@ cardano_plutus_data_get_last_error(const cardano_plutus_data_t* plutus_data)
 {
   return cardano_object_get_last_error(&plutus_data->base);
 }
+
+cardano_error_t
+cardano_plutus_data_deep_clone(const cardano_plutus_data_t* source, cardano_plutus_data_t** clone)
+{
+  if (clone == NULL)
+  {
+    return CARDANO_ERROR_POINTER_IS_NULL;
+  }
+
+  *clone = NULL;
+
+  if (source == NULL)
+  {
+    return CARDANO_ERROR_POINTER_IS_NULL;
+  }
+
+  cardano_plutus_data_t* copy = _cardano_malloc(sizeof(cardano_plutus_data_t));
+
+  if (copy == NULL)
+  {
+    return CARDANO_ERROR_MEMORY_ALLOCATION_FAILED;
+  }
+
+  copy->base.ref_count     = 1U;
+  copy->base.deallocator   = source->base.deallocator;
+  copy->base.last_error[0] = '\0';
+  copy->map                = NULL;
+  copy->list               = NULL;
+  copy->integer            = NULL;
+  copy->bytes              = NULL;
+  copy->constr             = NULL;
+  copy->kind               = source->kind;
+  copy->cbor_cache         = NULL;
+
+  if (source->map != NULL)
+  {
+    const cardano_error_t result = cardano_plutus_map_deep_clone(source->map, &copy->map);
+
+    if (result != CARDANO_SUCCESS)
+    {
+      copy->base.deallocator(copy);
+      return result;
+    }
+  }
+
+  if (source->list != NULL)
+  {
+    const cardano_error_t result = cardano_plutus_list_deep_clone(source->list, &copy->list);
+
+    if (result != CARDANO_SUCCESS)
+    {
+      copy->base.deallocator(copy);
+      return result;
+    }
+  }
+
+  if (source->integer != NULL)
+  {
+    const cardano_error_t result = cardano_bigint_deep_clone(source->integer, &copy->integer);
+
+    if (result != CARDANO_SUCCESS)
+    {
+      copy->base.deallocator(copy);
+      return result;
+    }
+  }
+
+  if (source->bytes != NULL)
+  {
+    const cardano_error_t result = cardano_buffer_deep_clone(source->bytes, &copy->bytes);
+
+    if (result != CARDANO_SUCCESS)
+    {
+      copy->base.deallocator(copy);
+      return result;
+    }
+  }
+
+  if (source->constr != NULL)
+  {
+    const cardano_error_t result = cardano_constr_plutus_data_deep_clone(source->constr, &copy->constr);
+
+    if (result != CARDANO_SUCCESS)
+    {
+      copy->base.deallocator(copy);
+      return result;
+    }
+  }
+
+  if (source->cbor_cache != NULL)
+  {
+    const cardano_error_t result = cardano_buffer_deep_clone(source->cbor_cache, &copy->cbor_cache);
+
+    if (result != CARDANO_SUCCESS)
+    {
+      copy->base.deallocator(copy);
+      return result;
+    }
+  }
+
+  *clone = copy;
+
+  return CARDANO_SUCCESS;
+}

@@ -62,3 +62,7 @@ Plutus Data Set
 ------------
 
 .. doxygenfunction:: cardano_plutus_data_set_get_last_error
+
+------------
+
+.. doxygenfunction:: cardano_plutus_data_set_deep_clone

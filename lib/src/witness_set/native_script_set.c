@@ -445,3 +445,61 @@ cardano_native_script_set_get_last_error(const cardano_native_script_set_t* nati
 {
   return cardano_object_get_last_error(&native_script_set->base);
 }
+
+/**
+ * Deep copies one element for the typed collection.
+ */
+static cardano_error_t
+clone_array_element(const cardano_object_t* source, cardano_object_t** clone)
+{
+  cardano_native_script_t* copy   = NULL;
+  const cardano_error_t    result = cardano_native_script_deep_clone((const cardano_native_script_t*)((const void*)source), &copy);
+
+  *clone = (cardano_object_t*)((void*)copy);
+
+  return result;
+}
+
+cardano_error_t
+cardano_native_script_set_deep_clone(const cardano_native_script_set_t* source, cardano_native_script_set_t** clone)
+{
+  if (clone == NULL)
+  {
+    return CARDANO_ERROR_POINTER_IS_NULL;
+  }
+
+  *clone = NULL;
+
+  if (source == NULL)
+  {
+    return CARDANO_ERROR_POINTER_IS_NULL;
+  }
+
+  cardano_native_script_set_t* copy = _cardano_malloc(sizeof(cardano_native_script_set_t));
+
+  if (copy == NULL)
+  {
+    return CARDANO_ERROR_MEMORY_ALLOCATION_FAILED;
+  }
+
+  copy->base.ref_count     = 1U;
+  copy->base.deallocator   = source->base.deallocator;
+  copy->base.last_error[0] = '\0';
+  copy->array              = NULL;
+  copy->uses_tags          = source->uses_tags;
+
+  if (source->array != NULL)
+  {
+    const cardano_error_t result = cardano_array_deep_clone(source->array, clone_array_element, &copy->array);
+
+    if (result != CARDANO_SUCCESS)
+    {
+      copy->base.deallocator(copy);
+      return result;
+    }
+  }
+
+  *clone = copy;
+
+  return CARDANO_SUCCESS;
+}

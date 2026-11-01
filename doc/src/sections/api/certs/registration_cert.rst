@@ -54,3 +54,7 @@ Registration Certificate
 ------------
 
 .. doxygenfunction:: cardano_registration_cert_get_last_error
+
+------------
+
+.. doxygenfunction:: cardano_registration_cert_deep_clone

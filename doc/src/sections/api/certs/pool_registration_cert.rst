@@ -46,3 +46,7 @@ Pool Registration Certificate
 ------------
 
 .. doxygenfunction:: cardano_pool_registration_cert_get_last_error
+
+------------
+
+.. doxygenfunction:: cardano_pool_registration_cert_deep_clone

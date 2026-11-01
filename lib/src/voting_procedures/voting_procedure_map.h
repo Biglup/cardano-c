@@ -421,6 +421,14 @@ CARDANO_EXPORT void cardano_voting_procedure_map_set_last_error(cardano_voting_p
 CARDANO_NODISCARD
 CARDANO_EXPORT const char* cardano_voting_procedure_map_get_last_error(const cardano_voting_procedure_map_t* voting_procedure_map);
 
+/**
+ * \brief Deep copies the action IDs and voting procedures in the map.
+ * \param[in] source Map to copy.
+ * \param[out] clone Receives one owned copy, or NULL on failure.
+ * \return Success or a null argument/allocation error.
+ */
+cardano_error_t cardano_voting_procedure_map_deep_clone(const cardano_voting_procedure_map_t* source, cardano_voting_procedure_map_t** clone);
+
 #ifdef __cplusplus
 }
 #endif /* __cplusplus */

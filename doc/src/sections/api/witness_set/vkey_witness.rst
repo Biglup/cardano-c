@@ -58,3 +58,7 @@ VKey Witness
 ------------
 
 .. doxygenfunction:: cardano_vkey_witness_get_last_error
+
+------------
+
+.. doxygenfunction:: cardano_vkey_witness_deep_clone

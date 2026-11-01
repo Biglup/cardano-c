@@ -62,3 +62,7 @@ Sub Transaction Set
 ------------
 
 .. doxygenfunction:: cardano_sub_transaction_set_get_last_error
+
+------------
+
+.. doxygenfunction:: cardano_sub_transaction_set_deep_clone

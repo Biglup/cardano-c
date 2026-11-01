@@ -54,3 +54,7 @@ Treasury Withdrawals Action
 ------------
 
 .. doxygenfunction:: cardano_treasury_withdrawals_action_get_last_error
+
+------------
+
+.. doxygenfunction:: cardano_treasury_withdrawals_action_deep_clone

@@ -1094,3 +1094,132 @@ cardano_pool_params_get_last_error(const cardano_pool_params_t* pool_params)
 {
   return cardano_object_get_last_error(&pool_params->base);
 }
+
+cardano_error_t
+cardano_pool_params_deep_clone(const cardano_pool_params_t* source, cardano_pool_params_t** clone)
+{
+  if (clone == NULL)
+  {
+    return CARDANO_ERROR_POINTER_IS_NULL;
+  }
+
+  *clone = NULL;
+
+  if (source == NULL)
+  {
+    return CARDANO_ERROR_POINTER_IS_NULL;
+  }
+
+  cardano_pool_params_t* copy = _cardano_malloc(sizeof(cardano_pool_params_t));
+
+  if (copy == NULL)
+  {
+    return CARDANO_ERROR_MEMORY_ALLOCATION_FAILED;
+  }
+
+  copy->base.ref_count     = 1U;
+  copy->base.deallocator   = source->base.deallocator;
+  copy->base.last_error[0] = '\0';
+  copy->operator_hash      = NULL;
+  copy->vrf_vk_hash        = NULL;
+  copy->bls_key            = NULL;
+  copy->pledge             = source->pledge;
+  copy->cost               = source->cost;
+  copy->margin             = NULL;
+  copy->reward_account     = NULL;
+  copy->owners             = NULL;
+  copy->relays             = NULL;
+  copy->metadata           = NULL;
+
+  if (source->operator_hash != NULL)
+  {
+    const cardano_error_t result = cardano_blake2b_hash_deep_clone(source->operator_hash, &copy->operator_hash);
+
+    if (result != CARDANO_SUCCESS)
+    {
+      copy->base.deallocator(copy);
+      return result;
+    }
+  }
+
+  if (source->vrf_vk_hash != NULL)
+  {
+    const cardano_error_t result = cardano_blake2b_hash_deep_clone(source->vrf_vk_hash, &copy->vrf_vk_hash);
+
+    if (result != CARDANO_SUCCESS)
+    {
+      copy->base.deallocator(copy);
+      return result;
+    }
+  }
+
+  if (source->bls_key != NULL)
+  {
+    const cardano_error_t result = cardano_bls_key_deep_clone(source->bls_key, &copy->bls_key);
+
+    if (result != CARDANO_SUCCESS)
+    {
+      copy->base.deallocator(copy);
+      return result;
+    }
+  }
+
+  if (source->margin != NULL)
+  {
+    const cardano_error_t result = cardano_unit_interval_deep_clone(source->margin, &copy->margin);
+
+    if (result != CARDANO_SUCCESS)
+    {
+      copy->base.deallocator(copy);
+      return result;
+    }
+  }
+
+  if (source->reward_account != NULL)
+  {
+    const cardano_error_t result = cardano_reward_address_deep_clone(source->reward_account, &copy->reward_account);
+
+    if (result != CARDANO_SUCCESS)
+    {
+      copy->base.deallocator(copy);
+      return result;
+    }
+  }
+
+  if (source->owners != NULL)
+  {
+    const cardano_error_t result = cardano_pool_owners_deep_clone(source->owners, &copy->owners);
+
+    if (result != CARDANO_SUCCESS)
+    {
+      copy->base.deallocator(copy);
+      return result;
+    }
+  }
+
+  if (source->relays != NULL)
+  {
+    const cardano_error_t result = cardano_relays_deep_clone(source->relays, &copy->relays);
+
+    if (result != CARDANO_SUCCESS)
+    {
+      copy->base.deallocator(copy);
+      return result;
+    }
+  }
+
+  if (source->metadata != NULL)
+  {
+    const cardano_error_t result = cardano_pool_metadata_deep_clone(source->metadata, &copy->metadata);
+
+    if (result != CARDANO_SUCCESS)
+    {
+      copy->base.deallocator(copy);
+      return result;
+    }
+  }
+
+  *clone = copy;
+
+  return CARDANO_SUCCESS;
+}

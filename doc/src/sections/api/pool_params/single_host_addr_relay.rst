@@ -62,3 +62,7 @@ Single Address Relay
 ------------
 
 .. doxygenfunction:: cardano_single_host_addr_relay_get_last_error
+
+------------
+
+.. doxygenfunction:: cardano_single_host_addr_relay_deep_clone

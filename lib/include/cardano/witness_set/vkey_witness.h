@@ -522,6 +522,27 @@ CARDANO_NODISCARD
 CARDANO_EXPORT const char* cardano_vkey_witness_get_last_error(
   const cardano_vkey_witness_t* vkey_witness);
 
+/**
+ * \brief Creates an independent deep copy of a \ref cardano_vkey_witness_t.
+ *
+ * Copies all owned children and preserves stored encoding and value state without
+ * serializing the object. Optional absent fields remain absent. The source is not
+ * modified and no mutable storage is shared with the result. Source graphs must
+ * be acyclic. The copy starts with one owned reference and an empty error message.
+ *
+ * \param[in] source The object to copy. Must not be \c NULL.
+ * \param[out] clone Receives the owned copy. Must not be \c NULL and must not
+ * overwrite an existing owned reference. Set to \c NULL on failure.
+ *
+ * \return \ref CARDANO_SUCCESS on success, \ref CARDANO_ERROR_POINTER_IS_NULL
+ * for a null argument, or \ref CARDANO_ERROR_MEMORY_ALLOCATION_FAILED when an
+ * allocation fails. Partial copies are released before returning an error.
+ *
+ * \note Release the result with \ref cardano_vkey_witness_unref.
+ */
+CARDANO_EXPORT cardano_error_t
+cardano_vkey_witness_deep_clone(const cardano_vkey_witness_t* source, cardano_vkey_witness_t** clone);
+
 #ifdef __cplusplus
 }
 #endif /* __cplusplus */

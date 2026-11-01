@@ -33,6 +33,8 @@
 #include "../endian.h"
 #include <assert.h>
 
+#include <string.h>
+
 /* STRUCTURES ****************************************************************/
 
 /**
@@ -904,4 +906,22 @@ const char*
 cardano_bigint_get_last_error(const cardano_bigint_t* bigint)
 {
   return cardano_object_get_last_error(&bigint->base);
+}
+
+cardano_error_t
+cardano_bigint_deep_clone(const cardano_bigint_t* source, cardano_bigint_t** clone)
+{
+  if (clone == NULL)
+  {
+    return CARDANO_ERROR_POINTER_IS_NULL;
+  }
+
+  *clone = NULL;
+
+  if (source == NULL)
+  {
+    return CARDANO_ERROR_POINTER_IS_NULL;
+  }
+
+  return cardano_bigint_clone(source, clone);
 }

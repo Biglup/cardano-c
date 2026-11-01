@@ -54,3 +54,7 @@ Hard Fork Initiation Action
 ------------
 
 .. doxygenfunction:: cardano_hard_fork_initiation_action_get_last_error
+
+------------
+
+.. doxygenfunction:: cardano_hard_fork_initiation_action_deep_clone

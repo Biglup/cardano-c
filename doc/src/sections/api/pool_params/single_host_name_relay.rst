@@ -58,3 +58,7 @@ Single Hostname Relay
 ------------
 
 .. doxygenfunction:: cardano_single_host_name_relay_get_last_error
+
+------------
+
+.. doxygenfunction:: cardano_single_host_name_relay_deep_clone

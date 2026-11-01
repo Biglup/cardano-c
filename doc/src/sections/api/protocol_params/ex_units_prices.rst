@@ -54,3 +54,7 @@ Execution Units Prices
 ------------
 
 .. doxygenfunction:: cardano_ex_unit_prices_get_last_error
+
+------------
+
+.. doxygenfunction:: cardano_ex_unit_prices_deep_clone

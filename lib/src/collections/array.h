@@ -352,6 +352,20 @@ CARDANO_EXPORT void cardano_array_set_last_error(cardano_array_t* array, const c
 CARDANO_NODISCARD
 CARDANO_EXPORT const char* cardano_array_get_last_error(const cardano_array_t* array);
 
+/**
+ * \brief Copies one owned array element without retaining its source.
+ */
+typedef cardano_error_t (*cardano_array_clone_item_t)(const cardano_object_t* source, cardano_object_t** clone);
+
+/**
+ * \brief Deep copies an array using the supplied typed element copier.
+ * \param[in] source Array to copy.
+ * \param[in] clone_item Copies one element and returns one owned reference.
+ * \param[out] clone Receives the copy, or NULL on failure.
+ * \return Success or the allocation/element-copy error.
+ */
+cardano_error_t cardano_array_deep_clone(const cardano_array_t* source, cardano_array_clone_item_t clone_item, cardano_array_t** clone);
+
 #ifdef __cplusplus
 }
 #endif /* __cplusplus */

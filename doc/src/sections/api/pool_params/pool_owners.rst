@@ -50,3 +50,7 @@ Pool Owners
 ------------
 
 .. doxygenfunction:: cardano_pool_owners_get_last_error
+
+------------
+
+.. doxygenfunction:: cardano_pool_owners_deep_clone

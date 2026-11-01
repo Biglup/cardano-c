@@ -407,3 +407,46 @@ cardano_bip32_public_key_to_hash(
 
   return cardano_blake2b_compute_hash(data, cardano_buffer_get_size(bip32_public_key->key_material), CARDANO_BLAKE2B_HASH_SIZE_224, hash);
 }
+
+cardano_error_t
+cardano_bip32_public_key_deep_clone(const cardano_bip32_public_key_t* source, cardano_bip32_public_key_t** clone)
+{
+  if (clone == NULL)
+  {
+    return CARDANO_ERROR_POINTER_IS_NULL;
+  }
+
+  *clone = NULL;
+
+  if (source == NULL)
+  {
+    return CARDANO_ERROR_POINTER_IS_NULL;
+  }
+
+  cardano_bip32_public_key_t* copy = _cardano_malloc(sizeof(cardano_bip32_public_key_t));
+
+  if (copy == NULL)
+  {
+    return CARDANO_ERROR_MEMORY_ALLOCATION_FAILED;
+  }
+
+  copy->base.ref_count     = 1U;
+  copy->base.deallocator   = source->base.deallocator;
+  copy->base.last_error[0] = '\0';
+  copy->key_material       = NULL;
+
+  if (source->key_material != NULL)
+  {
+    const cardano_error_t result = cardano_buffer_deep_clone(source->key_material, &copy->key_material);
+
+    if (result != CARDANO_SUCCESS)
+    {
+      copy->base.deallocator(copy);
+      return result;
+    }
+  }
+
+  *clone = copy;
+
+  return CARDANO_SUCCESS;
+}

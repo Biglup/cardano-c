@@ -42,3 +42,7 @@ ED25519 Signature
 ------------
 
 .. doxygenfunction:: cardano_ed25519_signature_to_hex
+
+------------
+
+.. doxygenfunction:: cardano_ed25519_signature_deep_clone

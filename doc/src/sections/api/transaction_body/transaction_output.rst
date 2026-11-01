@@ -74,3 +74,7 @@ Transaction Output
 ------------
 
 .. doxygenfunction:: cardano_transaction_output_get_last_error
+
+------------
+
+.. doxygenfunction:: cardano_transaction_output_deep_clone

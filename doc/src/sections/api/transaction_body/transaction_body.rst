@@ -309,3 +309,7 @@ sub-transactions. Lovelace amounts are decimal strings to preserve unsigned
 ------------
 
 .. doxygenfunction:: cardano_transaction_body_get_last_error
+
+------------
+
+.. doxygenfunction:: cardano_transaction_body_deep_clone

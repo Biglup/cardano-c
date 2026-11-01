@@ -325,3 +325,36 @@ cardano_protocol_version_get_last_error(const cardano_protocol_version_t* protoc
 {
   return cardano_object_get_last_error(&protocol_version->base);
 }
+
+cardano_error_t
+cardano_protocol_version_deep_clone(const cardano_protocol_version_t* source, cardano_protocol_version_t** clone)
+{
+  if (clone == NULL)
+  {
+    return CARDANO_ERROR_POINTER_IS_NULL;
+  }
+
+  *clone = NULL;
+
+  if (source == NULL)
+  {
+    return CARDANO_ERROR_POINTER_IS_NULL;
+  }
+
+  cardano_protocol_version_t* copy = _cardano_malloc(sizeof(cardano_protocol_version_t));
+
+  if (copy == NULL)
+  {
+    return CARDANO_ERROR_MEMORY_ALLOCATION_FAILED;
+  }
+
+  copy->base.ref_count     = 1U;
+  copy->base.deallocator   = source->base.deallocator;
+  copy->base.last_error[0] = '\0';
+  copy->major              = source->major;
+  copy->minor              = source->minor;
+
+  *clone = copy;
+
+  return CARDANO_SUCCESS;
+}

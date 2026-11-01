@@ -62,3 +62,7 @@ Constr Plutus Data
 ------------
 
 .. doxygenfunction:: cardano_constr_plutus_data_get_last_error
+
+------------
+
+.. doxygenfunction:: cardano_constr_plutus_data_deep_clone

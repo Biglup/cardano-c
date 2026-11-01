@@ -39,3 +39,6 @@ Voter List
 
 .. doxygenfunction:: cardano_voter_list_get_last_error
 
+------------
+
+.. doxygenfunction:: cardano_voter_list_deep_clone

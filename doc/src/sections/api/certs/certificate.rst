@@ -192,3 +192,6 @@ Certificate
 
 .. doxygenfunction:: cardano_certificate_get_last_error
 
+------------
+
+.. doxygenfunction:: cardano_certificate_deep_clone

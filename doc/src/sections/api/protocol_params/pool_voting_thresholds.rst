@@ -78,3 +78,7 @@ Pool Voting Thresholds
 ------------
 
 .. doxygenfunction:: cardano_pool_voting_thresholds_get_last_error
+
+------------
+
+.. doxygenfunction:: cardano_pool_voting_thresholds_deep_clone

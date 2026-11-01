@@ -114,3 +114,7 @@ Metadatum
 ------------
 
 .. doxygenfunction:: cardano_metadatum_get_last_error
+
+------------
+
+.. doxygenfunction:: cardano_metadatum_deep_clone

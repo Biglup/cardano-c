@@ -38,3 +38,7 @@ Asset Name List
 ------------
 
 .. doxygenfunction:: cardano_asset_name_list_get_last_error
+
+------------
+
+.. doxygenfunction:: cardano_asset_name_list_deep_clone

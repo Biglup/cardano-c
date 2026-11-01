@@ -39,3 +39,6 @@ Metadatum Label List
 
 .. doxygenfunction:: cardano_metadatum_label_list_get_last_error
 
+------------
+
+.. doxygenfunction:: cardano_metadatum_label_list_deep_clone

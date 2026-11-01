@@ -531,3 +531,70 @@ cardano_parameter_change_action_get_last_error(const cardano_parameter_change_ac
 {
   return cardano_object_get_last_error(&parameter_change_action->base);
 }
+
+cardano_error_t
+cardano_parameter_change_action_deep_clone(const cardano_parameter_change_action_t* source, cardano_parameter_change_action_t** clone)
+{
+  if (clone == NULL)
+  {
+    return CARDANO_ERROR_POINTER_IS_NULL;
+  }
+
+  *clone = NULL;
+
+  if (source == NULL)
+  {
+    return CARDANO_ERROR_POINTER_IS_NULL;
+  }
+
+  cardano_parameter_change_action_t* copy = _cardano_malloc(sizeof(cardano_parameter_change_action_t));
+
+  if (copy == NULL)
+  {
+    return CARDANO_ERROR_MEMORY_ALLOCATION_FAILED;
+  }
+
+  copy->base.ref_count        = 1U;
+  copy->base.deallocator      = source->base.deallocator;
+  copy->base.last_error[0]    = '\0';
+  copy->protocol_param_update = NULL;
+  copy->policy_hash           = NULL;
+  copy->governance_action_id  = NULL;
+
+  if (source->protocol_param_update != NULL)
+  {
+    const cardano_error_t result = cardano_protocol_param_update_deep_clone(source->protocol_param_update, &copy->protocol_param_update);
+
+    if (result != CARDANO_SUCCESS)
+    {
+      copy->base.deallocator(copy);
+      return result;
+    }
+  }
+
+  if (source->policy_hash != NULL)
+  {
+    const cardano_error_t result = cardano_blake2b_hash_deep_clone(source->policy_hash, &copy->policy_hash);
+
+    if (result != CARDANO_SUCCESS)
+    {
+      copy->base.deallocator(copy);
+      return result;
+    }
+  }
+
+  if (source->governance_action_id != NULL)
+  {
+    const cardano_error_t result = cardano_governance_action_id_deep_clone(source->governance_action_id, &copy->governance_action_id);
+
+    if (result != CARDANO_SUCCESS)
+    {
+      copy->base.deallocator(copy);
+      return result;
+    }
+  }
+
+  *clone = copy;
+
+  return CARDANO_SUCCESS;
+}

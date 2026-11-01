@@ -335,3 +335,36 @@ cardano_mir_to_pot_cert_get_last_error(const cardano_mir_to_pot_cert_t* mir_to_p
 {
   return cardano_object_get_last_error(&mir_to_pot_cert->base);
 }
+
+cardano_error_t
+cardano_mir_to_pot_cert_deep_clone(const cardano_mir_to_pot_cert_t* source, cardano_mir_to_pot_cert_t** clone)
+{
+  if (clone == NULL)
+  {
+    return CARDANO_ERROR_POINTER_IS_NULL;
+  }
+
+  *clone = NULL;
+
+  if (source == NULL)
+  {
+    return CARDANO_ERROR_POINTER_IS_NULL;
+  }
+
+  cardano_mir_to_pot_cert_t* copy = _cardano_malloc(sizeof(cardano_mir_to_pot_cert_t));
+
+  if (copy == NULL)
+  {
+    return CARDANO_ERROR_MEMORY_ALLOCATION_FAILED;
+  }
+
+  copy->base.ref_count     = 1U;
+  copy->base.deallocator   = source->base.deallocator;
+  copy->base.last_error[0] = '\0';
+  copy->pot                = source->pot;
+  copy->amount             = source->amount;
+
+  *clone = copy;
+
+  return CARDANO_SUCCESS;
+}

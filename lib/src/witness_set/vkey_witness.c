@@ -414,3 +414,58 @@ cardano_vkey_witness_get_last_error(const cardano_vkey_witness_t* vkey_witness)
 {
   return cardano_object_get_last_error(&vkey_witness->base);
 }
+
+cardano_error_t
+cardano_vkey_witness_deep_clone(const cardano_vkey_witness_t* source, cardano_vkey_witness_t** clone)
+{
+  if (clone == NULL)
+  {
+    return CARDANO_ERROR_POINTER_IS_NULL;
+  }
+
+  *clone = NULL;
+
+  if (source == NULL)
+  {
+    return CARDANO_ERROR_POINTER_IS_NULL;
+  }
+
+  cardano_vkey_witness_t* copy = _cardano_malloc(sizeof(cardano_vkey_witness_t));
+
+  if (copy == NULL)
+  {
+    return CARDANO_ERROR_MEMORY_ALLOCATION_FAILED;
+  }
+
+  copy->base.ref_count     = 1U;
+  copy->base.deallocator   = source->base.deallocator;
+  copy->base.last_error[0] = '\0';
+  copy->vkey               = NULL;
+  copy->signature          = NULL;
+
+  if (source->vkey != NULL)
+  {
+    const cardano_error_t result = cardano_ed25519_public_key_deep_clone(source->vkey, &copy->vkey);
+
+    if (result != CARDANO_SUCCESS)
+    {
+      copy->base.deallocator(copy);
+      return result;
+    }
+  }
+
+  if (source->signature != NULL)
+  {
+    const cardano_error_t result = cardano_ed25519_signature_deep_clone(source->signature, &copy->signature);
+
+    if (result != CARDANO_SUCCESS)
+    {
+      copy->base.deallocator(copy);
+      return result;
+    }
+  }
+
+  *clone = copy;
+
+  return CARDANO_SUCCESS;
+}

@@ -54,3 +54,7 @@ Update
 ------------
 
 .. doxygenfunction:: cardano_update_get_last_error
+
+------------
+
+.. doxygenfunction:: cardano_update_deep_clone

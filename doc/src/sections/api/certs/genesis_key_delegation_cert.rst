@@ -62,3 +62,7 @@ Genesis Key Delegation Certificate
 ------------
 
 .. doxygenfunction:: cardano_genesis_key_delegation_cert_get_last_error
+
+------------
+
+.. doxygenfunction:: cardano_genesis_key_delegation_cert_deep_clone

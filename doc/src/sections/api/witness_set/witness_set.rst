@@ -118,3 +118,7 @@ Witness Set
 ------------
 
 .. doxygenfunction:: cardano_witness_set_get_last_error
+
+------------
+
+.. doxygenfunction:: cardano_witness_set_deep_clone

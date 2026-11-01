@@ -518,3 +518,7 @@ Protocol Parameter Update
 ------------
 
 .. doxygenfunction:: cardano_protocol_param_update_get_last_error
+
+------------
+
+.. doxygenfunction:: cardano_protocol_param_update_deep_clone

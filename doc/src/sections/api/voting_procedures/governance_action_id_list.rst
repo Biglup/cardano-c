@@ -38,3 +38,7 @@ Governance Action ID List
 ------------
 
 .. doxygenfunction:: cardano_governance_action_id_list_get_last_error
+
+------------
+
+.. doxygenfunction:: cardano_governance_action_id_list_deep_clone

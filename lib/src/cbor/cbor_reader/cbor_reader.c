@@ -91,7 +91,7 @@ cardano_cbor_reader_deallocate(void* object)
  *         Returns \ref CARDANO_ERROR_MEMORY_ALLOCATION_FAILED if there was an error allocating memory for the cloned items.
  */
 static cardano_error_t
-clone_nested_items(cardano_array_t* src, cardano_array_t** clone)
+clone_nested_items(const cardano_array_t* src, cardano_array_t** clone)
 {
   assert(src != NULL);
   assert(clone != NULL);
@@ -342,12 +342,20 @@ cardano_cbor_reader_get_remainder_bytes(cardano_cbor_reader_t* reader, cardano_b
 cardano_error_t
 cardano_cbor_reader_clone(cardano_cbor_reader_t* reader, cardano_cbor_reader_t** clone)
 {
-  if (reader == NULL)
+  return cardano_cbor_reader_deep_clone(reader, clone);
+}
+
+cardano_error_t
+cardano_cbor_reader_deep_clone(const cardano_cbor_reader_t* reader, cardano_cbor_reader_t** clone)
+{
+  if (clone == NULL)
   {
     return CARDANO_ERROR_POINTER_IS_NULL;
   }
 
-  if (clone == NULL)
+  *clone = NULL;
+
+  if (reader == NULL)
   {
     return CARDANO_ERROR_POINTER_IS_NULL;
   }

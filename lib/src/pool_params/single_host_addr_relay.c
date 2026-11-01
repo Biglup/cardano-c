@@ -620,3 +620,74 @@ cardano_single_host_addr_relay_get_last_error(const cardano_single_host_addr_rel
 {
   return cardano_object_get_last_error(&single_host_addr_relay->base);
 }
+
+cardano_error_t
+cardano_single_host_addr_relay_deep_clone(const cardano_single_host_addr_relay_t* source, cardano_single_host_addr_relay_t** clone)
+{
+  if (clone == NULL)
+  {
+    return CARDANO_ERROR_POINTER_IS_NULL;
+  }
+
+  *clone = NULL;
+
+  if (source == NULL)
+  {
+    return CARDANO_ERROR_POINTER_IS_NULL;
+  }
+
+  cardano_single_host_addr_relay_t* copy = _cardano_malloc(sizeof(cardano_single_host_addr_relay_t));
+
+  if (copy == NULL)
+  {
+    return CARDANO_ERROR_MEMORY_ALLOCATION_FAILED;
+  }
+
+  copy->base.ref_count     = 1U;
+  copy->base.deallocator   = source->base.deallocator;
+  copy->base.last_error[0] = '\0';
+  copy->port               = NULL;
+  copy->ipv4               = NULL;
+  copy->ipv6               = NULL;
+
+  if (source->port != NULL)
+  {
+    const size_t size = sizeof(uint16_t);
+
+    copy->port = _cardano_malloc((size > 0U) ? size : 1U);
+
+    if (copy->port == NULL)
+    {
+      copy->base.deallocator(copy);
+      return CARDANO_ERROR_MEMORY_ALLOCATION_FAILED;
+    }
+
+    CARDANO_UNUSED(memcpy(copy->port, source->port, size));
+  }
+
+  if (source->ipv4 != NULL)
+  {
+    const cardano_error_t result = cardano_ipv4_deep_clone(source->ipv4, &copy->ipv4);
+
+    if (result != CARDANO_SUCCESS)
+    {
+      copy->base.deallocator(copy);
+      return result;
+    }
+  }
+
+  if (source->ipv6 != NULL)
+  {
+    const cardano_error_t result = cardano_ipv6_deep_clone(source->ipv6, &copy->ipv6);
+
+    if (result != CARDANO_SUCCESS)
+    {
+      copy->base.deallocator(copy);
+      return result;
+    }
+  }
+
+  *clone = copy;
+
+  return CARDANO_SUCCESS;
+}

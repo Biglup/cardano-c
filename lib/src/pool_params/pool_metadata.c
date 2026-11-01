@@ -461,3 +461,47 @@ cardano_pool_metadata_get_last_error(const cardano_pool_metadata_t* pool_metadat
 {
   return cardano_object_get_last_error(&pool_metadata->base);
 }
+
+cardano_error_t
+cardano_pool_metadata_deep_clone(const cardano_pool_metadata_t* source, cardano_pool_metadata_t** clone)
+{
+  if (clone == NULL)
+  {
+    return CARDANO_ERROR_POINTER_IS_NULL;
+  }
+
+  *clone = NULL;
+
+  if (source == NULL)
+  {
+    return CARDANO_ERROR_POINTER_IS_NULL;
+  }
+
+  cardano_pool_metadata_t* copy = _cardano_malloc(sizeof(cardano_pool_metadata_t));
+
+  if (copy == NULL)
+  {
+    return CARDANO_ERROR_MEMORY_ALLOCATION_FAILED;
+  }
+
+  copy->base.ref_count     = 1U;
+  copy->base.deallocator   = source->base.deallocator;
+  copy->base.last_error[0] = '\0';
+  CARDANO_UNUSED(memcpy(copy->url, source->url, sizeof(copy->url)));
+  copy->hash = NULL;
+
+  if (source->hash != NULL)
+  {
+    const cardano_error_t result = cardano_blake2b_hash_deep_clone(source->hash, &copy->hash);
+
+    if (result != CARDANO_SUCCESS)
+    {
+      copy->base.deallocator(copy);
+      return result;
+    }
+  }
+
+  *clone = copy;
+
+  return CARDANO_SUCCESS;
+}

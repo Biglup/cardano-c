@@ -624,3 +624,110 @@ cardano_address_get_last_error(const cardano_address_t* address)
 {
   return cardano_object_get_last_error(&address->base);
 }
+
+cardano_error_t
+cardano_address_deep_clone(const cardano_address_t* source, cardano_address_t** clone)
+{
+  if (clone == NULL)
+  {
+    return CARDANO_ERROR_POINTER_IS_NULL;
+  }
+
+  *clone = NULL;
+
+  if (source == NULL)
+  {
+    return CARDANO_ERROR_POINTER_IS_NULL;
+  }
+
+  cardano_address_t* copy = _cardano_malloc(sizeof(cardano_address_t));
+
+  if (copy == NULL)
+  {
+    return CARDANO_ERROR_MEMORY_ALLOCATION_FAILED;
+  }
+
+  copy->base.ref_count     = 1U;
+  copy->base.deallocator   = source->base.deallocator;
+  copy->base.last_error[0] = '\0';
+  copy->type               = source->type;
+  CARDANO_UNUSED(memcpy(copy->address_str, source->address_str, sizeof(copy->address_str)));
+  CARDANO_UNUSED(memcpy(copy->address_data, source->address_data, sizeof(copy->address_data)));
+  copy->address_data_size  = source->address_data_size;
+  copy->network_id         = NULL;
+  copy->stake_pointer      = NULL;
+  copy->payment_credential = NULL;
+  copy->stake_credential   = NULL;
+  copy->byron_content      = NULL;
+
+  if (source->network_id != NULL)
+  {
+    const size_t size = sizeof(cardano_network_id_t);
+
+    copy->network_id = _cardano_malloc((size > 0U) ? size : 1U);
+
+    if (copy->network_id == NULL)
+    {
+      copy->base.deallocator(copy);
+      return CARDANO_ERROR_MEMORY_ALLOCATION_FAILED;
+    }
+
+    CARDANO_UNUSED(memcpy(copy->network_id, source->network_id, size));
+  }
+
+  if (source->stake_pointer != NULL)
+  {
+    const size_t size = sizeof(cardano_stake_pointer_t);
+
+    copy->stake_pointer = _cardano_malloc((size > 0U) ? size : 1U);
+
+    if (copy->stake_pointer == NULL)
+    {
+      copy->base.deallocator(copy);
+      return CARDANO_ERROR_MEMORY_ALLOCATION_FAILED;
+    }
+
+    CARDANO_UNUSED(memcpy(copy->stake_pointer, source->stake_pointer, size));
+  }
+
+  if (source->payment_credential != NULL)
+  {
+    const cardano_error_t result = cardano_credential_deep_clone(source->payment_credential, &copy->payment_credential);
+
+    if (result != CARDANO_SUCCESS)
+    {
+      copy->base.deallocator(copy);
+      return result;
+    }
+  }
+
+  if (source->stake_credential != NULL)
+  {
+    const cardano_error_t result = cardano_credential_deep_clone(source->stake_credential, &copy->stake_credential);
+
+    if (result != CARDANO_SUCCESS)
+    {
+      copy->base.deallocator(copy);
+      return result;
+    }
+  }
+
+  if (source->byron_content != NULL)
+  {
+    const size_t size = sizeof(cardano_byron_address_content_t);
+
+    copy->byron_content = _cardano_malloc((size > 0U) ? size : 1U);
+
+    if (copy->byron_content == NULL)
+    {
+      copy->base.deallocator(copy);
+      return CARDANO_ERROR_MEMORY_ALLOCATION_FAILED;
+    }
+
+    CARDANO_UNUSED(memcpy(copy->byron_content, source->byron_content, size));
+  }
+
+  *clone = copy;
+
+  return CARDANO_SUCCESS;
+}

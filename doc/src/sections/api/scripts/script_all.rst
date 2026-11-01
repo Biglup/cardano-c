@@ -62,3 +62,7 @@ Native Script - Require All Of
 ------------
 
 .. doxygenfunction:: cardano_script_all_get_last_error
+
+------------
+
+.. doxygenfunction:: cardano_script_all_deep_clone

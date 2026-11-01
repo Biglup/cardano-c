@@ -66,3 +66,7 @@ Transaction Metadata
 ------------
 
 .. doxygenfunction:: cardano_transaction_metadata_get_last_error
+
+------------
+
+.. doxygenfunction:: cardano_transaction_metadata_deep_clone

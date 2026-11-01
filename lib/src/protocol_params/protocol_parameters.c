@@ -2124,3 +2124,311 @@ cardano_protocol_parameters_get_last_error(const cardano_protocol_parameters_t* 
 {
   return cardano_object_get_last_error(&protocol_parameters->base);
 }
+
+cardano_error_t
+cardano_protocol_parameters_deep_clone(const cardano_protocol_parameters_t* source, cardano_protocol_parameters_t** clone)
+{
+  if (clone == NULL)
+  {
+    return CARDANO_ERROR_POINTER_IS_NULL;
+  }
+
+  *clone = NULL;
+
+  if (source == NULL)
+  {
+    return CARDANO_ERROR_POINTER_IS_NULL;
+  }
+
+  cardano_protocol_parameters_t* copy = _cardano_malloc(sizeof(cardano_protocol_parameters_t));
+
+  if (copy == NULL)
+  {
+    return CARDANO_ERROR_MEMORY_ALLOCATION_FAILED;
+  }
+
+  copy->base.ref_count                         = 1U;
+  copy->base.deallocator                       = source->base.deallocator;
+  copy->base.last_error[0]                     = '\0';
+  copy->min_fee_a                              = source->min_fee_a;
+  copy->min_fee_b                              = source->min_fee_b;
+  copy->max_block_body_size                    = source->max_block_body_size;
+  copy->max_tx_size                            = source->max_tx_size;
+  copy->max_block_header_size                  = source->max_block_header_size;
+  copy->key_deposit                            = source->key_deposit;
+  copy->pool_deposit                           = source->pool_deposit;
+  copy->max_epoch                              = source->max_epoch;
+  copy->n_opt                                  = source->n_opt;
+  copy->pool_pledge_influence                  = NULL;
+  copy->expansion_rate                         = NULL;
+  copy->treasury_growth_rate                   = NULL;
+  copy->d                                      = NULL;
+  copy->extra_entropy                          = NULL;
+  copy->protocol_version                       = NULL;
+  copy->min_pool_cost                          = source->min_pool_cost;
+  copy->ada_per_utxo_byte                      = source->ada_per_utxo_byte;
+  copy->cost_models                            = NULL;
+  copy->execution_costs                        = NULL;
+  copy->max_tx_ex_units                        = NULL;
+  copy->max_block_ex_units                     = NULL;
+  copy->max_value_size                         = source->max_value_size;
+  copy->collateral_percentage                  = source->collateral_percentage;
+  copy->max_collateral_inputs                  = source->max_collateral_inputs;
+  copy->pool_voting_thresholds                 = NULL;
+  copy->drep_voting_thresholds                 = NULL;
+  copy->min_committee_size                     = source->min_committee_size;
+  copy->committee_term_limit                   = source->committee_term_limit;
+  copy->governance_action_validity_period      = source->governance_action_validity_period;
+  copy->governance_action_deposit              = source->governance_action_deposit;
+  copy->drep_deposit                           = source->drep_deposit;
+  copy->drep_inactivity_period                 = source->drep_inactivity_period;
+  copy->ref_script_cost_per_byte               = NULL;
+  copy->max_ref_script_size_per_block          = source->max_ref_script_size_per_block;
+  copy->max_ref_script_size_per_tx             = source->max_ref_script_size_per_tx;
+  copy->ref_script_cost_stride                 = source->ref_script_cost_stride;
+  copy->ref_script_cost_multiplier             = NULL;
+  copy->max_pledge_leverage                    = NULL;
+  copy->min_pool_margin                        = NULL;
+  copy->leios_announcement_period_length       = source->leios_announcement_period_length;
+  copy->leios_vote_period_length               = source->leios_vote_period_length;
+  copy->leios_diffusion_period_length          = source->leios_diffusion_period_length;
+  copy->leios_committee_size                   = source->leios_committee_size;
+  copy->leios_quorum_stake_threshold           = NULL;
+  copy->max_endorser_block_references_size     = source->max_endorser_block_references_size;
+  copy->max_endorser_block_txs_size            = source->max_endorser_block_txs_size;
+  copy->max_endorser_block_execution_units     = NULL;
+  copy->max_ref_script_size_per_endorser_block = source->max_ref_script_size_per_endorser_block;
+  copy->peras_min_candidate_block_age          = source->peras_min_candidate_block_age;
+  copy->peras_healing_factor                   = NULL;
+  copy->peras_cert_boost                       = source->peras_cert_boost;
+  copy->peras_target_committee_size            = source->peras_target_committee_size;
+  copy->has_peras_bootstrap_round              = source->has_peras_bootstrap_round;
+  copy->peras_bootstrap_round                  = source->peras_bootstrap_round;
+  copy->peras_quorum_threshold_safety_margin   = NULL;
+  copy->ref_inputs_cost_per_multi_asset_policy = source->ref_inputs_cost_per_multi_asset_policy;
+  copy->ref_inputs_cost_per_datum_byte         = source->ref_inputs_cost_per_datum_byte;
+
+  if (source->pool_pledge_influence != NULL)
+  {
+    const cardano_error_t result = cardano_unit_interval_deep_clone(source->pool_pledge_influence, &copy->pool_pledge_influence);
+
+    if (result != CARDANO_SUCCESS)
+    {
+      copy->base.deallocator(copy);
+      return result;
+    }
+  }
+
+  if (source->expansion_rate != NULL)
+  {
+    const cardano_error_t result = cardano_unit_interval_deep_clone(source->expansion_rate, &copy->expansion_rate);
+
+    if (result != CARDANO_SUCCESS)
+    {
+      copy->base.deallocator(copy);
+      return result;
+    }
+  }
+
+  if (source->treasury_growth_rate != NULL)
+  {
+    const cardano_error_t result = cardano_unit_interval_deep_clone(source->treasury_growth_rate, &copy->treasury_growth_rate);
+
+    if (result != CARDANO_SUCCESS)
+    {
+      copy->base.deallocator(copy);
+      return result;
+    }
+  }
+
+  if (source->d != NULL)
+  {
+    const cardano_error_t result = cardano_unit_interval_deep_clone(source->d, &copy->d);
+
+    if (result != CARDANO_SUCCESS)
+    {
+      copy->base.deallocator(copy);
+      return result;
+    }
+  }
+
+  if (source->extra_entropy != NULL)
+  {
+    const cardano_error_t result = cardano_buffer_deep_clone(source->extra_entropy, &copy->extra_entropy);
+
+    if (result != CARDANO_SUCCESS)
+    {
+      copy->base.deallocator(copy);
+      return result;
+    }
+  }
+
+  if (source->protocol_version != NULL)
+  {
+    const cardano_error_t result = cardano_protocol_version_deep_clone(source->protocol_version, &copy->protocol_version);
+
+    if (result != CARDANO_SUCCESS)
+    {
+      copy->base.deallocator(copy);
+      return result;
+    }
+  }
+
+  if (source->cost_models != NULL)
+  {
+    const cardano_error_t result = cardano_costmdls_deep_clone(source->cost_models, &copy->cost_models);
+
+    if (result != CARDANO_SUCCESS)
+    {
+      copy->base.deallocator(copy);
+      return result;
+    }
+  }
+
+  if (source->execution_costs != NULL)
+  {
+    const cardano_error_t result = cardano_ex_unit_prices_deep_clone(source->execution_costs, &copy->execution_costs);
+
+    if (result != CARDANO_SUCCESS)
+    {
+      copy->base.deallocator(copy);
+      return result;
+    }
+  }
+
+  if (source->max_tx_ex_units != NULL)
+  {
+    const cardano_error_t result = cardano_ex_units_deep_clone(source->max_tx_ex_units, &copy->max_tx_ex_units);
+
+    if (result != CARDANO_SUCCESS)
+    {
+      copy->base.deallocator(copy);
+      return result;
+    }
+  }
+
+  if (source->max_block_ex_units != NULL)
+  {
+    const cardano_error_t result = cardano_ex_units_deep_clone(source->max_block_ex_units, &copy->max_block_ex_units);
+
+    if (result != CARDANO_SUCCESS)
+    {
+      copy->base.deallocator(copy);
+      return result;
+    }
+  }
+
+  if (source->pool_voting_thresholds != NULL)
+  {
+    const cardano_error_t result = cardano_pool_voting_thresholds_deep_clone(source->pool_voting_thresholds, &copy->pool_voting_thresholds);
+
+    if (result != CARDANO_SUCCESS)
+    {
+      copy->base.deallocator(copy);
+      return result;
+    }
+  }
+
+  if (source->drep_voting_thresholds != NULL)
+  {
+    const cardano_error_t result = cardano_drep_voting_thresholds_deep_clone(source->drep_voting_thresholds, &copy->drep_voting_thresholds);
+
+    if (result != CARDANO_SUCCESS)
+    {
+      copy->base.deallocator(copy);
+      return result;
+    }
+  }
+
+  if (source->ref_script_cost_per_byte != NULL)
+  {
+    const cardano_error_t result = cardano_unit_interval_deep_clone(source->ref_script_cost_per_byte, &copy->ref_script_cost_per_byte);
+
+    if (result != CARDANO_SUCCESS)
+    {
+      copy->base.deallocator(copy);
+      return result;
+    }
+  }
+
+  if (source->ref_script_cost_multiplier != NULL)
+  {
+    const cardano_error_t result = cardano_unit_interval_deep_clone(source->ref_script_cost_multiplier, &copy->ref_script_cost_multiplier);
+
+    if (result != CARDANO_SUCCESS)
+    {
+      copy->base.deallocator(copy);
+      return result;
+    }
+  }
+
+  if (source->max_pledge_leverage != NULL)
+  {
+    const cardano_error_t result = cardano_unit_interval_deep_clone(source->max_pledge_leverage, &copy->max_pledge_leverage);
+
+    if (result != CARDANO_SUCCESS)
+    {
+      copy->base.deallocator(copy);
+      return result;
+    }
+  }
+
+  if (source->min_pool_margin != NULL)
+  {
+    const cardano_error_t result = cardano_unit_interval_deep_clone(source->min_pool_margin, &copy->min_pool_margin);
+
+    if (result != CARDANO_SUCCESS)
+    {
+      copy->base.deallocator(copy);
+      return result;
+    }
+  }
+
+  if (source->leios_quorum_stake_threshold != NULL)
+  {
+    const cardano_error_t result = cardano_unit_interval_deep_clone(source->leios_quorum_stake_threshold, &copy->leios_quorum_stake_threshold);
+
+    if (result != CARDANO_SUCCESS)
+    {
+      copy->base.deallocator(copy);
+      return result;
+    }
+  }
+
+  if (source->max_endorser_block_execution_units != NULL)
+  {
+    const cardano_error_t result = cardano_ex_units_deep_clone(source->max_endorser_block_execution_units, &copy->max_endorser_block_execution_units);
+
+    if (result != CARDANO_SUCCESS)
+    {
+      copy->base.deallocator(copy);
+      return result;
+    }
+  }
+
+  if (source->peras_healing_factor != NULL)
+  {
+    const cardano_error_t result = cardano_unit_interval_deep_clone(source->peras_healing_factor, &copy->peras_healing_factor);
+
+    if (result != CARDANO_SUCCESS)
+    {
+      copy->base.deallocator(copy);
+      return result;
+    }
+  }
+
+  if (source->peras_quorum_threshold_safety_margin != NULL)
+  {
+    const cardano_error_t result = cardano_unit_interval_deep_clone(source->peras_quorum_threshold_safety_margin, &copy->peras_quorum_threshold_safety_margin);
+
+    if (result != CARDANO_SUCCESS)
+    {
+      copy->base.deallocator(copy);
+      return result;
+    }
+  }
+
+  *clone = copy;
+
+  return CARDANO_SUCCESS;
+}

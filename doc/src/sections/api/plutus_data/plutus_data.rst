@@ -102,3 +102,7 @@ Plutus Data
 ------------
 
 .. doxygenfunction:: cardano_plutus_data_get_last_error
+
+------------
+
+.. doxygenfunction:: cardano_plutus_data_deep_clone

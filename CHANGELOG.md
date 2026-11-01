@@ -1,6 +1,9 @@
 Unreleased
 ---------------------
 
+- Return an allocation error when a CBOR byte-string or text-string slice cannot be allocated, instead of reporting success with a null output.
+
+- Add `deep_clone` APIs for native domain values, typed collections, addresses, cryptographic values, and JSON/CBOR utilities. Copies own their children and preserve encoding state. Existing shallow-clone APIs retain their behavior.
 - Add a binding author guide covering idiomatic APIs, native ownership, callbacks, and lifecycle conformance, with a shared conformance corpus, deterministic builder recipes, native checks, and a portable binding-adapter runner.
 
 V2.0.0-rc.6

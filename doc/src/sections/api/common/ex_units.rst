@@ -54,3 +54,7 @@ Execution Units
 ------------
 
 .. doxygenfunction:: cardano_ex_units_get_last_error
+
+------------
+
+.. doxygenfunction:: cardano_ex_units_deep_clone

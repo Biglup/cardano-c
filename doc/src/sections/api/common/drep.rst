@@ -66,3 +66,7 @@ DRep
 ------------
 
 .. doxygenfunction:: cardano_drep_get_last_error
+
+------------
+
+.. doxygenfunction:: cardano_drep_deep_clone

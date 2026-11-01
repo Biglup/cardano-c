@@ -62,3 +62,7 @@ Cost Model
 ------------
 
 .. doxygenfunction:: cardano_cost_model_get_last_error
+
+------------
+
+.. doxygenfunction:: cardano_cost_model_deep_clone

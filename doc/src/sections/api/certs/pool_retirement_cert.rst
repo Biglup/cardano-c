@@ -54,3 +54,7 @@ Pool Retirement Certificate
 ------------
 
 .. doxygenfunction:: cardano_pool_retirement_cert_get_last_error
+
+------------
+
+.. doxygenfunction:: cardano_pool_retirement_cert_deep_clone

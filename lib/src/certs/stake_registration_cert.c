@@ -321,3 +321,46 @@ cardano_stake_registration_cert_get_last_error(const cardano_stake_registration_
 {
   return cardano_object_get_last_error(&stake_registration_cert->base);
 }
+
+cardano_error_t
+cardano_stake_registration_cert_deep_clone(const cardano_stake_registration_cert_t* source, cardano_stake_registration_cert_t** clone)
+{
+  if (clone == NULL)
+  {
+    return CARDANO_ERROR_POINTER_IS_NULL;
+  }
+
+  *clone = NULL;
+
+  if (source == NULL)
+  {
+    return CARDANO_ERROR_POINTER_IS_NULL;
+  }
+
+  cardano_stake_registration_cert_t* copy = _cardano_malloc(sizeof(cardano_stake_registration_cert_t));
+
+  if (copy == NULL)
+  {
+    return CARDANO_ERROR_MEMORY_ALLOCATION_FAILED;
+  }
+
+  copy->base.ref_count     = 1U;
+  copy->base.deallocator   = source->base.deallocator;
+  copy->base.last_error[0] = '\0';
+  copy->credential         = NULL;
+
+  if (source->credential != NULL)
+  {
+    const cardano_error_t result = cardano_credential_deep_clone(source->credential, &copy->credential);
+
+    if (result != CARDANO_SUCCESS)
+    {
+      copy->base.deallocator(copy);
+      return result;
+    }
+  }
+
+  *clone = copy;
+
+  return CARDANO_SUCCESS;
+}

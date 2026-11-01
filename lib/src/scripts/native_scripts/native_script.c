@@ -1216,3 +1216,119 @@ cardano_native_script_get_last_error(const cardano_native_script_t* native_scrip
 {
   return cardano_object_get_last_error(&native_script->base);
 }
+
+cardano_error_t
+cardano_native_script_deep_clone(const cardano_native_script_t* source, cardano_native_script_t** clone)
+{
+  if (clone == NULL)
+  {
+    return CARDANO_ERROR_POINTER_IS_NULL;
+  }
+
+  *clone = NULL;
+
+  if (source == NULL)
+  {
+    return CARDANO_ERROR_POINTER_IS_NULL;
+  }
+
+  cardano_native_script_t* copy = _cardano_malloc(sizeof(cardano_native_script_t));
+
+  if (copy == NULL)
+  {
+    return CARDANO_ERROR_MEMORY_ALLOCATION_FAILED;
+  }
+
+  copy->base.ref_count     = 1U;
+  copy->base.deallocator   = source->base.deallocator;
+  copy->base.last_error[0] = '\0';
+  copy->type               = source->type;
+  copy->all                = NULL;
+  copy->any                = NULL;
+  copy->invalid_after      = NULL;
+  copy->invalid_before     = NULL;
+  copy->n_of_k             = NULL;
+  copy->pubkey             = NULL;
+  copy->require_guard      = NULL;
+
+  if (source->all != NULL)
+  {
+    const cardano_error_t result = cardano_script_all_deep_clone(source->all, &copy->all);
+
+    if (result != CARDANO_SUCCESS)
+    {
+      copy->base.deallocator(copy);
+      return result;
+    }
+  }
+
+  if (source->any != NULL)
+  {
+    const cardano_error_t result = cardano_script_any_deep_clone(source->any, &copy->any);
+
+    if (result != CARDANO_SUCCESS)
+    {
+      copy->base.deallocator(copy);
+      return result;
+    }
+  }
+
+  if (source->invalid_after != NULL)
+  {
+    const cardano_error_t result = cardano_script_invalid_after_deep_clone(source->invalid_after, &copy->invalid_after);
+
+    if (result != CARDANO_SUCCESS)
+    {
+      copy->base.deallocator(copy);
+      return result;
+    }
+  }
+
+  if (source->invalid_before != NULL)
+  {
+    const cardano_error_t result = cardano_script_invalid_before_deep_clone(source->invalid_before, &copy->invalid_before);
+
+    if (result != CARDANO_SUCCESS)
+    {
+      copy->base.deallocator(copy);
+      return result;
+    }
+  }
+
+  if (source->n_of_k != NULL)
+  {
+    const cardano_error_t result = cardano_script_n_of_k_deep_clone(source->n_of_k, &copy->n_of_k);
+
+    if (result != CARDANO_SUCCESS)
+    {
+      copy->base.deallocator(copy);
+      return result;
+    }
+  }
+
+  if (source->pubkey != NULL)
+  {
+    const cardano_error_t result = cardano_script_pubkey_deep_clone(source->pubkey, &copy->pubkey);
+
+    if (result != CARDANO_SUCCESS)
+    {
+      copy->base.deallocator(copy);
+      return result;
+    }
+  }
+
+  if (source->require_guard != NULL)
+  {
+    const cardano_error_t result = cardano_script_require_guard_deep_clone(source->require_guard, &copy->require_guard);
+
+    if (result != CARDANO_SUCCESS)
+    {
+      copy->base.deallocator(copy);
+      return result;
+    }
+  }
+
+  *clone = copy;
+
+  return CARDANO_SUCCESS;
+}

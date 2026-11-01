@@ -74,3 +74,7 @@ Reward Address
 ------------
 
 .. doxygenfunction:: cardano_reward_address_get_last_error
+
+------------
+
+.. doxygenfunction:: cardano_reward_address_deep_clone
