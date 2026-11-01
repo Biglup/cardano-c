@@ -54,3 +54,7 @@ New Constitution Action
 ------------
 
 .. doxygenfunction:: cardano_new_constitution_action_get_last_error
+
+------------
+
+.. doxygenfunction:: cardano_new_constitution_action_deep_clone

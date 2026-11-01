@@ -66,3 +66,7 @@ Asset ID
 ------------
 
 .. doxygenfunction:: cardano_asset_id_get_last_error
+
+------------
+
+.. doxygenfunction:: cardano_asset_id_deep_clone

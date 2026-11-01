@@ -70,3 +70,7 @@ Native Script - Require M Of N
 ------------
 
 .. doxygenfunction:: cardano_script_n_of_k_get_last_error
+
+------------
+
+.. doxygenfunction:: cardano_script_n_of_k_deep_clone

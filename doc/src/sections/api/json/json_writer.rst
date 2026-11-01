@@ -130,3 +130,7 @@ JSON Writer
 ------------
 
 .. doxygenfunction:: cardano_json_writer_get_last_error
+
+------------
+
+.. doxygenfunction:: cardano_json_writer_deep_clone

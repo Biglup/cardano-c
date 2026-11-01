@@ -51,3 +51,6 @@ Certificate Set
 
 .. doxygenfunction:: cardano_certificate_set_get_last_error
 
+------------
+
+.. doxygenfunction:: cardano_certificate_set_deep_clone

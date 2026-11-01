@@ -70,3 +70,7 @@ Update Committee Action
 ------------
 
 .. doxygenfunction:: cardano_update_committee_action_get_last_error
+
+------------
+
+.. doxygenfunction:: cardano_update_committee_action_deep_clone

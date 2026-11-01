@@ -54,3 +54,7 @@ Unregister DRep Certificate
 ------------
 
 .. doxygenfunction:: cardano_unregister_drep_cert_get_last_error
+
+------------
+
+.. doxygenfunction:: cardano_unregister_drep_cert_deep_clone

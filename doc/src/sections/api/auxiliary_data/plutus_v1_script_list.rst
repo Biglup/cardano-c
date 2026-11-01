@@ -50,3 +50,7 @@ PlutusV1 Script List
 ------------
 
 .. doxygenfunction:: cardano_plutus_v1_script_list_get_last_error
+
+------------
+
+.. doxygenfunction:: cardano_plutus_v1_script_list_deep_clone

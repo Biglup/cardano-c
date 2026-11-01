@@ -82,3 +82,7 @@ Anchor
 ------------
 
 .. doxygenfunction:: cardano_anchor_get_last_error
+
+------------
+
+.. doxygenfunction:: cardano_anchor_deep_clone

@@ -66,3 +66,7 @@ Plutus Map
 ------------
 
 .. doxygenfunction:: cardano_plutus_map_get_last_error
+
+------------
+
+.. doxygenfunction:: cardano_plutus_map_deep_clone

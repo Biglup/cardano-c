@@ -46,3 +46,7 @@ Stake De-Registration Certificate
 ------------
 
 .. doxygenfunction:: cardano_stake_deregistration_cert_get_last_error
+
+------------
+
+.. doxygenfunction:: cardano_stake_deregistration_cert_deep_clone

@@ -1976,3 +1976,263 @@ cardano_certificate_get_last_error(const cardano_certificate_t* certificate)
 {
   return cardano_object_get_last_error(&certificate->base);
 }
+
+cardano_error_t
+cardano_certificate_deep_clone(const cardano_certificate_t* source, cardano_certificate_t** clone)
+{
+  if (clone == NULL)
+  {
+    return CARDANO_ERROR_POINTER_IS_NULL;
+  }
+
+  *clone = NULL;
+
+  if (source == NULL)
+  {
+    return CARDANO_ERROR_POINTER_IS_NULL;
+  }
+
+  cardano_certificate_t* copy = _cardano_malloc(sizeof(cardano_certificate_t));
+
+  if (copy == NULL)
+  {
+    return CARDANO_ERROR_MEMORY_ALLOCATION_FAILED;
+  }
+
+  copy->base.ref_count                          = 1U;
+  copy->base.deallocator                        = source->base.deallocator;
+  copy->base.last_error[0]                      = '\0';
+  copy->type                                    = source->type;
+  copy->auth_committee_hot_cert                 = NULL;
+  copy->genesis_key_delegation_cert             = NULL;
+  copy->mir_cert                                = NULL;
+  copy->pool_registration_cert                  = NULL;
+  copy->pool_retirement_cert                    = NULL;
+  copy->register_drep_cert                      = NULL;
+  copy->registration_cert                       = NULL;
+  copy->resign_committee_cold_cert              = NULL;
+  copy->stake_delegation_cert                   = NULL;
+  copy->stake_deregistration_cert               = NULL;
+  copy->stake_registration_cert                 = NULL;
+  copy->stake_registration_delegation_cert      = NULL;
+  copy->stake_vote_delegation_cert              = NULL;
+  copy->stake_vote_registration_delegation_cert = NULL;
+  copy->unregister_drep_cert                    = NULL;
+  copy->unregistration_cert                     = NULL;
+  copy->update_drep_cert                        = NULL;
+  copy->vote_delegation_cert                    = NULL;
+  copy->vote_registration_delegation_cert       = NULL;
+
+  if (source->auth_committee_hot_cert != NULL)
+  {
+    const cardano_error_t result = cardano_auth_committee_hot_cert_deep_clone(source->auth_committee_hot_cert, &copy->auth_committee_hot_cert);
+
+    if (result != CARDANO_SUCCESS)
+    {
+      copy->base.deallocator(copy);
+      return result;
+    }
+  }
+
+  if (source->genesis_key_delegation_cert != NULL)
+  {
+    const cardano_error_t result = cardano_genesis_key_delegation_cert_deep_clone(source->genesis_key_delegation_cert, &copy->genesis_key_delegation_cert);
+
+    if (result != CARDANO_SUCCESS)
+    {
+      copy->base.deallocator(copy);
+      return result;
+    }
+  }
+
+  if (source->mir_cert != NULL)
+  {
+    const cardano_error_t result = cardano_mir_cert_deep_clone(source->mir_cert, &copy->mir_cert);
+
+    if (result != CARDANO_SUCCESS)
+    {
+      copy->base.deallocator(copy);
+      return result;
+    }
+  }
+
+  if (source->pool_registration_cert != NULL)
+  {
+    const cardano_error_t result = cardano_pool_registration_cert_deep_clone(source->pool_registration_cert, &copy->pool_registration_cert);
+
+    if (result != CARDANO_SUCCESS)
+    {
+      copy->base.deallocator(copy);
+      return result;
+    }
+  }
+
+  if (source->pool_retirement_cert != NULL)
+  {
+    const cardano_error_t result = cardano_pool_retirement_cert_deep_clone(source->pool_retirement_cert, &copy->pool_retirement_cert);
+
+    if (result != CARDANO_SUCCESS)
+    {
+      copy->base.deallocator(copy);
+      return result;
+    }
+  }
+
+  if (source->register_drep_cert != NULL)
+  {
+    const cardano_error_t result = cardano_register_drep_cert_deep_clone(source->register_drep_cert, &copy->register_drep_cert);
+
+    if (result != CARDANO_SUCCESS)
+    {
+      copy->base.deallocator(copy);
+      return result;
+    }
+  }
+
+  if (source->registration_cert != NULL)
+  {
+    const cardano_error_t result = cardano_registration_cert_deep_clone(source->registration_cert, &copy->registration_cert);
+
+    if (result != CARDANO_SUCCESS)
+    {
+      copy->base.deallocator(copy);
+      return result;
+    }
+  }
+
+  if (source->resign_committee_cold_cert != NULL)
+  {
+    const cardano_error_t result = cardano_resign_committee_cold_cert_deep_clone(source->resign_committee_cold_cert, &copy->resign_committee_cold_cert);
+
+    if (result != CARDANO_SUCCESS)
+    {
+      copy->base.deallocator(copy);
+      return result;
+    }
+  }
+
+  if (source->stake_delegation_cert != NULL)
+  {
+    const cardano_error_t result = cardano_stake_delegation_cert_deep_clone(source->stake_delegation_cert, &copy->stake_delegation_cert);
+
+    if (result != CARDANO_SUCCESS)
+    {
+      copy->base.deallocator(copy);
+      return result;
+    }
+  }
+
+  if (source->stake_deregistration_cert != NULL)
+  {
+    const cardano_error_t result = cardano_stake_deregistration_cert_deep_clone(source->stake_deregistration_cert, &copy->stake_deregistration_cert);
+
+    if (result != CARDANO_SUCCESS)
+    {
+      copy->base.deallocator(copy);
+      return result;
+    }
+  }
+
+  if (source->stake_registration_cert != NULL)
+  {
+    const cardano_error_t result = cardano_stake_registration_cert_deep_clone(source->stake_registration_cert, &copy->stake_registration_cert);
+
+    if (result != CARDANO_SUCCESS)
+    {
+      copy->base.deallocator(copy);
+      return result;
+    }
+  }
+
+  if (source->stake_registration_delegation_cert != NULL)
+  {
+    const cardano_error_t result = cardano_stake_registration_delegation_cert_deep_clone(source->stake_registration_delegation_cert, &copy->stake_registration_delegation_cert);
+
+    if (result != CARDANO_SUCCESS)
+    {
+      copy->base.deallocator(copy);
+      return result;
+    }
+  }
+
+  if (source->stake_vote_delegation_cert != NULL)
+  {
+    const cardano_error_t result = cardano_stake_vote_delegation_cert_deep_clone(source->stake_vote_delegation_cert, &copy->stake_vote_delegation_cert);
+
+    if (result != CARDANO_SUCCESS)
+    {
+      copy->base.deallocator(copy);
+      return result;
+    }
+  }
+
+  if (source->stake_vote_registration_delegation_cert != NULL)
+  {
+    const cardano_error_t result = cardano_stake_vote_registration_delegation_cert_deep_clone(source->stake_vote_registration_delegation_cert, &copy->stake_vote_registration_delegation_cert);
+
+    if (result != CARDANO_SUCCESS)
+    {
+      copy->base.deallocator(copy);
+      return result;
+    }
+  }
+
+  if (source->unregister_drep_cert != NULL)
+  {
+    const cardano_error_t result = cardano_unregister_drep_cert_deep_clone(source->unregister_drep_cert, &copy->unregister_drep_cert);
+
+    if (result != CARDANO_SUCCESS)
+    {
+      copy->base.deallocator(copy);
+      return result;
+    }
+  }
+
+  if (source->unregistration_cert != NULL)
+  {
+    const cardano_error_t result = cardano_unregistration_cert_deep_clone(source->unregistration_cert, &copy->unregistration_cert);
+
+    if (result != CARDANO_SUCCESS)
+    {
+      copy->base.deallocator(copy);
+      return result;
+    }
+  }
+
+  if (source->update_drep_cert != NULL)
+  {
+    const cardano_error_t result = cardano_update_drep_cert_deep_clone(source->update_drep_cert, &copy->update_drep_cert);
+
+    if (result != CARDANO_SUCCESS)
+    {
+      copy->base.deallocator(copy);
+      return result;
+    }
+  }
+
+  if (source->vote_delegation_cert != NULL)
+  {
+    const cardano_error_t result = cardano_vote_delegation_cert_deep_clone(source->vote_delegation_cert, &copy->vote_delegation_cert);
+
+    if (result != CARDANO_SUCCESS)
+    {
+      copy->base.deallocator(copy);
+      return result;
+    }
+  }
+
+  if (source->vote_registration_delegation_cert != NULL)
+  {
+    const cardano_error_t result = cardano_vote_registration_delegation_cert_deep_clone(source->vote_registration_delegation_cert, &copy->vote_registration_delegation_cert);
+
+    if (result != CARDANO_SUCCESS)
+    {
+      copy->base.deallocator(copy);
+      return result;
+    }
+  }
+
+  *clone = copy;
+
+  return CARDANO_SUCCESS;
+}

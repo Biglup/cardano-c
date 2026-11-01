@@ -198,3 +198,7 @@ Sub Transaction Body
 ------------
 
 .. doxygenfunction:: cardano_sub_transaction_body_get_last_error
+
+------------
+
+.. doxygenfunction:: cardano_sub_transaction_body_deep_clone

@@ -82,3 +82,7 @@ Asset Name Map
 ------------
 
 .. doxygenfunction:: cardano_asset_name_map_get_last_error
+
+------------
+
+.. doxygenfunction:: cardano_asset_name_map_deep_clone

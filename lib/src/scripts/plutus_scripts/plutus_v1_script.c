@@ -424,3 +424,46 @@ cardano_plutus_v1_script_get_last_error(const cardano_plutus_v1_script_t* plutus
 {
   return cardano_object_get_last_error(&plutus_v1_script->base);
 }
+
+cardano_error_t
+cardano_plutus_v1_script_deep_clone(const cardano_plutus_v1_script_t* source, cardano_plutus_v1_script_t** clone)
+{
+  if (clone == NULL)
+  {
+    return CARDANO_ERROR_POINTER_IS_NULL;
+  }
+
+  *clone = NULL;
+
+  if (source == NULL)
+  {
+    return CARDANO_ERROR_POINTER_IS_NULL;
+  }
+
+  cardano_plutus_v1_script_t* copy = _cardano_malloc(sizeof(cardano_plutus_v1_script_t));
+
+  if (copy == NULL)
+  {
+    return CARDANO_ERROR_MEMORY_ALLOCATION_FAILED;
+  }
+
+  copy->base.ref_count     = 1U;
+  copy->base.deallocator   = source->base.deallocator;
+  copy->base.last_error[0] = '\0';
+  copy->compiled_code      = NULL;
+
+  if (source->compiled_code != NULL)
+  {
+    const cardano_error_t result = cardano_buffer_deep_clone(source->compiled_code, &copy->compiled_code);
+
+    if (result != CARDANO_SUCCESS)
+    {
+      copy->base.deallocator(copy);
+      return result;
+    }
+  }
+
+  *clone = copy;
+
+  return CARDANO_SUCCESS;
+}

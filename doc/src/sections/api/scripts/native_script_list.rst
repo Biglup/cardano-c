@@ -62,3 +62,7 @@ Native Script List
 ------------
 
 .. doxygenfunction:: cardano_native_script_list_get_last_error
+
+------------
+
+.. doxygenfunction:: cardano_native_script_list_deep_clone

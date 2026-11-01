@@ -54,3 +54,7 @@ Voting Procedures
 ------------
 
 .. doxygenfunction:: cardano_voting_procedures_get_last_error
+
+------------
+
+.. doxygenfunction:: cardano_voting_procedures_deep_clone

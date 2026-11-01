@@ -58,3 +58,7 @@ Native Script - Require Guard
 ------------
 
 .. doxygenfunction:: cardano_script_require_guard_get_last_error
+
+------------
+
+.. doxygenfunction:: cardano_script_require_guard_deep_clone

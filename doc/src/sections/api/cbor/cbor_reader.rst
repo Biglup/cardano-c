@@ -118,3 +118,7 @@ CBOR Reader
 ------------
 
 .. doxygenfunction:: cardano_cbor_reader_get_last_error
+
+------------
+
+.. doxygenfunction:: cardano_cbor_reader_deep_clone

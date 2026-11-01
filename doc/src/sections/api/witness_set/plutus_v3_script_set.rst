@@ -58,3 +58,7 @@ Plutus V3 Script set
 ------------
 
 .. doxygenfunction:: cardano_plutus_v3_script_set_get_last_error
+
+------------
+
+.. doxygenfunction:: cardano_plutus_v3_script_set_deep_clone

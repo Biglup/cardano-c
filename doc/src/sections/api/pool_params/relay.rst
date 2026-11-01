@@ -62,3 +62,7 @@ Relay
 ------------
 
 .. doxygenfunction:: cardano_relay_get_last_error
+
+------------
+
+.. doxygenfunction:: cardano_relay_deep_clone

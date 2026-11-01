@@ -128,3 +128,180 @@ cardano_json_kvp_new(void)
 
   return kvp;
 }
+
+/**
+ * Deep copies a private map entry and its owned values.
+ */
+static cardano_error_t
+cardano_json_kvp_deep_clone(const cardano_json_kvp_t* source, cardano_json_kvp_t** clone)
+{
+  if (clone == NULL)
+  {
+    return CARDANO_ERROR_POINTER_IS_NULL;
+  }
+
+  *clone = NULL;
+
+  if (source == NULL)
+  {
+    return CARDANO_ERROR_POINTER_IS_NULL;
+  }
+
+  cardano_json_kvp_t* copy = _cardano_malloc(sizeof(cardano_json_kvp_t));
+
+  if (copy == NULL)
+  {
+    return CARDANO_ERROR_MEMORY_ALLOCATION_FAILED;
+  }
+
+  copy->base.ref_count     = 1U;
+  copy->base.deallocator   = source->base.deallocator;
+  copy->base.last_error[0] = '\0';
+  copy->key                = NULL;
+  copy->value              = NULL;
+
+  if (source->key != NULL)
+  {
+    const cardano_error_t result = cardano_buffer_deep_clone(source->key, &copy->key);
+
+    if (result != CARDANO_SUCCESS)
+    {
+      copy->base.deallocator(copy);
+      return result;
+    }
+  }
+
+  if (source->value != NULL)
+  {
+    const cardano_error_t result = cardano_json_object_deep_clone(source->value, &copy->value);
+
+    if (result != CARDANO_SUCCESS)
+    {
+      copy->base.deallocator(copy);
+      return result;
+    }
+  }
+
+  *clone = copy;
+
+  return CARDANO_SUCCESS;
+}
+
+/**
+ * Deep copies one element for the typed collection.
+ */
+static cardano_error_t
+clone_json_pair(const cardano_object_t* source, cardano_object_t** clone)
+{
+  cardano_json_kvp_t*   copy   = NULL;
+  const cardano_error_t result = cardano_json_kvp_deep_clone((const cardano_json_kvp_t*)((const void*)source), &copy);
+
+  *clone = (cardano_object_t*)((void*)copy);
+
+  return result;
+}
+
+/**
+ * Deep copies one element for the typed collection.
+ */
+static cardano_error_t
+clone_array_element(const cardano_object_t* source, cardano_object_t** clone)
+{
+  cardano_json_object_t* copy   = NULL;
+  const cardano_error_t  result = cardano_json_object_deep_clone((const cardano_json_object_t*)((const void*)source), &copy);
+
+  *clone = (cardano_object_t*)((void*)copy);
+
+  return result;
+}
+
+cardano_error_t
+cardano_json_object_deep_clone(const cardano_json_object_t* source, cardano_json_object_t** clone)
+{
+  if (clone == NULL)
+  {
+    return CARDANO_ERROR_POINTER_IS_NULL;
+  }
+
+  *clone = NULL;
+
+  if (source == NULL)
+  {
+    return CARDANO_ERROR_POINTER_IS_NULL;
+  }
+
+  cardano_json_object_t* copy = _cardano_malloc(sizeof(cardano_json_object_t));
+
+  if (copy == NULL)
+  {
+    return CARDANO_ERROR_MEMORY_ALLOCATION_FAILED;
+  }
+
+  copy->base.ref_count     = 1U;
+  copy->base.deallocator   = source->base.deallocator;
+  copy->base.last_error[0] = '\0';
+  copy->type               = source->type;
+  copy->pairs              = NULL;
+  copy->array              = NULL;
+  copy->string             = NULL;
+  copy->is_real            = source->is_real;
+  copy->is_negative        = source->is_negative;
+  copy->int_value          = source->int_value;
+  copy->uint_value         = source->uint_value;
+  copy->double_value       = source->double_value;
+  copy->bool_value         = source->bool_value;
+  copy->json_string        = NULL;
+  copy->json_string_length = source->json_string_length;
+
+  if (source->pairs != NULL)
+  {
+    const cardano_error_t result = cardano_array_deep_clone(source->pairs, clone_json_pair, &copy->pairs);
+
+    if (result != CARDANO_SUCCESS)
+    {
+      copy->base.deallocator(copy);
+      return result;
+    }
+  }
+
+  if (source->array != NULL)
+  {
+    const cardano_error_t result = cardano_array_deep_clone(source->array, clone_array_element, &copy->array);
+
+    if (result != CARDANO_SUCCESS)
+    {
+      copy->base.deallocator(copy);
+      return result;
+    }
+  }
+
+  if (source->string != NULL)
+  {
+    const cardano_error_t result = cardano_buffer_deep_clone(source->string, &copy->string);
+
+    if (result != CARDANO_SUCCESS)
+    {
+      copy->base.deallocator(copy);
+      return result;
+    }
+  }
+
+  if (source->json_string != NULL)
+  {
+    const size_t size = source->json_string_length;
+
+    copy->json_string = _cardano_malloc((size > 0U) ? size : 1U);
+
+    if (copy->json_string == NULL)
+    {
+      copy->base.deallocator(copy);
+      return CARDANO_ERROR_MEMORY_ALLOCATION_FAILED;
+    }
+
+    CARDANO_UNUSED(memcpy(copy->json_string, source->json_string, size));
+  }
+
+  *clone = copy;
+
+  return CARDANO_SUCCESS;
+}

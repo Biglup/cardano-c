@@ -38,3 +38,7 @@ Policy ID List
 ------------
 
 .. doxygenfunction:: cardano_policy_id_list_get_last_error
+
+------------
+
+.. doxygenfunction:: cardano_policy_id_list_deep_clone

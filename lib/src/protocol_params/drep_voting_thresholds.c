@@ -1075,3 +1075,154 @@ cardano_drep_voting_thresholds_get_last_error(const cardano_drep_voting_threshol
 {
   return cardano_object_get_last_error(&drep_voting_thresholds->base);
 }
+
+cardano_error_t
+cardano_drep_voting_thresholds_deep_clone(const cardano_drep_voting_thresholds_t* source, cardano_drep_voting_thresholds_t** clone)
+{
+  if (clone == NULL)
+  {
+    return CARDANO_ERROR_POINTER_IS_NULL;
+  }
+
+  *clone = NULL;
+
+  if (source == NULL)
+  {
+    return CARDANO_ERROR_POINTER_IS_NULL;
+  }
+
+  cardano_drep_voting_thresholds_t* copy = _cardano_malloc(sizeof(cardano_drep_voting_thresholds_t));
+
+  if (copy == NULL)
+  {
+    return CARDANO_ERROR_MEMORY_ALLOCATION_FAILED;
+  }
+
+  copy->base.ref_count          = 1U;
+  copy->base.deallocator        = source->base.deallocator;
+  copy->base.last_error[0]      = '\0';
+  copy->motion_no_confidence    = NULL;
+  copy->committee_normal        = NULL;
+  copy->committee_no_confidence = NULL;
+  copy->update_constitution     = NULL;
+  copy->hard_fork_initiation    = NULL;
+  copy->pp_network_group        = NULL;
+  copy->pp_economic_group       = NULL;
+  copy->pp_technical_group      = NULL;
+  copy->pp_governance_group     = NULL;
+  copy->treasury_withdrawal     = NULL;
+
+  if (source->motion_no_confidence != NULL)
+  {
+    const cardano_error_t result = cardano_unit_interval_deep_clone(source->motion_no_confidence, &copy->motion_no_confidence);
+
+    if (result != CARDANO_SUCCESS)
+    {
+      copy->base.deallocator(copy);
+      return result;
+    }
+  }
+
+  if (source->committee_normal != NULL)
+  {
+    const cardano_error_t result = cardano_unit_interval_deep_clone(source->committee_normal, &copy->committee_normal);
+
+    if (result != CARDANO_SUCCESS)
+    {
+      copy->base.deallocator(copy);
+      return result;
+    }
+  }
+
+  if (source->committee_no_confidence != NULL)
+  {
+    const cardano_error_t result = cardano_unit_interval_deep_clone(source->committee_no_confidence, &copy->committee_no_confidence);
+
+    if (result != CARDANO_SUCCESS)
+    {
+      copy->base.deallocator(copy);
+      return result;
+    }
+  }
+
+  if (source->update_constitution != NULL)
+  {
+    const cardano_error_t result = cardano_unit_interval_deep_clone(source->update_constitution, &copy->update_constitution);
+
+    if (result != CARDANO_SUCCESS)
+    {
+      copy->base.deallocator(copy);
+      return result;
+    }
+  }
+
+  if (source->hard_fork_initiation != NULL)
+  {
+    const cardano_error_t result = cardano_unit_interval_deep_clone(source->hard_fork_initiation, &copy->hard_fork_initiation);
+
+    if (result != CARDANO_SUCCESS)
+    {
+      copy->base.deallocator(copy);
+      return result;
+    }
+  }
+
+  if (source->pp_network_group != NULL)
+  {
+    const cardano_error_t result = cardano_unit_interval_deep_clone(source->pp_network_group, &copy->pp_network_group);
+
+    if (result != CARDANO_SUCCESS)
+    {
+      copy->base.deallocator(copy);
+      return result;
+    }
+  }
+
+  if (source->pp_economic_group != NULL)
+  {
+    const cardano_error_t result = cardano_unit_interval_deep_clone(source->pp_economic_group, &copy->pp_economic_group);
+
+    if (result != CARDANO_SUCCESS)
+    {
+      copy->base.deallocator(copy);
+      return result;
+    }
+  }
+
+  if (source->pp_technical_group != NULL)
+  {
+    const cardano_error_t result = cardano_unit_interval_deep_clone(source->pp_technical_group, &copy->pp_technical_group);
+
+    if (result != CARDANO_SUCCESS)
+    {
+      copy->base.deallocator(copy);
+      return result;
+    }
+  }
+
+  if (source->pp_governance_group != NULL)
+  {
+    const cardano_error_t result = cardano_unit_interval_deep_clone(source->pp_governance_group, &copy->pp_governance_group);
+
+    if (result != CARDANO_SUCCESS)
+    {
+      copy->base.deallocator(copy);
+      return result;
+    }
+  }
+
+  if (source->treasury_withdrawal != NULL)
+  {
+    const cardano_error_t result = cardano_unit_interval_deep_clone(source->treasury_withdrawal, &copy->treasury_withdrawal);
+
+    if (result != CARDANO_SUCCESS)
+    {
+      copy->base.deallocator(copy);
+      return result;
+    }
+  }
+
+  *clone = copy;
+
+  return CARDANO_SUCCESS;
+}

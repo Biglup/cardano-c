@@ -58,3 +58,7 @@ Unspent Transaction Output (UTxO)
 ------------
 
 .. doxygenfunction:: cardano_utxo_get_last_error
+
+------------
+
+.. doxygenfunction:: cardano_utxo_deep_clone

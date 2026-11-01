@@ -521,3 +521,59 @@ cardano_script_pubkey_get_last_error(const cardano_script_pubkey_t* script_pubke
 {
   return cardano_object_get_last_error(&script_pubkey->base);
 }
+
+cardano_error_t
+cardano_script_pubkey_deep_clone(const cardano_script_pubkey_t* source, cardano_script_pubkey_t** clone)
+{
+  if (clone == NULL)
+  {
+    return CARDANO_ERROR_POINTER_IS_NULL;
+  }
+
+  *clone = NULL;
+
+  if (source == NULL)
+  {
+    return CARDANO_ERROR_POINTER_IS_NULL;
+  }
+
+  cardano_script_pubkey_t* copy = _cardano_malloc(sizeof(cardano_script_pubkey_t));
+
+  if (copy == NULL)
+  {
+    return CARDANO_ERROR_MEMORY_ALLOCATION_FAILED;
+  }
+
+  copy->base.ref_count     = 1U;
+  copy->base.deallocator   = source->base.deallocator;
+  copy->base.last_error[0] = '\0';
+  copy->type               = source->type;
+  copy->key_hash           = NULL;
+  copy->cbor_cache         = NULL;
+
+  if (source->key_hash != NULL)
+  {
+    const cardano_error_t result = cardano_blake2b_hash_deep_clone(source->key_hash, &copy->key_hash);
+
+    if (result != CARDANO_SUCCESS)
+    {
+      copy->base.deallocator(copy);
+      return result;
+    }
+  }
+
+  if (source->cbor_cache != NULL)
+  {
+    const cardano_error_t result = cardano_buffer_deep_clone(source->cbor_cache, &copy->cbor_cache);
+
+    if (result != CARDANO_SUCCESS)
+    {
+      copy->base.deallocator(copy);
+      return result;
+    }
+  }
+
+  *clone = copy;
+
+  return CARDANO_SUCCESS;
+}

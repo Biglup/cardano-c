@@ -66,3 +66,7 @@ Committee
 ------------
 
 .. doxygenfunction:: cardano_committee_get_last_error
+
+------------
+
+.. doxygenfunction:: cardano_committee_deep_clone

@@ -126,3 +126,7 @@ Value
 ------------
 
 .. doxygenfunction:: cardano_value_get_last_error
+
+------------
+
+.. doxygenfunction:: cardano_value_deep_clone

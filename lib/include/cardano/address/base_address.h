@@ -680,6 +680,16 @@ CARDANO_EXPORT void cardano_base_address_set_last_error(cardano_base_address_t* 
 CARDANO_NODISCARD
 CARDANO_EXPORT const char* cardano_base_address_get_last_error(const cardano_base_address_t* address);
 
+/**
+ * \brief Creates an independent deep copy of the address and its credentials.
+ * \param[in] source Address to copy. Must not be NULL.
+ * \param[out] clone Receives one owned reference, or NULL on failure. Must not be NULL.
+ * \return CARDANO_SUCCESS, CARDANO_ERROR_POINTER_IS_NULL, or CARDANO_ERROR_MEMORY_ALLOCATION_FAILED.
+ * \note Release the result with cardano_base_address_unref. The source is unchanged.
+ */
+CARDANO_EXPORT cardano_error_t
+cardano_base_address_deep_clone(const cardano_base_address_t* source, cardano_base_address_t** clone);
+
 #ifdef __cplusplus
 }
 #endif /* __cplusplus */

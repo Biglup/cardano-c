@@ -417,3 +417,58 @@ cardano_auth_committee_hot_cert_get_last_error(const cardano_auth_committee_hot_
 {
   return cardano_object_get_last_error(&auth_committee_hot_cert->base);
 }
+
+cardano_error_t
+cardano_auth_committee_hot_cert_deep_clone(const cardano_auth_committee_hot_cert_t* source, cardano_auth_committee_hot_cert_t** clone)
+{
+  if (clone == NULL)
+  {
+    return CARDANO_ERROR_POINTER_IS_NULL;
+  }
+
+  *clone = NULL;
+
+  if (source == NULL)
+  {
+    return CARDANO_ERROR_POINTER_IS_NULL;
+  }
+
+  cardano_auth_committee_hot_cert_t* copy = _cardano_malloc(sizeof(cardano_auth_committee_hot_cert_t));
+
+  if (copy == NULL)
+  {
+    return CARDANO_ERROR_MEMORY_ALLOCATION_FAILED;
+  }
+
+  copy->base.ref_count      = 1U;
+  copy->base.deallocator    = source->base.deallocator;
+  copy->base.last_error[0]  = '\0';
+  copy->committee_cold_cred = NULL;
+  copy->committee_hot_cred  = NULL;
+
+  if (source->committee_cold_cred != NULL)
+  {
+    const cardano_error_t result = cardano_credential_deep_clone(source->committee_cold_cred, &copy->committee_cold_cred);
+
+    if (result != CARDANO_SUCCESS)
+    {
+      copy->base.deallocator(copy);
+      return result;
+    }
+  }
+
+  if (source->committee_hot_cred != NULL)
+  {
+    const cardano_error_t result = cardano_credential_deep_clone(source->committee_hot_cred, &copy->committee_hot_cred);
+
+    if (result != CARDANO_SUCCESS)
+    {
+      copy->base.deallocator(copy);
+      return result;
+    }
+  }
+
+  *clone = copy;
+
+  return CARDANO_SUCCESS;
+}

@@ -398,3 +398,47 @@ cardano_voting_procedure_get_last_error(const cardano_voting_procedure_t* voting
 {
   return cardano_object_get_last_error(&voting_procedure->base);
 }
+
+cardano_error_t
+cardano_voting_procedure_deep_clone(const cardano_voting_procedure_t* source, cardano_voting_procedure_t** clone)
+{
+  if (clone == NULL)
+  {
+    return CARDANO_ERROR_POINTER_IS_NULL;
+  }
+
+  *clone = NULL;
+
+  if (source == NULL)
+  {
+    return CARDANO_ERROR_POINTER_IS_NULL;
+  }
+
+  cardano_voting_procedure_t* copy = _cardano_malloc(sizeof(cardano_voting_procedure_t));
+
+  if (copy == NULL)
+  {
+    return CARDANO_ERROR_MEMORY_ALLOCATION_FAILED;
+  }
+
+  copy->base.ref_count     = 1U;
+  copy->base.deallocator   = source->base.deallocator;
+  copy->base.last_error[0] = '\0';
+  copy->vote               = source->vote;
+  copy->anchor             = NULL;
+
+  if (source->anchor != NULL)
+  {
+    const cardano_error_t result = cardano_anchor_deep_clone(source->anchor, &copy->anchor);
+
+    if (result != CARDANO_SUCCESS)
+    {
+      copy->base.deallocator(copy);
+      return result;
+    }
+  }
+
+  *clone = copy;
+
+  return CARDANO_SUCCESS;
+}

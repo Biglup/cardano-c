@@ -435,3 +435,58 @@ cardano_committee_get_last_error(const cardano_committee_t* committee)
 {
   return cardano_object_get_last_error(&committee->base);
 }
+
+cardano_error_t
+cardano_committee_deep_clone(const cardano_committee_t* source, cardano_committee_t** clone)
+{
+  if (clone == NULL)
+  {
+    return CARDANO_ERROR_POINTER_IS_NULL;
+  }
+
+  *clone = NULL;
+
+  if (source == NULL)
+  {
+    return CARDANO_ERROR_POINTER_IS_NULL;
+  }
+
+  cardano_committee_t* copy = _cardano_malloc(sizeof(cardano_committee_t));
+
+  if (copy == NULL)
+  {
+    return CARDANO_ERROR_MEMORY_ALLOCATION_FAILED;
+  }
+
+  copy->base.ref_count        = 1U;
+  copy->base.deallocator      = source->base.deallocator;
+  copy->base.last_error[0]    = '\0';
+  copy->quorum_threshold      = NULL;
+  copy->committee_members_map = NULL;
+
+  if (source->quorum_threshold != NULL)
+  {
+    const cardano_error_t result = cardano_unit_interval_deep_clone(source->quorum_threshold, &copy->quorum_threshold);
+
+    if (result != CARDANO_SUCCESS)
+    {
+      copy->base.deallocator(copy);
+      return result;
+    }
+  }
+
+  if (source->committee_members_map != NULL)
+  {
+    const cardano_error_t result = cardano_committee_members_map_deep_clone(source->committee_members_map, &copy->committee_members_map);
+
+    if (result != CARDANO_SUCCESS)
+    {
+      copy->base.deallocator(copy);
+      return result;
+    }
+  }
+
+  *clone = copy;
+
+  return CARDANO_SUCCESS;
+}

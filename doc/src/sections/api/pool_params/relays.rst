@@ -50,3 +50,7 @@ Relays
 ------------
 
 .. doxygenfunction:: cardano_relays_get_last_error
+
+------------
+
+.. doxygenfunction:: cardano_relays_deep_clone

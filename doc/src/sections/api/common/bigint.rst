@@ -202,3 +202,7 @@ Bigint
 ------------
 
 .. doxygenfunction:: cardano_bigint_get_last_error
+
+------------
+
+.. doxygenfunction:: cardano_bigint_deep_clone

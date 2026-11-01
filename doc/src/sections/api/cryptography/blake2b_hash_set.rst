@@ -50,3 +50,7 @@ BLAKE2b Hash Set
 ------------
 
 .. doxygenfunction:: cardano_blake2b_hash_set_get_last_error
+
+------------
+
+.. doxygenfunction:: cardano_blake2b_hash_set_deep_clone

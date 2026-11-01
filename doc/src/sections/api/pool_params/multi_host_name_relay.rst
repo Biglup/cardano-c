@@ -50,3 +50,7 @@ Multi Hostname Relay
 ------------
 
 .. doxygenfunction:: cardano_multi_host_name_relay_get_last_error
+
+------------
+
+.. doxygenfunction:: cardano_multi_host_name_relay_deep_clone

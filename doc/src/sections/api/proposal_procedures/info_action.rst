@@ -38,3 +38,7 @@ Info Action
 ------------
 
 .. doxygenfunction:: cardano_info_action_get_last_error
+
+------------
+
+.. doxygenfunction:: cardano_info_action_deep_clone

@@ -110,3 +110,7 @@ CBOR Writer
 ------------
 
 .. doxygenfunction:: cardano_cbor_writer_get_last_error
+
+------------
+
+.. doxygenfunction:: cardano_cbor_writer_deep_clone

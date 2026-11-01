@@ -440,3 +440,63 @@ cardano_asset_id_get_last_error(const cardano_asset_id_t* asset_id)
 {
   return cardano_object_get_last_error(&asset_id->base);
 }
+
+cardano_error_t
+cardano_asset_id_deep_clone(const cardano_asset_id_t* source, cardano_asset_id_t** clone)
+{
+  if (clone == NULL)
+  {
+    return CARDANO_ERROR_POINTER_IS_NULL;
+  }
+
+  *clone = NULL;
+
+  if (source == NULL)
+  {
+    return CARDANO_ERROR_POINTER_IS_NULL;
+  }
+
+  cardano_asset_id_t* copy = _cardano_malloc(sizeof(cardano_asset_id_t));
+
+  if (copy == NULL)
+  {
+    return CARDANO_ERROR_MEMORY_ALLOCATION_FAILED;
+  }
+
+  copy->base.ref_count     = 1U;
+  copy->base.deallocator   = source->base.deallocator;
+  copy->base.last_error[0] = '\0';
+  copy->policy_id          = NULL;
+  copy->asset_name         = NULL;
+  copy->is_lovelace        = source->is_lovelace;
+  CARDANO_UNUSED(memcpy(copy->data, source->data, sizeof(copy->data)));
+  copy->size = source->size;
+  CARDANO_UNUSED(memcpy(copy->hex, source->hex, sizeof(copy->hex)));
+  copy->hex_size = source->hex_size;
+
+  if (source->policy_id != NULL)
+  {
+    const cardano_error_t result = cardano_blake2b_hash_deep_clone(source->policy_id, &copy->policy_id);
+
+    if (result != CARDANO_SUCCESS)
+    {
+      copy->base.deallocator(copy);
+      return result;
+    }
+  }
+
+  if (source->asset_name != NULL)
+  {
+    const cardano_error_t result = cardano_asset_name_deep_clone(source->asset_name, &copy->asset_name);
+
+    if (result != CARDANO_SUCCESS)
+    {
+      copy->base.deallocator(copy);
+      return result;
+    }
+  }
+
+  *clone = copy;
+
+  return CARDANO_SUCCESS;
+}

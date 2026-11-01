@@ -588,3 +588,82 @@ cardano_update_committee_action_get_last_error(const cardano_update_committee_ac
 {
   return cardano_object_get_last_error(&update_committee_action->base);
 }
+
+cardano_error_t
+cardano_update_committee_action_deep_clone(const cardano_update_committee_action_t* source, cardano_update_committee_action_t** clone)
+{
+  if (clone == NULL)
+  {
+    return CARDANO_ERROR_POINTER_IS_NULL;
+  }
+
+  *clone = NULL;
+
+  if (source == NULL)
+  {
+    return CARDANO_ERROR_POINTER_IS_NULL;
+  }
+
+  cardano_update_committee_action_t* copy = _cardano_malloc(sizeof(cardano_update_committee_action_t));
+
+  if (copy == NULL)
+  {
+    return CARDANO_ERROR_MEMORY_ALLOCATION_FAILED;
+  }
+
+  copy->base.ref_count        = 1U;
+  copy->base.deallocator      = source->base.deallocator;
+  copy->base.last_error[0]    = '\0';
+  copy->members_to_be_removed = NULL;
+  copy->members_to_be_added   = NULL;
+  copy->new_quorum            = NULL;
+  copy->governance_action_id  = NULL;
+
+  if (source->members_to_be_removed != NULL)
+  {
+    const cardano_error_t result = cardano_credential_set_deep_clone(source->members_to_be_removed, &copy->members_to_be_removed);
+
+    if (result != CARDANO_SUCCESS)
+    {
+      copy->base.deallocator(copy);
+      return result;
+    }
+  }
+
+  if (source->members_to_be_added != NULL)
+  {
+    const cardano_error_t result = cardano_committee_members_map_deep_clone(source->members_to_be_added, &copy->members_to_be_added);
+
+    if (result != CARDANO_SUCCESS)
+    {
+      copy->base.deallocator(copy);
+      return result;
+    }
+  }
+
+  if (source->new_quorum != NULL)
+  {
+    const cardano_error_t result = cardano_unit_interval_deep_clone(source->new_quorum, &copy->new_quorum);
+
+    if (result != CARDANO_SUCCESS)
+    {
+      copy->base.deallocator(copy);
+      return result;
+    }
+  }
+
+  if (source->governance_action_id != NULL)
+  {
+    const cardano_error_t result = cardano_governance_action_id_deep_clone(source->governance_action_id, &copy->governance_action_id);
+
+    if (result != CARDANO_SUCCESS)
+    {
+      copy->base.deallocator(copy);
+      return result;
+    }
+  }
+
+  *clone = copy;
+
+  return CARDANO_SUCCESS;
+}

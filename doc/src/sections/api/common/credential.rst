@@ -86,3 +86,7 @@ Credential
 ------------
 
 .. doxygenfunction:: cardano_credential_get_last_error
+
+------------
+
+.. doxygenfunction:: cardano_credential_deep_clone

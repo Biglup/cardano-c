@@ -70,3 +70,7 @@ Withdrawal Map
 ------------
 
 .. doxygenfunction:: cardano_withdrawal_map_get_last_error
+
+------------
+
+.. doxygenfunction:: cardano_withdrawal_map_deep_clone

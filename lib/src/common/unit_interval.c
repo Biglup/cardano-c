@@ -435,3 +435,36 @@ cardano_unit_interval_get_last_error(const cardano_unit_interval_t* unit_interva
 {
   return cardano_object_get_last_error(&unit_interval->base);
 }
+
+cardano_error_t
+cardano_unit_interval_deep_clone(const cardano_unit_interval_t* source, cardano_unit_interval_t** clone)
+{
+  if (clone == NULL)
+  {
+    return CARDANO_ERROR_POINTER_IS_NULL;
+  }
+
+  *clone = NULL;
+
+  if (source == NULL)
+  {
+    return CARDANO_ERROR_POINTER_IS_NULL;
+  }
+
+  cardano_unit_interval_t* copy = _cardano_malloc(sizeof(cardano_unit_interval_t));
+
+  if (copy == NULL)
+  {
+    return CARDANO_ERROR_MEMORY_ALLOCATION_FAILED;
+  }
+
+  copy->base.ref_count     = 1U;
+  copy->base.deallocator   = source->base.deallocator;
+  copy->base.last_error[0] = '\0';
+  copy->numerator          = source->numerator;
+  copy->denominator        = source->denominator;
+
+  *clone = copy;
+
+  return CARDANO_SUCCESS;
+}

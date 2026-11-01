@@ -66,3 +66,7 @@ Transaction Input
 ------------
 
 .. doxygenfunction:: cardano_transaction_input_get_last_error
+
+------------
+
+.. doxygenfunction:: cardano_transaction_input_deep_clone

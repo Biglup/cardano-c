@@ -356,3 +356,36 @@ cardano_ipv4_get_last_error(const cardano_ipv4_t* ipv4)
 {
   return cardano_object_get_last_error(&ipv4->base);
 }
+
+cardano_error_t
+cardano_ipv4_deep_clone(const cardano_ipv4_t* source, cardano_ipv4_t** clone)
+{
+  if (clone == NULL)
+  {
+    return CARDANO_ERROR_POINTER_IS_NULL;
+  }
+
+  *clone = NULL;
+
+  if (source == NULL)
+  {
+    return CARDANO_ERROR_POINTER_IS_NULL;
+  }
+
+  cardano_ipv4_t* copy = _cardano_malloc(sizeof(cardano_ipv4_t));
+
+  if (copy == NULL)
+  {
+    return CARDANO_ERROR_MEMORY_ALLOCATION_FAILED;
+  }
+
+  copy->base.ref_count     = 1U;
+  copy->base.deallocator   = source->base.deallocator;
+  copy->base.last_error[0] = '\0';
+  CARDANO_UNUSED(memcpy(copy->ip_bytes, source->ip_bytes, sizeof(copy->ip_bytes)));
+  CARDANO_UNUSED(memcpy(copy->ip_str, source->ip_str, sizeof(copy->ip_str)));
+
+  *clone = copy;
+
+  return CARDANO_SUCCESS;
+}

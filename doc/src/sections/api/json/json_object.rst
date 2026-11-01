@@ -102,3 +102,7 @@ JSON Object
 ------------
 
 .. doxygenfunction:: cardano_json_object_get_last_error
+
+------------
+
+.. doxygenfunction:: cardano_json_object_deep_clone

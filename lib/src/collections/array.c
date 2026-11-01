@@ -621,3 +621,47 @@ cardano_array_get_last_error(const cardano_array_t* array)
 {
   return cardano_object_get_last_error(&array->base);
 }
+
+cardano_error_t
+cardano_array_deep_clone(const cardano_array_t* source, cardano_array_clone_item_t clone_item, cardano_array_t** clone)
+{
+  if (clone == NULL)
+  {
+    return CARDANO_ERROR_POINTER_IS_NULL;
+  }
+
+  *clone = NULL;
+
+  if ((source == NULL) || (clone_item == NULL))
+  {
+    return CARDANO_ERROR_POINTER_IS_NULL;
+  }
+
+  cardano_array_t* copy = cardano_array_new(source->capacity);
+
+  if (copy == NULL)
+  {
+    return CARDANO_ERROR_MEMORY_ALLOCATION_FAILED;
+  }
+
+  for (size_t i = 0U; i < source->size; ++i)
+  {
+    cardano_object_t*     item   = NULL;
+    const cardano_error_t result = clone_item(source->items[i], &item);
+
+    if (result != CARDANO_SUCCESS)
+    {
+      cardano_object_unref(&item);
+      cardano_array_unref(&copy);
+      return result;
+    }
+
+    copy->items[i] = item;
+    ++copy->size;
+  }
+
+  copy->head = source->head;
+  *clone     = copy;
+
+  return CARDANO_SUCCESS;
+}

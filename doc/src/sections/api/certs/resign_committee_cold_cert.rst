@@ -54,3 +54,7 @@ Resignation Committee Member Certificate
 ------------
 
 .. doxygenfunction:: cardano_resign_committee_cold_cert_get_last_error
+
+------------
+
+.. doxygenfunction:: cardano_resign_committee_cold_cert_deep_clone

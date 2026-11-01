@@ -78,3 +78,7 @@ Pointer Address
 ------------
 
 .. doxygenfunction:: cardano_pointer_address_get_last_error
+
+------------
+
+.. doxygenfunction:: cardano_pointer_address_deep_clone

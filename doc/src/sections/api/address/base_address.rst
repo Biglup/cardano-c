@@ -78,3 +78,7 @@ Base Address
 ------------
 
 .. doxygenfunction:: cardano_base_address_get_last_error
+
+------------
+
+.. doxygenfunction:: cardano_base_address_deep_clone

@@ -54,3 +54,7 @@ Update DRep Certificate
 ------------
 
 .. doxygenfunction:: cardano_update_drep_cert_get_last_error
+
+------------
+
+.. doxygenfunction:: cardano_update_drep_cert_deep_clone

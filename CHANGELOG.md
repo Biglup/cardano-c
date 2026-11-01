@@ -1,3 +1,8 @@
+Unreleased
+---------------------
+
+- Add `deep_clone` APIs for native domain values, typed collections, addresses, cryptographic values, and JSON/CBOR utilities. Copies own their children and preserve encoding state. Existing shallow-clone APIs retain their behavior.
+
 V2.0.0-rc.6
 ---------------------
 

@@ -483,3 +483,59 @@ cardano_mir_cert_get_last_error(const cardano_mir_cert_t* mir_cert)
 {
   return cardano_object_get_last_error(&mir_cert->base);
 }
+
+cardano_error_t
+cardano_mir_cert_deep_clone(const cardano_mir_cert_t* source, cardano_mir_cert_t** clone)
+{
+  if (clone == NULL)
+  {
+    return CARDANO_ERROR_POINTER_IS_NULL;
+  }
+
+  *clone = NULL;
+
+  if (source == NULL)
+  {
+    return CARDANO_ERROR_POINTER_IS_NULL;
+  }
+
+  cardano_mir_cert_t* copy = _cardano_malloc(sizeof(cardano_mir_cert_t));
+
+  if (copy == NULL)
+  {
+    return CARDANO_ERROR_MEMORY_ALLOCATION_FAILED;
+  }
+
+  copy->base.ref_count          = 1U;
+  copy->base.deallocator        = source->base.deallocator;
+  copy->base.last_error[0]      = '\0';
+  copy->type                    = source->type;
+  copy->mir_to_pot_cert         = NULL;
+  copy->mir_to_stake_creds_cert = NULL;
+
+  if (source->mir_to_pot_cert != NULL)
+  {
+    const cardano_error_t result = cardano_mir_to_pot_cert_deep_clone(source->mir_to_pot_cert, &copy->mir_to_pot_cert);
+
+    if (result != CARDANO_SUCCESS)
+    {
+      copy->base.deallocator(copy);
+      return result;
+    }
+  }
+
+  if (source->mir_to_stake_creds_cert != NULL)
+  {
+    const cardano_error_t result = cardano_mir_to_stake_creds_cert_deep_clone(source->mir_to_stake_creds_cert, &copy->mir_to_stake_creds_cert);
+
+    if (result != CARDANO_SUCCESS)
+    {
+      copy->base.deallocator(copy);
+      return result;
+    }
+  }
+
+  *clone = copy;
+
+  return CARDANO_SUCCESS;
+}

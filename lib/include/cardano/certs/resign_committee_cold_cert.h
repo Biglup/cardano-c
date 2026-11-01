@@ -456,6 +456,27 @@ CARDANO_NODISCARD
 CARDANO_EXPORT const char* cardano_resign_committee_cold_cert_get_last_error(
   const cardano_resign_committee_cold_cert_t* resign_committee_cold);
 
+/**
+ * \brief Creates an independent deep copy of a \ref cardano_resign_committee_cold_cert_t.
+ *
+ * Copies all owned children and preserves stored encoding and value state without
+ * serializing the object. Optional absent fields remain absent. The source is not
+ * modified and no mutable storage is shared with the result. Source graphs must
+ * be acyclic. The copy starts with one owned reference and an empty error message.
+ *
+ * \param[in] source The object to copy. Must not be \c NULL.
+ * \param[out] clone Receives the owned copy. Must not be \c NULL and must not
+ * overwrite an existing owned reference. Set to \c NULL on failure.
+ *
+ * \return \ref CARDANO_SUCCESS on success, \ref CARDANO_ERROR_POINTER_IS_NULL
+ * for a null argument, or \ref CARDANO_ERROR_MEMORY_ALLOCATION_FAILED when an
+ * allocation fails. Partial copies are released before returning an error.
+ *
+ * \note Release the result with \ref cardano_resign_committee_cold_cert_unref.
+ */
+CARDANO_EXPORT cardano_error_t
+cardano_resign_committee_cold_cert_deep_clone(const cardano_resign_committee_cold_cert_t* source, cardano_resign_committee_cold_cert_t** clone);
+
 #ifdef __cplusplus
 }
 #endif /* __cplusplus */

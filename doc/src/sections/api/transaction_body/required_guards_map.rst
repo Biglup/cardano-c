@@ -66,3 +66,7 @@ Required Guards Map
 ------------
 
 .. doxygenfunction:: cardano_required_guards_map_get_last_error
+
+------------
+
+.. doxygenfunction:: cardano_required_guards_map_deep_clone

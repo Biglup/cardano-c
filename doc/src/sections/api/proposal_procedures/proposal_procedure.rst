@@ -118,3 +118,7 @@ Proposal Procedure
 ------------
 
 .. doxygenfunction:: cardano_proposal_procedure_get_last_error
+
+------------
+
+.. doxygenfunction:: cardano_proposal_procedure_deep_clone

@@ -110,3 +110,7 @@ Native Script
 ------------
 
 .. doxygenfunction:: cardano_native_script_get_last_error
+
+------------
+
+.. doxygenfunction:: cardano_native_script_deep_clone

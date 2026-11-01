@@ -54,3 +54,7 @@ Unregistration Certificate
 ------------
 
 .. doxygenfunction:: cardano_unregistration_cert_get_last_error
+
+------------
+
+.. doxygenfunction:: cardano_unregistration_cert_deep_clone

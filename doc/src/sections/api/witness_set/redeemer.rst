@@ -74,3 +74,7 @@ Redeemer
 ------------
 
 .. doxygenfunction:: cardano_redeemer_get_last_error
+
+------------
+
+.. doxygenfunction:: cardano_redeemer_deep_clone

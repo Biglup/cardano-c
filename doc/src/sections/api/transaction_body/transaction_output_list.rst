@@ -50,3 +50,7 @@ Transaction Output List
 ------------
 
 .. doxygenfunction:: cardano_transaction_output_list_get_last_error
+
+------------
+
+.. doxygenfunction:: cardano_transaction_output_list_deep_clone

@@ -62,3 +62,7 @@ Proposed Protocol Parameter Updates
 ------------
 
 .. doxygenfunction:: cardano_proposed_param_updates_get_last_error
+
+------------
+
+.. doxygenfunction:: cardano_proposed_param_updates_deep_clone

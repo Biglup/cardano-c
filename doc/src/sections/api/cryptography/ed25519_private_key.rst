@@ -58,3 +58,7 @@ ED25519 Private Key
 ------------
 
 .. doxygenfunction:: cardano_ed25519_private_key_to_hex
+
+------------
+
+.. doxygenfunction:: cardano_ed25519_private_key_deep_clone

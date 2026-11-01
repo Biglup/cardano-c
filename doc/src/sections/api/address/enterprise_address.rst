@@ -74,3 +74,7 @@ Enterprise Address
 ------------
 
 .. doxygenfunction:: cardano_enterprise_address_get_last_error
+
+------------
+
+.. doxygenfunction:: cardano_enterprise_address_deep_clone

@@ -62,3 +62,7 @@ Parameter Change Action
 ------------
 
 .. doxygenfunction:: cardano_parameter_change_action_get_last_error
+
+------------
+
+.. doxygenfunction:: cardano_parameter_change_action_deep_clone

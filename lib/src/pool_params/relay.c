@@ -542,3 +542,71 @@ cardano_relay_get_last_error(const cardano_relay_t* relay)
 {
   return cardano_object_get_last_error(&relay->base);
 }
+
+cardano_error_t
+cardano_relay_deep_clone(const cardano_relay_t* source, cardano_relay_t** clone)
+{
+  if (clone == NULL)
+  {
+    return CARDANO_ERROR_POINTER_IS_NULL;
+  }
+
+  *clone = NULL;
+
+  if (source == NULL)
+  {
+    return CARDANO_ERROR_POINTER_IS_NULL;
+  }
+
+  cardano_relay_t* copy = _cardano_malloc(sizeof(cardano_relay_t));
+
+  if (copy == NULL)
+  {
+    return CARDANO_ERROR_MEMORY_ALLOCATION_FAILED;
+  }
+
+  copy->base.ref_count         = 1U;
+  copy->base.deallocator       = source->base.deallocator;
+  copy->base.last_error[0]     = '\0';
+  copy->type                   = source->type;
+  copy->multi_host_name_relay  = NULL;
+  copy->single_host_addr_relay = NULL;
+  copy->single_host_name_relay = NULL;
+
+  if (source->multi_host_name_relay != NULL)
+  {
+    const cardano_error_t result = cardano_multi_host_name_relay_deep_clone(source->multi_host_name_relay, &copy->multi_host_name_relay);
+
+    if (result != CARDANO_SUCCESS)
+    {
+      copy->base.deallocator(copy);
+      return result;
+    }
+  }
+
+  if (source->single_host_addr_relay != NULL)
+  {
+    const cardano_error_t result = cardano_single_host_addr_relay_deep_clone(source->single_host_addr_relay, &copy->single_host_addr_relay);
+
+    if (result != CARDANO_SUCCESS)
+    {
+      copy->base.deallocator(copy);
+      return result;
+    }
+  }
+
+  if (source->single_host_name_relay != NULL)
+  {
+    const cardano_error_t result = cardano_single_host_name_relay_deep_clone(source->single_host_name_relay, &copy->single_host_name_relay);
+
+    if (result != CARDANO_SUCCESS)
+    {
+      copy->base.deallocator(copy);
+      return result;
+    }
+  }
+
+  *clone = copy;
+
+  return CARDANO_SUCCESS;
+}

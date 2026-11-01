@@ -58,3 +58,7 @@ Guard Set
 ------------
 
 .. doxygenfunction:: cardano_guard_set_get_last_error
+
+------------
+
+.. doxygenfunction:: cardano_guard_set_deep_clone

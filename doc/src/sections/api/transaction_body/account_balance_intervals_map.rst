@@ -70,3 +70,7 @@ Account Balance Intervals Map
 ------------
 
 .. doxygenfunction:: cardano_account_balance_intervals_map_get_last_error
+
+------------
+
+.. doxygenfunction:: cardano_account_balance_intervals_map_deep_clone

@@ -123,3 +123,6 @@ Transaction
 
 .. doxygenfunction:: cardano_transaction_get_last_error
 
+------------
+
+.. doxygenfunction:: cardano_transaction_deep_clone

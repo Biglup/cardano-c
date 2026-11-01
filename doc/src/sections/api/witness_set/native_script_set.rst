@@ -59,4 +59,6 @@ Native Script Set
 
 .. doxygenfunction:: cardano_native_script_set_get_last_error
 
+------------
 
+.. doxygenfunction:: cardano_native_script_set_deep_clone

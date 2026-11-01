@@ -79,3 +79,7 @@ also decimal strings; ``null`` denotes an unbounded endpoint:
 ------------
 
 .. doxygenfunction:: cardano_account_balance_interval_get_last_error
+
+------------
+
+.. doxygenfunction:: cardano_account_balance_interval_deep_clone

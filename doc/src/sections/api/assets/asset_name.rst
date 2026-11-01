@@ -70,3 +70,7 @@ Asset Name
 ------------
 
 .. doxygenfunction:: cardano_asset_name_get_last_error
+
+------------
+
+.. doxygenfunction:: cardano_asset_name_deep_clone

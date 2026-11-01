@@ -58,3 +58,7 @@ Plutus List
 ------------
 
 .. doxygenfunction:: cardano_plutus_list_get_last_error
+
+------------
+
+.. doxygenfunction:: cardano_plutus_list_deep_clone

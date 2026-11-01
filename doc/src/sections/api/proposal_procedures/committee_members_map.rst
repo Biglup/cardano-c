@@ -66,3 +66,7 @@ Committee Members Map
 ------------
 
 .. doxygenfunction:: cardano_committee_members_map_get_last_error
+
+------------
+
+.. doxygenfunction:: cardano_committee_members_map_deep_clone

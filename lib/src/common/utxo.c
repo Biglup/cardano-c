@@ -392,3 +392,58 @@ cardano_utxo_get_last_error(const cardano_utxo_t* utxo)
 {
   return cardano_object_get_last_error(&utxo->base);
 }
+
+cardano_error_t
+cardano_utxo_deep_clone(const cardano_utxo_t* source, cardano_utxo_t** clone)
+{
+  if (clone == NULL)
+  {
+    return CARDANO_ERROR_POINTER_IS_NULL;
+  }
+
+  *clone = NULL;
+
+  if (source == NULL)
+  {
+    return CARDANO_ERROR_POINTER_IS_NULL;
+  }
+
+  cardano_utxo_t* copy = _cardano_malloc(sizeof(cardano_utxo_t));
+
+  if (copy == NULL)
+  {
+    return CARDANO_ERROR_MEMORY_ALLOCATION_FAILED;
+  }
+
+  copy->base.ref_count     = 1U;
+  copy->base.deallocator   = source->base.deallocator;
+  copy->base.last_error[0] = '\0';
+  copy->input              = NULL;
+  copy->output             = NULL;
+
+  if (source->input != NULL)
+  {
+    const cardano_error_t result = cardano_transaction_input_deep_clone(source->input, &copy->input);
+
+    if (result != CARDANO_SUCCESS)
+    {
+      copy->base.deallocator(copy);
+      return result;
+    }
+  }
+
+  if (source->output != NULL)
+  {
+    const cardano_error_t result = cardano_transaction_output_deep_clone(source->output, &copy->output);
+
+    if (result != CARDANO_SUCCESS)
+    {
+      copy->base.deallocator(copy);
+      return result;
+    }
+  }
+
+  *clone = copy;
+
+  return CARDANO_SUCCESS;
+}

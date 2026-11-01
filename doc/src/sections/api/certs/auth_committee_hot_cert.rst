@@ -55,3 +55,6 @@ Auth Committee Member Certificate
 
 .. doxygenfunction:: cardano_auth_committee_hot_cert_get_last_error
 
+------------
+
+.. doxygenfunction:: cardano_auth_committee_hot_cert_deep_clone

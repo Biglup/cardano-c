@@ -1009,6 +1009,16 @@ CARDANO_EXPORT void cardano_cbor_reader_set_last_error(cardano_cbor_reader_t* re
 CARDANO_NODISCARD
 CARDANO_EXPORT const char* cardano_cbor_reader_get_last_error(const cardano_cbor_reader_t* reader);
 
+/**
+ * \brief Deep copies the reader buffer, position, and nested parsing state.
+ * \param[in] reader Reader to copy. Must not be NULL.
+ * \param[out] clone Receives one owned reference, or NULL on failure. Must not be NULL.
+ * \return CARDANO_SUCCESS, CARDANO_ERROR_POINTER_IS_NULL, or CARDANO_ERROR_MEMORY_ALLOCATION_FAILED.
+ * \note Release the result with cardano_cbor_reader_unref. Advancing either reader does not advance the other.
+ */
+CARDANO_EXPORT cardano_error_t
+cardano_cbor_reader_deep_clone(const cardano_cbor_reader_t* reader, cardano_cbor_reader_t** clone);
+
 #ifdef __cplusplus
 }
 #endif /* __cplusplus */

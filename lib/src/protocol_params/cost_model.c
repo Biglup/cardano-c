@@ -521,3 +521,52 @@ cardano_cost_model_get_last_error(const cardano_cost_model_t* cost_model)
 {
   return cardano_object_get_last_error(&cost_model->base);
 }
+
+cardano_error_t
+cardano_cost_model_deep_clone(const cardano_cost_model_t* source, cardano_cost_model_t** clone)
+{
+  if (clone == NULL)
+  {
+    return CARDANO_ERROR_POINTER_IS_NULL;
+  }
+
+  *clone = NULL;
+
+  if (source == NULL)
+  {
+    return CARDANO_ERROR_POINTER_IS_NULL;
+  }
+
+  cardano_cost_model_t* copy = _cardano_malloc(sizeof(cardano_cost_model_t));
+
+  if (copy == NULL)
+  {
+    return CARDANO_ERROR_MEMORY_ALLOCATION_FAILED;
+  }
+
+  copy->base.ref_count     = 1U;
+  copy->base.deallocator   = source->base.deallocator;
+  copy->base.last_error[0] = '\0';
+  copy->language_id        = source->language_id;
+  copy->costs              = NULL;
+  copy->size               = source->size;
+
+  if (source->costs != NULL)
+  {
+    const size_t size = source->size * sizeof(int64_t);
+
+    copy->costs = _cardano_malloc((size > 0U) ? size : 1U);
+
+    if (copy->costs == NULL)
+    {
+      copy->base.deallocator(copy);
+      return CARDANO_ERROR_MEMORY_ALLOCATION_FAILED;
+    }
+
+    CARDANO_UNUSED(memcpy(copy->costs, source->costs, size));
+  }
+
+  *clone = copy;
+
+  return CARDANO_SUCCESS;
+}

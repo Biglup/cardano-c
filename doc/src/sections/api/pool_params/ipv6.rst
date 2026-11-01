@@ -54,3 +54,7 @@ IPv6 Address
 ------------
 
 .. doxygenfunction:: cardano_ipv6_get_last_error
+
+------------
+
+.. doxygenfunction:: cardano_ipv6_deep_clone

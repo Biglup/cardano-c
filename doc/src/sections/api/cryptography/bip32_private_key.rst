@@ -62,3 +62,7 @@ BIP32 Private Key
 ------------
 
 .. doxygenfunction:: cardano_bip32_harden
+
+------------
+
+.. doxygenfunction:: cardano_bip32_private_key_deep_clone

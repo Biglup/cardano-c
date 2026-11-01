@@ -38,3 +38,7 @@ Reward Address List
 ------------
 
 .. doxygenfunction:: cardano_reward_address_list_get_last_error
+
+------------
+
+.. doxygenfunction:: cardano_reward_address_list_deep_clone

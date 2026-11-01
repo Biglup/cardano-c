@@ -46,3 +46,7 @@ No Confidence Action
 ------------
 
 .. doxygenfunction:: cardano_no_confidence_action_get_last_error
+
+------------
+
+.. doxygenfunction:: cardano_no_confidence_action_deep_clone

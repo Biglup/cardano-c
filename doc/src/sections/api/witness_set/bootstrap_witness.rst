@@ -70,3 +70,7 @@ Bootstrap Witness
 ------------
 
 .. doxygenfunction:: cardano_bootstrap_witness_get_last_error
+
+------------
+
+.. doxygenfunction:: cardano_bootstrap_witness_deep_clone

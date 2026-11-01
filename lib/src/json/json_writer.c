@@ -1307,3 +1307,50 @@ cardano_json_writer_get_last_error(const cardano_json_writer_t* writer)
 {
   return cardano_object_get_last_error(&writer->base);
 }
+
+cardano_error_t
+cardano_json_writer_deep_clone(const cardano_json_writer_t* source, cardano_json_writer_t** clone)
+{
+  if (clone == NULL)
+  {
+    return CARDANO_ERROR_POINTER_IS_NULL;
+  }
+
+  *clone = NULL;
+
+  if (source == NULL)
+  {
+    return CARDANO_ERROR_POINTER_IS_NULL;
+  }
+
+  cardano_json_writer_t* copy = _cardano_malloc(sizeof(cardano_json_writer_t));
+
+  if (copy == NULL)
+  {
+    return CARDANO_ERROR_MEMORY_ALLOCATION_FAILED;
+  }
+
+  copy->base.ref_count     = 1U;
+  copy->base.deallocator   = source->base.deallocator;
+  copy->base.last_error[0] = '\0';
+  copy->buffer             = NULL;
+  copy->last_error         = source->last_error;
+  copy->depth              = source->depth;
+  copy->format             = source->format;
+  CARDANO_UNUSED(memcpy(copy->current_frame, source->current_frame, sizeof(copy->current_frame)));
+
+  if (source->buffer != NULL)
+  {
+    const cardano_error_t result = cardano_buffer_deep_clone(source->buffer, &copy->buffer);
+
+    if (result != CARDANO_SUCCESS)
+    {
+      copy->base.deallocator(copy);
+      return result;
+    }
+  }
+
+  *clone = copy;
+
+  return CARDANO_SUCCESS;
+}

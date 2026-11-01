@@ -54,3 +54,7 @@ Transaction Input To Redeemer Map
 ------------
 
 .. doxygenfunction:: cardano_input_to_redeemer_map_get_last_error
+
+------------
+
+.. doxygenfunction:: cardano_input_to_redeemer_map_deep_clone

@@ -58,3 +58,7 @@ Voter
 ------------
 
 .. doxygenfunction:: cardano_voter_get_last_error
+
+------------
+
+.. doxygenfunction:: cardano_voter_deep_clone

@@ -62,3 +62,7 @@ Stake Vote Delegation Certificate
 ------------
 
 .. doxygenfunction:: cardano_stake_vote_delegation_cert_get_last_error
+
+------------
+
+.. doxygenfunction:: cardano_stake_vote_delegation_cert_deep_clone
