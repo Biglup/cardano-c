@@ -17,6 +17,10 @@ Sub Transaction Set
 
 ------------
 
+.. doxygenfunction:: cardano_sub_transaction_set_to_cip116_json
+
+------------
+
 .. doxygenfunction:: cardano_sub_transaction_set_get_length
 
 ------------

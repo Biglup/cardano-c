@@ -19,6 +19,34 @@ Transaction Body
 
 .. doxygenfunction:: cardano_transaction_body_to_cip116_json
 
+Dijkstra JSON fields
+--------------------
+
+The transaction body serializer includes Dijkstra fields when present. These
+fields extend the JSON representation using CIP-116 conventions; they are not
+part of the published Babbage schema.
+
+* ``sub_transactions`` is an array of nested transactions. Each entry contains
+  ``body`` and ``witness_set``, plus ``auxiliary_data`` when present. Nested
+  transactions do not contain a top-level ``is_valid`` flag.
+* ``required_top_level_guards`` is an array of ``key``/``value`` objects. The key
+  is a credential tagged ``pubkey_hash`` or ``script_hash``; the value is Plutus
+  data, or ``null`` when no data is attached.
+* ``direct_deposits`` is an array of ``key``/``value`` objects mapping Bech32
+  reward addresses to lovelace amounts encoded as decimal strings.
+* ``account_balance_intervals`` and ``starting_account_balance_intervals`` map
+  Bech32 reward addresses to balance intervals, using the same ``key``/``value``
+  array representation. See :doc:`account_balance_interval` for interval forms.
+* ``guards`` contains the full credential array when a script guard is present.
+  Key guards also remain in ``required_signers``. Bodies containing only key
+  guards retain the existing ``required_signers`` representation.
+
+Sub-transaction bodies use ``guards`` for their credential array and serialize
+only their own fields; they do not add a fee, collateral, or nested
+sub-transactions. Lovelace amounts are decimal strings to preserve unsigned
+64-bit precision.
+
+
 ------------
 
 .. doxygenfunction:: cardano_transaction_body_get_inputs
