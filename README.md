@@ -205,7 +205,7 @@ This implies that the caller becomes the sole owner of the newly created referen
 When the reference count drops to zero-typically when the `*_unref` function is invoked by the last entity
 holding a reference-the object gets deallocated.
 
-Check each getter's ownership contract. For example, `cardano_transaction_get_body` returns an owned reference that the caller must release, while `cardano_blake2b_hash_get_data` returns borrowed bytes that must not be freed or outlive their owner. An `unref` call may leave a pointer non-null when another owner still holds the object; the caller has nevertheless released its own reference. See the [binding guide's memory model](BINDINGS.md#the-native-memory-model) for ownership and callback lifetime rules.
+Note that **all** getter functions will consistently increment the reference count of the object they return. Thus, it's the caller's responsibility to invoke `*_unref` once they're done using the result.
 
 ## WebAssembly builds
 
