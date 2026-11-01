@@ -27,6 +27,7 @@
 #include <cardano/common/credential.h>
 #include <cardano/error.h>
 #include <cardano/export.h>
+#include <cardano/json/json_writer.h>
 #include <cardano/plutus_data/plutus_data.h>
 #include <cardano/proposal_procedures/credential_set.h>
 
@@ -45,6 +46,20 @@ extern "C" {
  * on the wire).
  */
 typedef struct cardano_required_guards_map_t cardano_required_guards_map_t;
+
+/**
+ * \brief Serializes this Dijkstra value using CIP-116 JSON conventions.
+ *
+ * Encodes an array of key/value objects. Keys are credentials; values are Plutus data or null.
+ *
+ * \param[in] value Value to serialize. Must not be NULL.
+ * \param[in] writer JSON writer that receives the encoded value. Must not be NULL.
+ *
+ * \return CARDANO_SUCCESS on success, CARDANO_ERROR_POINTER_IS_NULL for a NULL argument,
+ *         or the error returned by a child serializer.
+ */
+CARDANO_EXPORT cardano_error_t
+cardano_required_guards_map_to_cip116_json(const cardano_required_guards_map_t* value, cardano_json_writer_t* writer);
 
 /**
  * \brief Creates and initializes a new instance of a required guards map.

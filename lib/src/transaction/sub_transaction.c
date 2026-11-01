@@ -488,6 +488,52 @@ cardano_sub_transaction_apply_vkey_witnesses(
   return cardano_vkey_witness_set_apply(inner_vkeys, new_vkeys);
 }
 
+cardano_error_t
+cardano_sub_transaction_to_cip116_json(
+  const cardano_sub_transaction_t* tx,
+  cardano_json_writer_t*           writer)
+{
+  if ((tx == NULL) || (writer == NULL))
+  {
+    return CARDANO_ERROR_POINTER_IS_NULL;
+  }
+
+  cardano_json_writer_write_start_object(writer);
+  cardano_error_t error = CARDANO_SUCCESS;
+
+  cardano_json_writer_write_property_name(writer, "body", 4);
+  error = cardano_sub_transaction_body_to_cip116_json(tx->body, writer);
+
+  if (error != CARDANO_SUCCESS)
+  {
+    return error;
+  }
+
+  cardano_json_writer_write_property_name(writer, "witness_set", 11);
+  error = cardano_witness_set_to_cip116_json(tx->witness_set, writer);
+
+  if (error != CARDANO_SUCCESS)
+  {
+    return error;
+  }
+
+  if (tx->auxiliary_data != NULL)
+  {
+    cardano_json_writer_write_property_name(writer, "auxiliary_data", 14);
+
+    error = cardano_auxiliary_data_to_cip116_json(tx->auxiliary_data, writer);
+
+    if (error != CARDANO_SUCCESS)
+    {
+      return error;
+    }
+  }
+
+  cardano_json_writer_write_end_object(writer);
+
+  return error;
+}
+
 void
 cardano_sub_transaction_unref(cardano_sub_transaction_t** sub_transaction)
 {

@@ -30,7 +30,10 @@
 #include "../allocators_helpers.h"
 #include "../src/allocators.h"
 
+#include "../json_helpers.h"
+
 #include <gmock/gmock.h>
+#include <string>
 
 /* CONSTANTS *****************************************************************/
 
@@ -2358,4 +2361,44 @@ TEST(cardano_sub_transaction_body_clear_cbor_cache, clearsTheCache)
   cardano_cbor_writer_unref(&writer2);
   free(cbor);
   free(cbor2);
+}
+
+TEST(cardano_sub_transaction_body_to_cip116_json, preservesAllFieldsAndRejectsNullArguments)
+{
+  cardano_cbor_reader_t*          reader = cardano_cbor_reader_from_hex(MAXIMAL_CBOR, strlen(MAXIMAL_CBOR));
+  cardano_sub_transaction_body_t* value  = NULL;
+  ASSERT_EQ(cardano_sub_transaction_body_from_cbor(reader, &value), CARDANO_SUCCESS);
+  cardano_json_writer_t* writer = cardano_json_writer_new(CARDANO_JSON_FORMAT_COMPACT);
+
+  EXPECT_EQ(cardano_sub_transaction_body_to_cip116_json(value, writer), CARDANO_SUCCESS);
+  char*             encoded = encode_json(writer);
+  const std::string json(encoded);
+  EXPECT_NE(json.find("\"inputs\":"), std::string::npos);
+  EXPECT_NE(json.find("\"outputs\":"), std::string::npos);
+  EXPECT_NE(json.find("\"ttl\":"), std::string::npos);
+  EXPECT_NE(json.find("\"certs\":"), std::string::npos);
+  EXPECT_NE(json.find("\"withdrawals\":"), std::string::npos);
+  EXPECT_NE(json.find("\"auxiliary_data_hash\":"), std::string::npos);
+  EXPECT_NE(json.find("\"validity_start_interval\":"), std::string::npos);
+  EXPECT_NE(json.find("\"mint\":"), std::string::npos);
+  EXPECT_NE(json.find("\"script_data_hash\":"), std::string::npos);
+  EXPECT_NE(json.find("\"guards\":"), std::string::npos);
+  EXPECT_NE(json.find("\"network_id\":"), std::string::npos);
+  EXPECT_NE(json.find("\"reference_inputs\":"), std::string::npos);
+  EXPECT_NE(json.find("\"voting_procedures\":"), std::string::npos);
+  EXPECT_NE(json.find("\"proposal_procedures\":"), std::string::npos);
+  EXPECT_NE(json.find("\"treasury_value\":"), std::string::npos);
+  EXPECT_NE(json.find("\"donation\":"), std::string::npos);
+  EXPECT_NE(json.find("\"required_top_level_guards\":"), std::string::npos);
+  EXPECT_NE(json.find("\"direct_deposits\":"), std::string::npos);
+  EXPECT_NE(json.find("\"account_balance_intervals\":"), std::string::npos);
+  EXPECT_EQ(json.find("\"fee\":"), std::string::npos);
+  EXPECT_EQ(json.find("\"is_valid\":"), std::string::npos);
+  EXPECT_EQ(cardano_sub_transaction_body_to_cip116_json(value, NULL), CARDANO_ERROR_POINTER_IS_NULL);
+  EXPECT_EQ(cardano_sub_transaction_body_to_cip116_json(NULL, writer), CARDANO_ERROR_POINTER_IS_NULL);
+
+  free(encoded);
+  cardano_json_writer_unref(&writer);
+  cardano_sub_transaction_body_unref(&value);
+  cardano_cbor_reader_unref(&reader);
 }

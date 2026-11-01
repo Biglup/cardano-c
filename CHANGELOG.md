@@ -1,3 +1,8 @@
+Unreleased
+---------------------
+
+- Include Dijkstra sub-transactions, script guards, required top-level guards, direct deposits and account balance constraints in transaction JSON inspection. Preserve nested witnesses and auxiliary data, uint64 amounts, and existing Conway JSON output.
+
 V2.0.0-rc.4
 ---------------------
 

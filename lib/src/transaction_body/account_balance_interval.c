@@ -395,6 +395,54 @@ cardano_account_balance_interval_is_exact(const cardano_account_balance_interval
   return account_balance_interval->is_exact;
 }
 
+cardano_error_t
+cardano_account_balance_interval_to_cip116_json(const cardano_account_balance_interval_t* value, cardano_json_writer_t* writer)
+{
+  if ((value == NULL) || (writer == NULL))
+  {
+    return CARDANO_ERROR_POINTER_IS_NULL;
+  }
+
+  cardano_json_writer_write_start_object(writer);
+  cardano_json_writer_write_property_name(writer, "tag", 3);
+
+  if (value->is_exact)
+  {
+    cardano_json_writer_write_string(writer, "exact", 5);
+    cardano_json_writer_write_property_name(writer, "value", 5);
+    cardano_json_writer_write_uint_as_string(writer, value->exact_balance);
+  }
+  else
+  {
+    cardano_json_writer_write_string(writer, "range", 5);
+    cardano_json_writer_write_property_name(writer, "inclusive_lower_bound", 21);
+
+    if (value->has_inclusive_lower_bound)
+    {
+      cardano_json_writer_write_uint_as_string(writer, value->inclusive_lower_bound);
+    }
+    else
+    {
+      cardano_json_writer_write_null(writer);
+    }
+
+    cardano_json_writer_write_property_name(writer, "exclusive_upper_bound", 21);
+
+    if (value->has_exclusive_upper_bound)
+    {
+      cardano_json_writer_write_uint_as_string(writer, value->exclusive_upper_bound);
+    }
+    else
+    {
+      cardano_json_writer_write_null(writer);
+    }
+  }
+
+  cardano_json_writer_write_end_object(writer);
+
+  return CARDANO_SUCCESS;
+}
+
 void
 cardano_account_balance_interval_unref(cardano_account_balance_interval_t** account_balance_interval)
 {

@@ -33,7 +33,10 @@
 #include "../allocators_helpers.h"
 #include "../src/allocators.h"
 
+#include "../json_helpers.h"
+
 #include <gmock/gmock.h>
+#include <string>
 
 /* CONSTANTS *****************************************************************/
 
@@ -1147,4 +1150,28 @@ TEST(cardano_sub_transaction_apply_vkey_witnesses, returnsErrorIfMemoryAllocatio
   // Cleanup
   cardano_sub_transaction_unref(&sub_transaction);
   cardano_vkey_witness_set_unref(&vkey_witness_set);
+}
+
+TEST(cardano_sub_transaction_to_cip116_json, preservesAllFieldsAndRejectsNullArguments)
+{
+  cardano_cbor_reader_t*     reader = cardano_cbor_reader_from_hex(WITH_WITNESS_AND_AUX_DATA_CBOR, strlen(WITH_WITNESS_AND_AUX_DATA_CBOR));
+  cardano_sub_transaction_t* value  = NULL;
+  ASSERT_EQ(cardano_sub_transaction_from_cbor(reader, &value), CARDANO_SUCCESS);
+  cardano_json_writer_t* writer = cardano_json_writer_new(CARDANO_JSON_FORMAT_COMPACT);
+
+  EXPECT_EQ(cardano_sub_transaction_to_cip116_json(value, writer), CARDANO_SUCCESS);
+  char*             encoded = encode_json(writer);
+  const std::string json(encoded);
+  EXPECT_NE(json.find("\"body\":"), std::string::npos);
+  EXPECT_NE(json.find("\"witness_set\":"), std::string::npos);
+  EXPECT_NE(json.find("\"auxiliary_data\":"), std::string::npos);
+  EXPECT_EQ(json.find("\"fee\":"), std::string::npos);
+  EXPECT_EQ(json.find("\"is_valid\":"), std::string::npos);
+  EXPECT_EQ(cardano_sub_transaction_to_cip116_json(value, NULL), CARDANO_ERROR_POINTER_IS_NULL);
+  EXPECT_EQ(cardano_sub_transaction_to_cip116_json(NULL, writer), CARDANO_ERROR_POINTER_IS_NULL);
+
+  free(encoded);
+  cardano_json_writer_unref(&writer);
+  cardano_sub_transaction_unref(&value);
+  cardano_cbor_reader_unref(&reader);
 }

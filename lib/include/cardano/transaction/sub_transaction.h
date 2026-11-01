@@ -29,6 +29,7 @@
 #include <cardano/cbor/cbor_writer.h>
 #include <cardano/error.h>
 #include <cardano/export.h>
+#include <cardano/json/json_writer.h>
 #include <cardano/transaction_body/sub_transaction_body.h>
 #include <cardano/typedefs.h>
 #include <cardano/witness_set/witness_set.h>
@@ -52,6 +53,20 @@ extern "C" {
  * encoded as a CBOR null.
  */
 typedef struct cardano_sub_transaction_t cardano_sub_transaction_t;
+
+/**
+ * \brief Serializes this Dijkstra value using CIP-116 JSON conventions.
+ *
+ * Encodes the body, witness set and optional auxiliary data, without an is_valid field.
+ *
+ * \param[in] tx Value to serialize. Must not be NULL.
+ * \param[in] writer JSON writer that receives the encoded value. Must not be NULL.
+ *
+ * \return CARDANO_SUCCESS on success, CARDANO_ERROR_POINTER_IS_NULL for a NULL argument,
+ *         or the error returned by a child serializer.
+ */
+CARDANO_EXPORT cardano_error_t
+cardano_sub_transaction_to_cip116_json(const cardano_sub_transaction_t* tx, cardano_json_writer_t* writer);
 
 /**
  * \brief Creates and initializes a new Cardano sub transaction.

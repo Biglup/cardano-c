@@ -30,6 +30,8 @@
 #include "../allocators_helpers.h"
 #include "../src/allocators.h"
 
+#include "../json_helpers.h"
+
 #include <gmock/gmock.h>
 
 /* CONSTANTS *****************************************************************/
@@ -1120,4 +1122,21 @@ TEST(cardano_sub_transaction_set_add, returnsErrorIfGrowingTheArrayFails)
   reset_limited_realloc();
   cardano_sub_transaction_set_unref(&set);
   cardano_sub_transaction_unref(&sub_transaction);
+}
+
+TEST(cardano_sub_transaction_set_to_cip116_json, preservesEmptySetAndRejectsNullArguments)
+{
+  cardano_sub_transaction_set_t* value = NULL;
+  ASSERT_EQ(cardano_sub_transaction_set_new(&value), CARDANO_SUCCESS);
+  cardano_json_writer_t* writer = cardano_json_writer_new(CARDANO_JSON_FORMAT_COMPACT);
+
+  EXPECT_EQ(cardano_sub_transaction_set_to_cip116_json(value, writer), CARDANO_SUCCESS);
+  char* json = encode_json(writer);
+  EXPECT_STREQ(json, "[]");
+  EXPECT_EQ(cardano_sub_transaction_set_to_cip116_json(value, NULL), CARDANO_ERROR_POINTER_IS_NULL);
+  EXPECT_EQ(cardano_sub_transaction_set_to_cip116_json(NULL, writer), CARDANO_ERROR_POINTER_IS_NULL);
+
+  free(json);
+  cardano_json_writer_unref(&writer);
+  cardano_sub_transaction_set_unref(&value);
 }

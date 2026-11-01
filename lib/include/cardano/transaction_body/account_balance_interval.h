@@ -28,6 +28,7 @@
 #include <cardano/cbor/cbor_writer.h>
 #include <cardano/error.h>
 #include <cardano/export.h>
+#include <cardano/json/json_writer.h>
 #include <cardano/typedefs.h>
 
 /* DECLARATIONS **************************************************************/
@@ -47,6 +48,20 @@ extern "C" {
  * exactly that amount.
  */
 typedef struct cardano_account_balance_interval_t cardano_account_balance_interval_t;
+
+/**
+ * \brief Serializes this Dijkstra value using CIP-116 JSON conventions.
+ *
+ * Encodes a tagged exact value or range. Amounts use decimal strings; absent range bounds are null.
+ *
+ * \param[in] value Value to serialize. Must not be NULL.
+ * \param[in] writer JSON writer that receives the encoded value. Must not be NULL.
+ *
+ * \return CARDANO_SUCCESS on success, CARDANO_ERROR_POINTER_IS_NULL for a NULL argument,
+ *         or the error returned by a child serializer.
+ */
+CARDANO_EXPORT cardano_error_t
+cardano_account_balance_interval_to_cip116_json(const cardano_account_balance_interval_t* value, cardano_json_writer_t* writer);
 
 /**
  * \brief Creates and initializes a new instance of an account balance interval.

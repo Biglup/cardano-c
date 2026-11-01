@@ -2674,6 +2674,8 @@ TEST(cardano_transaction_body_to_cip116_json, omitsRequiredSignersWhenGuardsHold
 
   // Assert
   EXPECT_EQ(json.find("required_signers"), std::string::npos);
+  EXPECT_NE(json.find("\"guards\":[{\"tag\":\"script_hash\""), std::string::npos);
+  EXPECT_NE(json.find(script_hash), std::string::npos);
 
   // Cleanup
   cardano_transaction_body_unref(&transaction_body);

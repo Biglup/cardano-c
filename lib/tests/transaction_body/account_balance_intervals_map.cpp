@@ -31,8 +31,10 @@
 #include "../allocators_helpers.h"
 #include "../src/allocators.h"
 
+#include "../json_helpers.h"
 #include <filesystem>
 #include <fstream>
+
 #include <gmock/gmock.h>
 #include <string>
 #include <vector>
@@ -1597,4 +1599,31 @@ TEST(cardano_account_balance_intervals_map_insert, returnsErrorIfGrowingTheArray
   cardano_credential_unref(&credential);
   cardano_reward_address_unref(&address);
   cardano_account_balance_interval_unref(&interval);
+}
+
+TEST(cardano_account_balance_intervals_map_to_cip116_json, preservesDijkstraValue3)
+{
+  // Arrange
+  const char*                              cbor   = "a1581de0111111111111111111111111111111111111111111111111111111111bffffffffffffffff";
+  cardano_cbor_reader_t*                   reader = cardano_cbor_reader_from_hex(cbor, strlen(cbor));
+  cardano_account_balance_intervals_map_t* value  = NULL;
+  ASSERT_EQ(cardano_account_balance_intervals_map_from_cbor(reader, &value), CARDANO_SUCCESS);
+  cardano_json_writer_t* writer    = cardano_json_writer_new(CARDANO_JSON_FORMAT_COMPACT);
+  const size_t           ref_count = cardano_account_balance_intervals_map_refcount(value);
+
+  // Act
+  EXPECT_EQ(cardano_account_balance_intervals_map_to_cip116_json(value, writer), CARDANO_SUCCESS);
+  char* json = encode_json(writer);
+
+  // Assert
+  EXPECT_STREQ(json, R"([{"key":"stake_test1uqg3zyg3zyg3zyg3zyg3zyg3zyg3zyg3zyg3zyg3zyg3zygxtxu2s","value":{"tag":"exact","value":"18446744073709551615"}}])");
+  EXPECT_EQ(cardano_account_balance_intervals_map_refcount(value), ref_count);
+  EXPECT_EQ(cardano_account_balance_intervals_map_to_cip116_json(value, NULL), CARDANO_ERROR_POINTER_IS_NULL);
+  EXPECT_EQ(cardano_account_balance_intervals_map_to_cip116_json(NULL, writer), CARDANO_ERROR_POINTER_IS_NULL);
+
+  // Cleanup
+  free(json);
+  cardano_json_writer_unref(&writer);
+  cardano_account_balance_intervals_map_unref(&value);
+  cardano_cbor_reader_unref(&reader);
 }
