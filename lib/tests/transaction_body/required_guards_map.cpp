@@ -30,6 +30,8 @@
 #include "../allocators_helpers.h"
 #include "../src/allocators.h"
 
+#include "../json_helpers.h"
+
 #include <gmock/gmock.h>
 
 /* CONSTANTS *****************************************************************/
@@ -1299,4 +1301,31 @@ TEST(cardano_required_guards_map_insert, returnsErrorIfGrowingTheArrayFails)
   cardano_blake2b_hash_unref(&hash);
   cardano_credential_unref(&credential);
   cardano_plutus_data_unref(&datum);
+}
+
+TEST(cardano_required_guards_map_to_cip116_json, preservesDijkstraValue2)
+{
+  // Arrange
+  const char*                    cbor   = "a28200581c11111111111111111111111111111111111111111111111111111111f68201581c22222222222222222222222222222222222222222222222222222222182a";
+  cardano_cbor_reader_t*         reader = cardano_cbor_reader_from_hex(cbor, strlen(cbor));
+  cardano_required_guards_map_t* value  = NULL;
+  ASSERT_EQ(cardano_required_guards_map_from_cbor(reader, &value), CARDANO_SUCCESS);
+  cardano_json_writer_t* writer    = cardano_json_writer_new(CARDANO_JSON_FORMAT_COMPACT);
+  const size_t           ref_count = cardano_required_guards_map_refcount(value);
+
+  // Act
+  EXPECT_EQ(cardano_required_guards_map_to_cip116_json(value, writer), CARDANO_SUCCESS);
+  char* json = encode_json(writer);
+
+  // Assert
+  EXPECT_STREQ(json, R"([{"key":{"tag":"pubkey_hash","value":"11111111111111111111111111111111111111111111111111111111"},"value":null},{"key":{"tag":"script_hash","value":"22222222222222222222222222222222222222222222222222222222"},"value":{"tag":"integer","value":"42"}}])");
+  EXPECT_EQ(cardano_required_guards_map_refcount(value), ref_count);
+  EXPECT_EQ(cardano_required_guards_map_to_cip116_json(value, NULL), CARDANO_ERROR_POINTER_IS_NULL);
+  EXPECT_EQ(cardano_required_guards_map_to_cip116_json(NULL, writer), CARDANO_ERROR_POINTER_IS_NULL);
+
+  // Cleanup
+  free(json);
+  cardano_json_writer_unref(&writer);
+  cardano_required_guards_map_unref(&value);
+  cardano_cbor_reader_unref(&reader);
 }

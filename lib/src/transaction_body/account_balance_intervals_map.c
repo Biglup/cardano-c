@@ -27,6 +27,7 @@
 #include "../allocators.h"
 #include "../cbor/cbor_validation.h"
 #include "../collections/array.h"
+#include "../string_safe.h"
 
 #include <assert.h>
 #include <string.h>
@@ -654,6 +655,49 @@ cardano_account_balance_intervals_map_get_key_value_at(
 
   *reward_address = kvp->key;
   *interval       = kvp->value;
+
+  return CARDANO_SUCCESS;
+}
+
+cardano_error_t
+cardano_account_balance_intervals_map_to_cip116_json(const cardano_account_balance_intervals_map_t* value, cardano_json_writer_t* writer)
+{
+  if ((value == NULL) || (writer == NULL))
+  {
+    return CARDANO_ERROR_POINTER_IS_NULL;
+  }
+
+  cardano_json_writer_write_start_array(writer);
+
+  for (size_t i = 0U; i < cardano_array_get_size(value->array); ++i)
+  {
+    cardano_object_t* entry = cardano_array_get(value->array, i);
+
+    if (entry == NULL)
+    {
+      return CARDANO_ERROR_ENCODING;
+    }
+
+    const cardano_account_balance_intervals_map_kvp_t* pair   = (const cardano_account_balance_intervals_map_kvp_t*)((const void*)entry);
+    cardano_error_t                                    result = CARDANO_SUCCESS;
+
+    cardano_json_writer_write_start_object(writer);
+    cardano_json_writer_write_property_name(writer, "key", 3);
+    const char*  address = cardano_reward_address_get_string(pair->key);
+    const size_t size    = cardano_safe_strlen(address, cardano_reward_address_get_bech32_size(pair->key));
+    cardano_json_writer_write_string(writer, address, size);
+    cardano_json_writer_write_property_name(writer, "value", 5);
+    result = cardano_account_balance_interval_to_cip116_json(pair->value, writer);
+    cardano_json_writer_write_end_object(writer);
+    cardano_object_unref(&entry);
+
+    if (result != CARDANO_SUCCESS)
+    {
+      return result;
+    }
+  }
+
+  cardano_json_writer_write_end_array(writer);
 
   return CARDANO_SUCCESS;
 }

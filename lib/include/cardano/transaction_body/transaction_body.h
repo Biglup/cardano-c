@@ -233,6 +233,15 @@ CARDANO_EXPORT cardano_error_t cardano_transaction_body_to_cbor(
  * The \c required_signers field lists the key hash guards of the body. It is omitted when the body has
  * no key hash guard, so an empty guards set, or one that holds only script guards, adds no field.
  *
+ * Dijkstra fields include sub_transactions, required_top_level_guards, direct_deposits,
+ * account_balance_intervals and starting_account_balance_intervals. Nested bodies retain
+ * their own witnesses and auxiliary data. Maps use arrays of key/value objects and lovelace
+ * amounts use decimal strings. Balance intervals use tagged exact/range objects with null
+ * bounds when unbounded.
+ *
+ * Key-hash guards retain the required_signers view for Conway compatibility. When script
+ * guards are present, guards also contains the complete credential set.
+ *
  * \param[in]  body    Pointer to the valid \ref cardano_transaction_body_t object to be serialized.
  * \param[in]  writer  Pointer to the active \ref cardano_json_writer_t instance where the JSON output will be written.
  *

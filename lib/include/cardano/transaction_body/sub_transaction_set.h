@@ -29,6 +29,7 @@
 #include <cardano/crypto/blake2b_hash.h>
 #include <cardano/error.h>
 #include <cardano/export.h>
+#include <cardano/json/json_writer.h>
 #include <cardano/transaction/sub_transaction.h>
 #include <cardano/typedefs.h>
 
@@ -51,6 +52,20 @@ extern "C" {
  * The set preserves insertion order and rejects two sub transactions with the same id.
  */
 typedef struct cardano_sub_transaction_set_t cardano_sub_transaction_set_t;
+
+/**
+ * \brief Serializes this Dijkstra value using CIP-116 JSON conventions.
+ *
+ * Encodes an array in insertion order. Each member uses its own CIP-116-style JSON representation.
+ *
+ * \param[in] value Value to serialize. Must not be NULL.
+ * \param[in] writer JSON writer that receives the encoded value. Must not be NULL.
+ *
+ * \return CARDANO_SUCCESS on success, CARDANO_ERROR_POINTER_IS_NULL for a NULL argument,
+ *         or the error returned by a child serializer.
+ */
+CARDANO_EXPORT cardano_error_t
+cardano_sub_transaction_set_to_cip116_json(const cardano_sub_transaction_set_t* value, cardano_json_writer_t* writer);
 
 /**
  * \brief Creates and initializes a new instance of a sub_transaction_set.

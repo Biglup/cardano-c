@@ -493,6 +493,39 @@ cardano_guard_set_set_use_tag(cardano_guard_set_t* guard_set, const bool use_tag
   return CARDANO_SUCCESS;
 }
 
+cardano_error_t
+cardano_guard_set_to_cip116_json(const cardano_guard_set_t* value, cardano_json_writer_t* writer)
+{
+  if ((value == NULL) || (writer == NULL))
+  {
+    return CARDANO_ERROR_POINTER_IS_NULL;
+  }
+
+  cardano_json_writer_write_start_array(writer);
+
+  for (size_t i = 0U; i < cardano_array_get_size(value->array); ++i)
+  {
+    cardano_object_t* element = cardano_array_get(value->array, i);
+
+    if (element == NULL)
+    {
+      return CARDANO_ERROR_ENCODING;
+    }
+
+    const cardano_error_t result = cardano_credential_to_cip116_json((const cardano_credential_t*)((const void*)element), writer);
+    cardano_object_unref(&element);
+
+    if (result != CARDANO_SUCCESS)
+    {
+      return result;
+    }
+  }
+
+  cardano_json_writer_write_end_array(writer);
+
+  return CARDANO_SUCCESS;
+}
+
 void
 cardano_guard_set_unref(cardano_guard_set_t** guard_set)
 {

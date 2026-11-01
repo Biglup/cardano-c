@@ -30,6 +30,7 @@
 #include <cardano/common/reward_address_list.h>
 #include <cardano/error.h>
 #include <cardano/export.h>
+#include <cardano/json/json_writer.h>
 #include <cardano/transaction_body/account_balance_interval.h>
 
 /* DECLARATIONS **************************************************************/
@@ -47,6 +48,20 @@ extern "C" {
  * amounts or an exact lovelace balance.
  */
 typedef struct cardano_account_balance_intervals_map_t cardano_account_balance_intervals_map_t;
+
+/**
+ * \brief Serializes this Dijkstra value using CIP-116 JSON conventions.
+ *
+ * Encodes an array of key/value objects. Keys are Bech32 reward addresses; lovelace values use decimal strings.
+ *
+ * \param[in] value Value to serialize. Must not be NULL.
+ * \param[in] writer JSON writer that receives the encoded value. Must not be NULL.
+ *
+ * \return CARDANO_SUCCESS on success, CARDANO_ERROR_POINTER_IS_NULL for a NULL argument,
+ *         or the error returned by a child serializer.
+ */
+CARDANO_EXPORT cardano_error_t
+cardano_account_balance_intervals_map_to_cip116_json(const cardano_account_balance_intervals_map_t* value, cardano_json_writer_t* writer);
 
 /**
  * \brief Creates and initializes a new instance of an account balance intervals map.

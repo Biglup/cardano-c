@@ -33,6 +33,7 @@
 #include <cardano/common/withdrawal_map.h>
 #include <cardano/crypto/blake2b_hash.h>
 #include <cardano/error.h>
+#include <cardano/json/json_writer.h>
 #include <cardano/proposal_procedures/proposal_procedure_set.h>
 #include <cardano/transaction_body/account_balance_intervals_map.h>
 #include <cardano/transaction_body/direct_deposit_map.h>
@@ -58,6 +59,20 @@ extern "C" {
  * guards, direct deposits and account balance intervals.
  */
 typedef struct cardano_sub_transaction_body_t cardano_sub_transaction_body_t;
+
+/**
+ * \brief Serializes this Dijkstra value using CIP-116 JSON conventions.
+ *
+ * Encodes all sub-transaction fields. No fee, collateral, nested batch or validity flag is added.
+ *
+ * \param[in] transaction_body Value to serialize. Must not be NULL.
+ * \param[in] writer JSON writer that receives the encoded value. Must not be NULL.
+ *
+ * \return CARDANO_SUCCESS on success, CARDANO_ERROR_POINTER_IS_NULL for a NULL argument,
+ *         or the error returned by a child serializer.
+ */
+CARDANO_EXPORT cardano_error_t
+cardano_sub_transaction_body_to_cip116_json(const cardano_sub_transaction_body_t* transaction_body, cardano_json_writer_t* writer);
 
 /**
  * \brief Creates and initializes a new instance of a Cardano sub transaction body.

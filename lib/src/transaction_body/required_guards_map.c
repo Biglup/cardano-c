@@ -617,6 +617,59 @@ cardano_required_guards_map_get_key_value_at(
   return CARDANO_SUCCESS;
 }
 
+cardano_error_t
+cardano_required_guards_map_to_cip116_json(const cardano_required_guards_map_t* value, cardano_json_writer_t* writer)
+{
+  if ((value == NULL) || (writer == NULL))
+  {
+    return CARDANO_ERROR_POINTER_IS_NULL;
+  }
+
+  cardano_json_writer_write_start_array(writer);
+
+  for (size_t i = 0U; i < cardano_array_get_size(value->array); ++i)
+  {
+    cardano_object_t* entry = cardano_array_get(value->array, i);
+
+    if (entry == NULL)
+    {
+      return CARDANO_ERROR_ENCODING;
+    }
+
+    const cardano_required_guards_map_kvp_t* pair   = (const cardano_required_guards_map_kvp_t*)((const void*)entry);
+    cardano_error_t                          result = CARDANO_SUCCESS;
+
+    cardano_json_writer_write_start_object(writer);
+    cardano_json_writer_write_property_name(writer, "key", 3);
+    result = cardano_credential_to_cip116_json(pair->key, writer);
+
+    if (result == CARDANO_SUCCESS)
+    {
+      cardano_json_writer_write_property_name(writer, "value", 5);
+
+      if (pair->value == NULL)
+      {
+        cardano_json_writer_write_null(writer);
+      }
+      else
+      {
+        result = cardano_plutus_data_to_cip116_json(pair->value, writer);
+      }
+    }
+    cardano_json_writer_write_end_object(writer);
+    cardano_object_unref(&entry);
+
+    if (result != CARDANO_SUCCESS)
+    {
+      return result;
+    }
+  }
+
+  cardano_json_writer_write_end_array(writer);
+
+  return CARDANO_SUCCESS;
+}
+
 void
 cardano_required_guards_map_unref(cardano_required_guards_map_t** required_guards_map)
 {

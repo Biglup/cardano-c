@@ -2487,3 +2487,39 @@ TEST(cardano_transaction_find_withdrawal_index, doesNotAllocate)
   cardano_transaction_unref(&transaction);
   cardano_reward_address_unref(&reward_address);
 }
+
+TEST(cardano_transaction_to_cip116_json, preservesDijkstraFieldsAndNestedTransactions)
+{
+  // Arrange: both top-level and sub-transaction Dijkstra fields, uint64 amounts, witnesses and auxiliary data.
+  const char*            cbor        = "84a90080018002010e828200581c111111111111111111111111111111111111111111111111111111118201581c22222222"
+                                       "222222222222222222222222222222222222222222222222178283a6008001800e828200581c111111111111111111111111"
+                                       "111111111111111111111111111111118201581c222222222222222222222222222222222222222222222222222222221818"
+                                       "a28200581c11111111111111111111111111111111111111111111111111111111f68201581c222222222222222222222222"
+                                       "22222222222222222222222222222222182a1819a1581de01111111111111111111111111111111111111111111111111111"
+                                       "11111bffffffffffffffff181aa1581de01111111111111111111111111111111111111111111111111111111182001bffff"
+                                       "ffffffffffffa300818258203333333333333333333333333333333333333333333333333333333333333333584044444444"
+                                       "4444444444444444444444444444444444444444444444444444444444444444444444444444444444444444444444444444"
+                                       "4444444444444444444405a182060082182a821901f41a000167c4088146450100002499a101647465737483a200800180a0"
+                                       "f61818a28200581c11111111111111111111111111111111111111111111111111111111f68201581c222222222222222222"
+                                       "22222222222222222222222222222222222222182a1819a1581de01111111111111111111111111111111111111111111111"
+                                       "11111111111bffffffffffffffff181aa1581de0111111111111111111111111111111111111111111111111111111118200"
+                                       "1bffffffffffffffff181ba1581de0111111111111111111111111111111111111111111111111111111111bffffffffffff"
+                                       "ffffa0f5f6";
+  cardano_cbor_reader_t* reader      = cardano_cbor_reader_from_hex(cbor, strlen(cbor));
+  cardano_transaction_t* transaction = NULL;
+  ASSERT_EQ(cardano_transaction_from_cbor(reader, &transaction), CARDANO_SUCCESS);
+  cardano_json_writer_t* writer = cardano_json_writer_new(CARDANO_JSON_FORMAT_COMPACT);
+
+  // Act
+  EXPECT_EQ(cardano_transaction_to_cip116_json(transaction, writer), CARDANO_SUCCESS);
+  char* json = encode_json(writer);
+
+  // Assert: sub-transactions must not acquire a fee, collateral or is_valid flag.
+  EXPECT_STREQ(json, R"({"body":{"inputs":[],"outputs":[],"fee":"1","required_signers":["11111111111111111111111111111111111111111111111111111111"],"guards":[{"tag":"pubkey_hash","value":"11111111111111111111111111111111111111111111111111111111"},{"tag":"script_hash","value":"22222222222222222222222222222222222222222222222222222222"}],"sub_transactions":[{"body":{"inputs":[],"outputs":[],"guards":[{"tag":"pubkey_hash","value":"11111111111111111111111111111111111111111111111111111111"},{"tag":"script_hash","value":"22222222222222222222222222222222222222222222222222222222"}],"required_top_level_guards":[{"key":{"tag":"pubkey_hash","value":"11111111111111111111111111111111111111111111111111111111"},"value":null},{"key":{"tag":"script_hash","value":"22222222222222222222222222222222222222222222222222222222"},"value":{"tag":"integer","value":"42"}}],"direct_deposits":[{"key":"stake_test1uqg3zyg3zyg3zyg3zyg3zyg3zyg3zyg3zyg3zyg3zyg3zygxtxu2s","value":"18446744073709551615"}],"account_balance_intervals":[{"key":"stake_test1uqg3zyg3zyg3zyg3zyg3zyg3zyg3zyg3zyg3zyg3zyg3zygxtxu2s","value":{"tag":"range","inclusive_lower_bound":"0","exclusive_upper_bound":"18446744073709551615"}}]},"witness_set":{"vkey_witnesses":[{"vkey":"3333333333333333333333333333333333333333333333333333333333333333","signature":"44444444444444444444444444444444444444444444444444444444444444444444444444444444444444444444444444444444444444444444444444444444"}],"plutus_scripts":[{"language":"plutus_v4","bytes":"450100002499"}],"redeemers":[{"tag":"guarding","index":"0","data":{"tag":"integer","value":"42"},"ex_units":{"mem":"500","steps":"92100"}}]},"auxiliary_data":{"metadata":[{"key":"1","value":{"tag":"string","value":"test"}}]}},{"body":{"inputs":[],"outputs":[]},"witness_set":{}}],"required_top_level_guards":[{"key":{"tag":"pubkey_hash","value":"11111111111111111111111111111111111111111111111111111111"},"value":null},{"key":{"tag":"script_hash","value":"22222222222222222222222222222222222222222222222222222222"},"value":{"tag":"integer","value":"42"}}],"direct_deposits":[{"key":"stake_test1uqg3zyg3zyg3zyg3zyg3zyg3zyg3zyg3zyg3zyg3zyg3zygxtxu2s","value":"18446744073709551615"}],"account_balance_intervals":[{"key":"stake_test1uqg3zyg3zyg3zyg3zyg3zyg3zyg3zyg3zyg3zyg3zyg3zygxtxu2s","value":{"tag":"range","inclusive_lower_bound":"0","exclusive_upper_bound":"18446744073709551615"}}],"starting_account_balance_intervals":[{"key":"stake_test1uqg3zyg3zyg3zyg3zyg3zyg3zyg3zyg3zyg3zyg3zyg3zygxtxu2s","value":{"tag":"exact","value":"18446744073709551615"}}]},"is_valid":true,"witness_set":{}})");
+
+  // Cleanup
+  free(json);
+  cardano_json_writer_unref(&writer);
+  cardano_transaction_unref(&transaction);
+  cardano_cbor_reader_unref(&reader);
+}

@@ -2261,7 +2261,14 @@ cardano_transaction_body_to_cip116_json(const cardano_transaction_body_t* transa
       result = cardano_blake2b_hash_set_to_cip116_json(required_signers, writer);
     }
 
+    const bool has_script_guards = cardano_blake2b_hash_set_get_length(required_signers) != cardano_guard_set_get_length(transaction_body->guards);
     cardano_blake2b_hash_set_unref(&required_signers);
+
+    if ((result == CARDANO_SUCCESS) && has_script_guards)
+    {
+      cardano_json_writer_write_property_name(writer, "guards", 6);
+      result = cardano_guard_set_to_cip116_json(transaction_body->guards, writer);
+    }
 
     if (result != CARDANO_SUCCESS)
     {
@@ -2338,6 +2345,61 @@ cardano_transaction_body_to_cip116_json(const cardano_transaction_body_t* transa
   {
     cardano_json_writer_write_property_name(writer, "donation", 8);
     cardano_json_writer_write_uint_as_string(writer, *transaction_body->donation);
+  }
+
+  if (transaction_body->sub_transactions != NULL)
+  {
+    cardano_json_writer_write_property_name(writer, "sub_transactions", 16);
+    result = cardano_sub_transaction_set_to_cip116_json(transaction_body->sub_transactions, writer);
+
+    if (result != CARDANO_SUCCESS)
+    {
+      return result;
+    }
+  }
+
+  if (transaction_body->required_top_level_guards != NULL)
+  {
+    cardano_json_writer_write_property_name(writer, "required_top_level_guards", 25);
+    result = cardano_required_guards_map_to_cip116_json(transaction_body->required_top_level_guards, writer);
+
+    if (result != CARDANO_SUCCESS)
+    {
+      return result;
+    }
+  }
+
+  if (transaction_body->direct_deposits != NULL)
+  {
+    cardano_json_writer_write_property_name(writer, "direct_deposits", 15);
+    result = cardano_direct_deposit_map_to_cip116_json(transaction_body->direct_deposits, writer);
+
+    if (result != CARDANO_SUCCESS)
+    {
+      return result;
+    }
+  }
+
+  if (transaction_body->account_balance_intervals != NULL)
+  {
+    cardano_json_writer_write_property_name(writer, "account_balance_intervals", 25);
+    result = cardano_account_balance_intervals_map_to_cip116_json(transaction_body->account_balance_intervals, writer);
+
+    if (result != CARDANO_SUCCESS)
+    {
+      return result;
+    }
+  }
+
+  if (transaction_body->starting_account_balance_intervals != NULL)
+  {
+    cardano_json_writer_write_property_name(writer, "starting_account_balance_intervals", 34);
+    result = cardano_account_balance_intervals_map_to_cip116_json(transaction_body->starting_account_balance_intervals, writer);
+
+    if (result != CARDANO_SUCCESS)
+    {
+      return result;
+    }
   }
 
   cardano_json_writer_write_end_object(writer);

@@ -29,6 +29,8 @@
 #include "../allocators_helpers.h"
 #include "../src/allocators.h"
 
+#include "../json_helpers.h"
+
 #include <gmock/gmock.h>
 
 /* CONSTANTS *****************************************************************/
@@ -1165,4 +1167,31 @@ TEST(cardano_guard_set_add, returnsErrorIfGrowingTheArrayFails)
   cardano_guard_set_unref(&set);
   cardano_blake2b_hash_unref(&hash);
   cardano_credential_unref(&credential);
+}
+
+TEST(cardano_guard_set_to_cip116_json, preservesDijkstraValue0)
+{
+  // Arrange
+  const char*            cbor   = "828200581c111111111111111111111111111111111111111111111111111111118201581c22222222222222222222222222222222222222222222222222222222";
+  cardano_cbor_reader_t* reader = cardano_cbor_reader_from_hex(cbor, strlen(cbor));
+  cardano_guard_set_t*   value  = NULL;
+  ASSERT_EQ(cardano_guard_set_from_cbor(reader, &value), CARDANO_SUCCESS);
+  cardano_json_writer_t* writer    = cardano_json_writer_new(CARDANO_JSON_FORMAT_COMPACT);
+  const size_t           ref_count = cardano_guard_set_refcount(value);
+
+  // Act
+  EXPECT_EQ(cardano_guard_set_to_cip116_json(value, writer), CARDANO_SUCCESS);
+  char* json = encode_json(writer);
+
+  // Assert
+  EXPECT_STREQ(json, R"([{"tag":"pubkey_hash","value":"11111111111111111111111111111111111111111111111111111111"},{"tag":"script_hash","value":"22222222222222222222222222222222222222222222222222222222"}])");
+  EXPECT_EQ(cardano_guard_set_refcount(value), ref_count);
+  EXPECT_EQ(cardano_guard_set_to_cip116_json(value, NULL), CARDANO_ERROR_POINTER_IS_NULL);
+  EXPECT_EQ(cardano_guard_set_to_cip116_json(NULL, writer), CARDANO_ERROR_POINTER_IS_NULL);
+
+  // Cleanup
+  free(json);
+  cardano_json_writer_unref(&writer);
+  cardano_guard_set_unref(&value);
+  cardano_cbor_reader_unref(&reader);
 }

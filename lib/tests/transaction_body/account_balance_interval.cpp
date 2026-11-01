@@ -28,8 +28,10 @@
 #include "../allocators_helpers.h"
 #include "../src/allocators.h"
 
+#include "../json_helpers.h"
 #include <filesystem>
 #include <fstream>
+
 #include <gmock/gmock.h>
 #include <string>
 #include <vector>
@@ -1205,4 +1207,112 @@ TEST(cardano_account_balance_interval_set_last_error, recordsMessageOnExactInter
 
   // Cleanup
   cardano_account_balance_interval_unref(&account_balance_interval);
+}
+
+TEST(cardano_account_balance_interval_to_cip116_json, preservesDijkstraValue4)
+{
+  // Arrange
+  const char*                         cbor   = "1bffffffffffffffff";
+  cardano_cbor_reader_t*              reader = cardano_cbor_reader_from_hex(cbor, strlen(cbor));
+  cardano_account_balance_interval_t* value  = NULL;
+  ASSERT_EQ(cardano_account_balance_interval_from_cbor(reader, &value), CARDANO_SUCCESS);
+  cardano_json_writer_t* writer    = cardano_json_writer_new(CARDANO_JSON_FORMAT_COMPACT);
+  const size_t           ref_count = cardano_account_balance_interval_refcount(value);
+
+  // Act
+  EXPECT_EQ(cardano_account_balance_interval_to_cip116_json(value, writer), CARDANO_SUCCESS);
+  char* json = encode_json(writer);
+
+  // Assert
+  EXPECT_STREQ(json, R"({"tag":"exact","value":"18446744073709551615"})");
+  EXPECT_EQ(cardano_account_balance_interval_refcount(value), ref_count);
+  EXPECT_EQ(cardano_account_balance_interval_to_cip116_json(value, NULL), CARDANO_ERROR_POINTER_IS_NULL);
+  EXPECT_EQ(cardano_account_balance_interval_to_cip116_json(NULL, writer), CARDANO_ERROR_POINTER_IS_NULL);
+
+  // Cleanup
+  free(json);
+  cardano_json_writer_unref(&writer);
+  cardano_account_balance_interval_unref(&value);
+  cardano_cbor_reader_unref(&reader);
+}
+
+TEST(cardano_account_balance_interval_to_cip116_json, preservesDijkstraValue5)
+{
+  // Arrange
+  const char*                         cbor   = "8200f6";
+  cardano_cbor_reader_t*              reader = cardano_cbor_reader_from_hex(cbor, strlen(cbor));
+  cardano_account_balance_interval_t* value  = NULL;
+  ASSERT_EQ(cardano_account_balance_interval_from_cbor(reader, &value), CARDANO_SUCCESS);
+  cardano_json_writer_t* writer    = cardano_json_writer_new(CARDANO_JSON_FORMAT_COMPACT);
+  const size_t           ref_count = cardano_account_balance_interval_refcount(value);
+
+  // Act
+  EXPECT_EQ(cardano_account_balance_interval_to_cip116_json(value, writer), CARDANO_SUCCESS);
+  char* json = encode_json(writer);
+
+  // Assert
+  EXPECT_STREQ(json, R"({"tag":"range","inclusive_lower_bound":"0","exclusive_upper_bound":null})");
+  EXPECT_EQ(cardano_account_balance_interval_refcount(value), ref_count);
+  EXPECT_EQ(cardano_account_balance_interval_to_cip116_json(value, NULL), CARDANO_ERROR_POINTER_IS_NULL);
+  EXPECT_EQ(cardano_account_balance_interval_to_cip116_json(NULL, writer), CARDANO_ERROR_POINTER_IS_NULL);
+
+  // Cleanup
+  free(json);
+  cardano_json_writer_unref(&writer);
+  cardano_account_balance_interval_unref(&value);
+  cardano_cbor_reader_unref(&reader);
+}
+
+TEST(cardano_account_balance_interval_to_cip116_json, preservesDijkstraValue6)
+{
+  // Arrange
+  const char*                         cbor   = "82f61bffffffffffffffff";
+  cardano_cbor_reader_t*              reader = cardano_cbor_reader_from_hex(cbor, strlen(cbor));
+  cardano_account_balance_interval_t* value  = NULL;
+  ASSERT_EQ(cardano_account_balance_interval_from_cbor(reader, &value), CARDANO_SUCCESS);
+  cardano_json_writer_t* writer    = cardano_json_writer_new(CARDANO_JSON_FORMAT_COMPACT);
+  const size_t           ref_count = cardano_account_balance_interval_refcount(value);
+
+  // Act
+  EXPECT_EQ(cardano_account_balance_interval_to_cip116_json(value, writer), CARDANO_SUCCESS);
+  char* json = encode_json(writer);
+
+  // Assert
+  EXPECT_STREQ(json, R"({"tag":"range","inclusive_lower_bound":null,"exclusive_upper_bound":"18446744073709551615"})");
+  EXPECT_EQ(cardano_account_balance_interval_refcount(value), ref_count);
+  EXPECT_EQ(cardano_account_balance_interval_to_cip116_json(value, NULL), CARDANO_ERROR_POINTER_IS_NULL);
+  EXPECT_EQ(cardano_account_balance_interval_to_cip116_json(NULL, writer), CARDANO_ERROR_POINTER_IS_NULL);
+
+  // Cleanup
+  free(json);
+  cardano_json_writer_unref(&writer);
+  cardano_account_balance_interval_unref(&value);
+  cardano_cbor_reader_unref(&reader);
+}
+
+TEST(cardano_account_balance_interval_to_cip116_json, preservesDijkstraValue7)
+{
+  // Arrange
+  const char*                         cbor   = "82001bffffffffffffffff";
+  cardano_cbor_reader_t*              reader = cardano_cbor_reader_from_hex(cbor, strlen(cbor));
+  cardano_account_balance_interval_t* value  = NULL;
+  ASSERT_EQ(cardano_account_balance_interval_from_cbor(reader, &value), CARDANO_SUCCESS);
+  cardano_json_writer_t* writer    = cardano_json_writer_new(CARDANO_JSON_FORMAT_COMPACT);
+  const size_t           ref_count = cardano_account_balance_interval_refcount(value);
+
+  // Act
+  EXPECT_EQ(cardano_account_balance_interval_to_cip116_json(value, writer), CARDANO_SUCCESS);
+  char* json = encode_json(writer);
+
+  // Assert
+  EXPECT_STREQ(json, R"({"tag":"range","inclusive_lower_bound":"0","exclusive_upper_bound":"18446744073709551615"})");
+  EXPECT_EQ(cardano_account_balance_interval_refcount(value), ref_count);
+  EXPECT_EQ(cardano_account_balance_interval_to_cip116_json(value, NULL), CARDANO_ERROR_POINTER_IS_NULL);
+  EXPECT_EQ(cardano_account_balance_interval_to_cip116_json(NULL, writer), CARDANO_ERROR_POINTER_IS_NULL);
+
+  // Cleanup
+  free(json);
+  cardano_json_writer_unref(&writer);
+  cardano_account_balance_interval_unref(&value);
+  cardano_cbor_reader_unref(&reader);
 }
