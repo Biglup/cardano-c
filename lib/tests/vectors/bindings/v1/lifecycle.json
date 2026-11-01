@@ -1,0 +1,117 @@
+{
+  "schema_version": 1,
+  "cases": [
+    {
+      "id": "owned-getter",
+      "operation": "lifecycle",
+      "input": {
+        "scenario": "owned-getter",
+        "iterations": 64,
+        "contract": "Obtain a nested public value, release its native parent, then serialize the retained value."
+      },
+      "expected": {
+        "passed": true,
+        "native_live_delta": 0,
+        "callback_live_delta": 0
+      }
+    },
+    {
+      "id": "released-alias",
+      "operation": "lifecycle",
+      "input": {
+        "scenario": "released-alias",
+        "iterations": 64,
+        "contract": "Release one of two owned native references; invalidate that binding handle even if the pointer remains non-null."
+      },
+      "expected": {
+        "passed": true,
+        "native_live_delta": 0,
+        "callback_live_delta": 0
+      }
+    },
+    {
+      "id": "repeated-operations",
+      "operation": "lifecycle",
+      "input": {
+        "scenario": "repeated-operations",
+        "iterations": 64,
+        "contract": "Warm up, then build, sign, inspect, discard results and drain operation cleanup for each iteration."
+      },
+      "expected": {
+        "passed": true,
+        "native_live_delta": 0,
+        "callback_live_delta": 0
+      }
+    },
+    {
+      "id": "partial-construction",
+      "operation": "lifecycle",
+      "input": {
+        "scenario": "partial-construction",
+        "iterations": 64,
+        "contract": "Inject allocation or conversion failures after each preceding allocation has succeeded; release partial output."
+      },
+      "expected": {
+        "passed": true,
+        "native_live_delta": 0,
+        "callback_live_delta": 0
+      }
+    },
+    {
+      "id": "callback-errors",
+      "operation": "lifecycle",
+      "input": {
+        "scenario": "callback-errors",
+        "iterations": 64,
+        "contract": "Raise in provider, signer and redeemer callbacks, and fail returned-value marshaling; preserve the cause and clean up."
+      },
+      "expected": {
+        "passed": true,
+        "native_live_delta": 0,
+        "callback_live_delta": 0
+      }
+    },
+    {
+      "id": "callback-retention",
+      "operation": "lifecycle",
+      "input": {
+        "scenario": "callback-retention",
+        "iterations": 64,
+        "contract": "Force host collection between callback registration and invocation, then destroy the native owner and collect again."
+      },
+      "expected": {
+        "passed": true,
+        "native_live_delta": 0,
+        "callback_live_delta": 0
+      }
+    },
+    {
+      "id": "cancellation",
+      "operation": "lifecycle",
+      "input": {
+        "scenario": "cancellation",
+        "iterations": 64,
+        "contract": "Cancel while a callback is suspended or in-flight; retain state until native execution has ended, then clean up."
+      },
+      "expected": {
+        "passed": true,
+        "native_live_delta": 0,
+        "callback_live_delta": 0
+      }
+    },
+    {
+      "id": "repeated-balancing",
+      "operation": "lifecycle",
+      "input": {
+        "scenario": "repeated-balancing",
+        "iterations": 64,
+        "contract": "Invoke the deferred redeemer repeatedly with identical drafts; compare results and release every output."
+      },
+      "expected": {
+        "passed": true,
+        "native_live_delta": 0,
+        "callback_live_delta": 0
+      }
+    }
+  ]
+}

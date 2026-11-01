@@ -1,71 +1,75 @@
 # Binding conformance corpus v1
 
-These public test vectors target cardano-c **2.0.0-rc.6**, release commit
-`e321e98bbc7f4e1f2d9177e6bafe3d884f5eb00e`. Pin the containing repository commit
-when consuming them. Fixture changes require review alongside native tests;
-never refresh expected values automatically during a binding test run.
+This corpus contains **229 cases** in six suites:
 
-Each JSON file is an independent transaction case:
+| Suite | Cases | Coverage |
+| --- | ---: | --- |
+| Transactions | 3 | Original Conway key-guard and Dijkstra account/nested-signature regression vectors |
+| Serialization | 114 | Transaction and subtransaction forms, outputs, values, credentials, certificates, governance proposals/votes, native and Plutus scripts, Plutus data, and balance intervals |
+| Invalid inputs | 45 | Wrong types, truncated CBOR, malformed proposals, intervals, and subtransaction envelopes |
+| Primitives | 45 | Ed25519 signing and positive/negative verification, BIP32 derivation, Blake2b, Shelley address credential/network combinations, and script parameter application |
+| Builders | 14 | Payments, account deposits/transfers/intervals, signed subtransactions and batching, native guard minting, deferred redeemers, script guards, and failure paths |
+| Lifecycle | 8 | Runtime-specific ownership, callback, partial-construction, cancellation, and cleanup obligations |
 
-| Field | Meaning |
-| --- | --- |
-| `schema_version` | Integer `1`; reject unsupported schema versions. |
-| `id` | Stable case identifier, matching the filename without `.json`. |
-| `native_version` | Native release used to produce expected results. |
-| `transaction_cbor` | Original complete transaction, lowercase hexadecimal. |
-| `body_cbor` | Serialized transaction body, lowercase hexadecimal. |
-| `transaction_id` | Blake2b-256 of the body bytes, lowercase hexadecimal. |
-| `signing_seed` | Public 32-byte Ed25519 test seed, **never use for funds**. |
-| `verification_key` | Derived 32-byte Ed25519 public key, lowercase hexadecimal. |
-| `signature` | Deterministic 64-byte Ed25519 signature over the raw 32-byte transaction ID. |
-| `inspection` | Native transaction JSON, compared structurally. |
+See [FORMAT.md](FORMAT.md) for the request/result protocol, exact field semantics,
+builder operations, lifecycle instrumentation requirements, and unit-test porting
+instructions. The [binding guide](../../../../../BINDINGS.md) defines the public
+API and native memory model.
 
-The seed is the byte sequence 0 through 31. The signature does not authorize
-spending the fixture inputs and is not attached to the transaction. Inputs are
-synthetic; these cases are not intended for submission to a network.
+## Run
 
-## Coverage and provenance
-
-- `conway-key-guard`: synthetic Conway-format transaction with one input, one
-  output, and a key guard. Confirms that RC6 JSON emits `guards`, not
-  `required_signers`, even for key-only transactions.
-- `dijkstra-account-balances`: promoted from the Cometa RC3 cross-binding
-  inspection checks. Covers direct deposits, a lower-only account interval,
-  and an exact starting balance of `18446744073709551615`.
-- `dijkstra-signed-subtransaction`: promoted from the same checks. Preserves a
-  signed nested transaction and its required top-level guard with Plutus integer
-  data. The fixture signature signs the outer body; it does not replace the
-  nested witnesses.
-
-Expected bodies, IDs, signatures, public keys, and inspection output were
-exported through Cometa.py using the official RC6 native library. The native
-`binding_conformance` tests independently call the C API against these files.
-The body hashes are also cross-checked with Python's Blake2b-256 implementation.
-JS/native comparison is useful additional evidence, not an independent ledger
-implementation: both bindings ultimately use cardano-c.
-
-## Running and consuming
-
-Build the repository's normal native test target and run:
+The native reference checks are part of the normal test target:
 
 ```sh
-/path/to/test-cardano-c --gtest_filter='binding_conformance.*'
+/path/to/test-cardano-c --gtest_filter='binding_*.*'
 ```
 
-Downstream suites should load each JSON file, decode and re-encode the
-transaction through their public API, and compare body bytes, ID, signature,
-verification key, and inspection. Verify the signature, then flip bit 0 of
-message byte 0 and require verification to fail. Compare hex as bytes and JSON
-as structured data: object order is irrelevant, array order and value types
-are significant. Do not convert decimal amount strings through floating point.
+A binding supplies an executable JSON-lines adapter against its public API:
 
-These cases preserve original CBOR; they do not require rewriting every legal
-CBOR encoding into a single canonical representation. Hash the actual body
-bytes. Public-value reconstruction must be tested separately from any cached
-CBOR round-trip path.
+```sh
+python3 scripts/check-binding-conformance.py --report conformance.json -- /path/to/adapter
+```
 
-This initial corpus does not yet contain deterministic balancing recipes,
-standalone subtransaction signing vectors, or all script/certificate variants.
-Lifecycle and callback conformance requires runtime tests, not additional golden
-JSON fields. See the [binding guide](../../../../../doc/src/sections/binding_guide.rst)
-for the required ownership rules, callback behavior, and lifecycle scenarios.
+The runner sends inputs, never expectations. It verifies every response against
+the corpus and fails on mismatches or omitted cases. Partial development runs can
+select `--suite builders`; their reports explicitly say they are partial.
+
+The native tests execute the 221 deterministic cases and additional ownership and
+repeated-failure probes. The eight lifecycle requests must be implemented and
+instrumented inside each target runtime; native tests are not evidence that a
+binding retains callbacks correctly through that runtime's GC or cancellation.
+
+## Provenance and scope
+
+Expected results target cardano-c **2.0.0-rc.6**, release commit
+`e321e98bbc7f4e1f2d9177e6bafe3d884f5eb00e`. Pin the containing corpus commit when
+consuming it. The native version belongs in this provenance, not in the binding
+architecture guide.
+
+Serialization cases are promoted from native unit-test vectors, identified by
+their `source` fields, plus explicit integer boundary cases. Builder expectations
+were produced by directly invoking the native C API with the declared inputs.
+The C++ reference adapter independently rebuilds them from those same recipes;
+it does not feed expected CBOR back into a builder. Parameter-application and
+cryptographic expectations use the native API; Blake2b digests and transaction
+body hashes are additionally checked with Python's independent implementation.
+
+The original three transaction files retain their compact format:
+`transaction_cbor`, `body_cbor`, `transaction_id`, `signing_seed`,
+`verification_key`, `signature`, and `inspection`, with `schema_version`, `id`,
+and `native_version` metadata. The runner normalizes them to the common `cbor`
+operation. Other files contain `cases` arrays. `manifest.json` enumerates every
+file and expected case count; expectation changes require review and must never
+be generated automatically during a binding's tests.
+
+All keys and seeds are public test data. Never use them for funds. Inputs and
+parameters are synthetic; these are not network-submit fixtures or evidence of
+hardfork availability. Some cases intentionally test historically supported
+encodings or rejected input. Original nested witnesses must be preserved; a
+standalone transaction test signature signs the outer body and does not replace
+those witnesses.
+
+The suite is a broad binding acceptance baseline, not an exhaustive enumeration
+of every native function, script program, network provider, or ledger rule.
+Network integration and full provider/signer behavior require ported unit tests
+and separate end-to-end tests. Add cases as APIs and supported features grow.
