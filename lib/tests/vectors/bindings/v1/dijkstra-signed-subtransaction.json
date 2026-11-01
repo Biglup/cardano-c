@@ -1,0 +1,78 @@
+{
+  "schema_version": 1,
+  "id": "dijkstra-signed-subtransaction",
+  "native_version": "2.0.0-rc.6",
+  "transaction_cbor": "84a500d90102818258203b40265111d8bb3c3c608d95b3a0bf83461ace32d79336579a1939b3aad1c0b70a0181a2005839009493315cd92eb5d8c4304e67b7e16ae36d61d34502694657811a2c8e32c728d3861e164cab28cb8f006448139c8f1740ffb8e7aa9e5232dc011a02abdadf021a0002ca610ed9010281581c7ed010b0b444eb2d3eeb37e8485931bbdc3d9cda18b8924467fbd0fd17d901028183a300d90102818258203b40265111d8bb3c3c608d95b3a0bf83461ace32d79336579a1939b3aad1c0b7000181a200583900657c03ae96fbe2c30eab4a9971aec71f0738b6614c74c5e9c8e23d878a04df66478dea681da4b55c15ee7d4ef0230c87817631912b8aff29011a00e4e1c01818a18200581c7ed010b0b444eb2d3eeb37e8485931bbdc3d9cda18b8924467fbd0fd182aa100d9010281825820cdfe5c2a7b4b06e4cec00cc8c83353a948ce3b1b50dacf7bd64a3f6329389a7f5840557e9294ab486a2d797a23d72c5fbee703e73557fd171f4e0702c03b1e387380dfd6b887d8e14dcd71adb03bc34b99f524de325ceb0536b461fcc0c3b5a3a20ff6a0f5f6",
+  "body_cbor": "a500d90102818258203b40265111d8bb3c3c608d95b3a0bf83461ace32d79336579a1939b3aad1c0b70a0181a2005839009493315cd92eb5d8c4304e67b7e16ae36d61d34502694657811a2c8e32c728d3861e164cab28cb8f006448139c8f1740ffb8e7aa9e5232dc011a02abdadf021a0002ca610ed9010281581c7ed010b0b444eb2d3eeb37e8485931bbdc3d9cda18b8924467fbd0fd17d901028183a300d90102818258203b40265111d8bb3c3c608d95b3a0bf83461ace32d79336579a1939b3aad1c0b7000181a200583900657c03ae96fbe2c30eab4a9971aec71f0738b6614c74c5e9c8e23d878a04df66478dea681da4b55c15ee7d4ef0230c87817631912b8aff29011a00e4e1c01818a18200581c7ed010b0b444eb2d3eeb37e8485931bbdc3d9cda18b8924467fbd0fd182aa100d9010281825820cdfe5c2a7b4b06e4cec00cc8c83353a948ce3b1b50dacf7bd64a3f6329389a7f5840557e9294ab486a2d797a23d72c5fbee703e73557fd171f4e0702c03b1e387380dfd6b887d8e14dcd71adb03bc34b99f524de325ceb0536b461fcc0c3b5a3a20ff6",
+  "transaction_id": "2c229c05c9f442b68d1643419b45edede7c96a1fc02e9ba689622edd49800264",
+  "signing_seed": "000102030405060708090a0b0c0d0e0f101112131415161718191a1b1c1d1e1f",
+  "verification_key": "03a107bff3ce10be1d70dd18e74bc09967e4d6309ba50d5f1ddc8664125531b8",
+  "signature": "49378ab421baf0207c93b7b7a8214c0d6d6e1b1a74210c67d7303b8f5b00139ad47a41cc04cba90dde68d60052ada0e8ddb6473c4e0260a08e2204dc2a982d07",
+  "inspection": {
+    "body": {
+      "inputs": [
+        {
+          "transaction_id": "3b40265111d8bb3c3c608d95b3a0bf83461ace32d79336579a1939b3aad1c0b7",
+          "index": 10
+        }
+      ],
+      "outputs": [
+        {
+          "address": "addr_test1qz2fxv2umyhttkxyxp8x0dlpdt3k6cwng5pxj3jhsydzer3jcu5d8ps7zex2k2xt3uqxgjqnnj83ws8lhrn648jjxtwq2ytjqp",
+          "amount": {
+            "coin": "44817119"
+          }
+        }
+      ],
+      "fee": "182881",
+      "guards": [
+        {
+          "tag": "pubkey_hash",
+          "value": "7ed010b0b444eb2d3eeb37e8485931bbdc3d9cda18b8924467fbd0fd"
+        }
+      ],
+      "sub_transactions": [
+        {
+          "body": {
+            "inputs": [
+              {
+                "transaction_id": "3b40265111d8bb3c3c608d95b3a0bf83461ace32d79336579a1939b3aad1c0b7",
+                "index": 0
+              }
+            ],
+            "outputs": [
+              {
+                "address": "addr_test1qpjhcqawjma79scw4d9fjudwcu0sww9kv9x8f30fer3rmpu2qn0kv3udaf5pmf94ts27ul2w7q3sepupwccez2u2lu5s7aa8rv",
+                "amount": {
+                  "coin": "15000000"
+                }
+              }
+            ],
+            "required_top_level_guards": [
+              {
+                "key": {
+                  "tag": "pubkey_hash",
+                  "value": "7ed010b0b444eb2d3eeb37e8485931bbdc3d9cda18b8924467fbd0fd"
+                },
+                "value": {
+                  "tag": "integer",
+                  "value": "42"
+                }
+              }
+            ]
+          },
+          "witness_set": {
+            "vkey_witnesses": [
+              {
+                "vkey": "cdfe5c2a7b4b06e4cec00cc8c83353a948ce3b1b50dacf7bd64a3f6329389a7f",
+                "signature": "557e9294ab486a2d797a23d72c5fbee703e73557fd171f4e0702c03b1e387380dfd6b887d8e14dcd71adb03bc34b99f524de325ceb0536b461fcc0c3b5a3a20f"
+              }
+            ]
+          }
+        }
+      ]
+    },
+    "is_valid": true,
+    "witness_set": {}
+  }
+}

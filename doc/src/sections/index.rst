@@ -66,6 +66,7 @@ See `APACHE LICENSE, VERSION 2.0`_
     :hidden:
 
     getting_started
+    binding_guide
 
 .. toctree::
     :caption: API Reference

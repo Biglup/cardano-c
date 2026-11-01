@@ -24,3 +24,7 @@ Community contributions are welcome as long as they follow the guidelines descri
 I work on cardano-c on the best effort basis. The typical response time is a few days.
 
 If you do not receive a response in a few weeks, feel free to ping the PR or issue.
+
+## Language bindings
+
+Follow the [binding author guide](doc/src/sections/binding_guide.rst). Bindings must expose idiomatic language-level APIs, hide native memory management, and validate against the shared transaction fixtures and lifecycle scenarios.

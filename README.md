@@ -60,6 +60,8 @@ Here is a list with all the languages/bindings available.
 
 Both binding release candidates bundle cardano-c **2.0.0-rc.6**.
 
+Building a language binding? See the [binding author guide](doc/src/sections/binding_guide.rst) for API design, ownership, callbacks, and shared conformance fixtures.
+
 More bindings to come, check https://cometa.dev for the upcoming list
 
 
