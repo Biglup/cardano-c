@@ -3,7 +3,8 @@ import importlib.util
 import json
 from pathlib import Path
 import unittest
-import subprocess
+# CLI tests run trusted test code without a shell.
+import subprocess  # nosec B404
 import sys
 import tempfile
 
@@ -62,12 +63,27 @@ class CheckerTests(unittest.TestCase):
                 {"id": "one", "operation": "test", "input": {}, "expected": {"ok": True}}
             ]}))
             script = 'import sys; sys.stdin.read(); print(\'{"id":"one","result":{"ok":true}}\'); sys.exit(3)'
-            result = subprocess.run([sys.executable, str(PATH), "--corpus", str(root), "--", sys.executable, "-c", script], capture_output=True, text=True, check=False)
+            # The interpreter, checker path, and adapter source are controlled by this test.
+            result = subprocess.run(  # nosec B603
+                [sys.executable, str(PATH), "--corpus", str(root), "--", sys.executable, "-c", script],
+                capture_output=True,
+                text=True,
+                check=False,
+            )
             self.assertEqual(result.returncode, 1)
             self.assertFalse(json.loads(result.stdout)["passed"])
 
     def test_cli_timeout_fails(self):
-        result = subprocess.run([sys.executable, str(PATH), "--timeout", "0.01", "--suite", "primitives", "--", sys.executable, "-c", "import time; time.sleep(1)"], capture_output=True, text=True, check=False)
+        # Exercise a real adapter timeout using a fixed, local Python command.
+        result = subprocess.run(  # nosec B603
+            [
+                sys.executable, str(PATH), "--timeout", "0.01", "--suite", "primitives", "--",
+                sys.executable, "-c", "import time; time.sleep(1)",
+            ],
+            capture_output=True,
+            text=True,
+            check=False,
+        )
         self.assertEqual(result.returncode, 1)
         self.assertIn("timed out", result.stderr)
 
