@@ -125,12 +125,6 @@ static const char* HARDFORK_PROPOSALS_CBOR     = "d90102818400581de04245236ab805
 static const char* SIGNER_KEY_HEX              = "9d61b19deffd5a60ba844af492ec2cc44449c5697b326919703bac031cae7f60";
 
 /**
- * The fee excess tolerated once a transaction is signed, in bytes of transaction. The estimate the fee is computed from
- * and the signed transaction can differ by the header of the witness set collections.
- */
-static const int64_t MAX_FEE_EXCESS_IN_BYTES = 3;
-
-/**
  * The fee of the native reference script that requires one signature, with the reference script price per byte set by
  * \ref init_protocol_parameters (15 lovelace): the 32 bytes of the CBOR of the native script, without the two bytes of
  * the array that holds the language tag and the script, all of them inside the first pricing tier.
@@ -3368,8 +3362,7 @@ TEST(cardano_tx_builder_build, paysForANativeScriptSuppliedByReferenceIfTheTrans
   EXPECT_EQ(cardano_redeemer_list_get_length(redeemers), 0U);
   EXPECT_EQ(signed_min_fee, signed_size_fee + NATIVE_REFERENCE_SCRIPT_FEE);
   EXPECT_GE(fee, signed_size_fee + NATIVE_REFERENCE_SCRIPT_FEE);
-  EXPECT_GE(fee_excess, 0);
-  EXPECT_LT(fee_excess, MAX_FEE_EXCESS_IN_BYTES * 44);
+  EXPECT_EQ(fee_excess, 0);
   EXPECT_EQ(fee, cardano_transaction_body_get_fee(plain_body) + NATIVE_REFERENCE_SCRIPT_FEE);
 
   // Cleanup

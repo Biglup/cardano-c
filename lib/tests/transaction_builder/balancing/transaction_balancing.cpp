@@ -145,12 +145,6 @@ static const char* SUB_TX_IMPLICIT_COIN_OVERFLOW_ERROR = "The withdrawals, depos
 static const uint64_t HALF_OF_UINT64_RANGE = 9223372036854775808U;
 
 /**
- * \brief The most a fee may exceed the minimum fee of the signed transaction, in bytes of fee. The estimate of the VK
- * witnesses is exact, so the bound only leaves room for an amount that takes fewer bytes once the fee converges.
- */
-static const int64_t MAX_FEE_EXCESS_IN_BYTES = 3;
-
-/**
  * \brief Byron addresses, the CBOR encoded attributes their bootstrap witnesses carry and a chain code to sign with.
  */
 static const char* BYRON_YOROI_ADDRESS           = "Ae2tdPwUPEZFRbyhz3cpfC2CumGzNkFBN2L42rcUc2yjQpEkxDbkPodpMAi";
@@ -2299,18 +2293,6 @@ get_fee_excess(cardano_transaction_t* tx, cardano_protocol_parameters_t* protoco
 }
 
 /**
- * Computes the fee the ledger asks for a number of bytes of transaction.
- * \param protocol the protocol parameters.
- * \param bytes the number of bytes.
- * \return The fee in lovelace.
- */
-static int64_t
-get_fee_of_bytes(cardano_protocol_parameters_t* protocol, const int64_t bytes)
-{
-  return bytes * (int64_t)cardano_protocol_parameters_get_min_fee_a(protocol);
-}
-
-/**
  * Makes a transaction need a script, by listing the script hash among the guards of its body.
  * \param tx the transaction.
  * \param script the script the transaction needs.
@@ -3351,6 +3333,11 @@ TEST(cardano_balance_transaction, useSuggestedFeeIfGivenAndEnough)
   EXPECT_EQ(result, CARDANO_SUCCESS);
   EXPECT_EQ(cardano_is_transaction_balanced(tx, resolved_inputs, protocol, &is_balanced), CARDANO_SUCCESS);
   EXPECT_TRUE(is_balanced);
+
+  body = cardano_transaction_get_body(tx);
+  cardano_transaction_body_unref(&body);
+
+  EXPECT_EQ(cardano_transaction_body_get_fee(body), 5000000U);
 
   // Cleanup
   cardano_transaction_unref(&tx);
@@ -5827,8 +5814,7 @@ TEST(cardano_balance_transaction, paysTheMinimumFeeOfTheSignedTransactionWithOne
 
   EXPECT_EQ(result, CARDANO_SUCCESS);
   EXPECT_EQ(get_vkey_witness_count(tx), 1U);
-  EXPECT_GE(fee_excess, 0);
-  EXPECT_LT(fee_excess, get_fee_of_bytes(protocol, MAX_FEE_EXCESS_IN_BYTES));
+  EXPECT_EQ(fee_excess, 0);
 
   // Cleanup
   cardano_transaction_unref(&tx);
@@ -5861,8 +5847,7 @@ TEST(cardano_balance_transaction, paysTheMinimumFeeOfTheSignedTransactionWithTwo
   EXPECT_TRUE(transaction_spends(tx, first_utxo));
   EXPECT_TRUE(transaction_spends(tx, second_utxo));
   EXPECT_EQ(get_vkey_witness_count(tx), 2U);
-  EXPECT_GE(fee_excess, 0);
-  EXPECT_LT(fee_excess, get_fee_of_bytes(protocol, MAX_FEE_EXCESS_IN_BYTES));
+  EXPECT_EQ(fee_excess, 0);
 
   // Cleanup
   cardano_transaction_unref(&tx);
@@ -5895,8 +5880,7 @@ TEST(cardano_balance_transaction, paysTheMinimumFeeOfTheSignedTransactionIfTheWi
 
   EXPECT_EQ(result, CARDANO_SUCCESS);
   EXPECT_EQ(get_vkey_witness_count(tx), 1U);
-  EXPECT_GE(fee_excess, 0);
-  EXPECT_LT(fee_excess, get_fee_of_bytes(protocol, MAX_FEE_EXCESS_IN_BYTES));
+  EXPECT_EQ(fee_excess, 0);
 
   // Cleanup
   cardano_transaction_unref(&tx);
@@ -5926,8 +5910,7 @@ TEST(cardano_balance_transaction, paysTheMinimumFeeOfTheSignedTransactionWithOne
   EXPECT_EQ(result, CARDANO_SUCCESS);
   EXPECT_EQ(get_vkey_witness_count(tx), 0U);
   EXPECT_EQ(get_bootstrap_witness_count(tx), 1U);
-  EXPECT_GE(fee_excess, 0);
-  EXPECT_LT(fee_excess, get_fee_of_bytes(protocol, MAX_FEE_EXCESS_IN_BYTES));
+  EXPECT_EQ(fee_excess, 0);
 
   // Cleanup
   cardano_transaction_unref(&tx);
@@ -5960,8 +5943,7 @@ TEST(cardano_balance_transaction, paysTheMinimumFeeOfTheSignedTransactionWithTwo
   EXPECT_TRUE(transaction_spends(tx, first_utxo));
   EXPECT_TRUE(transaction_spends(tx, second_utxo));
   EXPECT_EQ(get_bootstrap_witness_count(tx), 2U);
-  EXPECT_GE(fee_excess, 0);
-  EXPECT_LT(fee_excess, get_fee_of_bytes(protocol, MAX_FEE_EXCESS_IN_BYTES));
+  EXPECT_EQ(fee_excess, 0);
 
   // Cleanup
   cardano_transaction_unref(&tx);
@@ -5995,8 +5977,7 @@ TEST(cardano_balance_transaction, paysTheMinimumFeeOfTheSignedTransactionWithOne
   EXPECT_TRUE(transaction_spends(tx, first_utxo));
   EXPECT_TRUE(transaction_spends(tx, second_utxo));
   EXPECT_EQ(get_bootstrap_witness_count(tx), 1U);
-  EXPECT_GE(fee_excess, 0);
-  EXPECT_LT(fee_excess, get_fee_of_bytes(protocol, MAX_FEE_EXCESS_IN_BYTES));
+  EXPECT_EQ(fee_excess, 0);
 
   // Cleanup
   cardano_transaction_unref(&tx);
@@ -6032,8 +6013,7 @@ TEST(cardano_balance_transaction, paysTheMinimumFeeOfTheSignedTransactionWithByr
   EXPECT_TRUE(transaction_spends(tx, shelley_utxo));
   EXPECT_EQ(get_vkey_witness_count(tx), 1U);
   EXPECT_EQ(get_bootstrap_witness_count(tx), 1U);
-  EXPECT_GE(fee_excess, 0);
-  EXPECT_LT(fee_excess, get_fee_of_bytes(protocol, MAX_FEE_EXCESS_IN_BYTES));
+  EXPECT_EQ(fee_excess, 0);
 
   // Cleanup
   cardano_transaction_unref(&tx);
@@ -6067,8 +6047,7 @@ TEST(cardano_balance_transaction, doesNotPayForTheBootstrapWitnessesKeyIfTheWitn
 
   EXPECT_EQ(result, CARDANO_SUCCESS);
   EXPECT_EQ(get_bootstrap_witness_count(tx), 2U);
-  EXPECT_GE(fee_excess, 0);
-  EXPECT_LT(fee_excess, get_fee_of_bytes(protocol, MAX_FEE_EXCESS_IN_BYTES));
+  EXPECT_EQ(fee_excess, 0);
 
   // Cleanup
   cardano_transaction_unref(&tx);
@@ -6362,8 +6341,7 @@ TEST(cardano_balance_transaction, paysForAReferenceScriptOnAPreSelectedInput)
   EXPECT_TRUE(transaction_spends(tx, script_utxo));
   EXPECT_FALSE(transaction_spends(tx, other_utxo));
   EXPECT_EQ(get_fee(tx), get_fee(plain_tx) + NATIVE_REFERENCE_SCRIPT_FEE);
-  EXPECT_GE(fee_excess, 0);
-  EXPECT_LT(fee_excess, get_fee_of_bytes(protocol, MAX_FEE_EXCESS_IN_BYTES));
+  EXPECT_EQ(fee_excess, 0);
 
   // Cleanup
   cardano_transaction_unref(&tx);
@@ -6407,8 +6385,7 @@ TEST(cardano_balance_transaction, paysForAReferenceScriptOnACoinSelectedInput)
   EXPECT_EQ(plain_result, CARDANO_SUCCESS);
   EXPECT_TRUE(transaction_spends(tx, script_utxo));
   EXPECT_EQ(get_fee(tx), get_fee(plain_tx) + NATIVE_REFERENCE_SCRIPT_FEE);
-  EXPECT_GE(fee_excess, 0);
-  EXPECT_LT(fee_excess, get_fee_of_bytes(protocol, MAX_FEE_EXCESS_IN_BYTES));
+  EXPECT_EQ(fee_excess, 0);
 
   // Cleanup
   cardano_transaction_unref(&tx);
@@ -6451,8 +6428,7 @@ TEST(cardano_balance_transaction, paysForAReferenceScriptOnAReferenceInputIfTheT
   EXPECT_EQ(plain_result, CARDANO_SUCCESS);
   EXPECT_FALSE(transaction_spends(tx, script_utxo));
   EXPECT_EQ(get_fee(tx), get_fee(plain_tx) + NATIVE_REFERENCE_SCRIPT_FEE);
-  EXPECT_GE(fee_excess, 0);
-  EXPECT_LT(fee_excess, get_fee_of_bytes(protocol, MAX_FEE_EXCESS_IN_BYTES));
+  EXPECT_EQ(fee_excess, 0);
 
   // Cleanup
   cardano_transaction_unref(&tx);
@@ -6495,8 +6471,7 @@ TEST(cardano_balance_transaction, paysOnceForAReferenceScriptOnAnInputThatIsBoth
   EXPECT_EQ(plain_result, CARDANO_SUCCESS);
   EXPECT_TRUE(transaction_spends(tx, script_utxo));
   EXPECT_EQ(get_fee(tx), get_fee(plain_tx) + NATIVE_REFERENCE_SCRIPT_FEE);
-  EXPECT_GE(fee_excess, 0);
-  EXPECT_LT(fee_excess, get_fee_of_bytes(protocol, MAX_FEE_EXCESS_IN_BYTES));
+  EXPECT_EQ(fee_excess, 0);
 
   // Cleanup
   cardano_transaction_unref(&tx);
@@ -6542,8 +6517,7 @@ TEST(cardano_balance_transaction, paysTwiceForTheSameReferenceScriptOnTwoInputs)
   EXPECT_TRUE(transaction_spends(tx, first_utxo));
   EXPECT_TRUE(transaction_spends(tx, second_utxo));
   EXPECT_EQ(get_fee(tx), get_fee(plain_tx) + (2U * NATIVE_REFERENCE_SCRIPT_FEE));
-  EXPECT_GE(fee_excess, 0);
-  EXPECT_LT(fee_excess, get_fee_of_bytes(protocol, MAX_FEE_EXCESS_IN_BYTES));
+  EXPECT_EQ(fee_excess, 0);
 
   // Cleanup
   cardano_transaction_unref(&tx);
@@ -6594,8 +6568,7 @@ TEST(cardano_balance_transaction, paysForAReferenceScriptOnAnInputSpentByASubTra
   EXPECT_EQ(plain_result, CARDANO_SUCCESS);
   EXPECT_TRUE(is_batch_balanced(tx, protocol, sub_tx_inputs, available_utxo));
   EXPECT_EQ(get_fee(tx), get_fee(plain_tx) + NATIVE_REFERENCE_SCRIPT_FEE);
-  EXPECT_GE(fee_excess, 0);
-  EXPECT_LT(fee_excess, get_fee_of_bytes(protocol, MAX_FEE_EXCESS_IN_BYTES));
+  EXPECT_EQ(fee_excess, 0);
 
   // Cleanup
   cardano_protocol_parameters_unref(&protocol);
@@ -6651,8 +6624,7 @@ TEST(cardano_balance_transaction, paysOnceForAReferenceScriptOnAnInputThatASubTr
   EXPECT_EQ(plain_result, CARDANO_SUCCESS);
   EXPECT_TRUE(is_batch_balanced(tx, protocol, sub_tx_inputs, available_utxo));
   EXPECT_EQ(get_fee(tx), get_fee(plain_tx) + NATIVE_REFERENCE_SCRIPT_FEE);
-  EXPECT_GE(fee_excess, 0);
-  EXPECT_LT(fee_excess, get_fee_of_bytes(protocol, MAX_FEE_EXCESS_IN_BYTES));
+  EXPECT_EQ(fee_excess, 0);
 
   // Cleanup
   cardano_protocol_parameters_unref(&protocol);
@@ -6711,8 +6683,7 @@ TEST(cardano_balance_transaction, paysOncePerBodyForAReferenceInputSharedByTheTo
   EXPECT_FALSE(transaction_spends(tx, script_utxo));
   EXPECT_TRUE(is_batch_balanced(tx, protocol, sub_tx_inputs, available_utxo));
   EXPECT_EQ(get_fee(tx), get_fee(plain_tx) + (2U * NATIVE_REFERENCE_SCRIPT_FEE));
-  EXPECT_GE(fee_excess, 0);
-  EXPECT_LT(fee_excess, get_fee_of_bytes(protocol, MAX_FEE_EXCESS_IN_BYTES));
+  EXPECT_EQ(fee_excess, 0);
 
   // Cleanup
   cardano_protocol_parameters_unref(&protocol);

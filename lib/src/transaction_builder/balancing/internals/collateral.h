@@ -62,16 +62,19 @@ _cardano_utxo_list_to_input_set(cardano_utxo_list_t* utxos);
 /**
  * \brief Calculates the collateral amount required for a transaction based on the transaction fee and collateral percentage.
  *
- * This function calculates the collateral amount by applying a specified percentage to the transaction fee. The collateral
- * is used in transactions involving Plutus scripts to ensure sufficient funds are available to cover potential transaction costs.
+ * The ledger requires the balance of the collateral times 100 to be at least the fee times the collateral percentage, so
+ * the collateral amount is the fee times the collateral percentage over 100, rounded up, computed in integer arithmetic.
+ * A zero fee or a zero percentage requires no collateral amount.
  *
- * \param[in] fee The transaction fee in lovelace.
- * \param[in] collateral_percentage The collateral percentage as an integer. For example, a 150% collateral would be passed as 150.
+ * \param[in]  fee                   The transaction fee in lovelace.
+ * \param[in]  collateral_percentage The collateral percentage as an integer. For example, a 150% collateral would be passed as 150.
+ * \param[out] collateral_amount     The calculated collateral amount in lovelace. It is only written on success.
  *
- * \return The calculated collateral amount in lovelace.
+ * \return \ref CARDANO_SUCCESS if the amount was calculated, or \ref CARDANO_ERROR_INTEGER_OVERFLOW if it exceeds the largest
+ *         coin a value can hold.
  */
-uint64_t
-_cardano_calculate_collateral_amount(uint64_t fee, uint64_t collateral_percentage);
+cardano_error_t
+_cardano_calculate_collateral_amount(uint64_t fee, uint64_t collateral_percentage, uint64_t* collateral_amount);
 
 /**
  * \brief Creates a collateral change output for a transaction.
@@ -135,7 +138,14 @@ _cardano_is_collateral_required(cardano_transaction_t* tx, bool* is_required);
  * for the transaction. If the total collateral exceeds the required amount, a change collateral output is created and added to the transaction.
  *
  * Collateral is set when the transaction or any of the sub transactions it carries has redeemers, and it is sized from the
- * fee of the transaction, which pays for the whole batch.
+ * fee of the transaction, which pays for the whole batch. The UTXOs are selected for that fee alone, so a transaction
+ * whose fee is not known yet selects at least one UTXO and selects again once its fee is computed.
+ *
+ * The total collateral of the transaction is always the lovelace of the collateral inputs minus the lovelace of the
+ * collateral return, so it includes any lovelace selected to raise the collateral return to its min-ADA.
+ *
+ * When the collateral can not be selected because the collateral UTXOs are missing or do not cover it, the last error
+ * of \p tx describes the shortfall.
  *
  * \param[in,out] tx                           A pointer to the \ref cardano_transaction_t where the collateral output will be set.
  * \param[in]     protocol_params              A pointer to the \ref cardano_protocol_parameters_t containing protocol parameters for collateral calculations.
