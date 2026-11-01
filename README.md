@@ -52,11 +52,13 @@ Upgrading from 1.2 requires changes to bindings and custom callbacks. See the [c
 
 Here is a list with all the languages/bindings available.
 
-| Name                                                                                     | libcardano-c version | Language                                                             | License              |
-| :--------------------------------------------------------------------------------------- | :------------------: | :------------------------------------------------------------------: | :------------------: |
-| [libcardano-c](https://github.com/Biglup/cardano-c)                                      | **1.2.1 stable / 2.0.0-rc.5**            | [C](https://en.wikipedia.org/wiki/C_(programming_language))          | Apache 2.0           |
-| [cometa.js](https://github.com/Biglup/cometa.js)                                         | **1.2.0**            | [JavaScript](https://en.wikipedia.org/wiki/JavaScript)               | Apache 2.0           |
-| [cometa.py](https://github.com/Biglup/cometa.py)                                         | **1.2.0**            | [Python](https://www.python.org)                                     | Apache 2.0           |
+| Library | Stable | Release candidate | Language | License |
+| :-- | :-- | :-- | :-- | :-- |
+| [libcardano-c](https://github.com/Biglup/cardano-c) | [1.2.1](https://github.com/Biglup/cardano-c/releases/tag/v1.2.1) | [2.0.0-rc.5](https://github.com/Biglup/cardano-c/releases/tag/v2.0.0-rc.5) | C | Apache 2.0 |
+| [Cometa.js](https://github.com/Biglup/cometa.js) | [1.2.0](https://www.npmjs.com/package/@biglup/cometa/v/1.2.0) | [2.0.0-rc.2](https://www.npmjs.com/package/@biglup/cometa/v/2.0.0-rc.2) | JavaScript / TypeScript | Apache 2.0 |
+| [Cometa.py](https://github.com/Biglup/cometa.py) | [1.2.1.post6](https://pypi.org/project/biglup-cometa/1.2.1.post6/) | [2.0.0rc2](https://pypi.org/project/biglup-cometa/2.0.0rc2/) | Python | Apache 2.0 |
+
+Both binding release candidates bundle cardano-c **2.0.0-rc.5**.
 
 More bindings to come, check https://cometa.dev for the upcoming list
 
