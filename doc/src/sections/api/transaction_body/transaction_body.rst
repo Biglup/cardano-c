@@ -37,9 +37,24 @@ part of the published Babbage schema.
 * ``account_balance_intervals`` and ``starting_account_balance_intervals`` map
   Bech32 reward addresses to balance intervals, using the same ``key``/``value``
   array representation. See :doc:`account_balance_interval` for interval forms.
-* ``guards`` contains the full credential array when a script guard is present.
-  Key guards also remain in ``required_signers``. Bodies containing only key
-  guards retain the existing ``required_signers`` representation.
+* ``guards`` contains the full credential array, including key-only guards.
+  Credentials are tagged ``pubkey_hash`` or ``script_hash``. The field is omitted
+  for an absent or empty guard set. The legacy ``required_signers`` JSON field
+  is not emitted, including when inspecting Conway transactions.
+
+For example, a body with a key guard includes:
+
+.. code-block:: json
+
+   {
+     "guards": [
+       {"tag": "pubkey_hash", "value": "11111111111111111111111111111111111111111111111111111111"}
+     ]
+   }
+
+Consumers of earlier inspection output should read key hashes from entries in
+``guards`` whose ``tag`` is ``pubkey_hash``. This JSON change does not alter
+CBOR encoding, transaction hashes, or the C required-signer accessors.
 
 Sub-transaction bodies use ``guards`` for their credential array and serialize
 only their own fields; they do not add a fee, collateral, or nested
