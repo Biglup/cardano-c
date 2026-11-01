@@ -3555,3 +3555,45 @@ TEST(cardano_cbor_reader_read_bigint, returnErrorWhenMemoryAllocationFails2)
   cardano_bigint_unref(&bigint);
   cardano_set_allocators(malloc, realloc, free);
 }
+
+TEST(cardano_cbor_reader_read_bytestring, returnsErrorIfSliceAllocationFails)
+{
+  const char*       cbor_hex     = "46436f6d657461";
+  _cardano_malloc_t allocators[] = { fail_after_two_malloc, fail_after_three_malloc };
+
+  for (const auto allocator: allocators)
+  {
+    cardano_cbor_reader_t* reader = cardano_cbor_reader_from_hex(cbor_hex, strlen(cbor_hex));
+    ASSERT_NE(reader, nullptr);
+    cardano_buffer_t* buffer = nullptr;
+    reset_allocators_run_count();
+    cardano_set_allocators(allocator, realloc, free);
+    const cardano_error_t result = cardano_cbor_reader_read_bytestring(reader, &buffer);
+    cardano_set_allocators(malloc, realloc, free);
+    EXPECT_EQ(result, CARDANO_ERROR_MEMORY_ALLOCATION_FAILED);
+    EXPECT_EQ(buffer, nullptr);
+    cardano_buffer_unref(&buffer);
+    cardano_cbor_reader_unref(&reader);
+  }
+}
+
+TEST(cardano_cbor_reader_read_textstring, returnsErrorIfSliceAllocationFails)
+{
+  const char*       cbor_hex     = "66436f6d657461";
+  _cardano_malloc_t allocators[] = { fail_after_two_malloc, fail_after_three_malloc };
+
+  for (const auto allocator: allocators)
+  {
+    cardano_cbor_reader_t* reader = cardano_cbor_reader_from_hex(cbor_hex, strlen(cbor_hex));
+    ASSERT_NE(reader, nullptr);
+    cardano_buffer_t* buffer = nullptr;
+    reset_allocators_run_count();
+    cardano_set_allocators(allocator, realloc, free);
+    const cardano_error_t result = cardano_cbor_reader_read_textstring(reader, &buffer);
+    cardano_set_allocators(malloc, realloc, free);
+    EXPECT_EQ(result, CARDANO_ERROR_MEMORY_ALLOCATION_FAILED);
+    EXPECT_EQ(buffer, nullptr);
+    cardano_buffer_unref(&buffer);
+    cardano_cbor_reader_unref(&reader);
+  }
+}

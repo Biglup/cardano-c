@@ -590,5 +590,10 @@ _cbor_reader_read_string(cardano_cbor_reader_t* reader, const cardano_cbor_major
   *byte_string = cardano_buffer_slice(buffer, bytes_read, bytes_read + (size_t)length);
   cardano_buffer_unref(&buffer);
 
+  if (*byte_string == NULL)
+  {
+    return CARDANO_ERROR_MEMORY_ALLOCATION_FAILED;
+  }
+
   return CARDANO_SUCCESS;
 }
