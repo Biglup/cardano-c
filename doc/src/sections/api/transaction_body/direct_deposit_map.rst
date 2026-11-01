@@ -17,6 +17,10 @@ Direct Deposit Map
 
 ------------
 
+.. doxygenfunction:: cardano_direct_deposit_map_to_cip116_json
+
+------------
+
 .. doxygenfunction:: cardano_direct_deposit_map_get_length
 
 ------------

@@ -17,6 +17,10 @@ Account Balance Intervals Map
 
 ------------
 
+.. doxygenfunction:: cardano_account_balance_intervals_map_to_cip116_json
+
+------------
+
 .. doxygenfunction:: cardano_account_balance_intervals_map_get_length
 
 ------------

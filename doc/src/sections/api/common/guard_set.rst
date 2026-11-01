@@ -17,6 +17,10 @@ Guard Set
 
 ------------
 
+.. doxygenfunction:: cardano_guard_set_to_cip116_json
+
+------------
+
 .. doxygenfunction:: cardano_guard_set_get_length
 
 ------------

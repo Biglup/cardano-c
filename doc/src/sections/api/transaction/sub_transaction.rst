@@ -17,6 +17,10 @@ Sub Transaction
 
 ------------
 
+.. doxygenfunction:: cardano_sub_transaction_to_cip116_json
+
+------------
+
 .. doxygenfunction:: cardano_sub_transaction_get_body
 
 ------------
