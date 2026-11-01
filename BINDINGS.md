@@ -289,6 +289,78 @@ usage after warm-up; linear-memory capacity and process RSS are not live-allocat
 counts. Document intentional caches and test bounded behavior. An output-only
 fixture pass must not be advertised as lifecycle conformance.
 
+## Documentation
+
+Every binding must provide high-quality documentation written for developers
+using that language. Be direct: explain what an API does, when to use it, and the
+constraints that affect its use. Use precise terminology, short explanations,
+and runnable examples. Avoid filler, undocumented assumptions, and descriptions
+that merely repeat a symbol's name. Use Microsoft's MSDN-style API documentation
+and the [Microsoft Writing Style Guide](https://learn.microsoft.com/en-us/style-guide/welcome/)
+as references for clear engineering documentation.
+
+Provide a quick start, task-oriented guides, and a complete public API reference.
+Document types and enum variants, parameter meanings and units, return values,
+errors, defaults, mutability, and relevant lifetime or concurrency guarantees.
+Explain integer precision, byte and text encodings, supported eras, callback
+behavior, and cancellation where applicable. Include examples for building,
+signing, inspecting, and submitting transactions, alongside focused examples for
+individual features. Document migrations and breaking changes in release notes.
+
+Generate API reference material from the binding's own declarations and comments
+using established tools for its language. Supplement generated reference pages
+with authored explanations and workflows. Build documentation in CI, check links
+and references, and compile or execute examples where practical. Fix documentation
+build failures before release.
+
+Publish documentation at a stable public URL and link it from the repository
+README and package metadata. Keep released documentation aligned with the package
+version; distinguish development and prerelease documentation from stable docs.
+Document how contributors generate and preview the site locally and automate its
+publication. Existing generation and hosting configurations provide examples:
+
+* [cardano-c documentation](https://cardano-c.readthedocs.io/): Doxygen, Breathe,
+  and Sphinx; see [local build instructions](README.md#documentation) and
+  [Read the Docs configuration](.readthedocs.yaml).
+* [Cometa.py documentation](https://cometapy.readthedocs.io/): see its
+  [documentation generator](https://github.com/Biglup/cometa.py/blob/main/tools/generate_docs.py)
+  and [Read the Docs configuration](https://github.com/Biglup/cometa.py/blob/main/.readthedocs.yaml).
+* [Cometa.js documentation](https://cometajs.readthedocs.io/): see its
+  [TypeDoc configuration](https://github.com/Biglup/cometa.js/blob/main/typedoc.json)
+  and [Read the Docs configuration](https://github.com/Biglup/cometa.js/blob/main/.readthedocs.yaml).
+
+## Distribution and platform support
+
+Publish each binding in the package registry normally used by its language where
+applicable. Follow that ecosystem's package layout, versioning, prerelease,
+dependency, and native-library loading conventions. Users must be able to install
+and use a released package without a cardano-c development checkout.
+
+Where no suitable package registry exists, publish versioned GitHub releases.
+For bindings that distribute native binaries, provide artifacts for every
+applicable operating-system and architecture combination, following cardano-c's
+release model. A portable source package or WASM artifact may serve multiple
+targets when the ecosystem supports it; do not duplicate identical artifacts
+merely to give each architecture a filename. Include checksums, licenses, native
+dependency provenance, and installation instructions with release artifacts.
+
+Bindings must work across all platforms and architectures supported by both
+cardano-c and the target language/runtime. Maintain an explicit compatibility
+matrix covering operating systems, architectures, runtime versions, and relevant
+ABI variants. Include browser and server runtimes where applicable. Document
+upstream limitations and outstanding porting gaps; a missing build job does not
+make a target inapplicable. Do not claim support solely because cross-compilation
+succeeds.
+
+Build and test released packages across that matrix. Verify installation, native
+library discovery, public API behavior, callbacks, and cleanup using the actual
+artifacts users install. Use native runners, emulation, or device testing as
+appropriate, and identify targets that have not yet received runtime validation.
+Check 32-bit integer and pointer widths, alignment, calling conventions, and
+platform library naming rather than assuming a desktop 64-bit ABI. Publish a
+release only with accurate support claims and a documented plan for remaining
+gaps in applicable targets.
+
 ## Release checklist
 
 * Pin the native release, fixture revision, compiler/runtime versions, and native
@@ -301,6 +373,9 @@ fixture pass must not be advertised as lifecycle conformance.
   32-bit targets, signed/unsigned boundaries, and optional exports.
 * Document installation, ordinary transaction workflows, errors, cancellation,
   supported eras, and thread-safety with examples in the target language.
+* Publish the documentation and language-registry package or applicable GitHub
+  release artifacts. Verify public installation instructions and artifact links.
+* Check the platform matrix against build and runtime validation results.
 * Review API ergonomics with a maintainer experienced in that language. Existing
   bindings may migrate incrementally; this guide is not a claim that they already
   meet every requirement.
