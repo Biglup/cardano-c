@@ -68,9 +68,9 @@ static const fee_vector_t min_ada_required_vectors[] = {
 };
 
 static const fee_vector_t tx_fee_vectors[] = {
-  { 176193, "84a500818258200f3abbc8fc19c2e61bab6059bf8a466e6e754833a08a62a6c56fe0e78f19d9d5000181825839009493315cd92eb5d8c4304e67b7e16ae36d61d34502694657811a2c8e32c728d3861e164cab28cb8f006448139c8f1740ffb8e7aa9e5232dc820aa3581c2a286ad895d091f2b3d168a6091ad2627d30a72761a5bc36eef00740a14014581c659f2917fb63f12b33667463ee575eeac1845bbc736b9c0bbc40ba82a14454534c411832581c7eae28af2208be856f7a119668ae52a49b73725e326dc16579dcc373a240182846504154415445181e020a031903e8081864a200818258206199186adb51974690d7247d2646097d2c62763b767b528816fb7ed3f9f55d395840bdea87fca1b4b4df8a9b8fb4183c0fab2f8261eb6c5e4bc42c800bb9c8918755bdea87fca1b4b4df8a9b8fb4183c0fab2f8261eb6c5e4bc42c800bb9c89187550281845820deeb8f82f2af5836ebbc1b450b6dbf0b03c93afe5696f10d49e8a8304ebfac01584064676273786767746f6768646a7074657476746b636f6376796669647171676775726a687268716169697370717275656c6876797071786565777072796676775820b6dbf0b03c93afe5696f10d49e8a8304ebfac01deeb8f82f2af5836ebbc1b45041a0f5f6" },
-  { 257179, "84af00818258200f3abbc8fc19c2e61bab6059bf8a466e6e754833a08a62a6c56fe0e78f19d9d5000181825839009493315cd92eb5d8c4304e67b7e16ae36d61d34502694657811a2c8e32c728d3861e164cab28cb8f006448139c8f1740ffb8e7aa9e5232dc820aa3581c2a286ad895d091f2b3d168a6091ad2627d30a72761a5bc36eef00740a14014581c659f2917fb63f12b33667463ee575eeac1845bbc736b9c0bbc40ba82a14454534c411832581c7eae28af2208be856f7a119668ae52a49b73725e326dc16579dcc373a240182846504154415445181e020a031903e804828304581c26b17b78de4f035dc0bfce60d1d3c3a8085c38dcce5fb8767e518bed1901f48405581c0d94e174732ef9aae73f395ab44507bfa983d65023c11a951f0c32e4581ca646474b8f5431261506b6c273d307c7569a4eb6c96b42dd4a29520a582003170a2e7597b7b7e3d84c05391d139a62b157e78786d8c082f29dcf4c11131405a1581de013cf55d175ea848b87deb3e914febd7e028e2bf6534475d52fb9c3d0050758202ceb364d93225b4a0f004a0975a13eb50c3cc6348474b4fe9121f8dc72ca0cfa08186409a3581c2a286ad895d091f2b3d168a6091ad2627d30a72761a5bc36eef00740a14014581c659f2917fb63f12b33667463ee575eeac1845bbc736b9c0bbc40ba82a14454534c413831581c7eae28af2208be856f7a119668ae52a49b73725e326dc16579dcc373a240182846504154415445181e0b58206199186adb51974690d7247d2646097d2c62763b16fb7ed3f9f55d38abc123de0d818258200f3abbc8fc19c2e61bab6059bf8a466e6e754833a08a62a6c56fe0e78f19d9d5010e81581c6199186adb51974690d7247d2646097d2c62763b16fb7ed3f9f55d3910825839009493315cd92eb5d8c4304e67b7e16ae36d61d34502694657811a2c8e32c728d3861e164cab28cb8f006448139c8f1740ffb8e7aa9e5232dc820aa3581c2a286ad895d091f2b3d168a6091ad2627d30a72761a5bc36eef00740a14014581c659f2917fb63f12b33667463ee575eeac1845bbc736b9c0bbc40ba82a14454534c411832581c7eae28af2208be856f7a119668ae52a49b73725e326dc16579dcc373a240182846504154415445181e11186412818258200f3abbc8fc19c2e61bab6059bf8a466e6e754833a08a62a6c56fe0e78f19d9d500a700818258206199186adb51974690d7247d2646097d2c62763b767b528816fb7ed3f9f55d395840bdea87fca1b4b4df8a9b8fb4183c0fab2f8261eb6c5e4bc42c800bb9c8918755bdea87fca1b4b4df8a9b8fb4183c0fab2f8261eb6c5e4bc42c800bb9c891875501868205186482041901f48200581cb5ae663aaea8e500157bdf4baafd6f5ba0ce5759f7cd4101fc132f548201818200581cb5ae663aaea8e500157bdf4baafd6f5ba0ce5759f7cd4101fc132f548202818200581cb5ae663aaea8e500157bdf4baafd6f5ba0ce5759f7cd4101fc132f54830301818200581cb5ae663aaea8e500157bdf4baafd6f5ba0ce5759f7cd4101fc132f540281845820deeb8f82f2af5836ebbc1b450b6dbf0b03c93afe5696f10d49e8a8304ebfac01584064676273786767746f6768646a7074657476746b636f6376796669647171676775726a687268716169697370717275656c6876797071786565777072796676775820b6dbf0b03c93afe5696f10d49e8a8304ebfac01deeb8f82f2af5836ebbc1b45041a003815820b6dbf0b03c93afe5696f10d49e8a8304ebfac01deeb8f82f2af5836ebbc1b4500481187b0582840100d8668200810182190bb8191b58840201d86682008102821913881907d006815820b6dbf0b03c93afe5696f10d49e8a8304ebfac01deeb8f82f2af5836ebbc1b450f5a6011904d2026373747203821904d2637374720445627974657305a2667374726b6579187b81676c6973746b65796873747276616c75650626" },
-  { 326397, "84ab0081825820fbecbe69bc3ee617653b95893f50b0362cbaff3e27b01a936969a25bfc100a7c000182835839319068a7a3f008803edac87af1619860f2cdcde40c26987325ace138ad2c967f4bd28944b06462e13c5e3f5d5fa6e03f8567569438cd833e6d1a093d1cc0582057ad45489e9d4e3d7df98fb6b273d647cbed6990125dc51815bdee9abbc3a84a82583901e6d3410be0b3d51a52b874983bc6f0e48bcf4274352552e683e1c211b91d1fe82203de4c0de2c150746383a893cd21eb1082565252af63a51a00eef6fe021a00052d02031a082ee80007582026e4e8217ceb7c9eee2dffc410d77bbe3efd952288573f1c9a19fe62979634bc0b5820fe1f0d446610edf6890cbce2c3e69ad4052c557fd6d044b1f195a4f916c3e0fe0d8182582047754bf3cb4adf7374496b17fa41c197043533355c7a31a1776207fe627f5a5d010e81581ce6d3410be0b3d51a52b874983bc6f0e48bcf4274352552e683e1c2111082583901e6d3410be0b3d51a52b874983bc6f0e48bcf4274352552e683e1c211b91d1fe82203de4c0de2c150746383a893cd21eb1082565252af63a51a00461558111a0007c38312818258209a32459bd4ef6bbafdeb8cf3b909d0e3e2ec806e4cc6268529280b0fc1d06f5b00a3008182582005e884ca7c466df47785af770be8495ec0998e60ebe63e4cd187cd17eeac5e9258402cdcec5c4ba1ea76c558554dea99f472b67488be18f1f7085bac4cc55376ca8f4ed61b23565ddbffcd85a4e84963c36c98272314d2637b238e65def639969f0b0481d8799f581ce6d3410be0b3d51a52b874983bc6f0e48bcf4274352552e683e1c2119fd8799fd8799fd87a9f581c84cc25ea4c29951d40b443b95bbc5676bc425470f96376d1984af9abffd8799fd8799fd87a9f581c2c967f4bd28944b06462e13c5e3f5d5fa6e03f8567569438cd833e6dffffffffa140d8799f00a1401a00342f60ffffd8799fd8799fd8799f581cf437291791dda80d0bba9f3616f8b7533c8a8db2f788b8468a26bd5affd8799fd8799fd8799f581ce3c9536e2947e33703d5793a02b593a8d32b49aaaef03ea0b2b03c87ffffffffa140d8799f00a1401a0104ece0ffffd8799fd8799fd8799f581ce6d3410be0b3d51a52b874983bc6f0e48bcf4274352552e683e1c211ffd8799fd8799fd8799f581cb91d1fe82203de4c0de2c150746383a893cd21eb1082565252af63a5ffffffffa1581cb2d25f829ebb7f4c97b5e847923a1115b23ebf78000722c229c9c9f7d8799f01a0ffffffff0581840000d87980821a000af3301a0b01ca09f5ae181e613518327840643837393966353831636536643334313062653062336435316135326238373439383362633666306534386263663432373433353235353265363833653163321833784031313966643837393966643837393966643837613966353831633834636332356561346332393935316434306234343362393562626335363736626334323534183478403730663936333736643139383461663961626666643837393966643837393966643837613966353831633263393637663462643238393434623036343632653118357840336335653366356435666136653033663835363735363934333863643833336536646666666666666666613134306438373939663030613134303161303032661836784034643630666666666438373939666438373939666438373939663538316366343337323931373931646461383064306262613966333631366638623735333363183778403861386462326637383862383436386132366264356166666438373939666438373939666438373939663538316365336339353336653239343765333337303318387840643537393361303262353933613864333262343961616165663033656130623262303363383766666666666666666131343064383739396630306131343031611839784030306563383265306666666664383739396664383739396664383739396635383163653664333431306265306233643531613532623837343938336263366630183a784065343862636634323734333532353532653638336531633231316666643837393966643837393966643837393966353831636239316431666538323230336465183b784034633064653263313530373436333833613839336364323165623130383235363532353261663633613566666666666666666131353831636232643235663832183c784039656262376634633937623565383437393233613131313562323365626637383030303732326332323963396339663764383739396630316130666666666666183d6366662c183e783c62326432356638323965626237663463393762356538343739323361313131356232336562663738303030373232633232396339633966373a3a3030" }
+  { 176149, "84a500818258200f3abbc8fc19c2e61bab6059bf8a466e6e754833a08a62a6c56fe0e78f19d9d5000181825839009493315cd92eb5d8c4304e67b7e16ae36d61d34502694657811a2c8e32c728d3861e164cab28cb8f006448139c8f1740ffb8e7aa9e5232dc820aa3581c2a286ad895d091f2b3d168a6091ad2627d30a72761a5bc36eef00740a14014581c659f2917fb63f12b33667463ee575eeac1845bbc736b9c0bbc40ba82a14454534c411832581c7eae28af2208be856f7a119668ae52a49b73725e326dc16579dcc373a240182846504154415445181e020a031903e8081864a200818258206199186adb51974690d7247d2646097d2c62763b767b528816fb7ed3f9f55d395840bdea87fca1b4b4df8a9b8fb4183c0fab2f8261eb6c5e4bc42c800bb9c8918755bdea87fca1b4b4df8a9b8fb4183c0fab2f8261eb6c5e4bc42c800bb9c89187550281845820deeb8f82f2af5836ebbc1b450b6dbf0b03c93afe5696f10d49e8a8304ebfac01584064676273786767746f6768646a7074657476746b636f6376796669647171676775726a687268716169697370717275656c6876797071786565777072796676775820b6dbf0b03c93afe5696f10d49e8a8304ebfac01deeb8f82f2af5836ebbc1b45041a0f5f6" },
+  { 257135, "84af00818258200f3abbc8fc19c2e61bab6059bf8a466e6e754833a08a62a6c56fe0e78f19d9d5000181825839009493315cd92eb5d8c4304e67b7e16ae36d61d34502694657811a2c8e32c728d3861e164cab28cb8f006448139c8f1740ffb8e7aa9e5232dc820aa3581c2a286ad895d091f2b3d168a6091ad2627d30a72761a5bc36eef00740a14014581c659f2917fb63f12b33667463ee575eeac1845bbc736b9c0bbc40ba82a14454534c411832581c7eae28af2208be856f7a119668ae52a49b73725e326dc16579dcc373a240182846504154415445181e020a031903e804828304581c26b17b78de4f035dc0bfce60d1d3c3a8085c38dcce5fb8767e518bed1901f48405581c0d94e174732ef9aae73f395ab44507bfa983d65023c11a951f0c32e4581ca646474b8f5431261506b6c273d307c7569a4eb6c96b42dd4a29520a582003170a2e7597b7b7e3d84c05391d139a62b157e78786d8c082f29dcf4c11131405a1581de013cf55d175ea848b87deb3e914febd7e028e2bf6534475d52fb9c3d0050758202ceb364d93225b4a0f004a0975a13eb50c3cc6348474b4fe9121f8dc72ca0cfa08186409a3581c2a286ad895d091f2b3d168a6091ad2627d30a72761a5bc36eef00740a14014581c659f2917fb63f12b33667463ee575eeac1845bbc736b9c0bbc40ba82a14454534c413831581c7eae28af2208be856f7a119668ae52a49b73725e326dc16579dcc373a240182846504154415445181e0b58206199186adb51974690d7247d2646097d2c62763b16fb7ed3f9f55d38abc123de0d818258200f3abbc8fc19c2e61bab6059bf8a466e6e754833a08a62a6c56fe0e78f19d9d5010e81581c6199186adb51974690d7247d2646097d2c62763b16fb7ed3f9f55d3910825839009493315cd92eb5d8c4304e67b7e16ae36d61d34502694657811a2c8e32c728d3861e164cab28cb8f006448139c8f1740ffb8e7aa9e5232dc820aa3581c2a286ad895d091f2b3d168a6091ad2627d30a72761a5bc36eef00740a14014581c659f2917fb63f12b33667463ee575eeac1845bbc736b9c0bbc40ba82a14454534c411832581c7eae28af2208be856f7a119668ae52a49b73725e326dc16579dcc373a240182846504154415445181e11186412818258200f3abbc8fc19c2e61bab6059bf8a466e6e754833a08a62a6c56fe0e78f19d9d500a700818258206199186adb51974690d7247d2646097d2c62763b767b528816fb7ed3f9f55d395840bdea87fca1b4b4df8a9b8fb4183c0fab2f8261eb6c5e4bc42c800bb9c8918755bdea87fca1b4b4df8a9b8fb4183c0fab2f8261eb6c5e4bc42c800bb9c891875501868205186482041901f48200581cb5ae663aaea8e500157bdf4baafd6f5ba0ce5759f7cd4101fc132f548201818200581cb5ae663aaea8e500157bdf4baafd6f5ba0ce5759f7cd4101fc132f548202818200581cb5ae663aaea8e500157bdf4baafd6f5ba0ce5759f7cd4101fc132f54830301818200581cb5ae663aaea8e500157bdf4baafd6f5ba0ce5759f7cd4101fc132f540281845820deeb8f82f2af5836ebbc1b450b6dbf0b03c93afe5696f10d49e8a8304ebfac01584064676273786767746f6768646a7074657476746b636f6376796669647171676775726a687268716169697370717275656c6876797071786565777072796676775820b6dbf0b03c93afe5696f10d49e8a8304ebfac01deeb8f82f2af5836ebbc1b45041a003815820b6dbf0b03c93afe5696f10d49e8a8304ebfac01deeb8f82f2af5836ebbc1b4500481187b0582840100d8668200810182190bb8191b58840201d86682008102821913881907d006815820b6dbf0b03c93afe5696f10d49e8a8304ebfac01deeb8f82f2af5836ebbc1b450f5a6011904d2026373747203821904d2637374720445627974657305a2667374726b6579187b81676c6973746b65796873747276616c75650626" },
+  { 326353, "84ab0081825820fbecbe69bc3ee617653b95893f50b0362cbaff3e27b01a936969a25bfc100a7c000182835839319068a7a3f008803edac87af1619860f2cdcde40c26987325ace138ad2c967f4bd28944b06462e13c5e3f5d5fa6e03f8567569438cd833e6d1a093d1cc0582057ad45489e9d4e3d7df98fb6b273d647cbed6990125dc51815bdee9abbc3a84a82583901e6d3410be0b3d51a52b874983bc6f0e48bcf4274352552e683e1c211b91d1fe82203de4c0de2c150746383a893cd21eb1082565252af63a51a00eef6fe021a00052d02031a082ee80007582026e4e8217ceb7c9eee2dffc410d77bbe3efd952288573f1c9a19fe62979634bc0b5820fe1f0d446610edf6890cbce2c3e69ad4052c557fd6d044b1f195a4f916c3e0fe0d8182582047754bf3cb4adf7374496b17fa41c197043533355c7a31a1776207fe627f5a5d010e81581ce6d3410be0b3d51a52b874983bc6f0e48bcf4274352552e683e1c2111082583901e6d3410be0b3d51a52b874983bc6f0e48bcf4274352552e683e1c211b91d1fe82203de4c0de2c150746383a893cd21eb1082565252af63a51a00461558111a0007c38312818258209a32459bd4ef6bbafdeb8cf3b909d0e3e2ec806e4cc6268529280b0fc1d06f5b00a3008182582005e884ca7c466df47785af770be8495ec0998e60ebe63e4cd187cd17eeac5e9258402cdcec5c4ba1ea76c558554dea99f472b67488be18f1f7085bac4cc55376ca8f4ed61b23565ddbffcd85a4e84963c36c98272314d2637b238e65def639969f0b0481d8799f581ce6d3410be0b3d51a52b874983bc6f0e48bcf4274352552e683e1c2119fd8799fd8799fd87a9f581c84cc25ea4c29951d40b443b95bbc5676bc425470f96376d1984af9abffd8799fd8799fd87a9f581c2c967f4bd28944b06462e13c5e3f5d5fa6e03f8567569438cd833e6dffffffffa140d8799f00a1401a00342f60ffffd8799fd8799fd8799f581cf437291791dda80d0bba9f3616f8b7533c8a8db2f788b8468a26bd5affd8799fd8799fd8799f581ce3c9536e2947e33703d5793a02b593a8d32b49aaaef03ea0b2b03c87ffffffffa140d8799f00a1401a0104ece0ffffd8799fd8799fd8799f581ce6d3410be0b3d51a52b874983bc6f0e48bcf4274352552e683e1c211ffd8799fd8799fd8799f581cb91d1fe82203de4c0de2c150746383a893cd21eb1082565252af63a5ffffffffa1581cb2d25f829ebb7f4c97b5e847923a1115b23ebf78000722c229c9c9f7d8799f01a0ffffffff0581840000d87980821a000af3301a0b01ca09f5ae181e613518327840643837393966353831636536643334313062653062336435316135326238373439383362633666306534386263663432373433353235353265363833653163321833784031313966643837393966643837393966643837613966353831633834636332356561346332393935316434306234343362393562626335363736626334323534183478403730663936333736643139383461663961626666643837393966643837393966643837613966353831633263393637663462643238393434623036343632653118357840336335653366356435666136653033663835363735363934333863643833336536646666666666666666613134306438373939663030613134303161303032661836784034643630666666666438373939666438373939666438373939663538316366343337323931373931646461383064306262613966333631366638623735333363183778403861386462326637383862383436386132366264356166666438373939666438373939666438373939663538316365336339353336653239343765333337303318387840643537393361303262353933613864333262343961616165663033656130623262303363383766666666666666666131343064383739396630306131343031611839784030306563383265306666666664383739396664383739396664383739396635383163653664333431306265306233643531613532623837343938336263366630183a784065343862636634323734333532353532653638336531633231316666643837393966643837393966643837393966353831636239316431666538323230336465183b784034633064653263313530373436333833613839336364323165623130383235363532353261663633613566666666666666666131353831636232643235663832183c784039656262376634633937623565383437393233613131313562323365626637383030303732326332323963396339663764383739396630316130666666666666183d6366662c183e783c62326432356638323965626237663463393762356538343739323361313131356232336562663738303030373232633232396339633966373a3a3030" }
 };
 
 static const char* SUB_TX_INPUT_ID                      = "0f3abbc8fc19c2e61bab6059bf8a466e6e754833a08a62a6c56fe0e78f19d9d5";
@@ -89,6 +89,18 @@ static const char* PLUTUS_SCRIPT_CBORS[]                = {
   "82034e4d03000033222220051200120011",
   "82044e4d04000033222220051200120011"
 };
+
+/**
+ * A transaction in the frame without the is valid flag: a body that spends one input, an empty witness set and no
+ * auxiliary data.
+ */
+static const char* THREE_ELEMENT_FRAME_TX_CBOR = "83a300d90102818258200f3abbc8fc19c2e61bab6059bf8a466e6e754833a08a62a6c56fe0e78f19d9d50001800200a0f6";
+
+/**
+ * A transaction in the frame with the is valid flag: a body that spends one input, an empty witness set and auxiliary
+ * data that carries one metadatum.
+ */
+static const char* AUXILIARY_DATA_TX_CBOR = "84a300d90102818258200f3abbc8fc19c2e61bab6059bf8a466e6e754833a08a62a6c56fe0e78f19d9d50001800200a0f5d90103a100a1016161";
 
 /**
  * The size of the script that \ref RESOLVED_INPUT_WITH_REFERENCE_SCRIPT carries: the 2561 bytes of a PlutusV2 script, without
@@ -153,6 +165,38 @@ static const tiered_fee_vector_t tiered_fee_vectors[] = {
   { 51200U, 44U, 3U, 826026U, 826027U },
   { 60000U, 44U, 3U, 1011882U, 1011883U },
   { 204800U, 44U, 3U, 6194856U, 6194859U },
+};
+
+/**
+ * \brief Execution units, the prices of the execution units and the script fee the ledger charges for them.
+ */
+typedef struct
+{
+    uint64_t memory;
+    uint64_t cpu_steps;
+    uint64_t memory_price_numerator;
+    uint64_t memory_price_denominator;
+    uint64_t steps_price_numerator;
+    uint64_t steps_price_denominator;
+    uint64_t fee;
+} ex_units_fee_vector_t;
+
+/**
+ * The script fee the ledger charges for execution units: the ceiling of the exact price of the memory plus the exact
+ * price of the CPU steps. The first vectors have an integer exact fee that a floating point computation lands just above.
+ */
+static const ex_units_fee_vector_t ex_units_fee_vectors[] = {
+  { 7000U, 1000000U, 577U, 10000U, 721U, 10000000U, 476U },
+  { 100U, 0U, 7U, 100U, 7U, 100000U, 7U },
+  { 1142700U, 1000000U, 577U, 10000U, 721U, 100000000U, 65941U },
+  { 600000U, 250000000U, 577U, 10000U, 721U, 10000000U, 52645U },
+  { 0U, 0U, 577U, 10000U, 721U, 10000000U, 0U },
+  { 1U, 1U, 577U, 10000U, 721U, 10000000U, 1U },
+  { 50U, 50000U, 7U, 100U, 7U, 100000U, 7U },
+  { 10U, 10000U, 7U, 100U, 7U, 100000U, 2U },
+  { 3U, 0U, 7U, 2U, 1U, 3U, 11U },
+  { 1000U, 1000U, 1U, 3U, 2U, 3U, 1000U },
+  { 1000U, 1001U, 1U, 3U, 2U, 3U, 1001U },
 };
 
 /* STATIC FUNCTIONS **********************************************************/
@@ -466,6 +510,47 @@ compute_min_script_fee(
 
   cardano_ex_unit_prices_unref(&prices);
   cardano_unit_interval_unref(&script_ref_cost);
+
+  return result;
+}
+
+/**
+ * \brief Computes the script fee of a tx whose only redeemer has the execution units of a vector, priced with the exact
+ * prices of the vector.
+ *
+ * \param vector The execution units and the prices.
+ * \param min_fee The computed script fee.
+ * \return The result of the computation.
+ */
+static cardano_error_t
+compute_ex_units_vector_fee(const ex_units_fee_vector_t* vector, uint64_t* min_fee)
+{
+  cardano_transaction_t*    tx              = create_transaction(tx_fee_vectors[0].cbor);
+  cardano_witness_set_t*    witness_set     = cardano_transaction_get_witness_set(tx);
+  cardano_redeemer_list_t*  redeemers       = create_redeemers(vector->memory, vector->cpu_steps);
+  cardano_unit_interval_t*  memory_prices   = NULL;
+  cardano_unit_interval_t*  steps_prices    = NULL;
+  cardano_unit_interval_t*  script_ref_cost = NULL;
+  cardano_ex_unit_prices_t* prices          = NULL;
+  cardano_utxo_list_t*      utxo_list       = NULL;
+
+  EXPECT_EQ(cardano_witness_set_set_redeemers(witness_set, redeemers), CARDANO_SUCCESS);
+  EXPECT_EQ(cardano_unit_interval_new(vector->memory_price_numerator, vector->memory_price_denominator, &memory_prices), CARDANO_SUCCESS);
+  EXPECT_EQ(cardano_unit_interval_new(vector->steps_price_numerator, vector->steps_price_denominator, &steps_prices), CARDANO_SUCCESS);
+  EXPECT_EQ(cardano_unit_interval_new(15U, 1U, &script_ref_cost), CARDANO_SUCCESS);
+  EXPECT_EQ(cardano_ex_unit_prices_new(memory_prices, steps_prices, &prices), CARDANO_SUCCESS);
+  EXPECT_EQ(cardano_utxo_list_new(&utxo_list), CARDANO_SUCCESS);
+
+  cardano_error_t result = cardano_compute_min_script_fee(tx, prices, utxo_list, script_ref_cost, min_fee);
+
+  cardano_utxo_list_unref(&utxo_list);
+  cardano_ex_unit_prices_unref(&prices);
+  cardano_unit_interval_unref(&script_ref_cost);
+  cardano_unit_interval_unref(&steps_prices);
+  cardano_unit_interval_unref(&memory_prices);
+  cardano_redeemer_list_unref(&redeemers);
+  cardano_witness_set_unref(&witness_set);
+  cardano_transaction_unref(&tx);
 
   return result;
 }
@@ -1163,6 +1248,72 @@ TEST(cardano_fee_compute_min_script_fee, returnsZeroIfThereAreNoRedeemersAndNoRe
   cardano_transaction_unref(&tx);
   cardano_utxo_list_unref(&utxo_list);
   cardano_protocol_parameters_unref(&params);
+}
+
+TEST(cardano_fee_compute_min_script_fee, chargesTheCeilingOfTheExactPriceOfTheExecutionUnits)
+{
+  for (size_t i = 0U; i < (sizeof(ex_units_fee_vectors) / sizeof(ex_units_fee_vectors[0])); ++i)
+  {
+    // Arrange
+    const ex_units_fee_vector_t* vector = &ex_units_fee_vectors[i];
+    uint64_t                     fee    = 0U;
+
+    // Act
+    cardano_error_t result = compute_ex_units_vector_fee(vector, &fee);
+
+    // Assert
+    EXPECT_EQ(result, CARDANO_SUCCESS);
+    EXPECT_EQ(fee, vector->fee);
+  }
+}
+
+TEST(cardano_fee_compute_min_script_fee, returnsErrorIfTheExecutionUnitsFeeOverflows)
+{
+  // Arrange
+  const ex_units_fee_vector_t memory_vector = { UINT64_MAX, 0U, 2U, 1U, 1U, 1U, 0U };
+  const ex_units_fee_vector_t steps_vector  = { 0U, UINT64_MAX, 1U, 1U, 3U, 2U, 0U };
+  const ex_units_fee_vector_t sum_vector    = { UINT64_MAX, UINT64_MAX, 1U, 1U, 1U, 1U, 0U };
+  uint64_t                    fee           = 0U;
+
+  // Act
+  cardano_error_t memory_result = compute_ex_units_vector_fee(&memory_vector, &fee);
+  cardano_error_t steps_result  = compute_ex_units_vector_fee(&steps_vector, &fee);
+  cardano_error_t sum_result    = compute_ex_units_vector_fee(&sum_vector, &fee);
+
+  // Assert
+  EXPECT_EQ(memory_result, CARDANO_ERROR_INTEGER_OVERFLOW);
+  EXPECT_EQ(steps_result, CARDANO_ERROR_INTEGER_OVERFLOW);
+  EXPECT_EQ(sum_result, CARDANO_ERROR_INTEGER_OVERFLOW);
+}
+
+TEST(cardano_fee_compute_min_script_fee, returnsErrorIfAnExecutionUnitPriceHasAZeroDenominator)
+{
+  // Arrange
+  const ex_units_fee_vector_t memory_vector = { 1U, 1U, 1U, 0U, 1U, 1U, 0U };
+  const ex_units_fee_vector_t steps_vector  = { 1U, 1U, 1U, 1U, 1U, 0U, 0U };
+  uint64_t                    fee           = 0U;
+
+  // Act
+  cardano_error_t memory_result = compute_ex_units_vector_fee(&memory_vector, &fee);
+  cardano_error_t steps_result  = compute_ex_units_vector_fee(&steps_vector, &fee);
+
+  // Assert
+  EXPECT_EQ(memory_result, CARDANO_ERROR_INVALID_ARGUMENT);
+  EXPECT_EQ(steps_result, CARDANO_ERROR_INVALID_ARGUMENT);
+}
+
+TEST(cardano_fee_compute_min_script_fee, chargesNothingForNoExecutionUnitsIfAPriceHasAZeroDenominator)
+{
+  // Arrange
+  const ex_units_fee_vector_t vector = { 0U, 0U, 1U, 0U, 1U, 0U, 0U };
+  uint64_t                    fee    = 1U;
+
+  // Act
+  cardano_error_t result = compute_ex_units_vector_fee(&vector, &fee);
+
+  // Assert
+  EXPECT_EQ(result, CARDANO_SUCCESS);
+  EXPECT_EQ(fee, 0U);
 }
 
 TEST(cardano_fee_compute_min_script_fee, pricesANativeReferenceScriptIfTheTransactionHasNoRedeemers)
@@ -2341,6 +2492,39 @@ TEST(cardano_fee_compute_transaction_fee, returnsErrorIfTheMultiplierHasAZeroDen
   cardano_protocol_parameters_unref(&params);
 }
 
+TEST(cardano_fee_compute_transaction_fee, ignoresTheExecutionUnitPricesOfATransactionWithoutRedeemers)
+{
+  // Arrange
+  cardano_protocol_parameters_t* params         = create_protocol_parameters();
+  cardano_transaction_t*         tx             = create_transaction(tx_fee_vectors[0].cbor);
+  cardano_unit_interval_t*       memory_prices  = NULL;
+  cardano_unit_interval_t*       steps_prices   = NULL;
+  cardano_ex_unit_prices_t*      ex_unit_prices = NULL;
+  cardano_utxo_list_t*           utxo_list      = NULL;
+  uint64_t                       fee            = 0U;
+
+  EXPECT_EQ(cardano_unit_interval_new(577U, 0U, &memory_prices), CARDANO_SUCCESS);
+  EXPECT_EQ(cardano_unit_interval_new(721U, 0U, &steps_prices), CARDANO_SUCCESS);
+  EXPECT_EQ(cardano_ex_unit_prices_new(memory_prices, steps_prices, &ex_unit_prices), CARDANO_SUCCESS);
+  EXPECT_EQ(cardano_protocol_parameters_set_execution_costs(params, ex_unit_prices), CARDANO_SUCCESS);
+  EXPECT_EQ(cardano_utxo_list_new(&utxo_list), CARDANO_SUCCESS);
+
+  // Act
+  cardano_error_t result = cardano_compute_transaction_fee(tx, utxo_list, params, &fee);
+
+  // Assert
+  EXPECT_EQ(result, CARDANO_SUCCESS);
+  EXPECT_EQ(fee, tx_fee_vectors[0].fee);
+
+  // Cleanup
+  cardano_ex_unit_prices_unref(&ex_unit_prices);
+  cardano_unit_interval_unref(&steps_prices);
+  cardano_unit_interval_unref(&memory_prices);
+  cardano_utxo_list_unref(&utxo_list);
+  cardano_transaction_unref(&tx);
+  cardano_protocol_parameters_unref(&params);
+}
+
 TEST(cardano_fee_ccompute_min_fee_without_scripts, returnsErrorIfFirstParamIsNull)
 {
   cardano_error_t result = cardano_compute_min_fee_without_scripts(NULL, 0, 0, (uint64_t*)"");
@@ -2353,6 +2537,127 @@ TEST(cardano_fee_ccompute_min_fee_without_scripts, returnsErrorIfOutParamIsNull)
   cardano_error_t result = cardano_compute_min_fee_without_scripts((cardano_transaction_t*)"", 0, 0, NULL);
 
   EXPECT_EQ(result, CARDANO_ERROR_POINTER_IS_NULL);
+}
+
+TEST(cardano_fee_compute_min_fee_without_scripts, sizesTheTransactionWithoutTheIsValidFlag)
+{
+  // Arrange
+  cardano_transaction_t* tx      = create_transaction(tx_fee_vectors[0].cbor);
+  size_t                 size    = 0U;
+  uint64_t               min_fee = 0U;
+
+  EXPECT_EQ(cardano_get_serialized_transaction_size(tx, &size), CARDANO_SUCCESS);
+
+  // Act
+  cardano_error_t result = cardano_compute_min_fee_without_scripts(tx, 155381, 44, &min_fee);
+
+  // Assert
+  EXPECT_EQ(result, CARDANO_SUCCESS);
+  EXPECT_EQ(min_fee, 155381U + (44U * (size - 1U)));
+
+  // Cleanup
+  cardano_transaction_unref(&tx);
+}
+
+TEST(cardano_fee_compute_min_fee_without_scripts, sizesATransactionMarkedInvalidWithoutItsIsValidFlag)
+{
+  // Arrange
+  cardano_transaction_t* tx            = create_transaction(tx_fee_vectors[0].cbor);
+  uint64_t               valid_min_fee = 0U;
+  uint64_t               min_fee       = 0U;
+
+  EXPECT_EQ(cardano_compute_min_fee_without_scripts(tx, 155381, 44, &valid_min_fee), CARDANO_SUCCESS);
+  EXPECT_EQ(cardano_transaction_set_is_valid(tx, false), CARDANO_SUCCESS);
+
+  // Act
+  cardano_error_t result = cardano_compute_min_fee_without_scripts(tx, 155381, 44, &min_fee);
+
+  // Assert
+  EXPECT_EQ(result, CARDANO_SUCCESS);
+  EXPECT_EQ(min_fee, valid_min_fee);
+
+  // Cleanup
+  cardano_transaction_unref(&tx);
+}
+
+TEST(cardano_fee_compute_min_fee_without_scripts, sizesATransactionWithoutAnIsValidFlagAsItIsSerialized)
+{
+  // Arrange
+  cardano_transaction_t* tx      = create_transaction(THREE_ELEMENT_FRAME_TX_CBOR);
+  size_t                 size    = 0U;
+  uint64_t               min_fee = 0U;
+
+  EXPECT_EQ(cardano_get_serialized_transaction_size(tx, &size), CARDANO_SUCCESS);
+
+  // Act
+  cardano_error_t result = cardano_compute_min_fee_without_scripts(tx, 155381, 44, &min_fee);
+
+  // Assert
+  EXPECT_EQ(result, CARDANO_SUCCESS);
+  EXPECT_EQ(size, strlen(THREE_ELEMENT_FRAME_TX_CBOR) / 2U);
+  EXPECT_EQ(min_fee, 155381U + (44U * size));
+
+  // Cleanup
+  cardano_transaction_unref(&tx);
+}
+
+TEST(cardano_fee_compute_min_fee_without_scripts, sizesTheAuxiliaryDataOfTheTransaction)
+{
+  // Arrange
+  cardano_transaction_t* tx      = create_transaction(AUXILIARY_DATA_TX_CBOR);
+  size_t                 size    = 0U;
+  uint64_t               min_fee = 0U;
+
+  EXPECT_EQ(cardano_get_serialized_transaction_size(tx, &size), CARDANO_SUCCESS);
+
+  // Act
+  cardano_error_t result = cardano_compute_min_fee_without_scripts(tx, 155381, 44, &min_fee);
+
+  // Assert
+  EXPECT_EQ(result, CARDANO_SUCCESS);
+  EXPECT_EQ(size, strlen(AUXILIARY_DATA_TX_CBOR) / 2U);
+  EXPECT_EQ(min_fee, 155381U + (44U * (size - 1U)));
+
+  // Cleanup
+  cardano_transaction_unref(&tx);
+}
+
+TEST(cardano_fee_compute_min_fee_without_scripts, returnsErrorIfTheFeeOverflows)
+{
+  // Arrange
+  cardano_transaction_t* tx      = create_transaction(tx_fee_vectors[0].cbor);
+  uint64_t               min_fee = 0U;
+
+  // Act
+  cardano_error_t coefficient_result = cardano_compute_min_fee_without_scripts(tx, 0U, UINT64_MAX / 2U, &min_fee);
+  cardano_error_t constant_result    = cardano_compute_min_fee_without_scripts(tx, UINT64_MAX, 1U, &min_fee);
+
+  // Assert
+  EXPECT_EQ(coefficient_result, CARDANO_ERROR_INTEGER_OVERFLOW);
+  EXPECT_EQ(constant_result, CARDANO_ERROR_INTEGER_OVERFLOW);
+
+  // Cleanup
+  cardano_transaction_unref(&tx);
+}
+
+TEST(cardano_fee_compute_min_fee_without_scripts, returnsErrorIfMemoryAllocationFails)
+{
+  // Arrange
+  cardano_transaction_t* tx      = create_transaction(AUXILIARY_DATA_TX_CBOR);
+  uint64_t               min_fee = 0U;
+
+  reset_allocators_run_count();
+  cardano_set_allocators(fail_right_away_malloc, realloc, free);
+
+  // Act
+  cardano_error_t result = cardano_compute_min_fee_without_scripts(tx, 155381, 44, &min_fee);
+
+  // Assert
+  EXPECT_EQ(result, CARDANO_ERROR_MEMORY_ALLOCATION_FAILED);
+
+  // Cleanup
+  cardano_set_allocators(malloc, realloc, free);
+  cardano_transaction_unref(&tx);
 }
 
 TEST(cardano_fee_compute_transaction_fee, returnsErrorIfTransactionIsNull)

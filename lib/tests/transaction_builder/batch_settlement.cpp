@@ -113,11 +113,6 @@ static const int64_t MAX_BATCH_FEE = 1000000;
 static const int64_t MAX_CHANGE_COST = 2000000;
 
 /**
- * \brief The most a fee may exceed the minimum fee of the signed transaction, in bytes of fee.
- */
-static const int64_t MAX_FEE_EXCESS_IN_BYTES = 3;
-
-/**
  * \brief The cost models of the Plutus V1, V2 and V3 languages. The Plutus V4 cost model of these tests reuses the
  * parameters of the Plutus V3 cost model, since both languages share the parameter names and order.
  */
@@ -1065,7 +1060,7 @@ read_top_level_flows(cardano_transaction_t* tx, const party_t& party, amounts_t&
 /**
  * Expects the fee of a signed transaction to pay for the transaction as it is submitted. The ledger computes the
  * minimum fee over the signed bytes, so the fee set while the transaction was still unsigned must already cover the
- * witnesses added on signing, without exceeding that minimum fee by more than a few bytes of fee.
+ * witnesses added on signing and be exactly that minimum fee.
  * \param params the protocol parameters.
  * \param tx the signed transaction.
  * \param all_utxos the UTXOs that resolve every input of the transaction.
@@ -1085,8 +1080,7 @@ expect_fee_covers_signed_transaction(
 
   const int64_t fee_excess = (int64_t)cardano_transaction_body_get_fee(body) - (int64_t)signed_min_fee;
 
-  EXPECT_GE(fee_excess, 0);
-  EXPECT_LT(fee_excess, MAX_FEE_EXCESS_IN_BYTES * (int64_t)cardano_protocol_parameters_get_min_fee_a(params));
+  EXPECT_EQ(fee_excess, 0);
 }
 
 /**

@@ -29,7 +29,50 @@
 #include <cardano/transaction_builder/coin_selection/large_first_coin_selector.h>
 
 #include <cardano/transaction_builder/fee.h>
-#include <math.h>
+
+#include <assert.h>
+#include <inttypes.h>
+#include <stdio.h>
+
+/* STATIC FUNCTIONS **********************************************************/
+
+/**
+ * \brief Sets the last error of a transaction to describe collateral that the collateral UTXOs can not cover.
+ *
+ * \param[in,out] tx                The transaction that receives the error message.
+ * \param[in]     collateral_amount The collateral the transaction requires, in lovelace.
+ * \param[in]     available_utxos   The UTXOs available as collateral.
+ */
+static void
+set_insufficient_collateral_error(
+  cardano_transaction_t* tx,
+  const uint64_t         collateral_amount,
+  cardano_utxo_list_t*   available_utxos)
+{
+  cardano_value_t* available_value = NULL;
+  int64_t          available_coin  = 0;
+
+  if (_cardano_coalesce_all_utxos(available_utxos, &available_value) == CARDANO_SUCCESS)
+  {
+    available_coin = cardano_value_get_coin(available_value);
+  }
+
+  cardano_value_unref(&available_value);
+
+  char buffer[256] = { 0 };
+
+  const int32_t written = snprintf(
+    buffer,
+    sizeof(buffer),
+    "The transaction requires %" PRIu64 " lovelace of collateral, plus the min-ADA of the collateral return, but the collateral UTXOs hold %" PRId64 " lovelace.",
+    collateral_amount,
+    available_coin);
+
+  assert(written > 0);
+  CARDANO_UNUSED(written);
+
+  cardano_transaction_set_last_error(tx, buffer);
+}
 
 /* IMPLEMENTATION ************************************************************/
 
@@ -126,15 +169,37 @@ _cardano_utxo_list_to_input_set(cardano_utxo_list_t* utxos)
   return inputs;
 }
 
-uint64_t
-_cardano_calculate_collateral_amount(uint64_t fee, uint64_t collateral_percentage)
+cardano_error_t
+_cardano_calculate_collateral_amount(
+  const uint64_t fee,
+  const uint64_t collateral_percentage,
+  uint64_t*      collateral_amount)
 {
-  if ((fee == 0U) || (collateral_percentage == 0U))
+  const uint64_t hundreds  = fee / 100U;
+  const uint64_t remainder = fee % 100U;
+
+  if ((collateral_percentage != 0U) && (hundreds > (UINT64_MAX / collateral_percentage)))
   {
-    return 5000000U;
+    return CARDANO_ERROR_INTEGER_OVERFLOW;
   }
 
-  return (uint64_t)ceil(((double)fee * (double)collateral_percentage) / 100.0);
+  if ((collateral_percentage != 0U) && (remainder > (UINT64_MAX / collateral_percentage)))
+  {
+    return CARDANO_ERROR_INTEGER_OVERFLOW;
+  }
+
+  const uint64_t whole_part        = hundreds * collateral_percentage;
+  const uint64_t remainder_product = remainder * collateral_percentage;
+  const uint64_t remainder_part    = (remainder_product / 100U) + (((remainder_product % 100U) != 0U) ? 1U : 0U);
+
+  if ((whole_part > (uint64_t)INT64_MAX) || (remainder_part > ((uint64_t)INT64_MAX - whole_part)))
+  {
+    return CARDANO_ERROR_INTEGER_OVERFLOW;
+  }
+
+  *collateral_amount = whole_part + remainder_part;
+
+  return CARDANO_SUCCESS;
 }
 
 cardano_error_t
@@ -306,6 +371,8 @@ _cardano_set_collateral_output(
 
   if (collateral_count == 0U)
   {
+    cardano_transaction_set_last_error(tx, "The transaction requires collateral, but no collateral UTXOs were given.");
+
     return CARDANO_ERROR_BALANCE_INSUFFICIENT;
   }
 
@@ -314,9 +381,18 @@ _cardano_set_collateral_output(
 
   const uint64_t fee                   = cardano_transaction_body_get_fee(body);
   const uint64_t collateral_percentage = cardano_protocol_parameters_get_collateral_percentage(protocol_params);
-  uint64_t       collateral_amount     = _cardano_calculate_collateral_amount(fee, collateral_percentage);
+  uint64_t       collateral_amount     = 0U;
   uint64_t       change_padding        = 0U;
   bool           is_balanced           = false;
+
+  result = _cardano_calculate_collateral_amount(fee, collateral_percentage, &collateral_amount);
+
+  if (result != CARDANO_SUCCESS)
+  {
+    cardano_transaction_set_last_error(tx, "The collateral the fee of the transaction requires exceeds the maximum amount the balancer can represent.");
+
+    return result;
+  }
 
   cardano_coin_selector_t* coin_selector = NULL;
 
@@ -329,7 +405,16 @@ _cardano_set_collateral_output(
 
   while (!is_balanced)
   {
-    cardano_value_t*                   collateral_value       = cardano_value_new_from_coin((int64_t)collateral_amount + (int64_t)change_padding);
+    if (change_padding > ((uint64_t)INT64_MAX - collateral_amount))
+    {
+      cardano_transaction_set_last_error(tx, "The collateral the fee of the transaction requires exceeds the maximum amount the balancer can represent.");
+      cardano_coin_selector_unref(&coin_selector);
+
+      return CARDANO_ERROR_INTEGER_OVERFLOW;
+    }
+
+    const uint64_t                     total_collateral       = collateral_amount + change_padding;
+    cardano_value_t*                   collateral_value       = cardano_value_new_from_coin((int64_t)total_collateral);
     cardano_utxo_list_t*               selection              = NULL;
     cardano_utxo_list_t*               remaining_utxo         = NULL;
     cardano_transaction_output_list_t* selector_change_output = NULL;
@@ -350,6 +435,11 @@ _cardano_set_collateral_output(
 
     if (result != CARDANO_SUCCESS)
     {
+      if (result == CARDANO_ERROR_BALANCE_INSUFFICIENT)
+      {
+        set_insufficient_collateral_error(tx, total_collateral, available_collateral_outputs);
+      }
+
       cardano_value_unref(&collateral_value);
       cardano_coin_selector_unref(&coin_selector);
       return result;
@@ -403,7 +493,7 @@ _cardano_set_collateral_output(
       return result;
     }
 
-    result = _cardano_update_transaction_body_collateral(body, collateral_amount, change_output, selection);
+    result = _cardano_update_transaction_body_collateral(body, total_collateral, change_output, selection);
 
     if (result != CARDANO_SUCCESS)
     {

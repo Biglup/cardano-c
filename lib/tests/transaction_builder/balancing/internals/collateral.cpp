@@ -498,16 +498,52 @@ TEST(xxx_cardano_calculate_collateral_amount, calculateCollateralAmount)
 {
   const uint64_t fee                   = 1000000U;
   const uint64_t collateral_percentage = 10U;
+  uint64_t       collateral_amount     = 0U;
 
-  const uint64_t collateral_amount = _cardano_calculate_collateral_amount(fee, collateral_percentage);
+  EXPECT_EQ(_cardano_calculate_collateral_amount(fee, collateral_percentage, &collateral_amount), CARDANO_SUCCESS);
 
   EXPECT_EQ(collateral_amount, 100000U);
 }
 
-TEST(xxx_cardano_calculate_collateral_amount, retursDefaultValueIfGiven0)
+TEST(xxx_cardano_calculate_collateral_amount, requiresNoCollateralIfTheFeeOrThePercentageIsZero)
 {
-  EXPECT_EQ(_cardano_calculate_collateral_amount(1000, 0), 5000000U);
-  EXPECT_EQ(_cardano_calculate_collateral_amount(0, 100), 5000000U);
+  uint64_t zero_percentage_amount = 1U;
+  uint64_t zero_fee_amount        = 1U;
+
+  EXPECT_EQ(_cardano_calculate_collateral_amount(1000, 0, &zero_percentage_amount), CARDANO_SUCCESS);
+  EXPECT_EQ(_cardano_calculate_collateral_amount(0, 100, &zero_fee_amount), CARDANO_SUCCESS);
+
+  EXPECT_EQ(zero_percentage_amount, 0U);
+  EXPECT_EQ(zero_fee_amount, 0U);
+}
+
+TEST(xxx_cardano_calculate_collateral_amount, roundsTheExactCollateralUp)
+{
+  uint64_t exact_amount   = 0U;
+  uint64_t rounded_amount = 0U;
+  uint64_t small_amount   = 0U;
+  uint64_t large_amount   = 0U;
+
+  EXPECT_EQ(_cardano_calculate_collateral_amount(232490U, 150U, &exact_amount), CARDANO_SUCCESS);
+  EXPECT_EQ(_cardano_calculate_collateral_amount(227871U, 150U, &rounded_amount), CARDANO_SUCCESS);
+  EXPECT_EQ(_cardano_calculate_collateral_amount(1U, 150U, &small_amount), CARDANO_SUCCESS);
+  EXPECT_EQ(_cardano_calculate_collateral_amount((uint64_t)INT64_MAX, 100U, &large_amount), CARDANO_SUCCESS);
+
+  EXPECT_EQ(exact_amount, 348735U);
+  EXPECT_EQ(rounded_amount, 341807U);
+  EXPECT_EQ(small_amount, 2U);
+  EXPECT_EQ(large_amount, (uint64_t)INT64_MAX);
+}
+
+TEST(xxx_cardano_calculate_collateral_amount, returnsErrorIfTheAmountDoesNotFitInACoin)
+{
+  uint64_t collateral_amount = 0U;
+
+  EXPECT_EQ(_cardano_calculate_collateral_amount(UINT64_MAX, 150U, &collateral_amount), CARDANO_ERROR_INTEGER_OVERFLOW);
+  EXPECT_EQ(_cardano_calculate_collateral_amount(99U, UINT64_MAX, &collateral_amount), CARDANO_ERROR_INTEGER_OVERFLOW);
+  EXPECT_EQ(_cardano_calculate_collateral_amount((uint64_t)INT64_MAX, 200U, &collateral_amount), CARDANO_ERROR_INTEGER_OVERFLOW);
+  EXPECT_EQ(_cardano_calculate_collateral_amount((uint64_t)INT64_MAX + 1U, 100U, &collateral_amount), CARDANO_ERROR_INTEGER_OVERFLOW);
+  EXPECT_EQ(collateral_amount, 0U);
 }
 
 TEST(xxx_cardano_create_collateral_change_output, canCreateChangeOutput)
@@ -788,6 +824,7 @@ TEST(xxx_cardano_set_collateral_output, returnsBalanceInsufficientIfCollateralIs
   EXPECT_EQ(empty_result, CARDANO_ERROR_BALANCE_INSUFFICIENT);
   EXPECT_EQ(null_result, CARDANO_ERROR_BALANCE_INSUFFICIENT);
   EXPECT_FALSE(has_collateral(transaction));
+  EXPECT_STREQ(cardano_transaction_get_last_error(transaction), "The transaction requires collateral, but no collateral UTXOs were given.");
 
   // Cleanup
   cardano_transaction_unref(&transaction);
@@ -856,7 +893,35 @@ TEST(xxx_cardano_set_collateral_output, returnsNotEnoughBalanceIfCantMakeValidUt
 
   cardano_error_t result = _cardano_set_collateral_output(transaction, protocol_params, utxos, change_address);
   EXPECT_EQ(result, CARDANO_ERROR_BALANCE_INSUFFICIENT);
+  EXPECT_STREQ(cardano_transaction_get_last_error(transaction), "The transaction requires 0 lovelace of collateral, plus the min-ADA of the collateral return, but the collateral UTXOs hold 276252761 lovelace.");
 
+  cardano_transaction_unref(&transaction);
+  cardano_address_unref(&change_address);
+  cardano_protocol_parameters_unref(&protocol_params);
+  cardano_utxo_list_unref(&utxos);
+}
+
+TEST(xxx_cardano_set_collateral_output, returnsErrorIfTheCollateralOfTheFeeOverflows)
+{
+  // Arrange
+  cardano_transaction_t*         transaction     = new_default_transaction(COMPLEX_TX_CBOR);
+  cardano_address_t*             change_address  = create_address("addr_test1zrphkx6acpnf78fuvxn0mkew3l0fd058hzquvz7w36x4gten0d3vllmyqwsx5wktcd8cc3sq835lu7drv2xwl2wywfgsxj90mg");
+  cardano_protocol_parameters_t* protocol_params = init_protocol_parameters();
+  cardano_utxo_list_t*           utxos           = new_default_utxo_list();
+  cardano_transaction_body_t*    body            = cardano_transaction_get_body(transaction);
+
+  EXPECT_EQ(cardano_protocol_parameters_set_collateral_percentage(protocol_params, 150), CARDANO_SUCCESS);
+  EXPECT_EQ(cardano_transaction_body_set_fee(body, UINT64_MAX), CARDANO_SUCCESS);
+
+  // Act
+  cardano_error_t result = _cardano_set_collateral_output(transaction, protocol_params, utxos, change_address);
+
+  // Assert
+  EXPECT_EQ(result, CARDANO_ERROR_INTEGER_OVERFLOW);
+  EXPECT_STREQ(cardano_transaction_get_last_error(transaction), "The collateral the fee of the transaction requires exceeds the maximum amount the balancer can represent.");
+
+  // Cleanup
+  cardano_transaction_body_unref(&body);
   cardano_transaction_unref(&transaction);
   cardano_address_unref(&change_address);
   cardano_protocol_parameters_unref(&protocol_params);

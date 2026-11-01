@@ -59,6 +59,11 @@ extern "C" {
  * inputs and spend inputs are given in \p resolved_ref_inputs, as the ledger prices the reference scripts of the whole
  * batch.
  *
+ * The fee is the one the ledger requires: the size part is computed as \ref cardano_compute_min_fee_without_scripts
+ * documents, without the is valid flag, and the script part as \ref cardano_compute_min_script_fee documents, in exact
+ * arithmetic. The witness set is sized as it is, so to get the fee of the signed transaction, pass the transaction with
+ * its signatures.
+ *
  * \param[in] transaction The pointer to the \ref cardano_transaction_t object representing the transaction.
  * \param[in] resolved_ref_inputs A pointer to the \ref cardano_utxo_list_t containing every resolved UTXO whose reference script is priced: the ones behind
  *                                the reference inputs and the spend inputs of the transaction and of its sub transactions. Every entry is priced, so a UTXO
@@ -66,7 +71,10 @@ extern "C" {
  * \param[in] protocol_params The pointer to the \ref cardano_protocol_parameters_t structure that contains protocol-related parameters for fee calculation.
  * \param[out] fee A pointer to a uint64_t that will hold the computed transaction fee upon success.
  *
- * \return \ref CARDANO_SUCCESS if the fee was successfully computed, or an appropriate error code indicating failure.
+ * \return \ref CARDANO_SUCCESS if the fee was successfully computed, \ref CARDANO_ERROR_INVALID_ARGUMENT if the transaction
+ *         has execution units to price and the price of the memory units or of the CPU steps has a zero denominator,
+ *         \ref CARDANO_ERROR_INTEGER_OVERFLOW if the fee does not fit in 64 bits, or an appropriate error code indicating
+ *         failure.
  *
  * \note The transaction size and the execution unit requirements for Plutus scripts influence the final fee.
  *       Ensure that the resolved UTXOs match the reference inputs and the spend inputs specified in the transaction to compute accurate fees.
@@ -155,6 +163,11 @@ CARDANO_EXPORT cardano_error_t cardano_compute_min_ada_required(
  * the fee is zero and the computed fee is the reference script fee alone. The reference scripts of the sub transactions
  * resolved in \p resolved_reference_inputs are included, as the ledger prices the reference scripts of the whole batch.
  *
+ * The execution units are priced as the ledger prices them: the fee is the ceiling of the exact price of the memory
+ * units plus the exact price of the CPU steps, computed from the numerators and the denominators of the prices in
+ * integer arithmetic, so a fee whose exact value is an integer is never rounded up. A transaction without memory units
+ * and CPU steps pays no execution units fee, whatever the prices are.
+ *
  * The reference scripts are priced as \ref cardano_compute_script_ref_fee prices them, with the Conway values of the
  * reference script cost stride and multiplier. \ref cardano_compute_transaction_fee prices them with the stride and the
  * multiplier of its protocol parameters instead.
@@ -168,7 +181,10 @@ CARDANO_EXPORT cardano_error_t cardano_compute_min_ada_required(
  * \param[in] coins_per_ref_script_byte The pointer to the \ref cardano_unit_interval_t object representing the cost per byte of reference scripts.
  * \param[out] min_fee A pointer to a uint64_t where the calculated minimum fee for the transaction will be stored.
  *
- * \return \ref CARDANO_SUCCESS if the minimum script fee was successfully computed, or an appropriate error code indicating failure.
+ * \return \ref CARDANO_SUCCESS if the minimum script fee was successfully computed, \ref CARDANO_ERROR_INVALID_ARGUMENT if the
+ *         transaction has execution units to price and the price of the memory units or of the CPU steps has a zero
+ *         denominator, \ref CARDANO_ERROR_INTEGER_OVERFLOW if the fee does not fit in 64 bits, or an appropriate error code
+ *         indicating failure.
  *
  * \note The calculated fee accounts for the execution requirements of all the Plutus scripts included and for the size of every reference script listed in
  *       \p resolved_reference_inputs, measured as \ref cardano_get_serialized_script_size documents.
@@ -207,14 +223,18 @@ cardano_compute_min_script_fee(
  *
  * \f$ \text{min_fee} = \text{min_fee_constant} + (\text{min_fee_coefficient} \times \text{tx_size}) \f$
  *
- * where `tx_size` is the size of the transaction in bytes.
+ * where `tx_size` is the size of the transaction in bytes, measured as the ledger measures it for the fee: the size of
+ * a three element array of the body, the witness set and the auxiliary data (or null when the transaction has none).
+ * The is valid flag that the four element frame carries is not part of that size, so for such a transaction the size
+ * is one byte lower than the one \ref cardano_get_serialized_transaction_size returns.
  *
  * \param[in] tx A pointer to the \ref cardano_transaction_t object representing the transaction.
  * \param[in] min_fee_constant The constant fee factor (A) from the protocol parameters.
  * \param[in] min_fee_coefficient The fee-per-byte coefficient (B) from the protocol parameters.
  * \param[out] min_fee A pointer to a uint64_t where the computed minimum fee will be stored.
  *
- * \return \ref CARDANO_SUCCESS if the minimum fee was successfully computed, or an appropriate error code indicating failure.
+ * \return \ref CARDANO_SUCCESS if the minimum fee was successfully computed, \ref CARDANO_ERROR_INTEGER_OVERFLOW if the fee
+ *         does not fit in 64 bits, or an appropriate error code indicating failure.
  *
  * \note This function only computes the base fee without considering any costs related to scripts or smart contract execution.
  *
@@ -496,7 +516,9 @@ cardano_get_serialized_script_size(cardano_script_t* script, size_t* size_in_byt
 /**
  * \brief Computes the serialized size of a given transaction.
  *
- * This function calculates the size in bytes required to serialize a given transaction.
+ * This function calculates the size in bytes required to serialize a given transaction, with the is valid flag when
+ * the transaction is serialized in the four element frame. The ledger measures the size of a transaction for its fee
+ * without that flag, as \ref cardano_compute_min_fee_without_scripts does.
  *
  * \param[in] transaction A pointer to the \ref cardano_transaction_t object for which the serialized size is to be calculated.
  * \param[out] size_in_bytes A pointer to a \c size_t where the size of the serialized transaction in bytes will be stored.

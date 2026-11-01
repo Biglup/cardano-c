@@ -32,6 +32,10 @@
 #include <cardano/transaction_builder/balancing/transaction_balancing.h>
 #include <cardano/transaction_builder/fee.h>
 
+#include <assert.h>
+#include <inttypes.h>
+#include <stdio.h>
+
 /* CONSTANTS *****************************************************************/
 
 /**
@@ -2200,6 +2204,134 @@ shallow_clone_outputs(cardano_transaction_output_list_t* original)
 }
 
 /**
+ * \brief Finds the first native asset that a value requires beyond what another value holds.
+ *
+ * \param[in]  required_value   The value the inputs of the transaction must provide.
+ * \param[in]  available_value  The value the UTXOs available to balance the transaction hold.
+ * \param[out] asset_id         The first asset the available value does not cover, or NULL if it covers every asset.
+ * \param[out] required_amount  The amount of that asset the inputs must provide.
+ * \param[out] available_amount The amount of that asset the available UTXOs hold.
+ */
+static void
+find_missing_asset(
+  cardano_value_t*     required_value,
+  cardano_value_t*     available_value,
+  cardano_asset_id_t** asset_id,
+  int64_t*             required_amount,
+  int64_t*             available_amount)
+{
+  cardano_asset_id_map_t* required_assets  = cardano_value_as_assets_map(required_value);
+  cardano_asset_id_map_t* available_assets = cardano_value_as_assets_map(available_value);
+  const size_t            asset_count      = cardano_asset_id_map_get_length(required_assets);
+
+  *asset_id = NULL;
+
+  for (size_t i = 0U; (i < asset_count) && (*asset_id == NULL); ++i)
+  {
+    cardano_asset_id_t* candidate        = NULL;
+    int64_t             candidate_amount = 0;
+    int64_t             held_amount      = 0;
+
+    if (cardano_asset_id_map_get_key_value_at(required_assets, i, &candidate, &candidate_amount) == CARDANO_SUCCESS)
+    {
+      if (cardano_asset_id_map_get(available_assets, candidate, &held_amount) != CARDANO_SUCCESS)
+      {
+        held_amount = 0;
+      }
+
+      if (!cardano_asset_id_is_lovelace(candidate) && (candidate_amount > held_amount))
+      {
+        cardano_asset_id_ref(candidate);
+
+        *asset_id         = candidate;
+        *required_amount  = candidate_amount;
+        *available_amount = held_amount;
+      }
+    }
+
+    cardano_asset_id_unref(&candidate);
+  }
+
+  cardano_asset_id_map_unref(&required_assets);
+  cardano_asset_id_map_unref(&available_assets);
+}
+
+/**
+ * \brief Sets the last error of a transaction to describe a value that coin selection can not cover.
+ *
+ * When the UTXOs available to balance the transaction lack a native asset it spends, the error names that asset.
+ * Otherwise it reports the lovelace the inputs must provide, or zero when the implicit value of the transaction already
+ * covers its outputs, and the lovelace the available UTXOs hold.
+ *
+ * \param[in,out] tx                The transaction that receives the error message.
+ * \param[in]     required_value    The value the inputs of the transaction must provide.
+ * \param[in]     pre_selected_utxo The UTXOs the transaction must spend, or NULL.
+ * \param[in]     available_utxo    The UTXOs coin selection may spend.
+ */
+static void
+set_insufficient_balance_error(
+  cardano_transaction_t* tx,
+  cardano_value_t*       required_value,
+  cardano_utxo_list_t*   pre_selected_utxo,
+  cardano_utxo_list_t*   available_utxo)
+{
+  cardano_value_t*    pre_selected_value = NULL;
+  cardano_value_t*    available_value    = NULL;
+  cardano_value_t*    total_value        = NULL;
+  cardano_asset_id_t* missing_asset      = NULL;
+  int64_t             required_amount    = 0;
+  int64_t             available_amount   = 0;
+  int64_t             required_coin      = cardano_value_get_coin(required_value);
+  int64_t             available_coin     = 0;
+
+  if ((_cardano_coalesce_all_utxos(pre_selected_utxo, &pre_selected_value) == CARDANO_SUCCESS) && (_cardano_coalesce_all_utxos(available_utxo, &available_value) == CARDANO_SUCCESS) && (cardano_value_add(pre_selected_value, available_value, &total_value) == CARDANO_SUCCESS))
+  {
+    available_coin = cardano_value_get_coin(total_value);
+
+    find_missing_asset(required_value, total_value, &missing_asset, &required_amount, &available_amount);
+  }
+
+  cardano_value_unref(&pre_selected_value);
+  cardano_value_unref(&available_value);
+  cardano_value_unref(&total_value);
+
+  if (required_coin < 0)
+  {
+    required_coin = 0;
+  }
+
+  char    buffer[512] = { 0 };
+  int32_t written     = 0;
+
+  if (missing_asset != NULL)
+  {
+    written = snprintf(
+      buffer,
+      sizeof(buffer),
+      "The transaction requires %" PRId64 " of the asset %s from its inputs, but the UTXOs available to balance it hold %" PRId64 ".",
+      required_amount,
+      cardano_asset_id_get_hex(missing_asset),
+      available_amount);
+  }
+  else
+  {
+    written = snprintf(
+      buffer,
+      sizeof(buffer),
+      "The transaction requires %" PRId64 " lovelace from its inputs, plus the assets it spends and the min-ADA of its change, but the UTXOs available to balance it hold %" PRId64 " lovelace.",
+      required_coin,
+      available_coin);
+  }
+
+  assert(written > 0);
+  CARDANO_UNUSED(written);
+
+  cardano_asset_id_unref(&missing_asset);
+
+  cardano_transaction_set_last_error(tx, buffer);
+}
+
+/**
  * \brief Computes the CBOR array header size for a given element count.
  *
  * This function determines the number of bytes required for encoding the header of a CBOR array,
@@ -2394,6 +2526,14 @@ compute_bootstrap_witnesses_cost(
  * minus the deposits, the fee, the donation and the direct deposits. A surplus of the sub transactions therefore lowers
  * the target or ends up as change, while a deficit is funded by the selected inputs.
  *
+ * The collateral, the coin selection and the change of an iteration are sized for the fee of that iteration, and the
+ * fee of the next iteration is the minimum fee the ledger requires for the transaction they produced, never lower than
+ * the fee the transaction carried before balancing. The loop ends once that minimum fee is the fee the iteration was
+ * sized for, so the fee is the ledger minimum for the transaction it pays for. The fee goes down when a lower fee needs
+ * a smaller transaction, for example fewer collateral inputs or a shorter change amount, but once it goes up again after
+ * going down it only goes up, which makes the loop end. The fee then exceeds the minimum by the bytes that kept the fee
+ * from settling.
+ *
  * \param[in,out] unbalanced_tx                   The transaction to balance.
  * \param[in]     foreign_signature_count         The number of expected extra signatures, not specified in the transaction.
  * \param[in]     protocol_params                 The protocol parameters.
@@ -2490,8 +2630,11 @@ balance_transaction(
   cardano_transaction_output_list_t* shallow_cloned_outputs = shallow_clone_outputs(original_outputs);
   cardano_transaction_output_list_unref(&original_outputs);
 
-  uint64_t fee      = cardano_transaction_body_get_fee(body);
-  uint64_t donation = 0;
+  const uint64_t minimum_fee     = cardano_transaction_body_get_fee(body);
+  uint64_t       fee             = minimum_fee;
+  uint64_t       donation        = 0;
+  bool           has_lowered_fee = false;
+  bool           may_lower_fee   = true;
 
   const uint64_t* donationPtr = cardano_transaction_body_get_donation(body);
   if (donationPtr != NULL)
@@ -2617,18 +2760,27 @@ balance_transaction(
       &remaining_utxo,
       &change_outputs);
 
-    cardano_value_unref(&required_input_value);
-
     if (result != CARDANO_SUCCESS)
     {
       cardano_transaction_output_list_unref(&shallow_cloned_outputs);
 
-      cardano_transaction_set_last_error(
-        unbalanced_tx,
-        cardano_coin_selector_get_last_error(coin_selector));
+      const char* selector_error = cardano_coin_selector_get_last_error(coin_selector);
+
+      if ((result == CARDANO_ERROR_BALANCE_INSUFFICIENT) && (selector_error[0] == '\0'))
+      {
+        set_insufficient_balance_error(unbalanced_tx, required_input_value, pre_selected_utxo, available_utxo);
+      }
+      else
+      {
+        cardano_transaction_set_last_error(unbalanced_tx, selector_error);
+      }
+
+      cardano_value_unref(&required_input_value);
 
       return result;
     }
+
+    cardano_value_unref(&required_input_value);
 
     result = set_transaction_inputs(body, selection, input_to_redeemer_map);
 
@@ -2936,10 +3088,21 @@ balance_transaction(
       return result;
     }
 
-    if (computed_fee > fee)
+    if (computed_fee < minimum_fee)
     {
-      fee    = computed_fee;
-      result = cardano_transaction_body_set_fee(body, fee);
+      computed_fee = minimum_fee;
+    }
+
+    if ((computed_fee > fee) && has_lowered_fee)
+    {
+      may_lower_fee = false;
+    }
+
+    if ((computed_fee > fee) || ((computed_fee < fee) && may_lower_fee))
+    {
+      has_lowered_fee = has_lowered_fee || (computed_fee < fee);
+      fee             = computed_fee;
+      result          = cardano_transaction_body_set_fee(body, fee);
 
       cardano_utxo_list_unref(&resolved_inputs);
 
@@ -3031,6 +3194,10 @@ balance_transaction(
 
     if (!is_balanced)
     {
+      cardano_transaction_set_last_error(
+        unbalanced_tx,
+        "The inputs of the transaction do not balance its outputs, fee, deposits and donation once its change is added.");
+
       cardano_transaction_output_list_unref(&shallow_cloned_outputs);
       return CARDANO_ERROR_BALANCE_INSUFFICIENT;
     }

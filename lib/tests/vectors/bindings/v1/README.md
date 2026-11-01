@@ -42,9 +42,10 @@ binding retains callbacks correctly through that runtime's GC or cancellation.
 ## Provenance and scope
 
 Expected results target cardano-c **2.0.0-rc.6**, release commit
-`e321e98bbc7f4e1f2d9177e6bafe3d884f5eb00e`. Pin the containing corpus commit when
-consuming it. The native version belongs in this provenance, not in the binding
-architecture guide.
+`e321e98bbc7f4e1f2d9177e6bafe3d884f5eb00e`, except builder fees and change,
+which follow the exact ledger minimum fee introduced after 2.0.0-rc.6. Pin the
+containing corpus commit when consuming it. The native version belongs in this
+provenance, not in the binding architecture guide.
 
 Serialization cases are promoted from native unit-test vectors, identified by
 their `source` fields, plus explicit integer boundary cases. Builder expectations

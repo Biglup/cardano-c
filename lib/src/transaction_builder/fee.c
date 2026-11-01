@@ -31,7 +31,6 @@
 #include <cardano/transaction/sub_transaction.h>
 #include <cardano/transaction_body/sub_transaction_set.h>
 #include <cardano/transaction_builder/fee.h>
-#include <math.h>
 
 /* STRUCTURES ****************************************************************/
 
@@ -859,6 +858,192 @@ get_native_script_size(cardano_script_t* script, size_t* size_in_bytes)
 }
 
 /**
+ * \brief Multiplies an integer by a fraction, giving the integer part and the remainder of the product.
+ *
+ * \param[in]  factor      The integer.
+ * \param[in]  numerator   The numerator of the fraction.
+ * \param[in]  denominator The denominator of the fraction, not zero.
+ * \param[out] whole       The integer part of \p factor times \p numerator over \p denominator.
+ * \param[out] remainder   The remainder of \p factor times \p numerator over \p denominator, lower than \p denominator.
+ *
+ * \return \ref CARDANO_SUCCESS if the product was computed, or \ref CARDANO_ERROR_INTEGER_OVERFLOW if its integer part
+ *         does not fit in 64 bits.
+ */
+static cardano_error_t
+multiply_by_fraction(
+  const uint64_t factor,
+  const uint64_t numerator,
+  const uint64_t denominator,
+  uint64_t*      whole,
+  uint64_t*      remainder)
+{
+  uint64_t fraction_quotient = 0U;
+
+  cardano_error_t result = checked_multiply(factor, numerator / denominator, whole);
+
+  if (result == CARDANO_SUCCESS)
+  {
+    result = multiply_fraction(numerator % denominator, factor, denominator, &fraction_quotient, remainder);
+  }
+
+  if (result == CARDANO_SUCCESS)
+  {
+    result = checked_add(*whole, fraction_quotient, whole);
+  }
+
+  return result;
+}
+
+/**
+ * \brief Computes the fee of execution units as the ledger does: the ceiling of the exact price of the memory units
+ * plus the exact price of the CPU steps.
+ *
+ * Each price is split in an integer part and a remainder over the denominator of its price. The fee is the sum of the
+ * integer parts plus the ceiling of the sum of the two fractions: 0 when both are zero, 1 when their sum does not
+ * exceed one and 2 otherwise. The memory fraction m / M does not exceed one minus the steps fraction s / S exactly when
+ * m times S over M, computed as an integer part and a remainder, does not exceed S - s.
+ *
+ * Without memory units and CPU steps the fee is zero whatever the prices are, so a transaction without redeemers is
+ * never refused because of a price it does not pay.
+ *
+ * \param[in]  memory        The memory units.
+ * \param[in]  cpu_steps     The CPU steps.
+ * \param[in]  memory_prices The price of a memory unit.
+ * \param[in]  steps_prices  The price of a CPU step.
+ * \param[out] fee           The fee of the execution units. It is only written on success.
+ *
+ * \return \ref CARDANO_SUCCESS if the fee was computed, \ref CARDANO_ERROR_INVALID_ARGUMENT if there are memory
+ *         units or CPU steps to price and a price has a zero denominator, or \ref CARDANO_ERROR_INTEGER_OVERFLOW if
+ *         the fee does not fit in 64 bits.
+ */
+static cardano_error_t
+compute_ex_units_fee(
+  const uint64_t                 memory,
+  const uint64_t                 cpu_steps,
+  const cardano_unit_interval_t* memory_prices,
+  const cardano_unit_interval_t* steps_prices,
+  uint64_t*                      fee)
+{
+  const uint64_t memory_denominator = cardano_unit_interval_get_denominator(memory_prices);
+  const uint64_t steps_denominator  = cardano_unit_interval_get_denominator(steps_prices);
+
+  if ((memory == 0U) && (cpu_steps == 0U))
+  {
+    *fee = 0U;
+
+    return CARDANO_SUCCESS;
+  }
+
+  if ((memory_denominator == 0U) || (steps_denominator == 0U))
+  {
+    return CARDANO_ERROR_INVALID_ARGUMENT;
+  }
+
+  uint64_t memory_whole     = 0U;
+  uint64_t memory_remainder = 0U;
+  uint64_t steps_whole      = 0U;
+  uint64_t steps_remainder  = 0U;
+  uint64_t total            = 0U;
+
+  cardano_error_t result = multiply_by_fraction(memory, cardano_unit_interval_get_numerator(memory_prices), memory_denominator, &memory_whole, &memory_remainder);
+
+  if (result == CARDANO_SUCCESS)
+  {
+    result = multiply_by_fraction(cpu_steps, cardano_unit_interval_get_numerator(steps_prices), steps_denominator, &steps_whole, &steps_remainder);
+  }
+
+  if (result == CARDANO_SUCCESS)
+  {
+    result = checked_add(memory_whole, steps_whole, &total);
+  }
+
+  if ((result == CARDANO_SUCCESS) && ((memory_remainder != 0U) || (steps_remainder != 0U)))
+  {
+    uint64_t scaled_quotient  = 0U;
+    uint64_t scaled_remainder = 0U;
+
+    result = multiply_fraction(memory_remainder, steps_denominator, memory_denominator, &scaled_quotient, &scaled_remainder);
+
+    if (result == CARDANO_SUCCESS)
+    {
+      const uint64_t steps_complement = steps_denominator - steps_remainder;
+      const bool     exceeds_one      = (scaled_quotient > steps_complement) || ((scaled_quotient == steps_complement) && (scaled_remainder != 0U));
+
+      result = checked_add(total, exceeds_one ? 2U : 1U, &total);
+    }
+  }
+
+  if (result == CARDANO_SUCCESS)
+  {
+    *fee = total;
+  }
+
+  return result;
+}
+
+/**
+ * \brief Computes the size of a transaction as the ledger measures it to compute its fee.
+ *
+ * The ledger sizes a transaction as a three element array of its body, its witness set and its auxiliary data, or null
+ * when it has none. The is valid flag of the four element frame is not part of that size, whatever its value.
+ *
+ * \param[in]  transaction   The transaction.
+ * \param[out] size_in_bytes The size of the transaction for its fee. It is only written on success.
+ *
+ * \return \ref CARDANO_SUCCESS if the size was computed, or an appropriate error code indicating failure.
+ */
+static cardano_error_t
+get_transaction_size_for_fee(cardano_transaction_t* transaction, size_t* size_in_bytes)
+{
+  cardano_cbor_writer_t* writer = cardano_cbor_writer_new();
+
+  if (writer == NULL)
+  {
+    return CARDANO_ERROR_MEMORY_ALLOCATION_FAILED;
+  }
+
+  cardano_transaction_body_t* body = cardano_transaction_get_body(transaction);
+  cardano_transaction_body_unref(&body);
+
+  cardano_witness_set_t* witness_set = cardano_transaction_get_witness_set(transaction);
+  cardano_witness_set_unref(&witness_set);
+
+  cardano_auxiliary_data_t* auxiliary_data = cardano_transaction_get_auxiliary_data(transaction);
+  cardano_auxiliary_data_unref(&auxiliary_data);
+
+  cardano_error_t result = cardano_cbor_writer_write_start_array(writer, 3);
+
+  if (result == CARDANO_SUCCESS)
+  {
+    result = cardano_transaction_body_to_cbor(body, writer);
+  }
+
+  if (result == CARDANO_SUCCESS)
+  {
+    result = cardano_witness_set_to_cbor(witness_set, writer);
+  }
+
+  if ((result == CARDANO_SUCCESS) && (auxiliary_data == NULL))
+  {
+    result = cardano_cbor_writer_write_null(writer);
+  }
+
+  if ((result == CARDANO_SUCCESS) && (auxiliary_data != NULL))
+  {
+    result = cardano_auxiliary_data_to_cbor(auxiliary_data, writer);
+  }
+
+  if (result == CARDANO_SUCCESS)
+  {
+    *size_in_bytes = cardano_cbor_writer_get_encode_size(writer);
+  }
+
+  cardano_cbor_writer_unref(&writer);
+
+  return result;
+}
+
+/**
  * \brief Adds the execution units of the redeemers of a witness set to a running total.
  *
  * \param[in]     witness_set The witness set whose redeemers are added.
@@ -1082,28 +1267,31 @@ compute_min_script_fee_with_tiers(
     return result;
   }
 
-  const double cpu_price = cardano_unit_interval_to_double(cpu_steps_prices);
-  const double mem_price = cardano_unit_interval_to_double(memory_prices);
+  uint64_t ex_units_fee = 0U;
+
+  result = compute_ex_units_fee(memory, cpu_steps, memory_prices, cpu_steps_prices, &ex_units_fee);
 
   cardano_unit_interval_unref(&cpu_steps_prices);
   cardano_unit_interval_unref(&memory_prices);
 
-  *min_fee = (uint64_t)ceil(((double)cpu_steps * cpu_price) + ((double)memory * mem_price));
+  uint64_t ref_script_fee = 0U;
 
-  uint64_t ref_script_size = 0U;
+  if (result == CARDANO_SUCCESS)
+  {
+    result = compute_ref_script_fee_with_tiers(resolved_reference_inputs, coins_per_ref_script_byte, tiers, &ref_script_fee);
+  }
 
-  result = compute_ref_script_fee_with_tiers(resolved_reference_inputs, coins_per_ref_script_byte, tiers, &ref_script_size);
+  if (result == CARDANO_SUCCESS)
+  {
+    result = checked_add(ex_units_fee, ref_script_fee, min_fee);
+  }
 
   if (result != CARDANO_SUCCESS)
   {
     *min_fee = 0U;
-
-    return result;
   }
 
-  *min_fee += ref_script_size;
-
-  return CARDANO_SUCCESS;
+  return result;
 }
 
 /* DEFINITIONS ***************************************************************/
@@ -1432,18 +1620,22 @@ cardano_compute_min_fee_without_scripts(
     return CARDANO_ERROR_POINTER_IS_NULL;
   }
 
-  size_t size_in_bytes = 0U;
+  size_t   size_in_bytes = 0U;
+  uint64_t size_fee      = 0U;
 
-  cardano_error_t result = cardano_get_serialized_transaction_size(tx, &size_in_bytes);
+  cardano_error_t result = get_transaction_size_for_fee(tx, &size_in_bytes);
 
-  if (result != CARDANO_SUCCESS)
+  if (result == CARDANO_SUCCESS)
   {
-    return result;
+    result = checked_multiply(min_fee_coefficient, (uint64_t)size_in_bytes, &size_fee);
   }
 
-  *min_fee = (uint64_t)ceil((double)min_fee_constant + ((double)min_fee_coefficient * (double)size_in_bytes));
+  if (result == CARDANO_SUCCESS)
+  {
+    result = checked_add(min_fee_constant, size_fee, min_fee);
+  }
 
-  return CARDANO_SUCCESS;
+  return result;
 }
 
 cardano_error_t
@@ -1585,7 +1777,5 @@ cardano_compute_transaction_fee(
     return result;
   }
 
-  *fee = min_script_fee + no_script_fee;
-
-  return CARDANO_SUCCESS;
+  return checked_add(min_script_fee, no_script_fee, fee);
 }
