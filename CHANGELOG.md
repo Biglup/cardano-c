@@ -1,4 +1,4 @@
-Unreleased
+V2.0.0-rc.6
 ---------------------
 
 - **BREAKING (JSON)**: Transaction inspection now emits all key and script guards in `guards`, including Conway key-only guards. The `required_signers` JSON field is no longer emitted. Read key hashes from `guards` entries tagged `pubkey_hash`. CBOR encoding, transaction hashes and the C required-signer accessors are unchanged.
