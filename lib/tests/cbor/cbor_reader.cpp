@@ -3651,3 +3651,26 @@ TEST(cardano_cbor_reader_read_int, acceptsBothSignedLimits)
     cardano_cbor_reader_unref(&reader);
   }
 }
+
+TEST(cardano_cbor_reader_read_encoded_value, preservesFullWidthNegativeIntegers)
+{
+  // Arrange
+  const char*            cbor     = "3bffffffffffffffff";
+  cardano_cbor_reader_t* reader   = cardano_cbor_reader_from_hex(cbor, strlen(cbor));
+  cardano_buffer_t*      encoded  = nullptr;
+  cardano_buffer_t*      expected = cardano_buffer_from_hex(cbor, strlen(cbor));
+
+  // Act
+  const cardano_error_t result = cardano_cbor_reader_read_encoded_value(reader, &encoded);
+
+  // Assert
+  EXPECT_EQ(result, CARDANO_SUCCESS);
+  ASSERT_NE(encoded, nullptr);
+  EXPECT_EQ(cardano_buffer_get_size(encoded), cardano_buffer_get_size(expected));
+  EXPECT_EQ(memcmp(cardano_buffer_get_data(encoded), cardano_buffer_get_data(expected), cardano_buffer_get_size(expected)), 0);
+
+  // Cleanup
+  cardano_buffer_unref(&encoded);
+  cardano_buffer_unref(&expected);
+  cardano_cbor_reader_unref(&reader);
+}
