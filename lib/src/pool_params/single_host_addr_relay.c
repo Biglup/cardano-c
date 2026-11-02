@@ -210,6 +210,12 @@ cardano_single_host_addr_relay_from_cbor(cardano_cbor_reader_t* reader, cardano_
       return read_port_result;
     }
 
+    if (port64 > UINT16_MAX)
+    {
+      cardano_cbor_reader_set_last_error(reader, "Relay port exceeds the unsigned 16-bit range.");
+      return CARDANO_ERROR_DECODING;
+    }
+
     port     = (uint16_t)port64;
     has_port = true;
   }
@@ -244,6 +250,7 @@ cardano_single_host_addr_relay_from_cbor(cardano_cbor_reader_t* reader, cardano_
 
   if (peek_state != CARDANO_SUCCESS)
   {
+    cardano_ipv4_unref(&ipv4);
     return peek_state;
   }
 
@@ -253,6 +260,7 @@ cardano_single_host_addr_relay_from_cbor(cardano_cbor_reader_t* reader, cardano_
 
     if (read_null_result != CARDANO_SUCCESS)
     {
+      cardano_ipv4_unref(&ipv4);
       return read_null_result;
     }
   }
