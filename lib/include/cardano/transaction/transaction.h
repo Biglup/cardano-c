@@ -131,13 +131,21 @@ cardano_transaction_new(
  *         CBOR representation internally. When \ref cardano_transaction_to_cbor is called, it will output the cached CBOR.
  *         If the cached CBOR representation is not needed, the client can call \ref cardano_transaction_clear_cbor_cache after the object has been created.
  *
- * \remark This function accepts both transaction frames: the Dijkstra on-chain 3-element tuple
- *         [body, witness_set, auxiliary_data / nil] and the mempool/legacy 4-element frame
- *         [body, witness_set, is_valid, auxiliary_data / nil]. A 3-element frame implies is_valid = true.
- *         The decoded frame form is preserved while is_valid remains true, so \ref cardano_transaction_to_cbor
- *         re-encodes the transaction with the same number of elements it was decoded from. If is_valid is
- *         set to false, \ref cardano_transaction_to_cbor promotes the transaction to the 4-element frame
- *         so the flag is not lost.
+ * \remark This function accepts three transaction frames:
+ *         - the 3-element tuple [body, witness_set, auxiliary_data / nil], which implies is_valid = true;
+ *         - the mempool/legacy 4-element frame [body, witness_set, is_valid, auxiliary_data / nil];
+ *         - the Dijkstra block 4-element frame [body, witness_set, auxiliary_data / nil, is_valid], in which the
+ *           block producer records whether the scripts of the transaction passed validation, so is_valid may be false.
+ *           This is the form in which Dijkstra transactions are stored on chain.
+ *
+ *         The two 4-element frames are told apart by the third element: auxiliary data is never a boolean, so a
+ *         boolean third element is the is_valid flag of the mempool/legacy frame, and any other third element is the
+ *         auxiliary data of the block frame, followed by the is_valid flag. Indefinite-length frames are accepted.
+ *
+ *         The decoded frame form is preserved, so \ref cardano_transaction_to_cbor re-encodes the transaction in the
+ *         same frame it was decoded from (always as a definite-length array). The 3-element form is only kept while
+ *         is_valid is true; if is_valid is set to false, \ref cardano_transaction_to_cbor promotes the transaction to
+ *         the mempool/legacy 4-element frame so the flag is not lost.
  *
  * \note If the function fails, the last error can be retrieved by calling \ref cardano_cbor_reader_get_last_error with the reader.
  *       The caller is responsible for freeing the created \ref cardano_transaction_t object by calling
@@ -191,10 +199,11 @@ cardano_transaction_from_cbor(cardano_cbor_reader_t* reader, cardano_transaction
  *
  * \remark Transactions created with \ref cardano_transaction_new are serialized as the mempool/legacy
  *         4-element frame [body, witness_set, is_valid, auxiliary_data / nil]. Transactions decoded with
- *         \ref cardano_transaction_from_cbor keep the frame form they were decoded from, so a Dijkstra
- *         on-chain 3-element tuple [body, witness_set, auxiliary_data / nil] re-encodes as a 3-element tuple.
- *         The 3-element form is only kept while is_valid is true; a transaction whose is_valid flag is false
- *         is always serialized as the 4-element frame so the flag is preserved.
+ *         \ref cardano_transaction_from_cbor keep the frame form they were decoded from: a 3-element tuple
+ *         [body, witness_set, auxiliary_data / nil] re-encodes as a 3-element tuple, and a Dijkstra block frame
+ *         [body, witness_set, auxiliary_data / nil, is_valid] re-encodes with the is_valid flag after the auxiliary data.
+ *         The 3-element form is only kept while is_valid is true; a 3-element transaction whose is_valid flag is false
+ *         is serialized as the mempool/legacy 4-element frame so the flag is preserved.
  *
  * Usage Example:
  * \code{.c}
