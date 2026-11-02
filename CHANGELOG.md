@@ -1,6 +1,8 @@
 Unreleased
 ---------------------
 
+- Decode 128-byte anchor URLs and accept the same maximum length in debug-build URL setters.
+
 - Return an allocation error when a CBOR byte-string or text-string slice cannot be allocated, instead of reporting success with a null output.
 
 - Add `deep_clone` APIs for native domain values, typed collections, addresses, cryptographic values, and JSON/CBOR utilities. Copies own their children and preserve encoding state. Existing shallow-clone APIs retain their behavior.

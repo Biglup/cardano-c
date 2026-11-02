@@ -32,6 +32,8 @@
 
 #include <gmock/gmock.h>
 
+#include <string>
+
 /* CONSTANTS *****************************************************************/
 
 static const char* INVALID_HASH_HEX = "000000000000000000000000000000000000000000000000";
@@ -1104,4 +1106,62 @@ TEST(cardano_anchor_to_cip116_json, returnsErrorIfWriterIsNull)
   // Cleanup
   cardano_anchor_unref(&anchor);
   cardano_blake2b_hash_unref(&hash);
+}
+
+TEST(cardano_anchor_from_cbor, acceptsMaximumLengthUrl)
+{
+  // Arrange
+  const std::string      cbor   = "827880" + std::string(256, '6') + "5820" + HASH_HEX;
+  cardano_anchor_t*      anchor = nullptr;
+  cardano_cbor_reader_t* reader = cardano_cbor_reader_from_hex(cbor.c_str(), cbor.size());
+
+  // Act
+  const cardano_error_t result = cardano_anchor_from_cbor(reader, &anchor);
+
+  // Assert
+  ASSERT_EQ(result, CARDANO_SUCCESS);
+  EXPECT_EQ(cardano_anchor_get_url_size(anchor), 129);
+  EXPECT_EQ(std::string(cardano_anchor_get_url(anchor)), std::string(128, 'f'));
+
+  // Cleanup
+  cardano_anchor_unref(&anchor);
+  cardano_cbor_reader_unref(&reader);
+}
+
+TEST(cardano_anchor_from_cbor, rejectsUrlLongerThanMaximum)
+{
+  // Arrange
+  const std::string      cbor   = "827881" + std::string(258, '6') + "5820" + HASH_HEX;
+  cardano_anchor_t*      anchor = nullptr;
+  cardano_cbor_reader_t* reader = cardano_cbor_reader_from_hex(cbor.c_str(), cbor.size());
+
+  // Act
+  const cardano_error_t result = cardano_anchor_from_cbor(reader, &anchor);
+
+  // Assert
+  EXPECT_NE(result, CARDANO_SUCCESS);
+  EXPECT_EQ(anchor, nullptr);
+
+  // Cleanup
+  cardano_anchor_unref(&anchor);
+  cardano_cbor_reader_unref(&reader);
+}
+
+TEST(cardano_anchor_set_url, acceptsMaximumLengthUrl)
+{
+  // Arrange
+  const std::string url(128, 'a');
+  cardano_anchor_t* anchor = nullptr;
+  ASSERT_EQ(cardano_anchor_from_hash_hex(URL, strlen(URL), HASH_HEX, strlen(HASH_HEX), &anchor), CARDANO_SUCCESS);
+
+  // Act
+  const cardano_error_t result = cardano_anchor_set_url(anchor, url.data(), url.size());
+
+  // Assert
+  EXPECT_EQ(result, CARDANO_SUCCESS);
+  EXPECT_EQ(cardano_anchor_get_url_size(anchor), url.size() + 1);
+  EXPECT_EQ(std::string(cardano_anchor_get_url(anchor)), url);
+
+  // Cleanup
+  cardano_anchor_unref(&anchor);
 }
