@@ -1312,7 +1312,7 @@ TEST(cardano_parse_array_value, returnsNullIfGrowingTheArrayFails)
 
   for (size_t i = 0U; i < 32U; ++i)
   {
-    json += (i == 0U) ? "0" : ",0";
+    json += (i == 0U) ? "true" : ",true";
   }
 
   json += "]";
@@ -1341,7 +1341,7 @@ TEST(cardano_parse_object_value, returnsNullIfGrowingTheArrayFails)
   {
     json += (i == 0U) ? "\"" : ",\"";
     json += std::to_string(i);
-    json += "\":0";
+    json += "\":true";
   }
 
   json += "}";
@@ -1795,4 +1795,95 @@ TEST(cardano_json_object_get_key_at, rejectsOutOfRangeIndices)
   EXPECT_EQ(cardano_json_object_get_key_at(empty, SIZE_MAX, NULL), nullptr);
   EXPECT_EQ(length, 42U);
   cardano_json_object_unref(&empty);
+}
+
+TEST(cardano_json_object_parse_ex, rejectsTruncatedNumbersObjectsAndSurrogates)
+{
+  // Arrange
+  const char* cases[] = { "-", "{", "{\"a\"", "{\"a\":1,", "[true,", "\"\\ud800\\uZZZZ\"" };
+
+  // Act & Assert
+  for (const char* text: cases)
+  {
+    cardano_json_object_t* value = NULL;
+
+    EXPECT_EQ(cardano_json_object_parse_ex(text, strlen(text), &value), CARDANO_ERROR_INVALID_JSON) << text;
+    EXPECT_EQ(value, nullptr);
+    cardano_json_object_unref(&value);
+  }
+}
+
+TEST(cardano_json_object_parse_ex, rejectsExcessiveObjectNesting)
+{
+  // Arrange
+  std::string text;
+
+  for (size_t index = 0U; index < 1024U; ++index)
+  {
+    text += "{\"a\":";
+  }
+
+  text += "null";
+  text.append(1024U, '}');
+  cardano_json_object_t* value = NULL;
+
+  // Act
+  const cardano_error_t result = cardano_json_object_parse_ex(text.data(), text.size(), &value);
+
+  // Assert
+  EXPECT_EQ(result, CARDANO_ERROR_INVALID_JSON);
+  EXPECT_EQ(value, nullptr);
+  cardano_json_object_unref(&value);
+}
+
+TEST(cardano_json_object_parse_ex, reportsStringTerminatorAndSurrogateGrowthFailures)
+{
+  // Arrange
+  const std::string cases[] = { "\"" + std::string(127U, 'a') + "\"", "\"" + std::string(127U, 'a') + "\\ud83d\\ude00\"" };
+
+  // Act & Assert
+  for (const std::string& text: cases)
+  {
+    cardano_json_object_t* value = NULL;
+    cardano_set_allocators(malloc, fail_right_away_realloc, free);
+
+    const cardano_error_t result = cardano_json_object_parse_ex(text.data(), text.size(), &value);
+
+    cardano_set_allocators(malloc, realloc, free);
+
+    EXPECT_EQ(result, CARDANO_ERROR_MEMORY_ALLOCATION_FAILED);
+    EXPECT_EQ(value, nullptr);
+    cardano_json_object_unref(&value);
+  }
+}
+
+TEST(cardano_json_object_parse_ex, reportsEmptyArrayAllocationFailures)
+{
+  // Arrange
+  bool completed = false;
+
+  // Act & Assert
+  for (int index = 0; index < 16; ++index)
+  {
+    cardano_json_object_t* value = NULL;
+    set_malloc_fail_index(index);
+    cardano_set_allocators(fail_malloc_at_exact_index, realloc, free);
+
+    const cardano_error_t result = cardano_json_object_parse_ex("[]", 2U, &value);
+
+    cardano_set_allocators(malloc, realloc, free);
+
+    if (result == CARDANO_SUCCESS)
+    {
+      cardano_json_object_unref(&value);
+      completed = true;
+      break;
+    }
+
+    EXPECT_EQ(result, CARDANO_ERROR_MEMORY_ALLOCATION_FAILED) << index;
+    EXPECT_EQ(value, nullptr) << index;
+    cardano_json_object_unref(&value);
+  }
+
+  EXPECT_TRUE(completed);
 }
