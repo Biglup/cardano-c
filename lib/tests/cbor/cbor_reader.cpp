@@ -3674,3 +3674,103 @@ TEST(cardano_cbor_reader_read_encoded_value, preservesFullWidthNegativeIntegers)
   cardano_buffer_unref(&expected);
   cardano_cbor_reader_unref(&reader);
 }
+
+TEST(cardano_cbor_reader_read_tag, rejectsOversizedTagsWithoutConsumingInput)
+{
+  // Arrange
+  const char* encodings[] = { "da8000000000", "db000000010000010280", "dbffffffffffffffff00" };
+
+  for (size_t i = 0U; i < (sizeof(encodings) / sizeof(encodings[0])); ++i)
+  {
+    cardano_cbor_reader_t* reader    = cardano_cbor_reader_from_hex(encodings[i], strlen(encodings[i]));
+    cardano_cbor_tag_t     tag       = CARDANO_CBOR_TAG_SET;
+    size_t                 remaining = 0U;
+    EXPECT_EQ(cardano_cbor_reader_get_bytes_remaining(reader, &remaining), CARDANO_SUCCESS);
+
+    // Act
+    const cardano_error_t peek_result = cardano_cbor_reader_peek_tag(reader, &tag);
+    const cardano_error_t read_result = cardano_cbor_reader_read_tag(reader, &tag);
+
+    // Assert
+    EXPECT_EQ(peek_result, CARDANO_ERROR_INTEGER_OVERFLOW);
+    EXPECT_EQ(read_result, CARDANO_ERROR_INTEGER_OVERFLOW);
+    EXPECT_EQ(tag, CARDANO_CBOR_TAG_SET);
+    size_t after = 0U;
+    EXPECT_EQ(cardano_cbor_reader_get_bytes_remaining(reader, &after), CARDANO_SUCCESS);
+    EXPECT_EQ(after, remaining);
+    EXPECT_STREQ(cardano_cbor_reader_get_last_error(reader), "Semantic tag out of range.");
+
+    // Cleanup
+    cardano_cbor_reader_unref(&reader);
+  }
+}
+
+TEST(cardano_cbor_reader_read_encoded_value, preservesFullWidthTags)
+{
+  // Arrange
+  const char* encodings[] = { "dbffffffffffffffff00", "db000000010000010280", "81dbffffffffffffffffdb000000010000006480" };
+
+  for (size_t i = 0U; i < (sizeof(encodings) / sizeof(encodings[0])); ++i)
+  {
+    cardano_cbor_reader_t* reader   = cardano_cbor_reader_from_hex(encodings[i], strlen(encodings[i]));
+    cardano_buffer_t*      encoded  = nullptr;
+    cardano_buffer_t*      expected = cardano_buffer_from_hex(encodings[i], strlen(encodings[i]));
+
+    // Act
+    const cardano_error_t result = cardano_cbor_reader_read_encoded_value(reader, &encoded);
+
+    // Assert
+    EXPECT_EQ(result, CARDANO_SUCCESS);
+    ASSERT_NE(encoded, nullptr);
+    EXPECT_EQ(cardano_buffer_get_size(encoded), cardano_buffer_get_size(expected));
+    EXPECT_EQ(memcmp(cardano_buffer_get_data(encoded), cardano_buffer_get_data(expected), cardano_buffer_get_size(expected)), 0);
+    size_t remaining = 1U;
+    EXPECT_EQ(cardano_cbor_reader_get_bytes_remaining(reader, &remaining), CARDANO_SUCCESS);
+    EXPECT_EQ(remaining, 0U);
+
+    // Cleanup
+    cardano_buffer_unref(&encoded);
+    cardano_buffer_unref(&expected);
+    cardano_cbor_reader_unref(&reader);
+  }
+}
+
+TEST(cardano_cbor_reader_read_tag, acceptsMaximumSupportedTag)
+{
+  // Arrange
+  const char*            cbor   = "da7fffffff00";
+  cardano_cbor_reader_t* reader = cardano_cbor_reader_from_hex(cbor, strlen(cbor));
+  cardano_cbor_tag_t     tag    = CARDANO_CBOR_TAG_SET;
+
+  // Act
+  const cardano_error_t result = cardano_cbor_reader_read_tag(reader, &tag);
+
+  // Assert
+  EXPECT_EQ(result, CARDANO_SUCCESS);
+  EXPECT_EQ(static_cast<uint64_t>(tag), static_cast<uint64_t>(INT32_MAX));
+  uint64_t value = 1U;
+  EXPECT_EQ(cardano_cbor_reader_read_uint(reader, &value), CARDANO_SUCCESS);
+  EXPECT_EQ(value, 0U);
+
+  // Cleanup
+  cardano_cbor_reader_unref(&reader);
+}
+
+TEST(cardano_cbor_reader_skip_value, skipsFullWidthTag)
+{
+  // Arrange
+  const char*            cbor   = "dbffffffffffffffff00";
+  cardano_cbor_reader_t* reader = cardano_cbor_reader_from_hex(cbor, strlen(cbor));
+
+  // Act
+  const cardano_error_t result = cardano_cbor_reader_skip_value(reader);
+
+  // Assert
+  EXPECT_EQ(result, CARDANO_SUCCESS);
+  size_t remaining = 1U;
+  EXPECT_EQ(cardano_cbor_reader_get_bytes_remaining(reader, &remaining), CARDANO_SUCCESS);
+  EXPECT_EQ(remaining, 0U);
+
+  // Cleanup
+  cardano_cbor_reader_unref(&reader);
+}

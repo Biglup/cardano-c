@@ -72,4 +72,14 @@ _cbor_reader_read_tag(cardano_cbor_reader_t* reader, cardano_cbor_tag_t* tag);
 cardano_error_t
 _cbor_reader_peek_tag(cardano_cbor_reader_t* reader, cardano_cbor_tag_t* tag);
 
+/**
+ * \brief Consumes a semantic tag without narrowing its unsigned 64-bit value.
+ *
+ * \param[in,out] reader The reader positioned at a semantic tag.
+ *
+ * \return CARDANO_SUCCESS on success, or the decoding error.
+ */
+cardano_error_t
+_cbor_reader_skip_tag(cardano_cbor_reader_t* reader);
+
 #endif // BIGLUP_LABS_INCLUDE_CARDANO_CBOR_READER_INTERNAL_TAGS_H

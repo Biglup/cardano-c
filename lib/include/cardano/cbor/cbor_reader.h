@@ -905,6 +905,10 @@ CARDANO_EXPORT cardano_error_t cardano_cbor_reader_read_textstring(cardano_cbor_
 /**
  * \brief Reads the next data item as a semantic tag (major type 6), advancing the reader.
  *
+ * Tag values greater than INT32_MAX return \ref CARDANO_ERROR_INTEGER_OVERFLOW without
+ * changing the output or consuming input. Use \ref cardano_cbor_reader_skip_value or
+ * \ref cardano_cbor_reader_read_encoded_value to handle arbitrary unsigned 64-bit tags.
+ *
  * \param[in] reader A pointer to the \ref cardano_cbor_reader_t instance from which the tag is to be read.
  * \param[out] tag A pointer to a \ref cardano_cbor_tag_t variable where the decoded tag value will be stored.
  *
@@ -934,6 +938,10 @@ CARDANO_EXPORT cardano_error_t cardano_cbor_reader_read_tag(cardano_cbor_reader_
 
 /**
  * \brief Peeks at the next semantic tag (major type 6) in the CBOR stream without consuming it.
+ *
+ * Tag values greater than INT32_MAX return \ref CARDANO_ERROR_INTEGER_OVERFLOW without
+ * changing the output or consuming input. Use \ref cardano_cbor_reader_skip_value or
+ * \ref cardano_cbor_reader_read_encoded_value to handle arbitrary unsigned 64-bit tags.
  *
  * This function peeks at the semantic tag ahead in the CBOR data stream. Semantic tags provide additional context
  * to the subsequent data item, according to the CBOR specification (major type 6). This peek operation allows

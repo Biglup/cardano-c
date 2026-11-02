@@ -2927,3 +2927,26 @@ TEST(cardano_plutus_data_to_cip116_json, returnsErrorIfWriterIsNull)
   cardano_error_t error = cardano_plutus_data_to_cip116_json((cardano_plutus_data_t*)"", nullptr);
   EXPECT_EQ(error, CARDANO_ERROR_POINTER_IS_NULL);
 }
+
+TEST(cardano_plutus_data_from_cbor, rejectsOversizedConstructorAndBignumTags)
+{
+  // Arrange
+  const char* encodings[] = { "db000000010000007980", "db00000001000000024101", "81db000000010000007980" };
+
+  for (size_t i = 0U; i < (sizeof(encodings) / sizeof(encodings[0])); ++i)
+  {
+    cardano_cbor_reader_t* reader = cardano_cbor_reader_from_hex(encodings[i], strlen(encodings[i]));
+    cardano_plutus_data_t* data   = nullptr;
+
+    // Act
+    const cardano_error_t result = cardano_plutus_data_from_cbor(reader, &data);
+
+    // Assert
+    EXPECT_EQ(result, CARDANO_ERROR_INTEGER_OVERFLOW);
+    EXPECT_EQ(data, nullptr);
+
+    // Cleanup
+    cardano_plutus_data_unref(&data);
+    cardano_cbor_reader_unref(&reader);
+  }
+}
