@@ -1747,3 +1747,39 @@ TEST(cardano_auxiliary_data_to_cip116_json, returnsErrorIfMemoryAllocationFails)
   cardano_auxiliary_data_unref(&auxiliary_data);
   cardano_cbor_reader_unref(&reader);
 }
+
+TEST(cardano_auxiliary_data_from_cbor, rejectsDuplicateFieldsWithoutLeakingReplacedValues)
+{
+  // Arrange
+  const char* invalid[] = {
+    "d90103a200a000a0",
+    "d90103a201800180",
+    "d90103a202800280",
+    "d90103a203800380",
+    "d90103a204800480",
+    "d90103a205800580",
+    "d90103bf00a000a0ff",
+    "d90103bf01800180ff",
+    "d90103bf02800280ff",
+    "d90103bf03800380ff",
+    "d90103bf04800480ff",
+    "d90103bf05800580ff"
+  };
+
+  for (const char* cbor: invalid)
+  {
+    cardano_cbor_reader_t*    reader = cardano_cbor_reader_from_hex(cbor, strlen(cbor));
+    cardano_auxiliary_data_t* data   = nullptr;
+
+    // Act
+    const cardano_error_t result = cardano_auxiliary_data_from_cbor(reader, &data);
+
+    // Assert
+    EXPECT_EQ(result, CARDANO_ERROR_INVALID_CBOR_MAP_KEY) << cbor;
+    EXPECT_EQ(data, nullptr);
+
+    // Cleanup
+    cardano_auxiliary_data_unref(&data);
+    cardano_cbor_reader_unref(&reader);
+  }
+}
