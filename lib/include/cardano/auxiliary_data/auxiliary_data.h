@@ -97,6 +97,8 @@ cardano_auxiliary_data_new(cardano_auxiliary_data_t** auxiliary_data);
  * This function parses CBOR data using a provided \ref cardano_cbor_reader_t and constructs a \ref cardano_auxiliary_data_t object.
  * It assumes that the CBOR reader is set up correctly and that the CBOR data corresponds to the structure expected for a auxiliary_data.
  *
+ * Tagged auxiliary-data maps must not contain duplicate field keys.
+ *
  * \param[in] reader A pointer to an initialized \ref cardano_cbor_reader_t that is ready to read the CBOR-encoded data.
  * \param[out] auxiliary_data A pointer to a pointer of \ref cardano_auxiliary_data_t that will be set to the address
  *                        of the newly created auxiliary_data object upon successful decoding.

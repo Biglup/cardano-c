@@ -218,6 +218,7 @@ cardano_auxiliary_data_from_cbor(cardano_cbor_reader_t* reader, cardano_auxiliar
 
   if (peek_result != CARDANO_SUCCESS)
   {
+    cardano_auxiliary_data_unref(&new_auxiliary_data);
     *auxiliary_data = NULL;
     return peek_result;
   }
@@ -275,6 +276,8 @@ cardano_auxiliary_data_from_cbor(cardano_cbor_reader_t* reader, cardano_auxiliar
       return result;
     }
 
+    bool seen[6] = { false, false, false, false, false, false };
+
     state = CARDANO_CBOR_READER_STATE_START_MAP;
 
     while (state != CARDANO_CBOR_READER_STATE_END_MAP)
@@ -303,6 +306,20 @@ cardano_auxiliary_data_from_cbor(cardano_cbor_reader_t* reader, cardano_auxiliar
         *auxiliary_data = NULL;
 
         return result;
+      }
+
+      if (key < 6U)
+      {
+        if (seen[(size_t)key])
+        {
+          cardano_auxiliary_data_unref(&new_auxiliary_data);
+          *auxiliary_data = NULL;
+          cardano_cbor_reader_set_last_error(reader, "Duplicate key in auxiliary data.");
+
+          return CARDANO_ERROR_INVALID_CBOR_MAP_KEY;
+        }
+
+        seen[(size_t)key] = true;
       }
 
       switch (key)
