@@ -933,7 +933,7 @@ TEST(cardano_pointer_address_get_network_id, canGetNetworkId)
 TEST(cardano_pointer_address_from_credentials, releasesStateWhenEncodingAllocationFails)
 {
   // Arrange
-  const byte_t          hash[28]   = { 0 };
+  const byte_t          hash[28]   = { 1 };
   cardano_credential_t* credential = nullptr;
   ASSERT_EQ(cardano_credential_from_hash_bytes(hash, sizeof(hash), CARDANO_CREDENTIAL_TYPE_KEY_HASH, &credential), CARDANO_SUCCESS);
   bool reached_success = false;
