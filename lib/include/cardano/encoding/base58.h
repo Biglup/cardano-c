@@ -35,15 +35,15 @@ extern "C" {
 #endif /* __cplusplus */
 
 /**
- * \brief Calculates the length of a Base58-encoded string.
+ * \brief Calculates a buffer capacity for a Base58-encoded string.
  *
- * This function computes the length of a string after it has been encoded using Base58. This is
+ * This function computes an upper bound for the encoded string capacity. This is
  * useful for allocating the correct amount of memory for the encoded string.
  *
  * \param[in] data Pointer to the input data to be encoded.
  * \param[in] data_length Length of the input data in bytes.
  *
- * \return The length of the encoded Base58 string, including the null terminator.
+ * \return An upper bound for the encoded string capacity, including the null terminator; zero for null input or size overflow.
  *
  * To calculate the required buffer size for a Base58-encoded string:
  * \code{.c}
@@ -79,7 +79,7 @@ CARDANO_EXPORT size_t cardano_encoding_base58_get_encoded_length(const byte_t* d
  * \return \ref CARDANO_SUCCESS if the encoding was successful, or an appropriate error code otherwise.
  *
  * \note The output buffer should be large enough to hold the encoded string and the null terminator.
- *       Use \c cardano_encoding_base58_get_encoded_length to calculate the exact buffer size required.
+ *       Use \c cardano_encoding_base58_get_encoded_length to calculate a sufficient buffer size.
  *
  * Example usage:
  * \code{.c}

@@ -1,6 +1,8 @@
 Unreleased
 ---------------------
 
+- Preserve Base58 zero digits and leading zero bytes, compute exact decoded lengths, and reject decoding overflow instead of truncating input.
+
 - Decode 128-byte anchor URLs and accept the same maximum length in debug-build URL setters.
 
 - Return an allocation error when a CBOR byte-string or text-string slice cannot be allocated, instead of reporting success with a null output.
