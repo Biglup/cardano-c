@@ -55,6 +55,7 @@
 #include <gmock/gmock.h>
 
 #include <algorithm>
+#include <string>
 #include <vector>
 
 /* CONSTANTS *****************************************************************/
@@ -107,6 +108,19 @@ static const char* MISSING_COLLATERAL_ERROR = "Collateral UTXOs are required bec
 static const char* FIRST_SIGNER_KEY_HEX  = "9d61b19deffd5a60ba844af492ec2cc44449c5697b326919703bac031cae7f60";
 static const char* SECOND_SIGNER_KEY_HEX = "4ccd089b28ff96da9db6c346ec114e0f5b8a319f35aba624da8cf6ed4fb8a6fb";
 static const char* THIRD_SIGNER_KEY_HEX  = "c5aa8df43f9f837bedb7442f31dcb7b166d38535076f094b85ce3a2e0b4458f7";
+
+/**
+ * \brief The parts of a pool registration certificate around its operator key hash, pledge and single owner. The
+ * pool pledges 10000 lovelace and the update of its parameters 20000 lovelace.
+ */
+static const char* POOL_REGISTRATION_HEAD_HEX   = "8a03581c";
+static const char* POOL_REGISTRATION_VRF_HEX    = "58208dd154228946bd12967c12bedb1cb6038b78f8b84a1760b1a788fa72a4af3db0";
+static const char* POOL_REGISTRATION_PLEDGE_HEX = "192710";
+static const char* POOL_UPDATE_PLEDGE_HEX       = "194e20";
+static const char* POOL_REGISTRATION_OWNER_HEX  = "1903e8d81e820105581de1cb0ec2692497b458e46812c8a5bfa2931d1a2d965a99893828ec810fd9010281581c";
+static const char* POOL_REGISTRATION_TAIL_HEX   = "8383011913886b6578616d706c652e636f6d8400191770447f000001f682026b6578616d706c652e636f6d827368747470733a2f2f6578616d706c652e636f6d58200f3abbc8fc19c2e61bab6059bf8a466e6e754833a08a62a6c56fe0e78f19d9d5";
+static const char* POOL_RETIREMENT_HEAD_HEX     = "8304581c";
+static const char* POOL_RETIREMENT_EPOCH_HEX    = "1903e8";
 
 /**
  * \brief Hash of the script that controls the UTXO spent by the transaction that nobody signs.
@@ -1912,6 +1926,208 @@ get_vkey_witness_count(cardano_transaction_t* tx)
   cardano_witness_set_unref(&witness_set);
 
   return count;
+}
+
+/**
+ * Gets the hexadecimal representation of the key hash of a signer.
+ * \param signer the signer.
+ * \return The hexadecimal key hash.
+ */
+static std::string
+get_key_hash_hex(const signer_t& signer)
+{
+  std::string hex(cardano_blake2b_hash_get_hex_size(signer.key_hash), '\0');
+
+  EXPECT_EQ(cardano_blake2b_hash_to_hex(signer.key_hash, &hex[0], hex.size()), CARDANO_SUCCESS);
+  hex.resize(hex.size() - 1U);
+
+  return hex;
+}
+
+/**
+ * Creates a pool registration certificate.
+ * \param pool_operator the signer whose key hash identifies the pool.
+ * \param owner the signer that owns the pool.
+ * \param pledge_hex the CBOR hex of the pledge of the pool.
+ * \return A new instance of the certificate.
+ */
+static cardano_certificate_t*
+new_pool_registration_certificate(const signer_t& pool_operator, const signer_t& owner, const char* pledge_hex)
+{
+  const std::string hex = std::string(POOL_REGISTRATION_HEAD_HEX) + get_key_hash_hex(pool_operator) + POOL_REGISTRATION_VRF_HEX + pledge_hex + POOL_REGISTRATION_OWNER_HEX + get_key_hash_hex(owner) + POOL_REGISTRATION_TAIL_HEX;
+
+  cardano_certificate_t* certificate = NULL;
+  cardano_cbor_reader_t* reader      = cardano_cbor_reader_from_hex(hex.c_str(), hex.size());
+
+  EXPECT_EQ(cardano_certificate_from_cbor(reader, &certificate), CARDANO_SUCCESS);
+
+  cardano_cbor_reader_unref(&reader);
+
+  return certificate;
+}
+
+/**
+ * Creates a pool retirement certificate.
+ * \param pool_operator the signer whose key hash identifies the pool.
+ * \return A new instance of the certificate.
+ */
+static cardano_certificate_t*
+new_pool_retirement_certificate(const signer_t& pool_operator)
+{
+  const std::string hex = std::string(POOL_RETIREMENT_HEAD_HEX) + get_key_hash_hex(pool_operator) + POOL_RETIREMENT_EPOCH_HEX;
+
+  cardano_certificate_t* certificate = NULL;
+  cardano_cbor_reader_t* reader      = cardano_cbor_reader_from_hex(hex.c_str(), hex.size());
+
+  EXPECT_EQ(cardano_certificate_from_cbor(reader, &certificate), CARDANO_SUCCESS);
+
+  cardano_cbor_reader_unref(&reader);
+
+  return certificate;
+}
+
+/**
+ * Replaces the certificates of a transaction with the given certificates, in order.
+ * \param tx the transaction.
+ * \param certificates the certificates the transaction carries.
+ */
+static void
+set_certificates(cardano_transaction_t* tx, const std::vector<cardano_certificate_t*>& certificates)
+{
+  cardano_transaction_body_t* body = cardano_transaction_get_body(tx);
+  cardano_certificate_set_t*  set  = NULL;
+
+  EXPECT_EQ(cardano_certificate_set_new(&set), CARDANO_SUCCESS);
+
+  for (cardano_certificate_t* certificate: certificates)
+  {
+    EXPECT_EQ(cardano_certificate_set_add(set, certificate), CARDANO_SUCCESS);
+  }
+
+  EXPECT_EQ(cardano_transaction_body_set_certificates(body, set), CARDANO_SUCCESS);
+
+  cardano_certificate_set_unref(&set);
+  cardano_transaction_body_unref(&body);
+}
+
+/**
+ * Gets the lovelace held by the outputs of a transaction.
+ * \param tx the transaction.
+ * \return The lovelace of all the outputs.
+ */
+static uint64_t
+get_output_coin(cardano_transaction_t* tx)
+{
+  cardano_transaction_body_t*        body    = cardano_transaction_get_body(tx);
+  cardano_transaction_output_list_t* outputs = cardano_transaction_body_get_outputs(body);
+  uint64_t                           coin    = 0U;
+
+  for (size_t i = 0U; i < cardano_transaction_output_list_get_length(outputs); ++i)
+  {
+    cardano_transaction_output_t* output = NULL;
+
+    EXPECT_EQ(cardano_transaction_output_list_get(outputs, i, &output), CARDANO_SUCCESS);
+
+    cardano_value_t* value = cardano_transaction_output_get_value(output);
+
+    coin += (uint64_t)cardano_value_get_coin(value);
+
+    cardano_value_unref(&value);
+    cardano_transaction_output_unref(&output);
+  }
+
+  cardano_transaction_output_list_unref(&outputs);
+  cardano_transaction_body_unref(&body);
+
+  return coin;
+}
+
+/**
+ * Replaces the certificates of a sub transaction with the given certificates, in order.
+ * \param sub_tx the sub transaction.
+ * \param certificates the certificates the sub transaction carries.
+ */
+static void
+set_sub_transaction_certificates(cardano_sub_transaction_t* sub_tx, const std::vector<cardano_certificate_t*>& certificates)
+{
+  cardano_sub_transaction_body_t* body = cardano_sub_transaction_get_body(sub_tx);
+  cardano_certificate_set_t*      set  = NULL;
+
+  EXPECT_EQ(cardano_certificate_set_new(&set), CARDANO_SUCCESS);
+
+  for (cardano_certificate_t* certificate: certificates)
+  {
+    EXPECT_EQ(cardano_certificate_set_add(set, certificate), CARDANO_SUCCESS);
+  }
+
+  EXPECT_EQ(cardano_sub_transaction_body_set_certificates(body, set), CARDANO_SUCCESS);
+
+  cardano_certificate_set_unref(&set);
+  cardano_sub_transaction_body_unref(&body);
+}
+
+/**
+ * Gets the lovelace of the imbalance of a whole batch.
+ * \param tx the top level transaction of the batch.
+ * \param protocol the protocol parameters.
+ * \param resolved_inputs the UTXOs that resolve the inputs of every body of the batch.
+ * \return The lovelace of the batch imbalance.
+ */
+static int64_t
+get_batch_imbalance_coin(cardano_transaction_t* tx, cardano_protocol_parameters_t* protocol, cardano_utxo_list_t* resolved_inputs)
+{
+  cardano_value_t* imbalance = NULL;
+
+  EXPECT_EQ(cardano_compute_transaction_batch_imbalance(tx, resolved_inputs, protocol, &imbalance), CARDANO_SUCCESS);
+
+  const int64_t coin = cardano_value_get_coin(imbalance);
+
+  cardano_value_unref(&imbalance);
+
+  return coin;
+}
+
+/**
+ * Computes how much the pool registrations of a batch lower its imbalance: the batch is built from two sub
+ * transactions that spend and return one UTXO each, and the imbalance is compared with and without the certificates.
+ * \param top_certificates the certificates of the top level body.
+ * \param first_certificates the certificates of the first sub transaction.
+ * \param second_certificates the certificates of the second sub transaction.
+ * \return The lovelace the certificates take from the batch imbalance.
+ */
+static int64_t
+get_batch_pool_deposits(
+  const std::vector<cardano_certificate_t*>& top_certificates,
+  const std::vector<cardano_certificate_t*>& first_certificates,
+  const std::vector<cardano_certificate_t*>& second_certificates)
+{
+  cardano_protocol_parameters_t* protocol        = init_protocol_parameters();
+  signer_t                       owner           = new_signer(FIRST_SIGNER_KEY_HEX);
+  cardano_utxo_t*                first_utxo      = new_coin_utxo(1U, owner.address, 10000000);
+  cardano_utxo_t*                second_utxo     = new_coin_utxo(2U, owner.address, 10000000);
+  cardano_utxo_list_t*           resolved_inputs = new_utxo_list_of(first_utxo, second_utxo);
+  cardano_sub_transaction_t*     first           = new_coin_sub_transaction(first_utxo, 10000000);
+  cardano_sub_transaction_t*     second          = new_coin_sub_transaction(second_utxo, 10000000);
+  cardano_transaction_t*         tx              = new_top_level_transaction(first, second);
+
+  const int64_t without_certificates = get_batch_imbalance_coin(tx, protocol, resolved_inputs);
+
+  set_certificates(tx, top_certificates);
+  set_sub_transaction_certificates(first, first_certificates);
+  set_sub_transaction_certificates(second, second_certificates);
+
+  const int64_t with_certificates = get_batch_imbalance_coin(tx, protocol, resolved_inputs);
+
+  cardano_transaction_unref(&tx);
+  cardano_sub_transaction_unref(&first);
+  cardano_sub_transaction_unref(&second);
+  cardano_utxo_list_unref(&resolved_inputs);
+  cardano_utxo_unref(&first_utxo);
+  cardano_utxo_unref(&second_utxo);
+  cardano_protocol_parameters_unref(&protocol);
+  free_signer(owner);
+
+  return without_certificates - with_certificates;
 }
 
 /**
@@ -3793,6 +4009,50 @@ TEST(cardano_balance_transaction, fundsTheDeficitOfTheSubTransactionsWithTopLeve
   cardano_utxo_list_unref(&reference_inputs);
 }
 
+TEST(cardano_balance_transaction, paysThePoolDepositOnceIfTheTopLevelBodyAndASubTransactionRegisterTheSamePool)
+{
+  // Arrange
+  signer_t                       pool_operator    = new_signer(SECOND_SIGNER_KEY_HEX);
+  signer_t                       owner            = new_signer(THIRD_SIGNER_KEY_HEX);
+  cardano_certificate_t*         registration     = new_pool_registration_certificate(pool_operator, owner, POOL_REGISTRATION_PLEDGE_HEX);
+  cardano_utxo_t*                sub_tx_utxo      = new_default_utxo(SUB_TX_UTXO_CBOR);
+  cardano_sub_transaction_t*     sub_tx           = new_coin_sub_transaction(sub_tx_utxo, cardano_value_get_coin(get_utxo_value(sub_tx_utxo)));
+  cardano_protocol_parameters_t* protocol         = init_protocol_parameters();
+  cardano_utxo_list_t*           available_utxo   = new_default_utxo_list();
+  cardano_utxo_list_t*           sub_tx_inputs    = new_utxo_list_of(sub_tx_utxo, NULL);
+  cardano_utxo_list_t*           reference_inputs = new_empty_utxo_list();
+
+  set_sub_transaction_certificates(sub_tx, { registration });
+
+  cardano_transaction_t* tx = new_top_level_transaction(sub_tx, NULL);
+
+  set_certificates(tx, { registration });
+
+  // Act
+  cardano_error_t result = balance_batch(tx, protocol, reference_inputs, sub_tx_inputs, available_utxo);
+
+  // Assert
+  EXPECT_EQ(result, CARDANO_SUCCESS);
+  EXPECT_TRUE(is_batch_balanced(tx, protocol, sub_tx_inputs, available_utxo));
+
+  cardano_value_t* top_level_imbalance = new_top_level_imbalance(tx, protocol, available_utxo);
+
+  EXPECT_EQ(cardano_value_get_coin(top_level_imbalance), 0);
+
+  // Cleanup
+  cardano_value_unref(&top_level_imbalance);
+  cardano_certificate_unref(&registration);
+  cardano_utxo_unref(&sub_tx_utxo);
+  cardano_sub_transaction_unref(&sub_tx);
+  cardano_transaction_unref(&tx);
+  cardano_protocol_parameters_unref(&protocol);
+  cardano_utxo_list_unref(&available_utxo);
+  cardano_utxo_list_unref(&sub_tx_inputs);
+  cardano_utxo_list_unref(&reference_inputs);
+  free_signer(pool_operator);
+  free_signer(owner);
+}
+
 TEST(cardano_balance_transaction, returnsErrorIfTheDirectDepositsOfASubTransactionExceedTheMaximumRepresentableAmount)
 {
   // Arrange
@@ -4932,6 +5192,58 @@ TEST(cardano_balance_transaction, balancesTheTopLevelByItselfInLegacyModeIfTheSu
   cardano_utxo_list_unref(&reference_inputs);
 }
 
+TEST(cardano_balance_transaction, chargesTheTopLevelNoPoolDepositInLegacyModeForAPoolASubTransactionRegisters)
+{
+  // Arrange
+  signer_t                       pool_operator    = new_signer(SECOND_SIGNER_KEY_HEX);
+  signer_t                       owner            = new_signer(THIRD_SIGNER_KEY_HEX);
+  cardano_certificate_t*         registration     = new_pool_registration_certificate(pool_operator, owner, POOL_REGISTRATION_PLEDGE_HEX);
+  cardano_protocol_parameters_t* protocol         = init_protocol_parameters();
+  const int64_t                  pool_deposit     = (int64_t)cardano_protocol_parameters_get_pool_deposit(protocol);
+  cardano_utxo_t*                sub_tx_utxo      = new_coin_utxo(9U, owner.address, 10000000);
+  cardano_sub_transaction_t*     sub_tx           = new_coin_sub_transaction(sub_tx_utxo, 10000000 - pool_deposit);
+  cardano_utxo_t*                reference_utxo   = new_default_utxo(REF_SCRIPT_V2_UTXO);
+  cardano_utxo_t*                nft_utxo         = new_default_utxo(CBOR_DIFFERENT_VAL1);
+  cardano_utxo_t*                coin_utxo        = new_default_utxo(CBOR_DIFFERENT_VAL2);
+  cardano_utxo_list_t*           available_utxo   = new_utxo_list_of(nft_utxo, coin_utxo);
+  cardano_utxo_list_t*           sub_tx_inputs    = new_utxo_list_of(sub_tx_utxo, NULL);
+  cardano_utxo_list_t*           reference_inputs = new_utxo_list_of(reference_utxo, NULL);
+
+  set_sub_transaction_certificates(sub_tx, { registration });
+
+  cardano_transaction_t* tx = new_top_level_transaction(sub_tx, NULL);
+
+  set_certificates(tx, { registration });
+  add_needed_plutus_script(tx, CARDANO_SCRIPT_LANGUAGE_PLUTUS_V3);
+
+  // Act
+  cardano_error_t result = balance_batch(tx, protocol, reference_inputs, sub_tx_inputs, available_utxo);
+
+  // Assert
+  EXPECT_EQ(result, CARDANO_SUCCESS);
+  EXPECT_TRUE(is_batch_balanced(tx, protocol, sub_tx_inputs, available_utxo));
+
+  cardano_value_t* top_level_imbalance = new_top_level_imbalance(tx, protocol, available_utxo);
+
+  EXPECT_EQ(cardano_value_get_coin(top_level_imbalance), -pool_deposit);
+
+  // Cleanup
+  cardano_value_unref(&top_level_imbalance);
+  cardano_certificate_unref(&registration);
+  cardano_utxo_unref(&sub_tx_utxo);
+  cardano_utxo_unref(&reference_utxo);
+  cardano_utxo_unref(&nft_utxo);
+  cardano_utxo_unref(&coin_utxo);
+  cardano_sub_transaction_unref(&sub_tx);
+  cardano_transaction_unref(&tx);
+  cardano_protocol_parameters_unref(&protocol);
+  cardano_utxo_list_unref(&available_utxo);
+  cardano_utxo_list_unref(&sub_tx_inputs);
+  cardano_utxo_list_unref(&reference_inputs);
+  free_signer(pool_operator);
+  free_signer(owner);
+}
+
 TEST(cardano_balance_transaction, returnsErrorOnMemoryAllocationFailureForABatch)
 {
   // Arrange
@@ -5857,6 +6169,105 @@ TEST(cardano_balance_transaction, paysTheMinimumFeeOfTheSignedTransactionWithTwo
   cardano_utxo_list_unref(&utxos);
   free_signer(first);
   free_signer(second);
+}
+
+TEST(cardano_balance_transaction, paysTheMinimumFeeOfTheSignedTransactionThatRegistersAPool)
+{
+  // Arrange
+  cardano_transaction_t*         tx            = new_transaction_without_inputs_no_assets(BALANCED_TX_CBOR, 5000000);
+  cardano_protocol_parameters_t* protocol      = init_protocol_parameters();
+  signer_t                       payer         = new_signer(FIRST_SIGNER_KEY_HEX);
+  signer_t                       pool_operator = new_signer(SECOND_SIGNER_KEY_HEX);
+  signer_t                       owner         = new_signer(THIRD_SIGNER_KEY_HEX);
+  cardano_utxo_t*                utxo          = new_coin_utxo(1U, payer.address, 20000000);
+  cardano_utxo_list_t*           utxos         = new_utxo_list_of(utxo, NULL);
+  cardano_certificate_t*         registration  = new_pool_registration_certificate(pool_operator, owner, POOL_REGISTRATION_PLEDGE_HEX);
+
+  set_certificates(tx, { registration });
+
+  // Act
+  cardano_error_t result = balance_without_foreign_signatures(tx, protocol, utxos, payer.address);
+
+  sign_transaction(tx, { &payer, &pool_operator, &owner });
+
+  // Assert
+  const int64_t fee_excess = get_fee_excess(tx, protocol, utxos);
+
+  EXPECT_EQ(result, CARDANO_SUCCESS);
+  EXPECT_EQ(get_vkey_witness_count(tx), 3U);
+  EXPECT_EQ(fee_excess, 0);
+
+  // Cleanup
+  cardano_transaction_unref(&tx);
+  cardano_protocol_parameters_unref(&protocol);
+  cardano_certificate_unref(&registration);
+  cardano_utxo_unref(&utxo);
+  cardano_utxo_list_unref(&utxos);
+  free_signer(payer);
+  free_signer(pool_operator);
+  free_signer(owner);
+}
+
+TEST(cardano_balance_transaction, paysThePoolDepositOnceIfThePoolIsRegisteredTwice)
+{
+  // Arrange
+  cardano_transaction_t*         tx            = new_transaction_without_inputs_no_assets(BALANCED_TX_CBOR, 5000000);
+  cardano_protocol_parameters_t* protocol      = init_protocol_parameters();
+  signer_t                       payer         = new_signer(FIRST_SIGNER_KEY_HEX);
+  signer_t                       pool_operator = new_signer(SECOND_SIGNER_KEY_HEX);
+  cardano_utxo_t*                utxo          = new_coin_utxo(1U, payer.address, 20000000);
+  cardano_utxo_list_t*           utxos         = new_utxo_list_of(utxo, NULL);
+  cardano_certificate_t*         registration  = new_pool_registration_certificate(pool_operator, payer, POOL_REGISTRATION_PLEDGE_HEX);
+  cardano_certificate_t*         update        = new_pool_registration_certificate(pool_operator, payer, POOL_UPDATE_PLEDGE_HEX);
+
+  set_certificates(tx, { registration, update });
+
+  // Act
+  cardano_error_t result = balance_without_foreign_signatures(tx, protocol, utxos, payer.address);
+
+  // Assert
+  EXPECT_EQ(result, CARDANO_SUCCESS);
+  EXPECT_EQ(get_output_coin(tx) + get_fee(tx) + cardano_protocol_parameters_get_pool_deposit(protocol), 20000000U);
+
+  // Cleanup
+  cardano_transaction_unref(&tx);
+  cardano_protocol_parameters_unref(&protocol);
+  cardano_certificate_unref(&registration);
+  cardano_certificate_unref(&update);
+  cardano_utxo_unref(&utxo);
+  cardano_utxo_list_unref(&utxos);
+  free_signer(payer);
+  free_signer(pool_operator);
+}
+
+TEST(cardano_balance_transaction, reclaimsNoDepositIfThePoolRetires)
+{
+  // Arrange
+  cardano_transaction_t*         tx            = new_transaction_without_inputs_no_assets(BALANCED_TX_CBOR, 5000000);
+  cardano_protocol_parameters_t* protocol      = init_protocol_parameters();
+  signer_t                       payer         = new_signer(FIRST_SIGNER_KEY_HEX);
+  signer_t                       pool_operator = new_signer(SECOND_SIGNER_KEY_HEX);
+  cardano_utxo_t*                utxo          = new_coin_utxo(1U, payer.address, 20000000);
+  cardano_utxo_list_t*           utxos         = new_utxo_list_of(utxo, NULL);
+  cardano_certificate_t*         retirement    = new_pool_retirement_certificate(pool_operator);
+
+  set_certificates(tx, { retirement });
+
+  // Act
+  cardano_error_t result = balance_without_foreign_signatures(tx, protocol, utxos, payer.address);
+
+  // Assert
+  EXPECT_EQ(result, CARDANO_SUCCESS);
+  EXPECT_EQ(get_output_coin(tx) + get_fee(tx), 20000000U);
+
+  // Cleanup
+  cardano_transaction_unref(&tx);
+  cardano_protocol_parameters_unref(&protocol);
+  cardano_certificate_unref(&retirement);
+  cardano_utxo_unref(&utxo);
+  cardano_utxo_list_unref(&utxos);
+  free_signer(payer);
+  free_signer(pool_operator);
 }
 
 TEST(cardano_balance_transaction, paysTheMinimumFeeOfTheSignedTransactionIfTheWitnessSetHoldsANativeScript)
@@ -8175,6 +8586,51 @@ TEST(cardano_is_transaction_balanced, returnsFalseIfOnlyTheTopLevelBodyIsBalance
   cardano_utxo_list_unref(&resolved_inputs);
 }
 
+TEST(cardano_is_transaction_balanced, returnsTrueIfABatchPaysOnceForAPoolRegisteredByTwoBodies)
+{
+  // Arrange
+  cardano_protocol_parameters_t* protocol      = init_protocol_parameters();
+  signer_t                       pool_operator = new_signer(SECOND_SIGNER_KEY_HEX);
+  signer_t                       owner         = new_signer(THIRD_SIGNER_KEY_HEX);
+  cardano_utxo_t*                utxo          = new_coin_utxo(1U, owner.address, 20000000);
+  cardano_utxo_list_t*           utxos         = new_utxo_list_of(utxo, NULL);
+  cardano_sub_transaction_t*     unbalanced    = new_coin_sub_transaction(utxo, 20000000);
+  cardano_transaction_t*         unbalanced_tx = new_top_level_transaction(unbalanced, NULL);
+  cardano_certificate_t*         registration  = new_pool_registration_certificate(pool_operator, owner, POOL_REGISTRATION_PLEDGE_HEX);
+
+  const int64_t pool_deposit = (int64_t)cardano_protocol_parameters_get_pool_deposit(protocol);
+  const int64_t output_coin  = 20000000 + get_batch_imbalance_coin(unbalanced_tx, protocol, utxos) - pool_deposit;
+
+  cardano_sub_transaction_t* sub_tx = new_coin_sub_transaction(utxo, output_coin);
+
+  set_sub_transaction_certificates(sub_tx, { registration });
+
+  cardano_transaction_t* tx = new_top_level_transaction(sub_tx, NULL);
+
+  set_certificates(tx, { registration });
+
+  // Act
+  bool is_balanced = false;
+
+  cardano_error_t result = cardano_is_transaction_balanced(tx, utxos, protocol, &is_balanced);
+
+  // Assert
+  EXPECT_EQ(result, CARDANO_SUCCESS);
+  EXPECT_TRUE(is_balanced);
+
+  // Cleanup
+  cardano_transaction_unref(&tx);
+  cardano_transaction_unref(&unbalanced_tx);
+  cardano_sub_transaction_unref(&sub_tx);
+  cardano_sub_transaction_unref(&unbalanced);
+  cardano_certificate_unref(&registration);
+  cardano_utxo_list_unref(&utxos);
+  cardano_utxo_unref(&utxo);
+  cardano_protocol_parameters_unref(&protocol);
+  free_signer(pool_operator);
+  free_signer(owner);
+}
+
 TEST(cardano_is_transaction_balanced, returnsErrorIfASubTransactionInputIsNotResolved)
 {
   // Arrange
@@ -8554,6 +9010,75 @@ TEST(cardano_compute_transaction_batch_imbalance, returnsErrorIfASubTransactionI
   cardano_transaction_unref(&tx);
   cardano_protocol_parameters_unref(&protocol);
   cardano_utxo_list_unref(&resolved_inputs);
+}
+
+TEST(cardano_compute_transaction_batch_imbalance, chargesThePoolDepositOnceIfTheTopLevelBodyAndASubTransactionRegisterTheSamePool)
+{
+  // Arrange
+  cardano_protocol_parameters_t* protocol      = init_protocol_parameters();
+  signer_t                       pool_operator = new_signer(SECOND_SIGNER_KEY_HEX);
+  signer_t                       owner         = new_signer(THIRD_SIGNER_KEY_HEX);
+  cardano_certificate_t*         registration  = new_pool_registration_certificate(pool_operator, owner, POOL_REGISTRATION_PLEDGE_HEX);
+
+  // Act
+  const int64_t pool_deposits = get_batch_pool_deposits({ registration }, { registration }, {});
+
+  // Assert
+  EXPECT_EQ(pool_deposits, (int64_t)cardano_protocol_parameters_get_pool_deposit(protocol));
+
+  // Cleanup
+  cardano_certificate_unref(&registration);
+  cardano_protocol_parameters_unref(&protocol);
+  free_signer(pool_operator);
+  free_signer(owner);
+}
+
+TEST(cardano_compute_transaction_batch_imbalance, chargesThePoolDepositOnceIfTwoSubTransactionsRegisterTheSamePool)
+{
+  // Arrange
+  cardano_protocol_parameters_t* protocol      = init_protocol_parameters();
+  signer_t                       pool_operator = new_signer(SECOND_SIGNER_KEY_HEX);
+  signer_t                       owner         = new_signer(THIRD_SIGNER_KEY_HEX);
+  cardano_certificate_t*         registration  = new_pool_registration_certificate(pool_operator, owner, POOL_REGISTRATION_PLEDGE_HEX);
+  cardano_certificate_t*         update        = new_pool_registration_certificate(pool_operator, owner, POOL_UPDATE_PLEDGE_HEX);
+
+  // Act
+  const int64_t pool_deposits = get_batch_pool_deposits({}, { registration }, { update });
+
+  // Assert
+  EXPECT_EQ(pool_deposits, (int64_t)cardano_protocol_parameters_get_pool_deposit(protocol));
+
+  // Cleanup
+  cardano_certificate_unref(&registration);
+  cardano_certificate_unref(&update);
+  cardano_protocol_parameters_unref(&protocol);
+  free_signer(pool_operator);
+  free_signer(owner);
+}
+
+TEST(cardano_compute_transaction_batch_imbalance, chargesThePoolDepositOnceForEachDistinctPoolOfTheBatch)
+{
+  // Arrange
+  cardano_protocol_parameters_t* protocol      = init_protocol_parameters();
+  signer_t                       first_pool    = new_signer(FIRST_SIGNER_KEY_HEX);
+  signer_t                       second_pool   = new_signer(SECOND_SIGNER_KEY_HEX);
+  signer_t                       owner         = new_signer(THIRD_SIGNER_KEY_HEX);
+  cardano_certificate_t*         registration  = new_pool_registration_certificate(first_pool, owner, POOL_REGISTRATION_PLEDGE_HEX);
+  cardano_certificate_t*         registration2 = new_pool_registration_certificate(second_pool, owner, POOL_REGISTRATION_PLEDGE_HEX);
+
+  // Act
+  const int64_t pool_deposits = get_batch_pool_deposits({ registration }, { registration2, registration }, { registration2 });
+
+  // Assert
+  EXPECT_EQ(pool_deposits, 2 * (int64_t)cardano_protocol_parameters_get_pool_deposit(protocol));
+
+  // Cleanup
+  cardano_certificate_unref(&registration);
+  cardano_certificate_unref(&registration2);
+  cardano_protocol_parameters_unref(&protocol);
+  free_signer(first_pool);
+  free_signer(second_pool);
+  free_signer(owner);
 }
 
 TEST(cardano_compute_transaction_batch_imbalance, returnsErrorIfMemoryAllocationFails)

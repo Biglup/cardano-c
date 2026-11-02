@@ -2168,6 +2168,14 @@ CARDANO_EXPORT void cardano_tx_builder_vote_with_deferred_redeemer(
  * cardano_tx_builder_add_certificate(tx_builder, certificate, redeemer);
  * \endcode
  *
+ * A pool registration certificate needs the signatures of the pool operator and of every pool owner, and a pool
+ * retirement certificate the signature of the pool operator; the fee covers their witnesses. When balancing, a pool
+ * registration is charged the pool deposit unless the same pool is registered earlier in the same transaction or batch,
+ * in which case it only updates the pool parameters, and a pool retirement reclaims nothing, as the ledger returns the
+ * pool deposit at the epoch boundary where the pool retires. The builder does not know which pools are already
+ * registered on chain, so a registration that updates the parameters of an already registered pool is still charged
+ * the pool deposit, which the ledger does not charge, and the caller must account for that deposit.
+ *
  * \note Errors related to the certificate addition will be deferred until `cardano_tx_builder_build` is called.
  */
 CARDANO_EXPORT void cardano_tx_builder_add_certificate(

@@ -227,10 +227,10 @@ _process_credential(
 /**
  * \brief Processes a pool registration certificate by extracting and adding its unique public key hashes.
  *
- * This function processes a Cardano pool registration certificate, extracts the public key hashes associated
- * with the pool owners, and adds these hashes to the provided `unique_signers` set. This certificate type
- * represents the registration of a staking pool within the Cardano network, and multiple owners may be associated
- * with a single pool.
+ * This function processes a Cardano pool registration certificate, extracts the public key hashes of the pool
+ * operator and of the pool owners, and adds these hashes to the provided `unique_signers` set. This certificate type
+ * represents the registration of a staking pool within the Cardano network, and the ledger requires the signature of
+ * the operator and of every owner of the pool.
  *
  * \param[in,out] unique_signers A pointer to an initialized \ref cardano_blake2b_hash_set_t object where the unique
  *                               public key hashes required for the pool registration certificate will be added.

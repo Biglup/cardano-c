@@ -47,12 +47,12 @@ typedef struct cardano_implicit_coin_t
     uint64_t withdrawals;
 
     /**
-     * \brief Delegation registration deposits.
+     * \brief The deposits paid by the certificates and the proposal procedures.
      */
     uint64_t deposits;
 
     /**
-     * \brief Deposits returned.
+     * \brief The deposits returned by the stake credential and DRep unregistration certificates.
      */
     uint64_t reclaim_deposits;
 } cardano_implicit_coin_t;
@@ -63,6 +63,16 @@ typedef struct cardano_implicit_coin_t
  * \brief Computes the implicit coin balance for a transaction.
  *
  * The `cardano_compute_implicit_coin` function calculates the implicit coin balance for a given transaction.
+ *
+ * Deposits and refunds follow the ledger rules for the certificates of the body:
+ * - A pool registration pays the pool deposit of the protocol parameters, once per pool: a later registration of the
+ *   same pool, identified by its operator key hash, in the same body updates the pool parameters and pays nothing.
+ * - A pool retirement reclaims nothing. The ledger returns the pool deposit to the reward account of the pool at the
+ *   epoch boundary where the pool retires, not in the retiring transaction.
+ *
+ * This function does not know which pools are already registered on chain, so a registration that updates the
+ * parameters of an already registered pool is charged the pool deposit, which the ledger does not charge, and a
+ * transaction balanced with it does not conserve value for the ledger. The caller must account for that deposit.
  *
  * \param[in] tx A pointer to the \ref cardano_transaction_t object representing the transaction.
  * \param[in] protocol_params A pointer to \ref cardano_protocol_parameters_t containing the protocol parameters necessary for accurate computation.
@@ -98,7 +108,9 @@ cardano_compute_implicit_coin(
  *
  * The `cardano_compute_sub_transaction_implicit_coin` function calculates the implicit coin balance of a CIP-118 sub transaction
  * from the withdrawals, certificates and proposal procedures of its body, applying the same rules as \ref cardano_compute_implicit_coin
- * does for a top level transaction.
+ * does for a top level transaction. The pool deposits are charged per body: a pool registered by another body of the
+ * batch is treated like a pool that is not registered yet. The ledger charges the pool deposit once per pool across a
+ * whole CIP-118 batch, and \ref cardano_compute_transaction_batch_imbalance counts it that way.
  *
  * \param[in] sub_tx A pointer to the \ref cardano_sub_transaction_t object representing the sub transaction.
  * \param[in] protocol_params A pointer to \ref cardano_protocol_parameters_t containing the protocol parameters necessary for accurate computation.

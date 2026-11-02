@@ -41,7 +41,7 @@
 static const char* CBOR = "84b000818258200f3abbc8fc19c2e61bab6059bf8a466e6e754833a08a62a6c56fe0e78f19d9d5000181825839009493315cd92eb5d8c4304e67b7e16ae36d61d34502694657811a2c8e32c728d3861e164cab28cb8f006448139c8f1740ffb8e7aa9e5232dc820aa3581c2a286ad895d091f2b3d168a6091ad2627d30a72761a5bc36eef00740a14014581c659f2917fb63f12b33667463ee575eeac1845bbc736b9c0bbc40ba82a14454534c411832581c7eae28af2208be856f7a119668ae52a49b73725e326dc16579dcc373a240182846504154415445181e020a031903e8049182008200581c13cf55d175ea848b87deb3e914febd7e028e2bf6534475d52fb9c3d083078200581c13cf55d175ea848b87deb3e914febd7e028e2bf6534475d52fb9c3d00a83088200581c13cf55d175ea848b87deb3e914febd7e028e2bf6534475d52fb9c3d01483088200581cc37b1b5dc0669f1d3c61a6fddb2e8fde96be87b881c60bce8e8d542f186482018200581cc37b1b5dc0669f1d3c61a6fddb2e8fde96be87b881c60bce8e8d542f82008200581cc37b1b5dc0669f1d3c61a6fddb2e8fde96be87b881c60bce8e8d542f8a03581cd85087c646951407198c27b1b950fd2e99f28586c000ce39f6e6ef9258208dd154228946bd12967c12bedb1cb6038b78f8b84a1760b1a788fa72a4af3db01927101903e8d81e820105581de1cb0ec2692497b458e46812c8a5bfa2931d1a2d965a99893828ec810f81581ccb0ec2692497b458e46812c8a5bfa2931d1a2d965a99893828ec810f8383011913886b6578616d706c652e636f6d8400191770447f000001f682026b6578616d706c652e636f6d827368747470733a2f2f6578616d706c652e636f6d58200f3abbc8fc19c2e61bab6059bf8a466e6e754833a08a62a6c56fe0e78f19d9d58304581c13cf55d175ea848b87deb3e914febd7e028e2bf6534475d52fb9c3d01901f483028200581c13cf55d175ea848b87deb3e914febd7e028e2bf6534475d52fb9c3d0581c1732c16e26f8efb749c7f67113ec507a97fb3b382b8c147538e92db784108200581cb276b4f7a706a81364de606d890343a76af570268d4bbfee2fc8fcab05f683118200581cb276b4f7a706a81364de606d890343a76af570268d4bbfee2fc8fcab0584108200581cb276b4f7a706a81364de606d890343a76af570268d4bbfee2fc8fcab05f683118200581cb276b4f7a706a81364de606d890343a76af570268d4bbfee2fc8fcab05840b8200581c13cf55d175ea848b87deb3e914febd7e028e2bf6534475d52fb9c3d0581c1732c16e26f8efb749c7f67113ec507a97fb3b382b8c147538e92db70a840c8200581c13cf55d175ea848b87deb3e914febd7e028e2bf6534475d52fb9c3d08200581cb276b4f7a706a81364de606d890343a76af570268d4bbfee2fc8fcab0a850d8200581c13cf55d175ea848b87deb3e914febd7e028e2bf6534475d52fb9c3d0581c1732c16e26f8efb749c7f67113ec507a97fb3b382b8c147538e92db78200581cb276b4f7a706a81364de606d890343a76af570268d4bbfee2fc8fcab0a82018200581c13cf55d175ea848b87deb3e914febd7e028e2bf6534475d52fb9c3d005a1581de013cf55d175ea848b87deb3e914febd7e028e2bf6534475d52fb9c3d00a0758202ceb364d93225b4a0f004a0975a13eb50c3cc6348474b4fe9121f8dc72ca0cfa08186409a3581c2a286ad895d091f2b3d168a6091ad2627d30a72761a5bc36eef00740a14014581c659f2917fb63f12b33667463ee575eeac1845bbc736b9c0bbc40ba82a14454534c413831581c7eae28af2208be856f7a119668ae52a49b73725e326dc16579dcc373a240182846504154415445181e0b58206199186adb51974690d7247d2646097d2c62763b16fb7ed3f9f55d38abc123de0d818258200f3abbc8fc19c2e61bab6059bf8a466e6e754833a08a62a6c56fe0e78f19d9d5010e81581c6199186adb51974690d7247d2646097d2c62763b16fb7ed3f9f55d3910825839009493315cd92eb5d8c4304e67b7e16ae36d61d34502694657811a2c8e32c728d3861e164cab28cb8f006448139c8f1740ffb8e7aa9e5232dc820aa3581c2a286ad895d091f2b3d168a6091ad2627d30a72761a5bc36eef00740a14014581c659f2917fb63f12b33667463ee575eeac1845bbc736b9c0bbc40ba82a14454534c411832581c7eae28af2208be856f7a119668ae52a49b73725e326dc16579dcc373a240182846504154415445181e11186412818258200f3abbc8fc19c2e61bab6059bf8a466e6e754833a08a62a6c56fe0e78f19d9d5001481841864581de013cf55d175ea848b87deb3e914febd7e028e2bf6534475d52fb9c3d08106827468747470733a2f2f74657374696e672e7468697358203e33018e8293d319ef5b3ac72366dd28006bd315b715f7e7cfcbd3004129b80da700818258206199186adb51974690d7247d2646097d2c62763b767b528816fb7ed3f9f55d395840bdea87fca1b4b4df8a9b8fb4183c0fab2f8261eb6c5e4bc42c800bb9c8918755bdea87fca1b4b4df8a9b8fb4183c0fab2f8261eb6c5e4bc42c800bb9c891875501868205186482041901f48200581cb5ae663aaea8e500157bdf4baafd6f5ba0ce5759f7cd4101fc132f548201818200581cb5ae663aaea8e500157bdf4baafd6f5ba0ce5759f7cd4101fc132f548202818200581cb5ae663aaea8e500157bdf4baafd6f5ba0ce5759f7cd4101fc132f54830301818200581cb5ae663aaea8e500157bdf4baafd6f5ba0ce5759f7cd4101fc132f540281845820deeb8f82f2af5836ebbc1b450b6dbf0b03c93afe5696f10d49e8a8304ebfac01584064676273786767746f6768646a7074657476746b636f6376796669647171676775726a687268716169697370717275656c6876797071786565777072796676775820b6dbf0b03c93afe5696f10d49e8a8304ebfac01deeb8f82f2af5836ebbc1b45041a003815820b6dbf0b03c93afe5696f10d49e8a8304ebfac01deeb8f82f2af5836ebbc1b4500481187b0582840100d87a9f187bff82190bb8191b58840201d87a9f187bff821913881907d006815820b6dbf0b03c93afe5696f10d49e8a8304ebfac01deeb8f82f2af5836ebbc1b450f5a6011904d2026373747203821904d2637374720445627974657305a2667374726b6579187b81676c6973746b65796873747276616c75650626";
 
 // A sub transaction whose body carries a Shelley stake registration, a Conway registration with a deposit of 10,
-// a Conway unregistration refunding 20, a pool retirement and two withdrawals of 10 and 5 lovelace.
+// a Conway unregistration refunding 20, a pool retirement, which refunds nothing, and two withdrawals of 10 and 5 lovelace.
 static const char* SUB_TX_CBOR = "83a400d90102818258200f3abbc8fc19c2e61bab6059bf8a466e6e754833a08a62a6c56fe0e78f19d9d5000181a200583900dc435fc2638f6684bd1f9f6f917d80c92ae642a4a33a412e516479e64245236ab8056760efceebbff57e8cab220182be3e36439e520a6454011a0098968004d901028482008200581c13cf55d175ea848b87deb3e914febd7e028e2bf6534475d52fb9c3d083078200581c13cf55d175ea848b87deb3e914febd7e028e2bf6534475d52fb9c3d00a83088200581c13cf55d175ea848b87deb3e914febd7e028e2bf6534475d52fb9c3d0148304581c26b17b78de4f035dc0bfce60d1d3c3a8085c38dcce5fb8767e518bed1901f405a2581de013cf55d175ea848b87deb3e914febd7e028e2bf6534475d52fb9c3d00a581de1cb0ec2692497b458e46812c8a5bfa2931d1a2d965a99893828ec810f05a0f6";
 
 /**
@@ -55,11 +55,17 @@ static const char*    UNREGISTRATION_CERT_CBOR      = "83088200581c13cf55d175ea8
 static const char*    UNREGISTRATION_CERT2_CBOR     = "83088200581cc37b1b5dc0669f1d3c61a6fddb2e8fde96be87b881c60bce8e8d542f1b8000000000000000";
 static const char*    STAKE_REGISTRATION_CERT_CBOR  = "82008200581c13cf55d175ea848b87deb3e914febd7e028e2bf6534475d52fb9c3d0";
 static const char*    STAKE_REGISTRATION_CERT2_CBOR = "82008200581cc37b1b5dc0669f1d3c61a6fddb2e8fde96be87b881c60bce8e8d542f";
+static const char*    STAKE_DEREG_CERT_CBOR         = "82018200581c13cf55d175ea848b87deb3e914febd7e028e2bf6534475d52fb9c3d0";
+static const char*    STAKE_DEREG_CERT2_CBOR        = "82018200581cc37b1b5dc0669f1d3c61a6fddb2e8fde96be87b881c60bce8e8d542f";
+static const char*    POOL_REGISTRATION_CERT_CBOR   = "8a03581cd85087c646951407198c27b1b950fd2e99f28586c000ce39f6e6ef9258208dd154228946bd12967c12bedb1cb6038b78f8b84a1760b1a788fa72a4af3db01927101903e8d81e820105581de1cb0ec2692497b458e46812c8a5bfa2931d1a2d965a99893828ec810fd9010281581ccb0ec2692497b458e46812c8a5bfa2931d1a2d965a99893828ec810f8383011913886b6578616d706c652e636f6d8400191770447f000001f682026b6578616d706c652e636f6d827368747470733a2f2f6578616d706c652e636f6d58200f3abbc8fc19c2e61bab6059bf8a466e6e754833a08a62a6c56fe0e78f19d9d5";
+static const char*    POOL_UPDATE_CERT_CBOR         = "8a03581cd85087c646951407198c27b1b950fd2e99f28586c000ce39f6e6ef9258208dd154228946bd12967c12bedb1cb6038b78f8b84a1760b1a788fa72a4af3db0194e201903e8d81e820105581de1cb0ec2692497b458e46812c8a5bfa2931d1a2d965a99893828ec810fd9010281581ccb0ec2692497b458e46812c8a5bfa2931d1a2d965a99893828ec810f8383011913886b6578616d706c652e636f6d8400191770447f000001f682026b6578616d706c652e636f6d827368747470733a2f2f6578616d706c652e636f6d58200f3abbc8fc19c2e61bab6059bf8a466e6e754833a08a62a6c56fe0e78f19d9d5";
+static const char*    POOL_REGISTRATION_CERT2_CBOR  = "8a03581cc37b1b5dc0669f1d3c61a6fddb2e8fde96be87b881c60bce8e8d542f58208dd154228946bd12967c12bedb1cb6038b78f8b84a1760b1a788fa72a4af3db01927101903e8d81e820105581de1cb0ec2692497b458e46812c8a5bfa2931d1a2d965a99893828ec810fd9010281581ccb0ec2692497b458e46812c8a5bfa2931d1a2d965a99893828ec810f8383011913886b6578616d706c652e636f6d8400191770447f000001f682026b6578616d706c652e636f6d827368747470733a2f2f6578616d706c652e636f6d58200f3abbc8fc19c2e61bab6059bf8a466e6e754833a08a62a6c56fe0e78f19d9d5";
 static const char*    POOL_RETIREMENT_CERT_CBOR     = "8304581c26b17b78de4f035dc0bfce60d1d3c3a8085c38dcce5fb8767e518bed1901f4";
 static const char*    POOL_RETIREMENT_CERT2_CBOR    = "8304581cc37b1b5dc0669f1d3c61a6fddb2e8fde96be87b881c60bce8e8d542f1901f4";
 static const char*    REWARD_ADDRESS                = "stake_test1uqfu74w3wh4gfzu8m6e7j987h4lq9r3t7ef5gaw497uu85qsqfy27";
 static const char*    REWARD_ADDRESS2               = "stake_test1uqehkck0lajq8gr28t9uxnuvgcqrc6070x3k9r8048z8y5gssrtvn";
 static const uint64_t HALF_OF_UINT64_RANGE          = 9223372036854775808U;
+static const uint64_t DEFAULT_PROPOSAL_DEPOSIT      = 100U;
 
 /* STATIC FUNCTIONS **********************************************************/
 
@@ -302,7 +308,7 @@ TEST(cardano_compute_implicit_coin, canComputeImplicitCoin)
   EXPECT_EQ(result, CARDANO_SUCCESS);
   EXPECT_EQ(implicit_coin.withdrawals, 10);
   EXPECT_EQ(implicit_coin.deposits, 157);
-  EXPECT_EQ(implicit_coin.reclaim_deposits, 137);
+  EXPECT_EQ(implicit_coin.reclaim_deposits, 134);
 
   // Cleanup
   cardano_transaction_unref(&tx);
@@ -431,7 +437,28 @@ TEST(cardano_compute_implicit_coin, returnsErrorIfTheShelleyReclaimedDepositsWra
   cardano_protocol_parameters_t* protocol_params = init_protocol_parameters();
   cardano_implicit_coin_t        implicit_coin   = { 0 };
 
-  set_certificates(tx, POOL_RETIREMENT_CERT_CBOR, POOL_RETIREMENT_CERT2_CBOR);
+  set_certificates(tx, STAKE_DEREG_CERT_CBOR, STAKE_DEREG_CERT2_CBOR);
+  EXPECT_EQ(cardano_protocol_parameters_set_key_deposit(protocol_params, HALF_OF_UINT64_RANGE), CARDANO_SUCCESS);
+
+  // Act
+  cardano_error_t result = cardano_compute_implicit_coin(tx, protocol_params, &implicit_coin);
+
+  // Assert
+  EXPECT_EQ(result, CARDANO_ERROR_INTEGER_OVERFLOW);
+
+  // Cleanup
+  cardano_transaction_unref(&tx);
+  cardano_protocol_parameters_unref(&protocol_params);
+}
+
+TEST(cardano_compute_implicit_coin, returnsErrorIfThePoolDepositsWrapPastTheMaximumAmount)
+{
+  // Arrange
+  cardano_transaction_t*         tx              = new_default_transaction();
+  cardano_protocol_parameters_t* protocol_params = init_protocol_parameters();
+  cardano_implicit_coin_t        implicit_coin   = { 0 };
+
+  set_certificates(tx, POOL_REGISTRATION_CERT_CBOR, POOL_REGISTRATION_CERT2_CBOR);
   EXPECT_EQ(cardano_protocol_parameters_set_pool_deposit(protocol_params, HALF_OF_UINT64_RANGE), CARDANO_SUCCESS);
 
   // Act
@@ -439,6 +466,72 @@ TEST(cardano_compute_implicit_coin, returnsErrorIfTheShelleyReclaimedDepositsWra
 
   // Assert
   EXPECT_EQ(result, CARDANO_ERROR_INTEGER_OVERFLOW);
+
+  // Cleanup
+  cardano_transaction_unref(&tx);
+  cardano_protocol_parameters_unref(&protocol_params);
+}
+
+TEST(cardano_compute_implicit_coin, poolRetirementsReclaimNoDeposit)
+{
+  // Arrange
+  cardano_transaction_t*         tx              = new_default_transaction();
+  cardano_protocol_parameters_t* protocol_params = init_protocol_parameters();
+  cardano_implicit_coin_t        implicit_coin   = { 0 };
+
+  set_certificates(tx, POOL_RETIREMENT_CERT_CBOR, POOL_RETIREMENT_CERT2_CBOR);
+
+  // Act
+  cardano_error_t result = cardano_compute_implicit_coin(tx, protocol_params, &implicit_coin);
+
+  // Assert
+  EXPECT_EQ(result, CARDANO_SUCCESS);
+  EXPECT_EQ(implicit_coin.deposits, DEFAULT_PROPOSAL_DEPOSIT);
+  EXPECT_EQ(implicit_coin.reclaim_deposits, 0);
+
+  // Cleanup
+  cardano_transaction_unref(&tx);
+  cardano_protocol_parameters_unref(&protocol_params);
+}
+
+TEST(cardano_compute_implicit_coin, chargesThePoolDepositOnceForEachDistinctPool)
+{
+  // Arrange
+  cardano_transaction_t*         tx              = new_default_transaction();
+  cardano_protocol_parameters_t* protocol_params = init_protocol_parameters();
+  cardano_implicit_coin_t        implicit_coin   = { 0 };
+
+  set_certificates(tx, POOL_REGISTRATION_CERT_CBOR, POOL_REGISTRATION_CERT2_CBOR);
+
+  // Act
+  cardano_error_t result = cardano_compute_implicit_coin(tx, protocol_params, &implicit_coin);
+
+  // Assert
+  EXPECT_EQ(result, CARDANO_SUCCESS);
+  EXPECT_EQ(implicit_coin.deposits, DEFAULT_PROPOSAL_DEPOSIT + 6U);
+  EXPECT_EQ(implicit_coin.reclaim_deposits, 0);
+
+  // Cleanup
+  cardano_transaction_unref(&tx);
+  cardano_protocol_parameters_unref(&protocol_params);
+}
+
+TEST(cardano_compute_implicit_coin, chargesNoPoolDepositForASecondRegistrationOfTheSamePool)
+{
+  // Arrange
+  cardano_transaction_t*         tx              = new_default_transaction();
+  cardano_protocol_parameters_t* protocol_params = init_protocol_parameters();
+  cardano_implicit_coin_t        implicit_coin   = { 0 };
+
+  set_certificates(tx, POOL_REGISTRATION_CERT_CBOR, POOL_UPDATE_CERT_CBOR);
+
+  // Act
+  cardano_error_t result = cardano_compute_implicit_coin(tx, protocol_params, &implicit_coin);
+
+  // Assert
+  EXPECT_EQ(result, CARDANO_SUCCESS);
+  EXPECT_EQ(implicit_coin.deposits, DEFAULT_PROPOSAL_DEPOSIT + 3U);
+  EXPECT_EQ(implicit_coin.reclaim_deposits, 0);
 
   // Cleanup
   cardano_transaction_unref(&tx);
@@ -519,7 +612,7 @@ TEST(cardano_compute_sub_transaction_implicit_coin, canComputeImplicitCoin)
   EXPECT_EQ(result, CARDANO_SUCCESS);
   EXPECT_EQ(implicit_coin.withdrawals, 15);
   EXPECT_EQ(implicit_coin.deposits, 12);
-  EXPECT_EQ(implicit_coin.reclaim_deposits, 23);
+  EXPECT_EQ(implicit_coin.reclaim_deposits, 20);
 
   // Cleanup
   cardano_sub_transaction_unref(&sub_tx);
@@ -550,7 +643,7 @@ TEST(cardano_compute_sub_transaction_implicit_coin, matchesTopLevelResultForTheS
   EXPECT_EQ(sub_tx_coin.reclaim_deposits, tx_coin.reclaim_deposits);
   EXPECT_EQ(sub_tx_coin.withdrawals, 10);
   EXPECT_EQ(sub_tx_coin.deposits, 157);
-  EXPECT_EQ(sub_tx_coin.reclaim_deposits, 137);
+  EXPECT_EQ(sub_tx_coin.reclaim_deposits, 134);
 
   // Cleanup
   cardano_transaction_unref(&tx);
@@ -592,6 +685,50 @@ TEST(cardano_compute_sub_transaction_implicit_coin, returnsErrorIfTheDepositsWra
 
   // Assert
   EXPECT_EQ(result, CARDANO_ERROR_INTEGER_OVERFLOW);
+
+  // Cleanup
+  cardano_sub_transaction_unref(&sub_tx);
+  cardano_protocol_parameters_unref(&protocol_params);
+}
+
+TEST(cardano_compute_sub_transaction_implicit_coin, chargesNoPoolDepositForASecondRegistrationOfTheSamePool)
+{
+  // Arrange
+  cardano_sub_transaction_t*     sub_tx          = new_default_sub_transaction();
+  cardano_protocol_parameters_t* protocol_params = init_protocol_parameters();
+  cardano_implicit_coin_t        implicit_coin   = { 0 };
+
+  set_sub_transaction_certificates(sub_tx, POOL_REGISTRATION_CERT_CBOR, POOL_UPDATE_CERT_CBOR);
+
+  // Act
+  cardano_error_t result = cardano_compute_sub_transaction_implicit_coin(sub_tx, protocol_params, &implicit_coin);
+
+  // Assert
+  EXPECT_EQ(result, CARDANO_SUCCESS);
+  EXPECT_EQ(implicit_coin.deposits, 3);
+  EXPECT_EQ(implicit_coin.reclaim_deposits, 0);
+
+  // Cleanup
+  cardano_sub_transaction_unref(&sub_tx);
+  cardano_protocol_parameters_unref(&protocol_params);
+}
+
+TEST(cardano_compute_sub_transaction_implicit_coin, poolRetirementsReclaimNoDeposit)
+{
+  // Arrange
+  cardano_sub_transaction_t*     sub_tx          = new_default_sub_transaction();
+  cardano_protocol_parameters_t* protocol_params = init_protocol_parameters();
+  cardano_implicit_coin_t        implicit_coin   = { 0 };
+
+  set_sub_transaction_certificates(sub_tx, POOL_RETIREMENT_CERT_CBOR, POOL_RETIREMENT_CERT2_CBOR);
+
+  // Act
+  cardano_error_t result = cardano_compute_sub_transaction_implicit_coin(sub_tx, protocol_params, &implicit_coin);
+
+  // Assert
+  EXPECT_EQ(result, CARDANO_SUCCESS);
+  EXPECT_EQ(implicit_coin.deposits, 0);
+  EXPECT_EQ(implicit_coin.reclaim_deposits, 0);
 
   // Cleanup
   cardano_sub_transaction_unref(&sub_tx);
