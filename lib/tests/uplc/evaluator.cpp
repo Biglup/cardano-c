@@ -530,3 +530,42 @@ TEST(cardano_uplc_apply_params_to_script, failsWhenAnInteriorAllocationFails)
   cardano_buffer_unref(&script);
   cardano_plutus_list_unref(&params);
 }
+
+TEST(cardano_uplc_apply_params_to_script, preservesAllocationErrorsThroughoutDecodingAndApplication)
+{
+  // Arrange
+  cardano_buffer_t*      script = build_identity_script();
+  cardano_plutus_list_t* params = new_list();
+  list_append_int(params, 5);
+  bool completed = false;
+
+  // Act & Assert
+  for (int index = 0; index < 128; ++index)
+  {
+    cardano_buffer_t* output = nullptr;
+    set_malloc_fail_index(index);
+    cardano_set_allocators(fail_malloc_at_exact_index, realloc, free);
+
+    const cardano_error_t result = cardano_uplc_apply_params_to_script(
+      params, cardano_buffer_get_data(script), cardano_buffer_get_size(script), &output);
+
+    cardano_set_allocators(malloc, realloc, free);
+
+    if (result == CARDANO_SUCCESS)
+    {
+      EXPECT_NE(output, nullptr);
+      cardano_buffer_unref(&output);
+      completed = true;
+      break;
+    }
+
+    EXPECT_EQ(result, CARDANO_ERROR_MEMORY_ALLOCATION_FAILED) << index;
+    EXPECT_EQ(output, nullptr) << index;
+    cardano_buffer_unref(&output);
+  }
+
+  EXPECT_TRUE(completed);
+
+  cardano_buffer_unref(&script);
+  cardano_plutus_list_unref(&params);
+}

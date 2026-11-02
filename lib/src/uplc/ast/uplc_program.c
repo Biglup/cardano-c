@@ -58,8 +58,8 @@
  *
  * \return \ref CARDANO_SUCCESS on success, \ref CARDANO_ERROR_DECODING when the
  *         item is not a bytestring or is followed by bytes that are not allowed,
- *         or \ref CARDANO_ERROR_MEMORY_ALLOCATION_FAILED if the reader cannot be
- *         made.
+ *         or \ref CARDANO_ERROR_MEMORY_ALLOCATION_FAILED if the reader or decoded
+ *         bytes cannot be allocated.
  */
 static cardano_error_t
 peel_bytestring(const byte_t* data, const size_t size, const bool allow_trailing, cardano_buffer_t** inner)
@@ -97,7 +97,7 @@ peel_bytestring(const byte_t* data, const size_t size, const bool allow_trailing
   {
     cardano_cbor_reader_unref(&reader);
 
-    return CARDANO_ERROR_DECODING;
+    return (result == CARDANO_ERROR_MEMORY_ALLOCATION_FAILED) ? result : CARDANO_ERROR_DECODING;
   }
 
   result = cardano_cbor_reader_get_bytes_remaining(reader, &remaining);
