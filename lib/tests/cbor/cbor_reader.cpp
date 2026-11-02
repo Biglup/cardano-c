@@ -3774,3 +3774,31 @@ TEST(cardano_cbor_reader_skip_value, skipsFullWidthTag)
   // Cleanup
   cardano_cbor_reader_unref(&reader);
 }
+
+TEST(cardano_cbor_reader_read_encoded_value, reportsOutputAllocationFailure)
+{
+  // Arrange
+  const char*       cbor         = "00";
+  _cardano_malloc_t allocators[] = { fail_after_one_malloc, fail_after_two_malloc };
+
+  for (size_t index = 0U; index < (sizeof(allocators) / sizeof(allocators[0])); ++index)
+  {
+    cardano_cbor_reader_t* reader  = cardano_cbor_reader_from_hex(cbor, strlen(cbor));
+    cardano_buffer_t*      encoded = nullptr;
+    reset_allocators_run_count();
+    cardano_set_allocators(allocators[index], realloc, free);
+
+    // Act
+    const cardano_error_t result = cardano_cbor_reader_read_encoded_value(reader, &encoded);
+
+    cardano_set_allocators(malloc, realloc, free);
+
+    // Assert
+    EXPECT_EQ(result, CARDANO_ERROR_MEMORY_ALLOCATION_FAILED);
+    EXPECT_EQ(encoded, nullptr);
+
+    // Cleanup
+    cardano_buffer_unref(&encoded);
+    cardano_cbor_reader_unref(&reader);
+  }
+}
