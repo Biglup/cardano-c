@@ -858,3 +858,43 @@ TEST(cardano_reward_address_get_network_id, canGetNetworkId)
   // Clean up
   cardano_reward_address_unref(&address);
 }
+
+TEST(cardano_reward_address_from_credentials, releasesStateWhenEncodingAllocationFails)
+{
+  // Arrange
+  const byte_t          hash[28]   = { 1 };
+  cardano_credential_t* credential = nullptr;
+  ASSERT_EQ(cardano_credential_from_hash_bytes(hash, sizeof(hash), CARDANO_CREDENTIAL_TYPE_KEY_HASH, &credential), CARDANO_SUCCESS);
+  bool reached_success = false;
+  int  failures        = 0;
+
+  // Act & Assert
+  for (int index = 0; index < 64; ++index)
+  {
+    SCOPED_TRACE(index);
+    set_malloc_fail_index(index);
+    cardano_set_allocators(fail_malloc_at_exact_index, realloc, free);
+    cardano_reward_address_t* address = nullptr;
+    const cardano_error_t     result  = cardano_reward_address_from_credentials(CARDANO_NETWORK_ID_TEST_NET, credential, &address);
+    cardano_set_allocators(malloc, realloc, free);
+
+    if (result == CARDANO_SUCCESS)
+    {
+      EXPECT_NE(address, nullptr);
+      EXPECT_GT(strlen(cardano_reward_address_get_string(address)), 0U);
+      EXPECT_EQ(cardano_reward_address_get_bytes(address)[1], 1U);
+      cardano_reward_address_unref(&address);
+      reached_success = true;
+      break;
+    }
+
+    ++failures;
+    EXPECT_EQ(address, nullptr);
+    EXPECT_EQ(cardano_credential_refcount(credential), 1U);
+  }
+
+  EXPECT_TRUE(reached_success);
+  EXPECT_GT(failures, 3);
+  EXPECT_EQ(cardano_credential_refcount(credential), 1U);
+  cardano_credential_unref(&credential);
+}
