@@ -380,6 +380,37 @@ TEST(cardano_proposal_procedure_set_last_error, doesNothingWhenWhenMessageIsNull
   cardano_proposal_procedure_unref(&proposal_procedure);
 }
 
+TEST(cardano_proposal_procedure_from_cbor, releasesReadersWhenAllocationFails)
+{
+  for (int index = 0; index < 128; ++index)
+  {
+    // Arrange
+    SCOPED_TRACE(index);
+    cardano_cbor_reader_t*        reader   = cardano_cbor_reader_from_hex(INFO_PROPOSAL_CBOR, strlen(INFO_PROPOSAL_CBOR));
+    cardano_proposal_procedure_t* proposal = NULL;
+    set_malloc_fail_index(index);
+    cardano_set_allocators(fail_malloc_at_exact_index, realloc, free);
+
+    // Act
+    cardano_error_t result = cardano_proposal_procedure_from_cbor(reader, &proposal);
+
+    // Assert
+    cardano_set_allocators(malloc, realloc, free);
+    if (result == CARDANO_SUCCESS)
+    {
+      EXPECT_NE(proposal, nullptr);
+    }
+    else
+    {
+      EXPECT_EQ(proposal, nullptr);
+    }
+
+    // Cleanup
+    cardano_proposal_procedure_unref(&proposal);
+    cardano_cbor_reader_unref(&reader);
+  }
+}
+
 TEST(cardano_proposal_procedure_from_cbor, returnsErrorIfReaderIsNull)
 {
   // Arrange
