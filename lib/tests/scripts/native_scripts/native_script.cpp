@@ -66,7 +66,7 @@ static const char* NESTED_NATIVE_SCRIPT =
   "        {\n"
   "          \"type\": \"after\",\n"
   "          \"slot\": 4000\n"
-  "        },\n"
+  "        }\n"
   "      ]\n"
   "    }\n"
   "  ]\n"
