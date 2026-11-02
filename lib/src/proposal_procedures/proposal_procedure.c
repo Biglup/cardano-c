@@ -576,6 +576,16 @@ cardano_proposal_procedure_from_cbor(cardano_cbor_reader_t* reader, cardano_prop
 
   cardano_buffer_unref(&encoded_action);
 
+  if ((action_reader == NULL) || (action_reader_cloned == NULL))
+  {
+    cardano_reward_address_unref(&reward_address);
+    cardano_anchor_unref(&anchor);
+    cardano_cbor_reader_unref(&action_reader);
+    cardano_cbor_reader_unref(&action_reader_cloned);
+
+    return CARDANO_ERROR_MEMORY_ALLOCATION_FAILED;
+  }
+
   int64_t         array_size  = 0;
   cardano_error_t peek_result = cardano_cbor_reader_read_start_array(action_reader_cloned, &array_size);
 
