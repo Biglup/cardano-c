@@ -224,7 +224,6 @@ handle_json_object(cardano_json_object_t* json_obj, cardano_metadatum_t** metada
     if (error != CARDANO_SUCCESS)
     {
       cardano_metadatum_unref(&metadatum_key);
-      cardano_metadatum_unref(&metadatum_key);
       cardano_metadatum_map_unref(&map);
 
       return error;
@@ -289,7 +288,7 @@ convert_json_to_metadatum(cardano_json_object_t* json_obj, cardano_metadatum_t**
     size_t      size = 0;
     const char* str  = cardano_json_object_get_string(json_obj, &size);
 
-    cardano_error_t error = cardano_metadatum_new_string(str, cardano_safe_strlen(str, 64), metadatum);
+    cardano_error_t error = cardano_metadatum_new_string(str, size - 1U, metadatum);
 
     if (error != CARDANO_SUCCESS)
     {
@@ -344,7 +343,28 @@ convert_metadatum_to_json_object(cardano_json_writer_t* writer, cardano_metadatu
   {
     case CARDANO_METADATUM_KIND_INTEGER:
     {
-      cardano_json_writer_write_signed_int(writer, cardano_bigint_to_int(metadatum->integer));
+      const size_t size = cardano_bigint_get_string_size(metadatum->integer, 10);
+      char*        text = (char*)_cardano_malloc(size);
+
+      if (text == NULL)
+      {
+        return CARDANO_ERROR_MEMORY_ALLOCATION_FAILED;
+      }
+
+      cardano_error_t error = cardano_bigint_to_string(metadatum->integer, text, size, 10);
+
+      if (error == CARDANO_SUCCESS)
+      {
+        cardano_json_writer_write_raw_value(writer, text, size - 1U);
+      }
+
+      _cardano_free(text);
+
+      if (error != CARDANO_SUCCESS)
+      {
+        return error;
+      }
+
       break;
     }
     case CARDANO_METADATUM_KIND_TEXT:
@@ -455,14 +475,10 @@ convert_metadatum_to_json_object(cardano_json_writer_t* writer, cardano_metadatu
           return CARDANO_ERROR_INVALID_METADATUM_CONVERSION;
         }
 
-        const size_t key_size = cardano_buffer_get_size(key->text);
-        char*        key_str  = (char*)_cardano_malloc(key_size);
-
-        CARDANO_UNUSED(memset(key_str, 0, key_size));
-
-        cardano_safe_memcpy(key_str, key_size, (void*)cardano_buffer_get_data(key->text), cardano_buffer_get_size(key->text));
-
-        cardano_json_writer_write_property_name(writer, key_str, key_size);
+        cardano_json_writer_write_property_name(
+          writer,
+          (const char*)((const void*)cardano_buffer_get_data(key->text)),
+          cardano_buffer_get_size(key->text));
 
         // cppcheck-suppress misra-c2012-17.2; Reason: Parsing the JSON object is a recursive operation. TODO: Create cardano_json_reader_t and cardano_json_writer_t to break the recursion.
         cardano_error_t res = convert_metadatum_to_json_object(writer, value);
@@ -471,12 +487,9 @@ convert_metadatum_to_json_object(cardano_json_writer_t* writer, cardano_metadatu
         {
           cardano_metadatum_list_unref(&keys);
           cardano_metadatum_list_unref(&values);
-          _cardano_free(key_str);
 
           return res;
         }
-
-        _cardano_free(key_str);
       }
 
       cardano_metadatum_list_unref(&keys);
@@ -1029,14 +1042,17 @@ cardano_metadatum_from_json(const char* json, size_t json_size, cardano_metadatu
     return CARDANO_ERROR_INVALID_JSON;
   }
 
-  cardano_json_object_t* parsed_json = cardano_json_object_parse(json, json_size);
+  *metadatum = NULL;
 
-  if (parsed_json == NULL)
+  cardano_json_object_t* parsed_json = NULL;
+  cardano_error_t        error       = cardano_json_object_parse_ex(json, json_size, &parsed_json);
+
+  if (error != CARDANO_SUCCESS)
   {
-    return CARDANO_ERROR_INVALID_JSON;
+    return error;
   }
 
-  cardano_error_t error = convert_json_to_metadatum(parsed_json, metadatum);
+  error = convert_json_to_metadatum(parsed_json, metadatum);
 
   cardano_json_object_unref(&parsed_json);
 
@@ -1062,7 +1078,13 @@ cardano_metadatum_to_json(
   }
 
   cardano_json_writer_t* writer = cardano_json_writer_new(CARDANO_JSON_FORMAT_PRETTY);
-  cardano_error_t        result = convert_metadatum_to_json_object(writer, metadatum);
+
+  if (writer == NULL)
+  {
+    return CARDANO_ERROR_MEMORY_ALLOCATION_FAILED;
+  }
+
+  cardano_error_t result = convert_metadatum_to_json_object(writer, metadatum);
 
   if (result != CARDANO_SUCCESS)
   {
@@ -1094,7 +1116,13 @@ cardano_metadatum_get_json_size(cardano_metadatum_t* metadatum)
   }
 
   cardano_json_writer_t* writer = cardano_json_writer_new(CARDANO_JSON_FORMAT_PRETTY);
-  cardano_error_t        result = convert_metadatum_to_json_object(writer, metadatum);
+
+  if (writer == NULL)
+  {
+    return 0U;
+  }
+
+  cardano_error_t result = convert_metadatum_to_json_object(writer, metadatum);
 
   if (result != CARDANO_SUCCESS)
   {

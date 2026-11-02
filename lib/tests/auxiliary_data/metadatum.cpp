@@ -3010,3 +3010,162 @@ TEST(cardano_metadatum_get_json_size, returnZeroIfGivenNull)
   // Assert
   EXPECT_EQ(size, 0);
 }
+
+TEST(cardano_metadatum_from_json, preservesEmbeddedNullAndLongStrings)
+{
+  // Arrange
+  const char*  inputs[]  = { "\"a\\u0000b\"", "\"abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789abc\"" };
+  const size_t lengths[] = { 3U, 65U };
+
+  for (size_t index = 0U; index < 2U; ++index)
+  {
+    cardano_metadatum_t* data     = nullptr;
+    char                 text[66] = { 0 };
+
+    // Act
+    ASSERT_EQ(cardano_metadatum_from_json(inputs[index], strlen(inputs[index]), &data), CARDANO_SUCCESS);
+    ASSERT_EQ(cardano_metadatum_to_string(data, text, sizeof(text)), CARDANO_SUCCESS);
+
+    // Assert
+    EXPECT_EQ(cardano_metadatum_get_string_size(data), lengths[index] + 1U);
+    if (index == 0U)
+    {
+      EXPECT_EQ(memcmp(text, "a\0b", 3U), 0);
+    }
+
+    // Cleanup
+    cardano_metadatum_unref(&data);
+  }
+}
+
+TEST(cardano_metadatum_to_json, preservesUnsignedIntegerRange)
+{
+  // Arrange
+  cardano_metadatum_t* data = nullptr;
+  ASSERT_EQ(cardano_metadatum_new_integer_from_uint(UINT64_MAX, &data), CARDANO_SUCCESS);
+  char json[32] = { 0 };
+
+  // Act
+  const cardano_error_t result = cardano_metadatum_to_json(data, json, sizeof(json));
+
+  // Assert
+  EXPECT_EQ(result, CARDANO_SUCCESS);
+  EXPECT_STREQ(json, "18446744073709551615");
+
+  // Cleanup
+  cardano_metadatum_unref(&data);
+}
+
+TEST(cardano_metadatum_to_json, handlesEveryAllocationFailure)
+{
+  // Arrange
+  const char*          input = "{\"\": [42, {\"a\\u0000b\": \"value\"}]}";
+  cardano_metadatum_t* data  = nullptr;
+  ASSERT_EQ(cardano_metadatum_from_json(input, strlen(input), &data), CARDANO_SUCCESS);
+  char json[256] = { 0 };
+  bool completed = false;
+
+  for (int limit = 0; limit < 200; ++limit)
+  {
+    reset_allocators_run_count();
+    set_malloc_limit(limit);
+    cardano_set_allocators(fail_malloc_at_limit, realloc, free);
+
+    // Act
+    const cardano_error_t result = cardano_metadatum_to_json(data, json, sizeof(json));
+    cardano_set_allocators(malloc, realloc, free);
+    reset_limited_malloc();
+
+    // Assert
+    if (result == CARDANO_SUCCESS)
+    {
+      completed = true;
+      break;
+    }
+
+    EXPECT_EQ(result, CARDANO_ERROR_MEMORY_ALLOCATION_FAILED) << limit;
+  }
+
+  EXPECT_TRUE(completed);
+
+  // Cleanup
+  cardano_metadatum_unref(&data);
+}
+
+TEST(cardano_metadatum_get_json_size, handlesWriterAllocationFailure)
+{
+  // Arrange
+  cardano_metadatum_t* data = nullptr;
+  ASSERT_EQ(cardano_metadatum_new_integer_from_int(1, &data), CARDANO_SUCCESS);
+  cardano_set_allocators(fail_right_away_malloc, realloc, free);
+
+  // Act
+  const size_t size = cardano_metadatum_get_json_size(data);
+  cardano_set_allocators(malloc, realloc, free);
+
+  // Assert
+  EXPECT_EQ(size, 0U);
+
+  // Cleanup
+  cardano_metadatum_unref(&data);
+}
+
+TEST(cardano_metadatum_from_json, preservesAllocationErrorsAndReleasesPartialValues)
+{
+  // Arrange
+  const char* input     = "{\"key\": [42, \"text\"]}";
+  bool        completed = false;
+
+  for (int limit = 0; limit < 200; ++limit)
+  {
+    cardano_metadatum_t* data = nullptr;
+    reset_allocators_run_count();
+    set_malloc_limit(limit);
+    cardano_set_allocators(fail_malloc_at_limit, realloc, free);
+
+    // Act
+    const cardano_error_t result = cardano_metadatum_from_json(input, strlen(input), &data);
+    cardano_set_allocators(malloc, realloc, free);
+    reset_limited_malloc();
+
+    // Assert
+    if (result == CARDANO_SUCCESS)
+    {
+      completed = true;
+      cardano_metadatum_unref(&data);
+      break;
+    }
+
+    EXPECT_EQ(result, CARDANO_ERROR_MEMORY_ALLOCATION_FAILED) << limit;
+    EXPECT_EQ(data, nullptr);
+    cardano_metadatum_unref(&data);
+  }
+
+  EXPECT_TRUE(completed);
+}
+
+TEST(cardano_metadatum_to_json, preservesArbitraryPrecisionIntegerValues)
+{
+  // Arrange
+  const char* values[] = { "18446744073709551616", "-18446744073709551616" };
+
+  for (const char* value: values)
+  {
+    cardano_bigint_t*    integer = nullptr;
+    cardano_metadatum_t* data    = nullptr;
+    ASSERT_EQ(cardano_bigint_from_string(value, strlen(value), 10, &integer), CARDANO_SUCCESS);
+    ASSERT_EQ(cardano_metadatum_new_integer(integer, &data), CARDANO_SUCCESS);
+    char json[32] = { 0 };
+
+    // Act
+    const cardano_error_t result = cardano_metadatum_to_json(data, json, sizeof(json));
+
+    // Assert
+    EXPECT_EQ(result, CARDANO_SUCCESS);
+    EXPECT_STREQ(json, value);
+
+    // Cleanup
+    cardano_metadatum_unref(&data);
+    cardano_bigint_unref(&integer);
+  }
+}

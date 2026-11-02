@@ -1,6 +1,14 @@
 Metadatum
 ==========================
 
+Plain JSON conversion preserves the complete text value, including embedded
+null characters. Text and byte-string limits are checked when encoding CBOR;
+JSON input is not silently shortened to fit those limits.
+
+``cardano_metadatum_to_json`` writes integer values as exact decimal JSON numbers.
+It requires text map keys and rejects byte-string values. CIP-116 inspection
+output uses the tagged representation and supports every metadatum kind.
+
 .. doxygentypedef:: cardano_metadatum_t
 
 ------------
