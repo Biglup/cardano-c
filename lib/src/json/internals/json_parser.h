@@ -38,11 +38,12 @@
  */
 typedef struct
 {
-    const char* input;           /**< The input JSON string to be parsed. */
-    size_t      length;          /**< The total length of the input JSON string, in bytes. */
-    size_t      offset;          /**< The current position within the input JSON string. */
-    size_t      depth;           /**< The current depth of the JSON structure being parsed. */
-    char        last_error[256]; /**< Buffer for storing the last error message encountered. */
+    const char*     input;           /**< The input JSON string to be parsed. */
+    size_t          length;          /**< The total length of the input JSON string, in bytes. */
+    size_t          offset;          /**< The current position within the input JSON string. */
+    size_t          depth;           /**< The current depth of the JSON structure being parsed. */
+    cardano_error_t error;           /**< Allocation error classification for checked parsing. */
+    char            last_error[256]; /**< Buffer for storing the last error message encountered. */
 } cardano_json_parse_context_t;
 
 /* DECLARATIONS **************************************************************/
@@ -59,22 +60,6 @@ typedef struct
  */
 void
 cardano_skip_whitespace(cardano_json_parse_context_t* ctx);
-
-/**
- * \brief Checks if a specific character exists within a given range of a character array.
- *
- * This function searches for the character \p to_match in the range specified by
- * \p begin and \p end. If the character is found within the range, the function
- * returns `true`. Otherwise, it returns `false`.
- *
- * \param[in] to_match The character to search for.
- * \param[in] begin A pointer to the start of the range to search. This must not be NULL.
- * \param[in] end A pointer to the end of the range to search. This must not be NULL and must be greater than or equal to \p begin.
- *
- * \return `true` if the character \p to_match is found in the range, `false` otherwise.
- */
-bool
-cardano_has_char(char to_match, const char* begin, const char* end);
 
 /**
  * \brief Processes a UTF-8 sequence from the JSON input and writes it to a buffer.
