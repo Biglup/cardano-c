@@ -642,6 +642,32 @@ _process_pool_registration(
     return result;
   }
 
+  cardano_blake2b_hash_t* operator_key_hash = NULL;
+  result                                    = cardano_pool_params_get_operator_key_hash(params, &operator_key_hash);
+
+  if (result != CARDANO_SUCCESS)
+  {
+    cardano_pool_params_unref(&params);
+    cardano_pool_registration_cert_unref(&registration);
+
+    return result;
+  }
+
+  if (!_cardano_blake2b_hash_set_has(unique_signers, operator_key_hash))
+  {
+    result = cardano_blake2b_hash_set_add(unique_signers, operator_key_hash);
+  }
+
+  cardano_blake2b_hash_unref(&operator_key_hash);
+
+  if (result != CARDANO_SUCCESS)
+  {
+    cardano_pool_params_unref(&params);
+    cardano_pool_registration_cert_unref(&registration);
+
+    return result;
+  }
+
   cardano_pool_owners_t* owners = NULL;
   result                        = cardano_pool_params_get_owners(params, &owners);
 

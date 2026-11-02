@@ -32,6 +32,7 @@
 #include <string.h>
 
 #include "../../string_safe.h"
+#include "internals/pool_deposits.h"
 
 /* STATIC FUNCTIONS **********************************************************/
 
@@ -95,9 +96,72 @@ compute_withdrawals(
 }
 
 /**
+ * \brief Determines whether a pool registration certificate registers a pool for the first time in its certificate set.
+ *
+ * The ledger charges the pool deposit once per pool: a later registration of the same pool in the same set updates
+ * the pool parameters and pays no deposit.
+ *
+ * \param[in]  certificates The certificate set holding the pool registration certificate.
+ * \param[in]  index        The position of the pool registration certificate in the set.
+ * \param[in]  certificate  The pool registration certificate at `index`.
+ * \param[out] is_first     On success, `true` if no certificate before `index` registers the same pool; otherwise, `false`.
+ *
+ * \return \ref CARDANO_SUCCESS if the certificates were inspected, or an appropriate error code.
+ */
+static cardano_error_t
+is_first_pool_registration(
+  cardano_certificate_set_t* certificates,
+  const size_t               index,
+  cardano_certificate_t*     certificate,
+  bool*                      is_first)
+{
+  cardano_blake2b_hash_t* operator_key_hash = NULL;
+
+  cardano_error_t result = _cardano_get_pool_operator_key_hash(certificate, &operator_key_hash);
+
+  if (result != CARDANO_SUCCESS)
+  {
+    return result;
+  }
+
+  *is_first = true;
+
+  for (size_t i = 0U; (i < index) && *is_first && (result == CARDANO_SUCCESS); ++i)
+  {
+    cardano_certificate_t* previous = NULL;
+
+    result = cardano_certificate_set_get(certificates, i, &previous);
+    cardano_certificate_unref(&previous);
+
+    cardano_cert_type_t type = CARDANO_CERT_TYPE_STAKE_REGISTRATION;
+
+    if (result == CARDANO_SUCCESS)
+    {
+      result = cardano_cert_get_type(previous, &type);
+    }
+
+    if ((result == CARDANO_SUCCESS) && (type == CARDANO_CERT_TYPE_POOL_REGISTRATION))
+    {
+      cardano_blake2b_hash_t* previous_operator_key_hash = NULL;
+
+      result    = _cardano_get_pool_operator_key_hash(previous, &previous_operator_key_hash);
+      *is_first = !cardano_blake2b_hash_equals(operator_key_hash, previous_operator_key_hash);
+
+      cardano_blake2b_hash_unref(&previous_operator_key_hash);
+    }
+  }
+
+  cardano_blake2b_hash_unref(&operator_key_hash);
+
+  return result;
+}
+
+/**
  * \brief Accumulates the deposits and refunds of the Shelley era certificates into the implicit coin.
  *
- * Shelley era certificates do not carry their deposit, so the amounts are taken from the protocol parameters.
+ * Shelley era certificates do not carry their deposit, so the amounts are taken from the protocol parameters. A pool
+ * registration pays the pool deposit unless the same pool is registered earlier in the set, and a pool retirement
+ * reclaims nothing, as the ledger returns the pool deposit when the pool retires at an epoch boundary.
  *
  * \param[in]  certificates  The certificate set of the body, or NULL when the body has none.
  * \param[in]  pool_deposit  The pool deposit from the protocol parameters.
@@ -115,7 +179,7 @@ compute_shelley_deposits(
 {
   const size_t size = cardano_certificate_set_get_length(certificates);
 
-  // Remark: For the case of deregistration (CARDANO_CERT_TYPE_STAKE_DEREGISTRATION and CARDANO_CERT_TYPE_POOL_RETIREMENT) the code here is not entirely correct
+  // Remark: For the case of deregistration (CARDANO_CERT_TYPE_STAKE_DEREGISTRATION) the code here is not entirely correct
   // as we are assuming the current protocol parameters for the deposits where the same as the ones used when the certificates where issued.
   // This is going to work for now, but to properly implement this we need a way to know when the certificate we are undoing was originally issued
   // and get the protocol parameters for that epoch. However, these parameters in particular have never changed in mainnet and these certificates will be deprecated,
@@ -155,12 +219,14 @@ compute_shelley_deposits(
       }
       case CARDANO_CERT_TYPE_POOL_REGISTRATION:
       {
-        result = add_amount(&implicit_coin->deposits, pool_deposit);
-        break;
-      }
-      case CARDANO_CERT_TYPE_POOL_RETIREMENT:
-      {
-        result = add_amount(&implicit_coin->reclaim_deposits, pool_deposit);
+        bool is_first = false;
+
+        result = is_first_pool_registration(certificates, i, certificate, &is_first);
+
+        if ((result == CARDANO_SUCCESS) && is_first)
+        {
+          result = add_amount(&implicit_coin->deposits, pool_deposit);
+        }
 
         break;
       }

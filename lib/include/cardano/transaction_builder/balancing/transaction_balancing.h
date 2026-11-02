@@ -57,6 +57,8 @@ extern "C" {
  * the net imbalance of the sub transactions (see \ref cardano_compute_sub_transaction_imbalance) is part of the value
  * that coin selection must cover: a net deficit is funded by additional top level inputs and a net surplus ends up in
  * the change outputs, and the result is verified with the whole batch check of \ref cardano_is_transaction_balanced.
+ * A pool registered by several bodies of the batch pays the pool deposit once, as in
+ * \ref cardano_compute_transaction_batch_imbalance.
  *
  * The resolved UTXOs of the sub transactions, the ones they spend and optionally the ones they reference, are given in
  * \p available_utxo, next to the UTXOs the top level transaction may spend. The role of each UTXO is taken from the
@@ -247,7 +249,8 @@ cardano_is_transaction_balanced(
  *
  * The imbalance is the value the transaction consumes minus the value it produces. Consumed value is the sum of the
  * resolved input values, the reward withdrawals, the deposit refunds and the minted assets; produced value is the sum
- * of the outputs, the fee, the deposits, the treasury donation, the direct deposits and the burned assets.
+ * of the outputs, the fee, the deposits, the treasury donation, the direct deposits and the burned assets. The deposits
+ * and deposit refunds are the ones \ref cardano_compute_implicit_coin reports for the body.
  *
  * The imbalance covers the top level body only and ignores the sub transactions the transaction carries (body key 23).
  * The figure the ledger checks for a CIP-118 batch is \ref cardano_compute_transaction_batch_imbalance, which is also
@@ -357,6 +360,11 @@ cardano_compute_sub_transaction_imbalance(
  * transaction (see \ref cardano_compute_sub_transaction_imbalance), coin and multi assets included, with the same sign
  * convention: a positive amount is value the batch still has left over, a negative amount is value the batch still
  * needs, and a zero imbalance means the batch is balanced.
+ *
+ * The figure is not a plain sum of the imbalances of the bodies for pool deposits: as the ledger does, a pool pays the
+ * pool deposit once across the whole batch, even when the top level body and its sub transactions, or several sub
+ * transactions, register it, so the pool deposit is given back once for every additional body that registers the same
+ * pool. A pool that is already registered on chain is still charged, as in \ref cardano_compute_implicit_coin.
  *
  * For a transaction that carries no sub transactions the result equals \ref cardano_compute_transaction_imbalance.
  *

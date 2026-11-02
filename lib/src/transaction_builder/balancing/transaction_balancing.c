@@ -22,6 +22,7 @@
 /* INCLUDES ******************************************************************/
 
 #include "internals/collateral.h"
+#include "internals/pool_deposits.h"
 #include "internals/scripts_needed.h"
 #include "internals/unique_signers.h"
 #include <cardano/cbor/cbor_writer.h>
@@ -717,6 +718,157 @@ add_sub_transactions_imbalance(
   }
 
   return CARDANO_SUCCESS;
+}
+
+/**
+ * \brief Computes the pool deposits that summing the imbalance of each body of a batch counts more than once.
+ *
+ * Each body of a CIP-118 batch is charged the pool deposit once per pool it registers, while the ledger charges it once
+ * per pool across the whole batch. The result is the pool deposit times the number of extra times a pool registered by
+ * several bodies was charged.
+ *
+ * \param[in]  certificates     The certificates of the top level body, or NULL to inspect the sub transactions only.
+ * \param[in]  sub_transactions The sub transactions of the batch, or NULL when there are none.
+ * \param[in]  protocol_params  The protocol parameters supplying the pool deposit.
+ * \param[out] pool_deposits    On success, the pool deposits counted more than once.
+ *
+ * \return \ref CARDANO_SUCCESS if the pool deposits were computed, \ref CARDANO_ERROR_INTEGER_OVERFLOW if they exceed
+ *         INT64_MAX, or an appropriate error code.
+ */
+static cardano_error_t
+compute_repeated_pool_deposits(
+  cardano_certificate_set_t*     certificates,
+  cardano_sub_transaction_set_t* sub_transactions,
+  cardano_protocol_parameters_t* protocol_params,
+  uint64_t*                      pool_deposits)
+{
+  *pool_deposits = 0U;
+
+  if (cardano_sub_transaction_set_get_length(sub_transactions) == 0U)
+  {
+    return CARDANO_SUCCESS;
+  }
+
+  uint64_t repeated = 0U;
+
+  cardano_error_t result = _cardano_count_repeated_pool_deposits(certificates, sub_transactions, &repeated);
+
+  if (result != CARDANO_SUCCESS)
+  {
+    return result;
+  }
+
+  const uint64_t pool_deposit = cardano_protocol_parameters_get_pool_deposit(protocol_params);
+
+  if ((pool_deposit != 0U) && (repeated > ((uint64_t)INT64_MAX / pool_deposit)))
+  {
+    return CARDANO_ERROR_INTEGER_OVERFLOW;
+  }
+
+  *pool_deposits = repeated * pool_deposit;
+
+  return CARDANO_SUCCESS;
+}
+
+/**
+ * \brief Adds a lovelace amount to the coin of a value.
+ *
+ * \param[in,out] value  The value. On failure it is left untouched.
+ * \param[in]     amount The lovelace amount to add. It must not exceed INT64_MAX.
+ *
+ * \return \ref CARDANO_SUCCESS if the amount was added, or \ref CARDANO_ERROR_INTEGER_OVERFLOW if the coin of the value
+ *         would exceed INT64_MAX.
+ */
+static cardano_error_t
+add_lovelace(cardano_value_t* value, const uint64_t amount)
+{
+  if (cardano_value_get_coin(value) > (INT64_MAX - (int64_t)amount))
+  {
+    return CARDANO_ERROR_INTEGER_OVERFLOW;
+  }
+
+  return cardano_value_add_coin(value, (int64_t)amount);
+}
+
+/**
+ * \brief Gives back to a batch imbalance the pool deposits that summing the imbalance of each body counts more than once.
+ *
+ * \param[in]     certificates     The certificates of the top level body, or NULL when it has none.
+ * \param[in]     sub_transactions The sub transactions of the batch, or NULL when there are none.
+ * \param[in]     protocol_params  The protocol parameters supplying the pool deposit.
+ * \param[in,out] imbalance        The imbalance of the whole batch, as the sum of the imbalance of each body. On
+ *                                 failure it is left untouched.
+ *
+ * \return \ref CARDANO_SUCCESS if the imbalance was adjusted, \ref CARDANO_ERROR_INTEGER_OVERFLOW if the pool deposits
+ *         to give back or the resulting coin exceed INT64_MAX, or an appropriate error code.
+ */
+static cardano_error_t
+add_repeated_pool_deposits(
+  cardano_certificate_set_t*     certificates,
+  cardano_sub_transaction_set_t* sub_transactions,
+  cardano_protocol_parameters_t* protocol_params,
+  cardano_value_t*               imbalance)
+{
+  uint64_t pool_deposits = 0U;
+
+  cardano_error_t result = compute_repeated_pool_deposits(certificates, sub_transactions, protocol_params, &pool_deposits);
+
+  if (result != CARDANO_SUCCESS)
+  {
+    return result;
+  }
+
+  return add_lovelace(imbalance, pool_deposits);
+}
+
+/**
+ * \brief Splits the pool deposits a batch counts more than once between its sub transactions and its top level body.
+ *
+ * The ledger applies the sub transactions before the top level body, so a pool registered by a sub transaction is
+ * already registered when the top level body registers it again, and a top level body validated on its own in legacy
+ * mode pays no deposit for it. The pool deposits the sub transactions count more than once among themselves are given
+ * back to their imbalance, and the ones the top level body is charged for pools a sub transaction registers are
+ * reported separately so that the top level body is not charged for them.
+ *
+ * \param[in]     certificates               The certificates of the top level body, or NULL when it has none.
+ * \param[in]     sub_transactions           The sub transactions of the batch, or NULL when there are none.
+ * \param[in]     protocol_params            The protocol parameters supplying the pool deposit.
+ * \param[in,out] sub_transactions_imbalance The net imbalance of the sub transactions. On failure it is left untouched.
+ * \param[out]    top_level_pool_deposits    On success, the pool deposits the top level body is charged for pools that
+ *                                           a sub transaction registers.
+ *
+ * \return \ref CARDANO_SUCCESS if the pool deposits were split, \ref CARDANO_ERROR_INTEGER_OVERFLOW if they exceed
+ *         INT64_MAX, or an appropriate error code.
+ */
+static cardano_error_t
+split_repeated_pool_deposits(
+  cardano_certificate_set_t*     certificates,
+  cardano_sub_transaction_set_t* sub_transactions,
+  cardano_protocol_parameters_t* protocol_params,
+  cardano_value_t*               sub_transactions_imbalance,
+  uint64_t*                      top_level_pool_deposits)
+{
+  uint64_t sub_transaction_pool_deposits = 0U;
+  uint64_t batch_pool_deposits           = 0U;
+
+  cardano_error_t result = compute_repeated_pool_deposits(NULL, sub_transactions, protocol_params, &sub_transaction_pool_deposits);
+
+  if (result == CARDANO_SUCCESS)
+  {
+    result = compute_repeated_pool_deposits(certificates, sub_transactions, protocol_params, &batch_pool_deposits);
+  }
+
+  if (result == CARDANO_SUCCESS)
+  {
+    result = add_lovelace(sub_transactions_imbalance, sub_transaction_pool_deposits);
+  }
+
+  if (result == CARDANO_SUCCESS)
+  {
+    *top_level_pool_deposits = batch_pool_deposits - sub_transaction_pool_deposits;
+  }
+
+  return result;
 }
 
 /**
@@ -2545,6 +2697,9 @@ compute_bootstrap_witnesses_cost(
  *                                                transaction carries none.
  * \param[in]     sub_transactions_imbalance      The net imbalance of the sub transactions, zero when the transaction
  *                                                carries none.
+ * \param[in]     top_level_pool_deposits         The pool deposits the top level body is charged for pools that a sub
+ *                                                transaction registers, which the ledger does not charge it. They are
+ *                                                taken out of the deposits of the top level body.
  * \param[in]     input_to_redeemer_map           The map of inputs to redeemers.
  * \param[in]     available_utxo                  The UTXOs coin selection may spend at the top level.
  * \param[in]     coin_selector                   The coin selector.
@@ -2566,6 +2721,7 @@ balance_transaction(
   cardano_utxo_list_t*              pre_selected_utxo,
   cardano_utxo_list_t*              sub_transaction_spent_utxos,
   cardano_value_t*                  sub_transactions_imbalance,
+  const uint64_t                    top_level_pool_deposits,
   cardano_input_to_redeemer_map_t*  input_to_redeemer_map,
   cardano_utxo_list_t*              available_utxo,
   cardano_coin_selector_t*          coin_selector,
@@ -2602,6 +2758,10 @@ balance_transaction(
 
     return result;
   }
+
+  assert(top_level_pool_deposits <= implicit_coin.deposits);
+
+  implicit_coin.deposits -= top_level_pool_deposits;
 
   cardano_direct_deposit_map_t* direct_deposits = cardano_transaction_body_get_direct_deposits(body);
   cardano_direct_deposit_map_unref(&direct_deposits);
@@ -3308,6 +3468,25 @@ cardano_balance_transaction(
     return result;
   }
 
+  cardano_certificate_set_t* certificates = cardano_transaction_body_get_certificates(body);
+  cardano_certificate_set_unref(&certificates);
+
+  uint64_t top_level_pool_deposits = 0U;
+
+  result = split_repeated_pool_deposits(certificates, sub_transactions, protocol_params, sub_transactions_imbalance, &top_level_pool_deposits);
+
+  if (result != CARDANO_SUCCESS)
+  {
+    cardano_utxo_list_unref(&sub_transaction_spent_utxos);
+    cardano_value_unref(&sub_transactions_imbalance);
+
+    cardano_transaction_set_last_error(
+      unbalanced_tx,
+      "Failed to count the pool deposits of the pools registered by several bodies of the batch for transaction balancing.");
+
+    return result;
+  }
+
   cardano_utxo_list_t* selectable_utxo = NULL;
 
   result = exclude_sub_transaction_inputs(available_utxo, sub_transactions, &selectable_utxo);
@@ -3396,6 +3575,7 @@ cardano_balance_transaction(
     pre_selected_utxo,
     sub_transaction_spent_utxos,
     sub_transactions_imbalance,
+    top_level_pool_deposits,
     input_to_redeemer_map,
     selectable_utxo,
     coin_selector,
@@ -3701,6 +3881,14 @@ cardano_compute_transaction_batch_imbalance(
   cardano_sub_transaction_set_unref(&sub_transactions);
 
   result = add_sub_transactions_imbalance(sub_transactions, resolved_inputs, protocol_params, &total, NULL);
+
+  if (result == CARDANO_SUCCESS)
+  {
+    cardano_certificate_set_t* certificates = cardano_transaction_body_get_certificates(body);
+    cardano_certificate_set_unref(&certificates);
+
+    result = add_repeated_pool_deposits(certificates, sub_transactions, protocol_params, total);
+  }
 
   if (result != CARDANO_SUCCESS)
   {

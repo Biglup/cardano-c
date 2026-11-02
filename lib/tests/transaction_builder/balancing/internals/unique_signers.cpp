@@ -44,6 +44,9 @@ static const char* CBOR_AUTHORIZE_COMMITTEE_HOT            = "830e8200581c000000
 static const char* CBOR_GENESIS_DELEGATION                 = "8405581c00010001000100010001000100010001000100010001000100010001581c0002000200020002000200020002000200020002000200020002000258200003000300030003000300030003000300030003000300030003000300030003";
 static const char* CBOR_MIR                                = "820682001a000f4240";
 static const char* CBOR_POOL_REGISTRATION                  = "8a03581cd85087c646951407198c27b1b950fd2e99f28586c000ce39f6e6ef9258208dd154228946bd12967c12bedb1cb6038b78f8b84a1760b1a788fa72a4af3db01927101903e8d81e820105581de1cb0ec2692497b458e46812c8a5bfa2931d1a2d965a99893828ec810fd9010281581ccb0ec2692497b458e46812c8a5bfa2931d1a2d965a99893828ec810f8383011913886b6578616d706c652e636f6d8400191770447f000001f682026b6578616d706c652e636f6d827368747470733a2f2f6578616d706c652e636f6d58200f3abbc8fc19c2e61bab6059bf8a466e6e754833a08a62a6c56fe0e78f19d9d5";
+static const char* CBOR_POOL_REGISTRATION_OPERATOR_OWNER   = "8a03581cd85087c646951407198c27b1b950fd2e99f28586c000ce39f6e6ef9258208dd154228946bd12967c12bedb1cb6038b78f8b84a1760b1a788fa72a4af3db01927101903e8d81e820105581de1cb0ec2692497b458e46812c8a5bfa2931d1a2d965a99893828ec810fd9010281581cd85087c646951407198c27b1b950fd2e99f28586c000ce39f6e6ef928383011913886b6578616d706c652e636f6d8400191770447f000001f682026b6578616d706c652e636f6d827368747470733a2f2f6578616d706c652e636f6d58200f3abbc8fc19c2e61bab6059bf8a466e6e754833a08a62a6c56fe0e78f19d9d5";
+static const char* POOL_OPERATOR_KEY_HASH_HEX              = "d85087c646951407198c27b1b950fd2e99f28586c000ce39f6e6ef92";
+static const char* POOL_OWNER_KEY_HASH_HEX                 = "cb0ec2692497b458e46812c8a5bfa2931d1a2d965a99893828ec810f";
 static const char* CBOR_POOL_RETIREMENT                    = "8304581cd85087c646951407198c27b1b950fd2e99f28586c000ce39f6e6ef921903e8";
 static const char* CBOR_REGISTER_DREP                      = "84108200581c0000000000000000000000000000000000000000000000000000000000f6";
 static const char* CBOR_REGISTRATION                       = "83078200581c0000000000000000000000000000000000000000000000000000000000";
@@ -294,6 +297,21 @@ get_hash_hex(cardano_blake2b_hash_t* hash)
   hex.resize(hex.size() - 1U);
 
   return hex;
+}
+
+/**
+ * Creates a hash from its hexadecimal representation.
+ * \param hex the hexadecimal representation of the hash.
+ * \return A new instance of the hash.
+ */
+static cardano_blake2b_hash_t*
+new_hash(const char* hex)
+{
+  cardano_blake2b_hash_t* hash = nullptr;
+
+  EXPECT_EQ(cardano_blake2b_hash_from_hex(hex, strlen(hex), &hash), CARDANO_SUCCESS);
+
+  return hash;
 }
 
 /**
@@ -665,8 +683,47 @@ TEST(_process_pool_registration, addCredential)
 
   EXPECT_EQ(_process_pool_registration(unique_signers, certificate), CARDANO_SUCCESS);
 
-  EXPECT_EQ(cardano_blake2b_hash_set_get_length(unique_signers), 1);
+  EXPECT_EQ(cardano_blake2b_hash_set_get_length(unique_signers), 2);
 
+  cardano_certificate_unref(&certificate);
+  cardano_blake2b_hash_set_unref(&unique_signers);
+}
+
+TEST(_process_pool_registration, addsTheOperatorAndEveryOwner)
+{
+  cardano_certificate_t*      certificate    = new_default_certificate(CBOR_POOL_REGISTRATION);
+  cardano_blake2b_hash_set_t* unique_signers = nullptr;
+  cardano_blake2b_hash_t*     operator_hash  = new_hash(POOL_OPERATOR_KEY_HASH_HEX);
+  cardano_blake2b_hash_t*     owner_hash     = new_hash(POOL_OWNER_KEY_HASH_HEX);
+
+  EXPECT_EQ(cardano_blake2b_hash_set_new(&unique_signers), CARDANO_SUCCESS);
+
+  EXPECT_EQ(_process_pool_registration(unique_signers, certificate), CARDANO_SUCCESS);
+
+  EXPECT_EQ(cardano_blake2b_hash_set_get_length(unique_signers), 2);
+  EXPECT_TRUE(_cardano_blake2b_hash_set_has(unique_signers, operator_hash));
+  EXPECT_TRUE(_cardano_blake2b_hash_set_has(unique_signers, owner_hash));
+
+  cardano_blake2b_hash_unref(&operator_hash);
+  cardano_blake2b_hash_unref(&owner_hash);
+  cardano_certificate_unref(&certificate);
+  cardano_blake2b_hash_set_unref(&unique_signers);
+}
+
+TEST(_process_pool_registration, addsTheOperatorOnceIfItIsAlsoAnOwner)
+{
+  cardano_certificate_t*      certificate    = new_default_certificate(CBOR_POOL_REGISTRATION_OPERATOR_OWNER);
+  cardano_blake2b_hash_set_t* unique_signers = nullptr;
+  cardano_blake2b_hash_t*     operator_hash  = new_hash(POOL_OPERATOR_KEY_HASH_HEX);
+
+  EXPECT_EQ(cardano_blake2b_hash_set_new(&unique_signers), CARDANO_SUCCESS);
+
+  EXPECT_EQ(_process_pool_registration(unique_signers, certificate), CARDANO_SUCCESS);
+
+  EXPECT_EQ(cardano_blake2b_hash_set_get_length(unique_signers), 1);
+  EXPECT_TRUE(_cardano_blake2b_hash_set_has(unique_signers, operator_hash));
+
+  cardano_blake2b_hash_unref(&operator_hash);
   cardano_certificate_unref(&certificate);
   cardano_blake2b_hash_set_unref(&unique_signers);
 }
@@ -898,7 +955,7 @@ TEST(_cardano_add_certificates_pub_key_hashes, canAddCertificateCerts)
   EXPECT_EQ(validate_add_cert(CBOR_REGISTER_DREP, 1), CARDANO_SUCCESS);
   EXPECT_EQ(validate_add_cert(CBOR_UNREGISTER_DREP, 1), CARDANO_SUCCESS);
   EXPECT_EQ(validate_add_cert(CBOR_UPDATE_DREP, 1), CARDANO_SUCCESS);
-  EXPECT_EQ(validate_add_cert(CBOR_POOL_REGISTRATION, 1), CARDANO_SUCCESS);
+  EXPECT_EQ(validate_add_cert(CBOR_POOL_REGISTRATION, 2), CARDANO_SUCCESS);
   EXPECT_EQ(validate_add_cert(CBOR_POOL_RETIREMENT, 1), CARDANO_SUCCESS);
   EXPECT_EQ(validate_add_cert(CBOR_REGISTRATION, 1), CARDANO_SUCCESS);
   EXPECT_EQ(validate_add_cert(CBOR_RESIGN_COMMITTEE_COLD, 1), CARDANO_SUCCESS);
