@@ -100,6 +100,7 @@ ip_to_string(const byte_t* ip_data, const size_t ip_data_size, char* destination
  * Converts a string representing an IPv6 address in colon-separated hexadecimal format into a 16-byte array.
  *
  * \param ip_string Pointer to the string containing the IPv6 address in colon-separated hexadecimal format.
+ * \param string_size The number of input characters.
  * \param ip_data Pointer to the array where the bytes of the IPv6 address will be stored.
  * \param ip_data_size The size of the array pointed to by ip_data. Should be at least 16.
  *
@@ -107,31 +108,55 @@ ip_to_string(const byte_t* ip_data, const size_t ip_data_size, char* destination
  *         CARDANO_ERROR_INVALID_ARGUMENT if the string format is invalid or ip_data_size is less than 16.
  */
 static cardano_error_t
-ip_from_string(const char* ip_string, byte_t* ip_data, const size_t ip_data_size)
+ip_from_string(const char* ip_string, const size_t string_size, byte_t* ip_data, const size_t ip_data_size)
 {
   assert(ip_string != NULL);
   assert(ip_data != NULL);
-  assert(ip_data_size >= 16U);
+  assert(ip_data_size == 16U);
+  assert(string_size == 39U);
 
-  uint16_t temp[8];
-  int32_t  result = sscanf(ip_string, "%4hx:%4hx:%4hx:%4hx:%4hx:%4hx:%4hx:%4hx", &temp[0], &temp[1], &temp[2], &temp[3], &temp[4], &temp[5], &temp[6], &temp[7]); // nosemgrep
+  CARDANO_UNUSED(string_size);
 
-  if (result == 8)
+  for (size_t component = 0U; component < 8U; ++component)
   {
-    for (size_t i = 0U; i < 8U; i++)
+    uint16_t value = 0U;
+
+    for (size_t digit = 0U; digit < 4U; ++digit)
     {
-      size_t          offset       = 2U * i;
-      cardano_error_t write_result = cardano_write_uint16_be(temp[i], ip_data, ip_data_size, offset);
+      const char current = ip_string[(component * 5U) + digit];
+      uint16_t   nibble  = 0U;
 
-      if (write_result != CARDANO_SUCCESS)
+      if ((current >= '0') && (current <= '9'))
       {
-        return write_result;
+        nibble = (uint16_t)current - (uint16_t)'0';
       }
+      else if ((current >= 'a') && (current <= 'f'))
+      {
+        nibble = ((uint16_t)current - (uint16_t)'a') + 10U;
+      }
+      else if ((current >= 'A') && (current <= 'F'))
+      {
+        nibble = ((uint16_t)current - (uint16_t)'A') + 10U;
+      }
+      else
+      {
+        return CARDANO_ERROR_INVALID_ARGUMENT;
+      }
+
+      value = (uint16_t)((value * 16U) + nibble);
     }
-  }
-  else
-  {
-    return CARDANO_ERROR_INVALID_ARGUMENT;
+
+    if ((component < 7U) && (ip_string[(component * 5U) + 4U] != ':'))
+    {
+      return CARDANO_ERROR_INVALID_ARGUMENT;
+    }
+
+    const cardano_error_t result = cardano_write_uint16_be(value, ip_data, ip_data_size, component * 2U);
+
+    if (result != CARDANO_SUCCESS)
+    {
+      return result;
+    }
   }
 
   return CARDANO_SUCCESS;
@@ -203,7 +228,7 @@ cardano_ipv6_from_string(const char* string, const size_t size, cardano_ipv6_t**
   (*ipv6)->base.ref_count     = 1;
   (*ipv6)->base.last_error[0] = '\0';
 
-  cardano_error_t result = ip_from_string(string, (*ipv6)->ip_bytes, 16);
+  cardano_error_t result = ip_from_string(string, size, (*ipv6)->ip_bytes, 16);
 
   if (result != CARDANO_SUCCESS)
   {
