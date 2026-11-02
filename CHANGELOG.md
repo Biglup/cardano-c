@@ -2,11 +2,9 @@ Unreleased
 ---------------------
 
 - Preserve Base58 zero digits and leading zero bytes, compute exact decoded lengths, and reject decoding overflow instead of truncating input.
-
+- **BREAKING (behavioral)**: Required top level guards (key 24), direct deposits (key 25) and account balance intervals (keys 26 and 27) of transaction and sub transaction bodies are now written in canonical CBOR key order instead of in insertion order, as withdrawals already are: guards sorted by the CBOR bytes of their credentials (credential type, then hash), deposits and intervals by the bytes of their reward addresses. `cardano_required_guards_map_t`, `cardano_direct_deposit_map_t` and `cardano_account_balance_intervals_map_t` keep their entries sorted on insert and when decoded, so the index accessors and their CIP-116 JSON follow that order, and the transaction and sub transaction builders write these maps in that order. Transactions with more than one entry in these maps get different bytes and ids than before. Decoded transaction bodies still re-encode with their original bytes.
 - Decode 128-byte anchor URLs and accept the same maximum length in debug-build URL setters.
-
 - Return an allocation error when a CBOR byte-string or text-string slice cannot be allocated, instead of reporting success with a null output.
-
 - Add `deep_clone` APIs for native domain values, typed collections, addresses, cryptographic values, and JSON/CBOR utilities. Copies own their children and preserve encoding state. Existing shallow-clone APIs retain their behavior.
 - Add a binding author guide covering idiomatic APIs, native ownership, callbacks, and lifecycle conformance, with a shared conformance corpus, deterministic builder recipes, native checks, and a portable binding-adapter runner.
 - **BREAKING (behavioral)**: Fixed transaction fees being one byte of fee above the ledger minimum. The fee functions now size a transaction without its `is_valid` flag, as the ledger does, so `cardano_compute_transaction_fee` and `cardano_compute_min_fee_without_scripts` return one byte of fee less for transactions encoded with that flag, and transactions built by the transaction builder carry that lower fee and that much more change. `cardano_get_serialized_transaction_size` still returns the full serialized size. The builder expectations of the `builders.json` binding conformance corpus are updated accordingly.

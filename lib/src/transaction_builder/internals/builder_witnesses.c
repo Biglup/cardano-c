@@ -103,8 +103,8 @@ add_guard_credential(
  * \brief Copies a required guards map setting the datum required for one credential.
  *
  * Required guards maps reject duplicated keys and entries can not be updated in place, so this
- * function builds a new map with every entry of \p current in its original position. The entry of
- * \p credential gets \p datum, and it is appended at the end when the credential is not present.
+ * function builds a new map with every entry of \p current, kept sorted by credential. The entry of
+ * \p credential gets \p datum, and it is added when the credential is not present.
  *
  * \param[in] current A pointer to the \ref cardano_required_guards_map_t to copy, or NULL when there
  *                    are no required guards yet.

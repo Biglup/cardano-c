@@ -112,6 +112,9 @@ static const char* REQUIRED_GUARD_BODY_CBOR       = "a300d901028001801818a182015
 static const char* REQUIRED_GUARD_DATUM_BODY_CBOR = "a300d901028001801818a18201581c966e394a544f242081e41d1965137b1bb412ac230d40ed5407821c37d8799f0102030405ff";
 static const char* DIRECT_DEPOSIT_BODY_CBOR       = "a300d901028001801819a1581de04245236ab8056760efceebbff57e8cab220182be3e36439e520a64541a002dc6c0";
 static const char* BALANCE_INTERVAL_BODY_CBOR     = "a300d90102800180181aa1581de04245236ab8056760efceebbff57e8cab220182be3e36439e520a6454821a000f4240f6";
+static const char* SORTED_DEPOSITS_BODY_CBOR      = "a300d901028001801819a2581de0337b62cfff6403a06a3acbc34f8c46003c69fe79a3628cefa9c472511a001e8480581de04245236ab8056760efceebbff57e8cab220182be3e36439e520a64541a000f4240";
+static const char* SORTED_INTERVALS_BODY_CBOR     = "a300d90102800180181aa2581de0337b62cfff6403a06a3acbc34f8c46003c69fe79a3628cefa9c47251821a001e8480f6581de04245236ab8056760efceebbff57e8cab220182be3e36439e520a6454821a000f4240f6";
+static const char* SORTED_GUARDS_BODY_CBOR        = "a300d901028001801818a28200581c00000000000000000000000000000000000000000000000000000000d879808201581c966e394a544f242081e41d1965137b1bb412ac230d40ed5407821c37f6";
 static const char* FULL_SUB_TX_CBOR               = "83ad00d9010281825820d3c887d17486d483a2b46b58b01cb9344745f15fdd8f8e70a57f854cdd88a633010181a200583910c37b1b5dc0669f1d3c61a6fddb2e8fde96be87b881c60bce8e8d542f337b62cfff6403a06a3acbc34f8c46003c69fe79a3628cefa9c47251011a001e8480031907d0075820e628f35cc5d8b14c57a01ec12c7169729e294b5dd83ef01273b20b5c3cafc244081903e809a1581c00000000000000000000000000000000000000000000000000000000a14454455854040ed9010281581c000000000000000000000000000000000000000000000000000000000f0012d9010281825820bb277abaca60fc0ca68c1555eca6a96d2478547818ae76ce6836133f3cc546e003161a0007a1201818a18201581c966e394a544f242081e41d1965137b1bb412ac230d40ed5407821c37d8799f0102030405ff1819a1581de04245236ab8056760efceebbff57e8cab220182be3e36439e520a64541a002dc6c0181aa1581de04245236ab8056760efceebbff57e8cab220182be3e36439e520a6454821a000f4240f6a101d90102818202828200581cb275b08c999097247f7c17e77007c7010cd19f20cc086ad99d3985388201838205190bb88200581c966e394a544f242081e41d1965137b1bb412ac230d40ed5407821c378204190fa0d90103a100a11902a2a1646e616d656474657374";
 
 static const char* WITHDRAWAL_BODY_CBOR                = "a300d9010280018005a1581de04245236ab8056760efceebbff57e8cab220182be3e36439e520a64541a0026a331";
@@ -4027,6 +4030,35 @@ TEST(cardano_sub_tx_builder_require_top_level_guard, canRequireGuardWithDatum)
   free(body_hex);
 }
 
+TEST(cardano_sub_tx_builder_require_top_level_guard, writesGuardsSortedByCredential)
+{
+  // Arrange
+  cardano_protocol_parameters_t* params      = init_protocol_parameters();
+  cardano_sub_tx_builder_t*      builder     = cardano_sub_tx_builder_new(params, &CARDANO_MAINNET_SLOT_CONFIG);
+  cardano_credential_t*          credential  = create_credential(SCRIPT_HASH_HEX, CARDANO_CREDENTIAL_TYPE_SCRIPT_HASH);
+  cardano_credential_t*          credential2 = create_credential(HASH_HEX, CARDANO_CREDENTIAL_TYPE_KEY_HASH);
+  cardano_plutus_data_t*         datum       = create_plutus_data(OTHER_PLUTUS_DATA_CBOR);
+
+  // Act
+  cardano_sub_tx_builder_require_top_level_guard(builder, credential, nullptr);
+  cardano_sub_tx_builder_require_top_level_guard(builder, credential2, datum);
+
+  cardano_sub_transaction_t* sub_tx   = build_sub_transaction(builder);
+  char*                      body_hex = encode_body(sub_tx);
+
+  // Assert
+  EXPECT_STREQ(body_hex, SORTED_GUARDS_BODY_CBOR);
+
+  // Cleanup
+  cardano_sub_transaction_unref(&sub_tx);
+  cardano_sub_tx_builder_unref(&builder);
+  cardano_protocol_parameters_unref(&params);
+  cardano_credential_unref(&credential);
+  cardano_credential_unref(&credential2);
+  cardano_plutus_data_unref(&datum);
+  free(body_hex);
+}
+
 TEST(cardano_sub_tx_builder_require_top_level_guard, requiringTheSameCredentialTwiceReplacesItsDatum)
 {
   // Arrange
@@ -4047,17 +4079,17 @@ TEST(cardano_sub_tx_builder_require_top_level_guard, requiringTheSameCredentialT
   cardano_required_guards_map_t* required_guards = cardano_sub_transaction_body_get_required_top_level_guards(get_body(sub_tx));
   cardano_required_guards_map_unref(&required_guards);
 
-  cardano_credential_t*  first_credential = nullptr;
-  cardano_plutus_data_t* first_datum      = nullptr;
-  EXPECT_EQ(cardano_required_guards_map_get_key_value_at(required_guards, 0, &first_credential, &first_datum), CARDANO_SUCCESS);
+  cardano_credential_t*  script_credential = nullptr;
+  cardano_plutus_data_t* script_datum      = nullptr;
+  EXPECT_EQ(cardano_required_guards_map_get_key_value_at(required_guards, 1, &script_credential, &script_datum), CARDANO_SUCCESS);
 
   cardano_plutus_data_t* second_datum = nullptr;
   EXPECT_EQ(cardano_required_guards_map_get(required_guards, credential2, &second_datum), CARDANO_SUCCESS);
 
   // Assert
   EXPECT_EQ(cardano_required_guards_map_get_length(required_guards), 2);
-  EXPECT_TRUE(cardano_credential_equals(first_credential, credential));
-  EXPECT_TRUE(cardano_plutus_data_equals(first_datum, datum));
+  EXPECT_TRUE(cardano_credential_equals(script_credential, credential));
+  EXPECT_TRUE(cardano_plutus_data_equals(script_datum, datum));
   EXPECT_EQ(second_datum, nullptr);
 
   // Cleanup
@@ -4066,10 +4098,10 @@ TEST(cardano_sub_tx_builder_require_top_level_guard, requiringTheSameCredentialT
   cardano_protocol_parameters_unref(&params);
   cardano_credential_unref(&credential);
   cardano_credential_unref(&credential2);
-  cardano_credential_unref(&first_credential);
+  cardano_credential_unref(&script_credential);
   cardano_plutus_data_unref(&datum);
   cardano_plutus_data_unref(&other_datum);
-  cardano_plutus_data_unref(&first_datum);
+  cardano_plutus_data_unref(&script_datum);
 }
 
 TEST(cardano_sub_tx_builder_require_top_level_guard, keepsThePreviousGuardsWhenAllocationFails)
@@ -4183,6 +4215,31 @@ TEST(cardano_sub_tx_builder_require_top_level_guard_ex, canRequireGuard)
   cardano_plutus_data_unref(&datum);
   free(body_hex);
   free(datum_body_hex);
+}
+
+TEST(cardano_sub_tx_builder_require_top_level_guard_ex, writesGuardsSortedByCredential)
+{
+  // Arrange
+  cardano_protocol_parameters_t* params  = init_protocol_parameters();
+  cardano_sub_tx_builder_t*      builder = cardano_sub_tx_builder_new(params, &CARDANO_MAINNET_SLOT_CONFIG);
+  cardano_plutus_data_t*         datum   = create_plutus_data(OTHER_PLUTUS_DATA_CBOR);
+
+  // Act
+  cardano_sub_tx_builder_require_top_level_guard_ex(builder, SCRIPT_HASH_HEX, strlen(SCRIPT_HASH_HEX), CARDANO_CREDENTIAL_TYPE_SCRIPT_HASH, nullptr);
+  cardano_sub_tx_builder_require_top_level_guard_ex(builder, HASH_HEX, strlen(HASH_HEX), CARDANO_CREDENTIAL_TYPE_KEY_HASH, datum);
+
+  cardano_sub_transaction_t* sub_tx   = build_sub_transaction(builder);
+  char*                      body_hex = encode_body(sub_tx);
+
+  // Assert
+  EXPECT_STREQ(body_hex, SORTED_GUARDS_BODY_CBOR);
+
+  // Cleanup
+  cardano_sub_transaction_unref(&sub_tx);
+  cardano_sub_tx_builder_unref(&builder);
+  cardano_protocol_parameters_unref(&params);
+  cardano_plutus_data_unref(&datum);
+  free(body_hex);
 }
 
 TEST(cardano_sub_tx_builder_require_top_level_guard_ex, reportsInvalidHexWhenBuilding)
@@ -4319,6 +4376,33 @@ TEST(cardano_sub_tx_builder_add_direct_deposit, canAddDirectDeposit)
   cardano_sub_tx_builder_unref(&builder);
   cardano_protocol_parameters_unref(&params);
   cardano_reward_address_unref(&reward_address);
+  free(body_hex);
+}
+
+TEST(cardano_sub_tx_builder_add_direct_deposit, writesRewardAccountsSortedByAddress)
+{
+  // Arrange
+  cardano_protocol_parameters_t* params          = init_protocol_parameters();
+  cardano_sub_tx_builder_t*      builder         = cardano_sub_tx_builder_new(params, &CARDANO_MAINNET_SLOT_CONFIG);
+  cardano_reward_address_t*      reward_address  = create_reward_address(REWARD_ADDRESS);
+  cardano_reward_address_t*      reward_address2 = create_reward_address(REWARD_ADDRESS2);
+
+  // Act
+  cardano_sub_tx_builder_add_direct_deposit(builder, reward_address, 1000000);
+  cardano_sub_tx_builder_add_direct_deposit(builder, reward_address2, 2000000);
+
+  cardano_sub_transaction_t* sub_tx   = build_sub_transaction(builder);
+  char*                      body_hex = encode_body(sub_tx);
+
+  // Assert
+  EXPECT_STREQ(body_hex, SORTED_DEPOSITS_BODY_CBOR);
+
+  // Cleanup
+  cardano_sub_transaction_unref(&sub_tx);
+  cardano_sub_tx_builder_unref(&builder);
+  cardano_protocol_parameters_unref(&params);
+  cardano_reward_address_unref(&reward_address);
+  cardano_reward_address_unref(&reward_address2);
   free(body_hex);
 }
 
@@ -4541,6 +4625,37 @@ TEST(cardano_sub_tx_builder_add_account_balance_interval, canAddAccountBalanceIn
   cardano_reward_address_unref(&reward_address);
   cardano_account_balance_interval_unref(&interval);
   cardano_account_balance_interval_unref(&stored_interval);
+  free(body_hex);
+}
+
+TEST(cardano_sub_tx_builder_add_account_balance_interval, writesRewardAccountsSortedByAddress)
+{
+  // Arrange
+  cardano_protocol_parameters_t*      params          = init_protocol_parameters();
+  cardano_sub_tx_builder_t*           builder         = cardano_sub_tx_builder_new(params, &CARDANO_MAINNET_SLOT_CONFIG);
+  cardano_reward_address_t*           reward_address  = create_reward_address(REWARD_ADDRESS);
+  cardano_reward_address_t*           reward_address2 = create_reward_address(REWARD_ADDRESS2);
+  cardano_account_balance_interval_t* interval        = create_interval(1000000);
+  cardano_account_balance_interval_t* interval2       = create_interval(2000000);
+
+  // Act
+  cardano_sub_tx_builder_add_account_balance_interval(builder, reward_address, interval);
+  cardano_sub_tx_builder_add_account_balance_interval(builder, reward_address2, interval2);
+
+  cardano_sub_transaction_t* sub_tx   = build_sub_transaction(builder);
+  char*                      body_hex = encode_body(sub_tx);
+
+  // Assert
+  EXPECT_STREQ(body_hex, SORTED_INTERVALS_BODY_CBOR);
+
+  // Cleanup
+  cardano_sub_transaction_unref(&sub_tx);
+  cardano_sub_tx_builder_unref(&builder);
+  cardano_protocol_parameters_unref(&params);
+  cardano_reward_address_unref(&reward_address);
+  cardano_reward_address_unref(&reward_address2);
+  cardano_account_balance_interval_unref(&interval);
+  cardano_account_balance_interval_unref(&interval2);
   free(body_hex);
 }
 

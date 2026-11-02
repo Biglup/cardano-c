@@ -32,6 +32,7 @@
 #include "../src/allocators.h"
 
 #include "../json_helpers.h"
+#include <algorithm>
 #include <filesystem>
 #include <fstream>
 
@@ -53,6 +54,7 @@ static const char* EXACT_INTERVAL_CBOR       = "182a";
 static const char* CBOR                 = "a3581de013cf55d175ea848b87deb3e914febd7e028e2bf6534475d52fb9c3d0821864191388581de0404b5a4088ae9abcf486a7e7b8f82069e6fcfe1bf226f1851ce7257082f6192710581df0aabbccddeeff00112233445566778899aabbccddeeff001122334455182a";
 static const char* RANGES_CBOR          = "a3581de013cf55d175ea848b87deb3e914febd7e028e2bf6534475d52fb9c3d0821864191388581de0404b5a4088ae9abcf486a7e7b8f82069e6fcfe1bf226f1851ce72570821901f4f6581df0aabbccddeeff00112233445566778899aabbccddeeff00112233445582f6192710";
 static const char* REVERSED_CBOR        = "a2581de0404b5a4088ae9abcf486a7e7b8f82069e6fcfe1bf226f1851ce7257082f6192710581de013cf55d175ea848b87deb3e914febd7e028e2bf6534475d52fb9c3d0821864191388";
+static const char* SORTED_CBOR          = "a2581de013cf55d175ea848b87deb3e914febd7e028e2bf6534475d52fb9c3d0821864191388581de0404b5a4088ae9abcf486a7e7b8f82069e6fcfe1bf226f1851ce7257082f6192710";
 static const char* EMPTY_MAP_CBOR       = "a0";
 static const char* DUPLICATE_CBOR       = "a2581de013cf55d175ea848b87deb3e914febd7e028e2bf6534475d52fb9c3d0821864191388581de013cf55d175ea848b87deb3e914febd7e028e2bf6534475d52fb9c3d082f6192710";
 static const char* INVALID_KEY_CBOR     = "a101821864191388";
@@ -203,8 +205,72 @@ load_cddl_vectors(const char* rule)
 }
 
 /**
+ * Rewrites the given CBOR map with its entries sorted by the bytes of their encoded keys, without decoding
+ * the keys or the values.
+ * @return The CBOR hex string of the map in canonical key order.
+ */
+static std::string
+sort_map_entries_by_key(const std::string& cbor)
+{
+  cardano_cbor_reader_t* reader = cardano_cbor_reader_from_hex(cbor.c_str(), cbor.size());
+  int64_t                length = 0;
+
+  EXPECT_EQ(cardano_cbor_reader_read_start_map(reader, &length), CARDANO_SUCCESS);
+
+  std::vector<std::pair<std::vector<byte_t>, std::vector<byte_t>>> entries;
+  cardano_cbor_reader_state_t                                      state = CARDANO_CBOR_READER_STATE_UNDEFINED;
+
+  EXPECT_EQ(cardano_cbor_reader_peek_state(reader, &state), CARDANO_SUCCESS);
+
+  while (state != CARDANO_CBOR_READER_STATE_END_MAP)
+  {
+    cardano_buffer_t* key   = nullptr;
+    cardano_buffer_t* value = nullptr;
+
+    EXPECT_EQ(cardano_cbor_reader_read_encoded_value(reader, &key), CARDANO_SUCCESS);
+    EXPECT_EQ(cardano_cbor_reader_read_encoded_value(reader, &value), CARDANO_SUCCESS);
+
+    const byte_t* key_data   = cardano_buffer_get_data(key);
+    const byte_t* value_data = cardano_buffer_get_data(value);
+
+    entries.emplace_back(
+      std::vector<byte_t>(key_data, key_data + cardano_buffer_get_size(key)),
+      std::vector<byte_t>(value_data, value_data + cardano_buffer_get_size(value)));
+
+    cardano_buffer_unref(&key);
+    cardano_buffer_unref(&value);
+
+    EXPECT_EQ(cardano_cbor_reader_peek_state(reader, &state), CARDANO_SUCCESS);
+  }
+
+  std::sort(entries.begin(), entries.end());
+
+  cardano_cbor_writer_t* writer = cardano_cbor_writer_new();
+
+  EXPECT_EQ(cardano_cbor_writer_write_start_map(writer, (int64_t)entries.size()), CARDANO_SUCCESS);
+
+  for (const auto& entry: entries)
+  {
+    EXPECT_EQ(cardano_cbor_writer_write_encoded(writer, entry.first.data(), entry.first.size()), CARDANO_SUCCESS);
+    EXPECT_EQ(cardano_cbor_writer_write_encoded(writer, entry.second.data(), entry.second.size()), CARDANO_SUCCESS);
+  }
+
+  const size_t hex_size = cardano_cbor_writer_get_hex_size(writer);
+  std::string  hex(hex_size, '\0');
+
+  EXPECT_EQ(cardano_cbor_writer_encode_hex(writer, &hex[0], hex_size), CARDANO_SUCCESS);
+
+  hex.resize(hex_size - 1U);
+
+  cardano_cbor_writer_unref(&writer);
+  cardano_cbor_reader_unref(&reader);
+
+  return hex;
+}
+
+/**
  * Decodes every vector generated from the Dijkstra CDDL for the given rule and checks that it re-encodes
- * to the same bytes.
+ * to the same entries, written in canonical key order.
  */
 static void
 expect_cddl_vectors_round_trip(const char* rule)
@@ -223,7 +289,7 @@ expect_cddl_vectors_round_trip(const char* rule)
     char* actual_cbor = encode_account_balance_intervals_map(account_balance_intervals_map);
 
     // Assert
-    EXPECT_STREQ(actual_cbor, vector.c_str());
+    EXPECT_STREQ(actual_cbor, sort_map_entries_by_key(vector).c_str());
 
     // Cleanup
     cardano_account_balance_intervals_map_unref(&account_balance_intervals_map);
@@ -593,7 +659,7 @@ TEST(cardano_account_balance_intervals_map_to_cbor, canRoundTripAllRangeShapes)
   free(actual_cbor);
 }
 
-TEST(cardano_account_balance_intervals_map_to_cbor, preservesKeyInsertionOrder)
+TEST(cardano_account_balance_intervals_map_to_cbor, writesDecodedKeysSortedByAddress)
 {
   // Arrange
   cardano_account_balance_intervals_map_t* account_balance_intervals_map = new_default_account_balance_intervals_map(REVERSED_CBOR);
@@ -601,13 +667,13 @@ TEST(cardano_account_balance_intervals_map_to_cbor, preservesKeyInsertionOrder)
 
   cardano_reward_address_t* key = nullptr;
   EXPECT_EQ(cardano_account_balance_intervals_map_get_key_at(account_balance_intervals_map, 0, &key), CARDANO_SUCCESS);
-  EXPECT_STREQ(cardano_reward_address_get_string(key), ACCOUNT_B_BECH32);
+  EXPECT_STREQ(cardano_reward_address_get_string(key), ACCOUNT_A_BECH32);
 
   // Act
   char* actual_cbor = encode_account_balance_intervals_map(account_balance_intervals_map);
 
   // Assert
-  EXPECT_STREQ(actual_cbor, REVERSED_CBOR);
+  EXPECT_STREQ(actual_cbor, SORTED_CBOR);
 
   // Cleanup
   cardano_reward_address_unref(&key);
@@ -958,6 +1024,78 @@ TEST(cardano_account_balance_intervals_map_insert, returnsErrorIfKeyIsDuplicated
   cardano_reward_address_unref(&key);
   cardano_account_balance_interval_unref(&interval);
   cardano_account_balance_intervals_map_unref(&account_balance_intervals_map);
+}
+
+TEST(cardano_account_balance_intervals_map_insert, keepsElementsSortedByAddress)
+{
+  // Arrange
+  cardano_account_balance_intervals_map_t* account_balance_intervals_map = nullptr;
+  cardano_error_t                          error                         = cardano_account_balance_intervals_map_new(&account_balance_intervals_map);
+
+  ASSERT_EQ(error, CARDANO_SUCCESS);
+
+  cardano_reward_address_t* key_a = new_default_reward_address(ACCOUNT_A_BECH32);
+  cardano_reward_address_t* key_b = new_default_reward_address(ACCOUNT_B_BECH32);
+  cardano_reward_address_t* key_c = new_default_reward_address(ACCOUNT_C_BECH32);
+
+  cardano_account_balance_interval_t* both_bounds_interval = new_default_account_balance_interval(BOTH_BOUNDS_INTERVAL_CBOR);
+  cardano_account_balance_interval_t* upper_only_interval  = new_default_account_balance_interval(UPPER_ONLY_INTERVAL_CBOR);
+  cardano_account_balance_interval_t* exact_interval       = new_default_account_balance_interval(EXACT_INTERVAL_CBOR);
+
+  // Act
+  EXPECT_EQ(cardano_account_balance_intervals_map_insert(account_balance_intervals_map, key_c, exact_interval), CARDANO_SUCCESS);
+  EXPECT_EQ(cardano_account_balance_intervals_map_insert(account_balance_intervals_map, key_b, upper_only_interval), CARDANO_SUCCESS);
+  EXPECT_EQ(cardano_account_balance_intervals_map_insert(account_balance_intervals_map, key_a, both_bounds_interval), CARDANO_SUCCESS);
+
+  char* actual_cbor = encode_account_balance_intervals_map(account_balance_intervals_map);
+
+  // Assert
+  cardano_reward_address_t*           first_key      = nullptr;
+  cardano_account_balance_interval_t* first_interval = nullptr;
+
+  EXPECT_EQ(cardano_account_balance_intervals_map_get_key_value_at(account_balance_intervals_map, 0, &first_key, &first_interval), CARDANO_SUCCESS);
+  EXPECT_STREQ(cardano_reward_address_get_string(first_key), ACCOUNT_A_BECH32);
+  EXPECT_EQ(first_interval, both_bounds_interval);
+  EXPECT_STREQ(actual_cbor, CBOR);
+
+  // Cleanup
+  cardano_reward_address_unref(&first_key);
+  cardano_account_balance_interval_unref(&first_interval);
+  cardano_reward_address_unref(&key_a);
+  cardano_reward_address_unref(&key_b);
+  cardano_reward_address_unref(&key_c);
+  cardano_account_balance_interval_unref(&both_bounds_interval);
+  cardano_account_balance_interval_unref(&upper_only_interval);
+  cardano_account_balance_interval_unref(&exact_interval);
+  cardano_account_balance_intervals_map_unref(&account_balance_intervals_map);
+  free(actual_cbor);
+}
+
+TEST(cardano_account_balance_intervals_map_insert_ex, keepsElementsSortedByAddress)
+{
+  // Arrange
+  cardano_account_balance_intervals_map_t* account_balance_intervals_map = nullptr;
+  cardano_error_t                          error                         = cardano_account_balance_intervals_map_new(&account_balance_intervals_map);
+
+  ASSERT_EQ(error, CARDANO_SUCCESS);
+
+  cardano_account_balance_interval_t* both_bounds_interval = new_default_account_balance_interval(BOTH_BOUNDS_INTERVAL_CBOR);
+  cardano_account_balance_interval_t* upper_only_interval  = new_default_account_balance_interval(UPPER_ONLY_INTERVAL_CBOR);
+
+  // Act
+  EXPECT_EQ(cardano_account_balance_intervals_map_insert_ex(account_balance_intervals_map, ACCOUNT_B_BECH32, strlen(ACCOUNT_B_BECH32), upper_only_interval), CARDANO_SUCCESS);
+  EXPECT_EQ(cardano_account_balance_intervals_map_insert_ex(account_balance_intervals_map, ACCOUNT_A_BECH32, strlen(ACCOUNT_A_BECH32), both_bounds_interval), CARDANO_SUCCESS);
+
+  char* actual_cbor = encode_account_balance_intervals_map(account_balance_intervals_map);
+
+  // Assert
+  EXPECT_STREQ(actual_cbor, SORTED_CBOR);
+
+  // Cleanup
+  cardano_account_balance_interval_unref(&both_bounds_interval);
+  cardano_account_balance_interval_unref(&upper_only_interval);
+  cardano_account_balance_intervals_map_unref(&account_balance_intervals_map);
+  free(actual_cbor);
 }
 
 TEST(cardano_account_balance_intervals_map_insert, returnsErrorIfMemoryAllocationFails)
