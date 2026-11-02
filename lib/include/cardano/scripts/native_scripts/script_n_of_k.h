@@ -102,6 +102,9 @@ cardano_script_n_of_k_new(cardano_native_script_list_t* native_scripts, size_t r
 /**
  * \brief Creates a script_n_of_k from a CBOR reader.
  *
+ * Thresholds greater than SIZE_MAX return \ref CARDANO_ERROR_INTEGER_OVERFLOW.
+ * The supported threshold range follows the platform's size_t width.
+ *
  * This function parses CBOR data using a provided \ref cardano_cbor_reader_t and constructs a \ref cardano_script_n_of_k_t object.
  * It assumes that the CBOR reader is set up correctly and that the CBOR data corresponds to the structure expected for a script_n_of_k.
  *
@@ -232,6 +235,9 @@ CARDANO_EXPORT cardano_error_t cardano_script_n_of_k_to_cip116_json(
 
 /**
  * \brief Creates a script_n_of_k from a JSON string.
+ *
+ * Thresholds greater than SIZE_MAX return \ref CARDANO_ERROR_INTEGER_OVERFLOW.
+ * The supported threshold range follows the platform's size_t width.
  *
  * This function parses JSON data using a provided JSON string and constructs a \ref cardano_script_n_of_k_t object.
  * It assumes that the JSON data corresponds to the structure expected for a script_n_of_k.

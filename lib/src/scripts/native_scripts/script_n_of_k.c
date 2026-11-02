@@ -128,6 +128,11 @@ cardano_script_n_of_k_decode(cardano_cbor_reader_t* reader, cardano_script_n_of_
     return read_required_result;
   }
 
+  if ((uint64_t)(size_t)required != required)
+  {
+    return CARDANO_ERROR_INTEGER_OVERFLOW;
+  }
+
   cardano_native_script_list_t* native_scripts          = NULL;
   const cardano_error_t         read_script_list_result = cardano_native_script_list_from_cbor(reader, &native_scripts);
 
@@ -367,6 +372,12 @@ cardano_script_n_of_k_from_json(const char* json, size_t json_size, cardano_scri
     return result;
   }
 
+  if ((uint64_t)(size_t)required != required)
+  {
+    cardano_json_object_unref(&json_object);
+    return CARDANO_ERROR_INTEGER_OVERFLOW;
+  }
+
   cardano_native_script_list_t* native_scripts = NULL;
 
   if (strcmp(type_string, "atLeast") == 0)
@@ -498,7 +509,7 @@ cardano_script_n_of_k_equals(const cardano_script_n_of_k_t* lhs, const cardano_s
     return false;
   }
 
-  if (lhs->type != rhs->type)
+  if ((lhs->type != rhs->type) || (lhs->required != rhs->required))
   {
     return false;
   }
