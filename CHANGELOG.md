@@ -1,6 +1,8 @@
 Unreleased
 ---------------------
 
+- Propagate BIP32 derivation failures and release intermediate keys instead of asserting or returning a key after a failed curve operation.
+
 - Preserve parsed JSON number tokens without rounding or truncation; reject malformed number syntax, trailing commas, invalid UTF-8, and incomplete strings. Numeric getters report conversion failures instead of returning zero.
 - Add checked JSON parsing with distinct syntax and allocation errors; fix empty/embedded-null property lookup and cached output formatting and allocation handling.
 
