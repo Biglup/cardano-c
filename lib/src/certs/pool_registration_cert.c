@@ -184,16 +184,16 @@ cardano_pool_registration_cert_from_cbor(cardano_cbor_reader_t* reader, cardano_
     return read_params;
   }
 
-  cardano_error_t new_result = cardano_pool_registration_cert_new(params, pool_registration_cert);
+  cardano_error_t result = cardano_cbor_validate_end_array(validator_name, reader);
+
+  if (result == CARDANO_SUCCESS)
+  {
+    result = cardano_pool_registration_cert_new(params, pool_registration_cert);
+  }
 
   cardano_pool_params_unref(&params);
 
-  if (new_result != CARDANO_SUCCESS)
-  {
-    return new_result;
-  }
-
-  return cardano_cbor_validate_end_array(validator_name, reader);
+  return result;
 }
 
 cardano_error_t
