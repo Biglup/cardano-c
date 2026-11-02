@@ -265,7 +265,7 @@ cardano_anchor_from_cbor(cardano_cbor_reader_t* reader, cardano_anchor_t** ancho
     validator_name,
     reader,
     url,
-    (uint32_t)ANCHOR_MAX_URL_LENGTH);
+    (uint32_t)sizeof(url));
 
   if (read_uint_result != CARDANO_SUCCESS)
   {
@@ -477,7 +477,7 @@ cardano_anchor_set_url(cardano_anchor_t* anchor, const char* url, const size_t u
     return CARDANO_ERROR_INVALID_URL;
   }
 
-  assert(url_size < (size_t)ANCHOR_MAX_URL_LENGTH);
+  assert(url_size <= (size_t)ANCHOR_MAX_URL_LENGTH);
   CARDANO_UNUSED(memset(anchor->url, 0, sizeof(anchor->url)));
   cardano_safe_memcpy(anchor->url, ANCHOR_MAX_URL_LENGTH, url, url_size);
 
