@@ -1,6 +1,9 @@
 Unreleased
 ---------------------
 
+- Preserve parsed JSON number tokens without rounding or truncation; reject malformed number syntax, trailing commas, invalid UTF-8, and incomplete strings. Numeric getters report conversion failures instead of returning zero.
+- Add checked JSON parsing with distinct syntax and allocation errors; fix empty/embedded-null property lookup and cached output formatting and allocation handling.
+
 - Preserve Base58 zero digits and leading zero bytes, compute exact decoded lengths, and reject decoding overflow instead of truncating input.
 
 - Decode 128-byte anchor URLs and accept the same maximum length in debug-build URL setters.

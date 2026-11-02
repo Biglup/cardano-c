@@ -149,6 +149,12 @@ cardano_write_json_object_type_number(cardano_json_writer_t* writer, const carda
   assert(writer != NULL);
   assert(number_obj != NULL);
 
+  if (number_obj->string != NULL)
+  {
+    cardano_json_writer_write_raw_value(writer, (const char*)cardano_buffer_get_data(number_obj->string), cardano_buffer_get_size(number_obj->string) - 1U);
+    return;
+  }
+
   if (number_obj->is_real)
   {
     double          value  = 0.0;
