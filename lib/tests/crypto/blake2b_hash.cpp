@@ -1169,7 +1169,7 @@ TEST(cardano_blake2b_hash_to_cip116_json, reportsAnErrorInTheWriterIfMemoryAlloc
 
   // Assert
   EXPECT_EQ(error, CARDANO_SUCCESS);
-  EXPECT_EQ(cardano_json_writer_encode(json, buffer, sizeof(buffer)), CARDANO_ERROR_POINTER_IS_NULL);
+  EXPECT_EQ(cardano_json_writer_encode(json, buffer, sizeof(buffer)), CARDANO_ERROR_MEMORY_ALLOCATION_FAILED);
 
   // Cleanup
   cardano_blake2b_hash_unref(&hash);
