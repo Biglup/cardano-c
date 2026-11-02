@@ -24,6 +24,10 @@
 #include <cardano/encoding/base58.h>
 #include <gmock/gmock.h>
 
+#include <string>
+#include <utility>
+#include <vector>
+
 #include "../allocators_helpers.h"
 #include "../src/allocators.h"
 
@@ -416,4 +420,132 @@ TEST(cardano_encoding_base58_decode, returnEncodingErrorIfGivenAWrongCharacter)
   EXPECT_EQ(result, CARDANO_ERROR_DECODING);
 
   free(output);
+}
+
+TEST(cardano_encoding_base58, preservesShortInputsAndZeroDigits)
+{
+  // Arrange
+  const std::vector<std::pair<std::string, std::vector<uint8_t>>> vectors {
+    { "1", { 0 } },
+    { "111", { 0, 0, 0 } },
+    { "2", { 1 } },
+    { "z", { 57 } },
+    { "21", { 58 } },
+    { "211", { 0x0d, 0x24 } },
+    { "121", { 0, 58 } },
+    { "1121", { 0, 0, 58 } },
+    { "5Q", { 255 } },
+    { "5R", { 1, 0 } },
+    { "JxF12TrwUP45BMd", { 'H', 'e', 'l', 'l', 'o', ' ', 'W', 'o', 'r', 'l', 'd' } }
+  };
+
+  // Act & Assert
+  for (const std::pair<std::string, std::vector<uint8_t>>& vector: vectors)
+  {
+    SCOPED_TRACE(vector.first);
+    EXPECT_TRUE(encodes_correctly(vector.first.c_str(), vector.second.data(), vector.second.size()));
+    EXPECT_TRUE(decodes_correctly(vector.first.c_str(), vector.second.data(), vector.second.size()));
+  }
+}
+
+TEST(cardano_encoding_base58, roundTripsEverySingleByte)
+{
+  // Arrange
+  const std::string alphabet = "123456789ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz";
+
+  // Act & Assert
+  for (uint32_t value = 0; value <= 255; ++value)
+  {
+    const uint8_t     byte     = static_cast<uint8_t>(value);
+    const std::string expected = value < 58 ? std::string(1, alphabet[value]) : std::string(1, alphabet[value / 58]) + alphabet[value % 58];
+
+    EXPECT_TRUE(encodes_correctly(expected.c_str(), &byte, 1));
+    EXPECT_TRUE(decodes_correctly(expected.c_str(), &byte, 1));
+  }
+}
+
+TEST(cardano_encoding_base58_decode, doesNotOverwriteBufferBoundaries)
+{
+  // Arrange
+  uint8_t output[] = { 0xa5, 0xa5, 0xa5, 0xa5 };
+
+  // Act
+  const cardano_error_t result = cardano_encoding_base58_decode("5R", 2, output + 1, 2);
+
+  // Assert
+  EXPECT_EQ(result, CARDANO_SUCCESS);
+  EXPECT_EQ(output[0], 0xa5);
+  EXPECT_EQ(output[1], 1);
+  EXPECT_EQ(output[2], 0);
+  EXPECT_EQ(output[3], 0xa5);
+}
+
+TEST(cardano_encoding_base58_decode, rejectsOverflowInsteadOfTruncating)
+{
+  // Arrange
+  uint8_t output[] = { 0xa5, 0xa5, 0xa5 };
+
+  // Act
+  const cardano_error_t result = cardano_encoding_base58_decode("5R", 2, output + 1, 1);
+
+  // Assert
+  EXPECT_EQ(result, CARDANO_ERROR_INSUFFICIENT_BUFFER_SIZE);
+  EXPECT_EQ(output[0], 0xa5);
+  EXPECT_EQ(output[2], 0xa5);
+}
+
+TEST(cardano_encoding_base58_decode, rejectsInsufficientLeadingZeroCapacity)
+{
+  // Arrange
+  uint8_t output[1] = { 0 };
+
+  // Act
+  const cardano_error_t result = cardano_encoding_base58_decode("12", 2, output, sizeof(output));
+
+  // Assert
+  EXPECT_EQ(result, CARDANO_ERROR_INSUFFICIENT_BUFFER_SIZE);
+}
+
+TEST(cardano_encoding_base58_decode, writesAtStartOfLargerBuffers)
+{
+  // Arrange
+  uint8_t output[4] = { 0xa5, 0xa5, 0xa5, 0xa5 };
+
+  // Act
+  const cardano_error_t result = cardano_encoding_base58_decode("21", 2, output, sizeof(output));
+
+  // Assert
+  EXPECT_EQ(result, CARDANO_SUCCESS);
+  EXPECT_EQ(output[0], 58);
+  EXPECT_EQ(output[1], 0);
+  EXPECT_EQ(output[2], 0);
+  EXPECT_EQ(output[3], 0);
+}
+
+TEST(cardano_encoding_base58_get_decoded_length, rejectsInvalidCharacters)
+{
+  // Arrange
+  const char* invalid[] = { "0", "O", "I", "l", " 2", "2 " };
+
+  // Act & Assert
+  for (const char* text: invalid)
+  {
+    EXPECT_EQ(cardano_encoding_base58_get_decoded_length(text, strlen(text)), 0);
+  }
+}
+
+TEST(cardano_encoding_base58_get_decoded_length, returnsZeroWhenAllocationFails)
+{
+  // Arrange
+  reset_allocators_run_count();
+  cardano_set_allocators(fail_right_away_malloc, realloc, free);
+
+  // Act
+  const size_t length = cardano_encoding_base58_get_decoded_length("2", 1);
+
+  // Assert
+  EXPECT_EQ(length, 0);
+
+  // Cleanup
+  cardano_set_allocators(malloc, realloc, free);
 }

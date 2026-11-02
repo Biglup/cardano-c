@@ -815,7 +815,7 @@ TEST(cardano_address_from_string, returnsErrorWhenAddressIsTooSmall)
   cardano_error_t result = cardano_address_from_string("a", 1, &address);
 
   // Assert
-  EXPECT_EQ(result, CARDANO_ERROR_INSUFFICIENT_BUFFER_SIZE);
+  EXPECT_EQ(result, CARDANO_ERROR_INVALID_ADDRESS_FORMAT);
   EXPECT_EQ(address, nullptr);
 }
 
