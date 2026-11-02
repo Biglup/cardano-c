@@ -74,3 +74,10 @@ Native Script - Require M Of N
 ------------
 
 .. doxygenfunction:: cardano_script_n_of_k_deep_clone
+
+Threshold values
+----------------
+
+The required count uses ``size_t``. CBOR and JSON decoding reject counts larger
+than ``SIZE_MAX`` with ``CARDANO_ERROR_INTEGER_OVERFLOW``. Equality compares
+both the required count and the ordered child scripts.

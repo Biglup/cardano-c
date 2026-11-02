@@ -128,6 +128,13 @@ cardano_script_n_of_k_decode(cardano_cbor_reader_t* reader, cardano_script_n_of_
     return read_required_result;
   }
 
+#if SIZE_MAX < UINT64_MAX
+  if (required > (uint64_t)SIZE_MAX)
+  {
+    return CARDANO_ERROR_INTEGER_OVERFLOW;
+  }
+#endif
+
   cardano_native_script_list_t* native_scripts          = NULL;
   const cardano_error_t         read_script_list_result = cardano_native_script_list_from_cbor(reader, &native_scripts);
 
@@ -366,6 +373,14 @@ cardano_script_n_of_k_from_json(const char* json, size_t json_size, cardano_scri
 
     return result;
   }
+
+#if SIZE_MAX < UINT64_MAX
+  if (required > (uint64_t)SIZE_MAX)
+  {
+    cardano_json_object_unref(&json_object);
+    return CARDANO_ERROR_INTEGER_OVERFLOW;
+  }
+#endif
 
   cardano_native_script_list_t* native_scripts = NULL;
 
