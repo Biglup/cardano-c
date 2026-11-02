@@ -887,3 +887,25 @@ TEST(cardano_bip32_private_key_to_hex, returnsErrorIfGivenNull)
   // Assert
   EXPECT_EQ(error, CARDANO_ERROR_POINTER_IS_NULL);
 }
+
+TEST(cardano_bip32_private_key_derive, returnsErrorForZeroScalar)
+{
+  // Arrange
+  const byte_t                 bytes[96] = { 0 };
+  cardano_bip32_private_key_t* key       = nullptr;
+  ASSERT_EQ(cardano_bip32_private_key_from_bytes(bytes, sizeof(bytes), &key), CARDANO_SUCCESS);
+
+  cardano_bip32_private_key_t* derived = nullptr;
+  const uint32_t               path[]  = { 0 };
+
+  // Act
+  const cardano_error_t result = cardano_bip32_private_key_derive(key, path, 1U, &derived);
+
+  // Assert
+  EXPECT_EQ(result, CARDANO_ERROR_GENERIC);
+  EXPECT_EQ(derived, nullptr);
+  EXPECT_EQ(cardano_bip32_private_key_refcount(key), 1U);
+
+  cardano_bip32_private_key_unref(&derived);
+  cardano_bip32_private_key_unref(&key);
+}

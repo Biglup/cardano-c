@@ -279,8 +279,13 @@ cardano_bip32_public_key_derive(
     byte_t          derived_key[64U] = { 0 };
     cardano_error_t error            = _cardano_crypto_derive_public(key_data, (int32_t)indices[i], &derived_key[0], 64U);
 
-    assert(error == CARDANO_SUCCESS);
-    CARDANO_UNUSED(error);
+    if (error != CARDANO_SUCCESS)
+    {
+      *derived_bip32_public_key = NULL;
+      cardano_bip32_public_key_unref(&working_key);
+
+      return error;
+    }
 
     cardano_bip32_public_key_t* new_key = NULL;
 
