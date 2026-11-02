@@ -25,7 +25,6 @@
 
 #include "../allocators.h"
 
-#include <math.h>
 #include <stddef.h>
 #include <string.h>
 
@@ -57,6 +56,75 @@ char_index(const char c, const char* alphabet)
   return -1;
 }
 
+/**
+ * \brief Converts Base58 digits into a caller-owned buffer and reports their exact byte count.
+ *
+ * \param input The validated non-null input pointer.
+ * \param input_length The number of input characters.
+ * \param data The validated non-null destination pointer.
+ * \param data_length The nonzero destination capacity.
+ * \param decoded_length Receives the exact byte count on success.
+ *
+ * \return Success, a decoding error, or an insufficient-buffer error.
+ */
+static cardano_error_t
+base58_decode_into(const char* input, const size_t input_length, byte_t* data, const size_t data_length, size_t* decoded_length)
+{
+  size_t leading_ones = 0U;
+
+  while ((leading_ones < input_length) && (input[leading_ones] == '1'))
+  {
+    ++leading_ones;
+  }
+
+  CARDANO_UNUSED(memset(data, 0, data_length));
+
+  for (size_t i = leading_ones; i < input_length; ++i)
+  {
+    const int64_t value = char_index(input[i], BASE58_ALPHABET);
+
+    if (value < 0)
+    {
+      return CARDANO_ERROR_DECODING;
+    }
+
+    uint32_t carry = (uint32_t)value;
+
+    for (size_t j = data_length; j > 0U; --j)
+    {
+      carry        += 58U * (uint32_t)data[j - 1U];
+      data[j - 1U] = (byte_t)(carry % 256U);
+      carry        /= 256U;
+    }
+
+    if (carry != 0U)
+    {
+      return CARDANO_ERROR_INSUFFICIENT_BUFFER_SIZE;
+    }
+  }
+
+  size_t first_nonzero = 0U;
+
+  while ((first_nonzero < data_length) && (data[first_nonzero] == 0U))
+  {
+    ++first_nonzero;
+  }
+
+  if (leading_ones > first_nonzero)
+  {
+    return CARDANO_ERROR_INSUFFICIENT_BUFFER_SIZE;
+  }
+
+  const size_t magnitude_length = data_length - first_nonzero;
+  *decoded_length               = leading_ones + magnitude_length;
+
+  CARDANO_UNUSED(memmove(&data[leading_ones], &data[first_nonzero], magnitude_length));
+  CARDANO_UNUSED(memset(data, 0, leading_ones));
+  CARDANO_UNUSED(memset(&data[*decoded_length], 0, data_length - *decoded_length));
+
+  return CARDANO_SUCCESS;
+}
+
 /* DEFINITIONS ***************************************************************/
 
 size_t
@@ -79,10 +147,17 @@ cardano_encoding_base58_get_encoded_length(const byte_t* data, const size_t data
     ++leading_zeros;
   }
 
-  const double log_ratio       = log(256) / log(58);
   const size_t non_zero_length = data_length - leading_zeros;
 
-  return (size_t)ceil((double)non_zero_length * log_ratio) + leading_zeros + 1U;
+  if (data_length > ((SIZE_MAX - 1U) / 2U))
+  {
+    return 0U;
+  }
+
+  // 1.38 exceeds log(256) / log(58); round the integer estimate upward.
+  const size_t digits = ((non_zero_length / 100U) * 138U) + ((((non_zero_length % 100U) * 138U) + 99U) / 100U);
+
+  return digits + leading_zeros + 1U;
 }
 
 cardano_error_t
@@ -109,7 +184,7 @@ cardano_encoding_base58_encode(
 
   size_t encoded_length = cardano_encoding_base58_get_encoded_length(data, data_length);
 
-  if (output_length < encoded_length)
+  if ((encoded_length == 0U) || (output_length < encoded_length))
   {
     return CARDANO_ERROR_INSUFFICIENT_BUFFER_SIZE;
   }
@@ -135,21 +210,25 @@ cardano_encoding_base58_encode(
     }
   }
 
-  size_t output_index = 0;
+  size_t output_index = 0U;
 
-  for (size_t i = 0; (i < encoded_length) && (temp[i] == 0U); i++)
+  while ((output_index < data_length) && (data[output_index] == 0U))
   {
     output[output_index] = '1';
     ++output_index;
   }
 
-  for (size_t i = 0; i < encoded_length; i++)
+  size_t first_digit = 0U;
+
+  while ((first_digit < (encoded_length - 1U)) && (temp[first_digit] == 0U))
   {
-    if (temp[i] != 0U)
-    {
-      output[output_index] = BASE58_ALPHABET[temp[i]];
-      ++output_index;
-    }
+    ++first_digit;
+  }
+
+  for (size_t i = first_digit; i < (encoded_length - 1U); ++i)
+  {
+    output[output_index] = BASE58_ALPHABET[temp[i]];
+    ++output_index;
   }
 
   output[output_index] = '\0';
@@ -172,18 +251,19 @@ cardano_encoding_base58_get_decoded_length(const char* data, const size_t data_l
     return 0;
   }
 
-  double leading_ones = 0.0;
+  byte_t* decoded = _cardano_malloc(data_length);
 
-  for (size_t i = 0; (i < data_length) && (data[i] == '1'); ++i)
+  if (decoded == NULL)
   {
-    ++leading_ones;
+    return 0U;
   }
 
-  const double log_base256_of_58       = log(58) / log(256);
-  const size_t non_zero_decoded_length = (size_t)floor(((double)data_length - leading_ones) * log_base256_of_58);
-  const size_t decoded_length          = (size_t)leading_ones + non_zero_decoded_length;
+  size_t                decoded_length = 0U;
+  const cardano_error_t result         = base58_decode_into(data, data_length, decoded, data_length, &decoded_length);
 
-  return decoded_length;
+  _cardano_free(decoded);
+
+  return (result == CARDANO_SUCCESS) ? decoded_length : 0U;
 }
 
 cardano_error_t
@@ -198,43 +278,25 @@ cardano_encoding_base58_decode(
     return CARDANO_ERROR_POINTER_IS_NULL;
   }
 
-  if (data_length == 0U)
-  {
-    return CARDANO_ERROR_INSUFFICIENT_BUFFER_SIZE;
-  }
-
   if (input == NULL)
   {
     return CARDANO_ERROR_POINTER_IS_NULL;
   }
 
-  size_t decoded_length = cardano_encoding_base58_get_decoded_length(input, input_length);
+  for (size_t i = 0U; i < input_length; ++i)
+  {
+    if (char_index(input[i], BASE58_ALPHABET) < 0)
+    {
+      return CARDANO_ERROR_DECODING;
+    }
+  }
 
-  if (data_length < decoded_length)
+  if (data_length == 0U)
   {
     return CARDANO_ERROR_INSUFFICIENT_BUFFER_SIZE;
   }
 
-  CARDANO_UNUSED(memset(data, 0, data_length));
+  size_t decoded_length = 0U;
 
-  for (size_t i = 0; i < input_length; ++i)
-  {
-    int64_t value = char_index(input[i], BASE58_ALPHABET);
-
-    if (value == -1)
-    {
-      return CARDANO_ERROR_DECODING;
-    }
-
-    int64_t carry = value;
-
-    for (int64_t j = (int64_t)decoded_length - 1; j >= 0; --j)
-    {
-      carry   += (int64_t)58 * (int64_t)data[j];
-      data[j] = carry % (int64_t)256U;
-      carry   /= (int64_t)256U;
-    }
-  }
-
-  return CARDANO_SUCCESS;
+  return base58_decode_into(input, input_length, data, data_length, &decoded_length);
 }

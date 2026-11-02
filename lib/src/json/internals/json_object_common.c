@@ -108,6 +108,7 @@ cardano_json_object_new(void)
     object->is_negative        = false;
     object->json_string        = NULL;
     object->json_string_length = 0U;
+    object->json_format        = CARDANO_JSON_FORMAT_COMPACT;
   }
 
   return object;
@@ -252,6 +253,7 @@ cardano_json_object_deep_clone(const cardano_json_object_t* source, cardano_json
   copy->bool_value         = source->bool_value;
   copy->json_string        = NULL;
   copy->json_string_length = source->json_string_length;
+  copy->json_format        = source->json_format;
 
   if (source->pairs != NULL)
   {

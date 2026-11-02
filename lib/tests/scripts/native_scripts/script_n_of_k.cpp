@@ -1038,3 +1038,74 @@ TEST(cardano_script_n_of_k_set_required, discardsTheCachedCbor)
   // Cleanup
   script_n_of_k_unref_and_free(&script, hex);
 }
+
+TEST(cardano_script_n_of_k_equals, comparesRequiredThreshold)
+{
+  // Arrange
+  cardano_script_n_of_k_t* first  = nullptr;
+  cardano_script_n_of_k_t* second = nullptr;
+  ASSERT_EQ(cardano_script_n_of_k_from_json(AT_LEAST_SCRIPT2, strlen(AT_LEAST_SCRIPT2), &first), CARDANO_SUCCESS);
+  ASSERT_EQ(cardano_script_n_of_k_deep_clone(first, &second), CARDANO_SUCCESS);
+
+  const size_t required = cardano_script_n_of_k_get_required(first);
+  ASSERT_EQ(cardano_script_n_of_k_set_required(second, required + 1U), CARDANO_SUCCESS);
+
+  // Act
+  const bool equal = cardano_script_n_of_k_equals(first, second);
+
+  // Assert
+  EXPECT_FALSE(equal);
+  EXPECT_FALSE(cardano_script_n_of_k_equals(second, first));
+  EXPECT_EQ(cardano_script_n_of_k_set_required(second, required), CARDANO_SUCCESS);
+  EXPECT_TRUE(cardano_script_n_of_k_equals(first, second));
+
+  // Cleanup
+  cardano_script_n_of_k_unref(&first);
+  cardano_script_n_of_k_unref(&second);
+}
+
+TEST(cardano_script_n_of_k_from_cbor, checksThresholdAgainstPlatformSize)
+{
+  // Arrange
+  const char*              cbor   = "83031bffffffffffffffff80";
+  cardano_cbor_reader_t*   reader = cardano_cbor_reader_from_hex(cbor, strlen(cbor));
+  cardano_script_n_of_k_t* script = nullptr;
+
+  // Act
+  const cardano_error_t result = cardano_script_n_of_k_from_cbor(reader, &script);
+
+  // Assert
+#if SIZE_MAX < UINT64_MAX
+  EXPECT_EQ(result, CARDANO_ERROR_INTEGER_OVERFLOW);
+  EXPECT_EQ(script, nullptr);
+#else
+  EXPECT_EQ(result, CARDANO_SUCCESS);
+  EXPECT_EQ(cardano_script_n_of_k_get_required(script), SIZE_MAX);
+#endif
+
+  // Cleanup
+  cardano_script_n_of_k_unref(&script);
+  cardano_cbor_reader_unref(&reader);
+}
+
+TEST(cardano_script_n_of_k_from_json, checksThresholdAgainstPlatformSize)
+{
+  // Arrange
+  const char*              json   = "{\"type\":\"atLeast\",\"required\":18446744073709551615,\"scripts\":[]}";
+  cardano_script_n_of_k_t* script = nullptr;
+
+  // Act
+  const cardano_error_t result = cardano_script_n_of_k_from_json(json, strlen(json), &script);
+
+  // Assert
+#if SIZE_MAX < UINT64_MAX
+  EXPECT_EQ(result, CARDANO_ERROR_INTEGER_OVERFLOW);
+  EXPECT_EQ(script, nullptr);
+#else
+  EXPECT_EQ(result, CARDANO_SUCCESS);
+  EXPECT_EQ(cardano_script_n_of_k_get_required(script), SIZE_MAX);
+#endif
+
+  // Cleanup
+  cardano_script_n_of_k_unref(&script);
+}

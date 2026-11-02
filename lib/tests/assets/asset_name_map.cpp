@@ -2080,3 +2080,26 @@ TEST(cardano_asset_name_map_subtract, returnsErrorIfGrowingTheArrayFails)
   cardano_asset_name_unref(&key1);
   cardano_asset_name_unref(&key2);
 }
+
+TEST(cardano_asset_name_map_from_cbor, rejectsAmountsOutsideSignedRange)
+{
+  // Arrange
+  const char* encodings[] = { "a1401b8000000000000000", "a1403b8000000000000000" };
+
+  for (size_t i = 0U; i < (sizeof(encodings) / sizeof(encodings[0])); ++i)
+  {
+    cardano_cbor_reader_t*    reader = cardano_cbor_reader_from_hex(encodings[i], strlen(encodings[i]));
+    cardano_asset_name_map_t* map    = nullptr;
+
+    // Act
+    const cardano_error_t result = cardano_asset_name_map_from_cbor(reader, &map);
+
+    // Assert
+    EXPECT_EQ(result, CARDANO_ERROR_INTEGER_OVERFLOW);
+    EXPECT_EQ(map, nullptr);
+
+    // Cleanup
+    cardano_asset_name_map_unref(&map);
+    cardano_cbor_reader_unref(&reader);
+  }
+}

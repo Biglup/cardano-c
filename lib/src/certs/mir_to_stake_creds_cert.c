@@ -308,6 +308,11 @@ cardano_mir_to_stake_creds_cert_from_cbor(cardano_cbor_reader_t* reader, cardano
 
   result = cardano_cbor_validate_end_map("mir_to_stake_creds_cert", reader);
 
+  if (result == CARDANO_SUCCESS)
+  {
+    result = cardano_cbor_validate_end_array(validator_name, reader);
+  }
+
   if (result != CARDANO_SUCCESS)
   {
     cardano_mir_to_stake_creds_cert_unref(&map);

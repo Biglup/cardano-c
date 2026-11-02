@@ -2599,3 +2599,114 @@ TEST(cardano_json_writer_write_buffer_as_bech32, canWriteEmptyBufferAsBech32)
   cardano_json_writer_unref(&json);
   cardano_buffer_unref(&buffer);
 }
+
+TEST(cardano_json_writer_write_object, writesNestedValuesWithoutDuplicateSeparators)
+{
+  // Arrange
+  cardano_json_object_t* value  = cardano_json_object_parse("{\"x\":1.2300}", 12);
+  cardano_json_writer_t* writer = cardano_json_writer_new(CARDANO_JSON_FORMAT_COMPACT);
+
+  // Act
+  cardano_json_writer_write_start_object(writer);
+  cardano_json_writer_write_property_name(writer, "first", 5);
+  cardano_json_writer_write_null(writer);
+  cardano_json_writer_write_property_name(writer, "second", 6);
+  cardano_json_writer_write_object(writer, value);
+  cardano_json_writer_write_property_name(writer, "array", 5);
+  cardano_json_writer_write_start_array(writer);
+  cardano_json_writer_write_object(writer, value);
+  cardano_json_writer_write_object(writer, value);
+  cardano_json_writer_write_end_array(writer);
+  cardano_json_writer_write_end_object(writer);
+  char* text = encode_json(writer);
+
+  // Assert
+  EXPECT_STREQ(text, "{\"first\":null,\"second\":{\"x\":1.2300},\"array\":[{\"x\":1.2300},{\"x\":1.2300}]}");
+
+  free(text);
+  cardano_json_object_unref(&value);
+  cardano_json_writer_unref(&writer);
+}
+
+TEST(cardano_json_writer_write_string, escapesEveryAsciiControlInNamesAndValues)
+{
+  // Arrange
+  std::string controls;
+  for (int value = 0; value < 32; ++value)
+  {
+    controls.push_back(static_cast<char>(value));
+  }
+  cardano_json_writer_t* writer = cardano_json_writer_new(CARDANO_JSON_FORMAT_COMPACT);
+
+  // Act
+  cardano_json_writer_write_start_object(writer);
+  cardano_json_writer_write_property_name(writer, controls.data(), controls.size());
+  cardano_json_writer_write_string(writer, controls.data(), controls.size());
+  cardano_json_writer_write_end_object(writer);
+  char*                  text   = encode_json(writer);
+  cardano_json_object_t* object = cardano_json_object_parse(text, strlen(text));
+
+  // Assert
+  ASSERT_NE(object, nullptr);
+  size_t      key_size = 0;
+  const char* key      = cardano_json_object_get_key_at(object, 0, &key_size);
+  EXPECT_EQ(std::string(key, key_size), controls);
+  cardano_json_object_t* value       = cardano_json_object_get_value_at(object, 0);
+  size_t                 string_size = 0;
+  const char*            string      = cardano_json_object_get_string(value, &string_size);
+  EXPECT_EQ(std::string(string, string_size - 1), controls);
+  EXPECT_NE(strstr(text, "\\u0000"), nullptr);
+  EXPECT_NE(strstr(text, "\\u001f"), nullptr);
+
+  cardano_json_object_unref(&value);
+  cardano_json_object_unref(&object);
+  free(text);
+  cardano_json_writer_unref(&writer);
+}
+
+TEST(cardano_json_writer_write_end_object, rejectsMissingPropertyValues)
+{
+  // Arrange
+  cardano_json_writer_t* writer     = cardano_json_writer_new(CARDANO_JSON_FORMAT_COMPACT);
+  char                   buffer[32] = { 0 };
+
+  // Act
+  cardano_json_writer_write_start_object(writer);
+  cardano_json_writer_write_property_name(writer, "a", 1);
+  cardano_json_writer_write_end_object(writer);
+
+  // Assert
+  EXPECT_EQ(cardano_json_writer_encode(writer, buffer, sizeof(buffer)), CARDANO_ERROR_ENCODING);
+  cardano_json_writer_unref(&writer);
+}
+
+TEST(cardano_json_writer_write_property_name, rejectsOverwritingAnUnfilledProperty)
+{
+  // Arrange
+  cardano_json_writer_t* writer     = cardano_json_writer_new(CARDANO_JSON_FORMAT_COMPACT);
+  char                   buffer[32] = { 0 };
+
+  // Act
+  cardano_json_writer_write_start_object(writer);
+  cardano_json_writer_write_property_name(writer, "a", 1);
+  cardano_json_writer_write_property_name(writer, "b", 1);
+
+  // Assert
+  EXPECT_EQ(cardano_json_writer_encode(writer, buffer, sizeof(buffer)), CARDANO_ERROR_ENCODING);
+  cardano_json_writer_unref(&writer);
+}
+
+TEST(cardano_json_writer_write_start_object, rejectsASecondRootValue)
+{
+  // Arrange
+  cardano_json_writer_t* writer     = cardano_json_writer_new(CARDANO_JSON_FORMAT_COMPACT);
+  char                   buffer[32] = { 0 };
+
+  // Act
+  cardano_json_writer_write_null(writer);
+  cardano_json_writer_write_start_object(writer);
+
+  // Assert
+  EXPECT_EQ(cardano_json_writer_encode(writer, buffer, sizeof(buffer)), CARDANO_ERROR_ENCODING);
+  cardano_json_writer_unref(&writer);
+}

@@ -98,6 +98,8 @@ cardano_single_host_name_relay_new(
  * This function parses CBOR data using a provided \ref cardano_cbor_reader_t and constructs a \ref cardano_single_host_name_relay_t object.
  * It assumes that the CBOR reader is set up correctly and that the CBOR data corresponds to the structure expected for a single_host_name_relay.
  *
+ * A present port must be in the range 0 through 65535; larger CBOR integers are rejected.
+ *
  * \param[in] reader A pointer to an initialized \ref cardano_cbor_reader_t that is ready to read the CBOR-encoded data.
  * \param[out] single_host_name_relay A pointer to a pointer of \ref cardano_single_host_name_relay_t that will be set to the address
  *                        of the newly created single_host_name_relay object upon successful decoding.

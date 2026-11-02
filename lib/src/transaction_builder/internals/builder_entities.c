@@ -97,8 +97,8 @@ parse_reward_address(
  * \brief Copies a direct deposit map setting the amount deposited to one reward account.
  *
  * Direct deposit maps reject duplicated keys and entries can not be updated in place, so this
- * function builds a new map with every entry of \p current in its original position. The entry of
- * \p reward_address gets \p amount, and it is appended at the end when the account is not present.
+ * function builds a new map with every entry of \p current, kept sorted by reward address. The
+ * entry of \p reward_address gets \p amount, and it is added when the account is not present.
  *
  * \param[in] current A pointer to the \ref cardano_direct_deposit_map_t to copy, or NULL when there
  *                    are no direct deposits yet.
@@ -188,9 +188,8 @@ copy_with_direct_deposit(
  * \brief Copies an account balance intervals map setting the interval of one reward account.
  *
  * Account balance intervals maps reject duplicated keys and entries can not be updated in place, so
- * this function builds a new map with every entry of \p current in its original position. The entry
- * of \p reward_address gets \p interval, and it is appended at the end when the account is not
- * present.
+ * this function builds a new map with every entry of \p current, kept sorted by reward address. The
+ * entry of \p reward_address gets \p interval, and it is added when the account is not present.
  *
  * \param[in] current A pointer to the \ref cardano_account_balance_intervals_map_t to copy, or NULL
  *                    when there are no intervals yet.

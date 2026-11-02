@@ -61,6 +61,8 @@ cardano_base_address_from_credentials(
     return CARDANO_ERROR_POINTER_IS_NULL;
   }
 
+  *base_address = NULL;
+
   cardano_address_t* address = _cardano_malloc(sizeof(cardano_address_t));
 
   if (address == NULL)
@@ -96,7 +98,10 @@ cardano_base_address_from_credentials(
   address->address_data_size  = ADDRESS_HEADER_SIZE + (2U * (size_t)CARDANO_BLAKE2B_HASH_SIZE_224);
 
   _cardano_pack_base_address(address, address->address_data, sizeof(address->address_data));
-  _cardano_to_bech32_addr(
+  cardano_credential_ref(payment);
+  cardano_credential_ref(stake);
+
+  const cardano_error_t encoding_result = _cardano_to_bech32_addr(
     address->address_data,
     address->address_data_size,
     network_id,
@@ -104,8 +109,11 @@ cardano_base_address_from_credentials(
     address->address_str,
     1024);
 
-  cardano_credential_ref(payment);
-  cardano_credential_ref(stake);
+  if (encoding_result != CARDANO_SUCCESS)
+  {
+    _cardano_address_deallocate(address);
+    return encoding_result;
+  }
 
   *base_address = _cardano_from_address_to_base(address);
 

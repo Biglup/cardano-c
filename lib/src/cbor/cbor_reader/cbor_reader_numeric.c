@@ -103,6 +103,12 @@ peek_signed_integer(cardano_cbor_reader_t* reader, int64_t* signed_int, size_t* 
         return decode_result;
       }
 
+      if (unsigned_int > (uint64_t)INT64_MAX)
+      {
+        cardano_object_set_last_error(&reader->base, "Signed integer out of range.");
+        return CARDANO_ERROR_INTEGER_OVERFLOW;
+      }
+
       *signed_int = (int64_t)unsigned_int;
       *bytes_read = read;
       break;
@@ -128,6 +134,12 @@ peek_signed_integer(cardano_cbor_reader_t* reader, int64_t* signed_int, size_t* 
       if (decode_result != CARDANO_SUCCESS)
       {
         return decode_result;
+      }
+
+      if (unsigned_int > (uint64_t)INT64_MAX)
+      {
+        cardano_object_set_last_error(&reader->base, "Signed integer out of range.");
+        return CARDANO_ERROR_INTEGER_OVERFLOW;
       }
 
       *signed_int = (int64_t)(-1) - (int64_t)unsigned_int;

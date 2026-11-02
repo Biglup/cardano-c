@@ -149,7 +149,7 @@ cardano_required_guards_map_from_cbor(cardano_cbor_reader_t* reader, cardano_req
  * \brief Serializes a required guards map into CBOR format using a CBOR writer.
  *
  * This function serializes the given \ref cardano_required_guards_map_t object using a \ref cardano_cbor_writer_t.
- * Entries are written in insertion order. An entry without a datum is written with a CBOR null value.
+ * Entries are written sorted by the CBOR encoding of their credentials, the canonical CBOR key order. An entry without a datum is written with a CBOR null value.
  *
  * \param[in] required_guards_map A constant pointer to the \ref cardano_required_guards_map_t object that is to be serialized.
  * \param[out] writer A pointer to a \ref cardano_cbor_writer_t where the CBOR serialized data will be written.
@@ -268,7 +268,8 @@ CARDANO_EXPORT cardano_error_t cardano_required_guards_map_get(
  * \brief Inserts a key-value pair into the required guards map.
  *
  * This function inserts the specified credential and its optional datum into the provided required guards map.
- * Entries keep their insertion order when the map is serialized. Inserting a credential that is already
+ * The map keeps its entries sorted by the CBOR encoding of their credentials (by credential type, then hash bytes),
+ * so they are serialized in canonical CBOR key order whatever the order of insertion. Inserting a credential that is already
  * present in the map fails with \ref CARDANO_ERROR_DUPLICATED_KEY.
  *
  * \param[in] required_guards_map A constant pointer to the \ref cardano_required_guards_map_t object where
@@ -318,8 +319,8 @@ CARDANO_EXPORT cardano_error_t cardano_required_guards_map_insert(
  * The caller is responsible for managing the lifecycle of the returned set by calling
  * \ref cardano_credential_set_unref when it is no longer needed.
  *
- * \note The returned set is canonically ordered (by credential type, then hash bytes) and may not
- *       match the map's insertion-order iteration via the index based accessors.
+ * \note The returned set is canonically ordered (by credential type, then hash bytes), the same order
+ *       as the index based accessors.
  *
  * \param[in] required_guards_map A pointer to the \ref cardano_required_guards_map_t object from which
  *                       the keys are to be retrieved.

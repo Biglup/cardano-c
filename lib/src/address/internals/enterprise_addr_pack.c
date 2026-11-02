@@ -90,15 +90,11 @@ _cardano_pack_enterprise_address(const cardano_address_t* address, byte_t* data,
 
   CARDANO_UNUSED(memset(data, 0, ADDRESS_HEADER_SIZE + (size_t)CARDANO_BLAKE2B_HASH_SIZE_224));
 
-  cardano_blake2b_hash_t* payment_cred_hash = cardano_credential_get_hash(address->payment_credential);
-
   data[0] = ((byte_t)address->type << 4U) | (byte_t)(*address->network_id);
 
   cardano_safe_memcpy(
     &data[ADDRESS_HEADER_SIZE],
     size - ADDRESS_HEADER_SIZE,
-    cardano_blake2b_hash_get_data(payment_cred_hash),
+    cardano_credential_get_hash_bytes(address->payment_credential),
     CARDANO_BLAKE2B_HASH_SIZE_224);
-
-  cardano_blake2b_hash_unref(&payment_cred_hash);
 }

@@ -385,8 +385,10 @@ bool _cardano_is_valid_stake_address_prefix(const char* address, size_t length);
  * \param[in] type The address type.
  * \param[out] address The buffer where to write the address data to.
  * \param[in] address_size The size of the address buffer.
+ *
+ * \return CARDANO_SUCCESS or the encoding or allocation error.
  */
-void _cardano_to_bech32_addr(
+cardano_error_t _cardano_to_bech32_addr(
   const byte_t*          data,
   size_t                 data_size,
   cardano_network_id_t   network_id,

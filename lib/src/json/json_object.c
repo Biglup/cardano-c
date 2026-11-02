@@ -41,24 +41,45 @@
 cardano_json_object_t*
 cardano_json_object_parse(const char* json, const size_t size)
 {
-  if ((json == NULL) || (size == 0U))
+  cardano_json_object_t* result = NULL;
+  cardano_error_t        error  = cardano_json_object_parse_ex(json, size, &result);
+
+  CARDANO_UNUSED(error);
+
+  return result;
+}
+
+cardano_error_t
+cardano_json_object_parse_ex(const char* json, const size_t size, cardano_json_object_t** result)
+{
+  if (result == NULL)
   {
-    return NULL;
+    return CARDANO_ERROR_POINTER_IS_NULL;
   }
 
-  cardano_json_parse_context_t ctx;
+  *result = NULL;
 
-  ctx.input         = json;
-  ctx.length        = size;
-  ctx.offset        = 0U;
-  ctx.depth         = 0U;
-  ctx.last_error[0] = '\0';
+  if (json == NULL)
+  {
+    return CARDANO_ERROR_POINTER_IS_NULL;
+  }
+
+  if (size == 0U)
+  {
+    return CARDANO_ERROR_INVALID_JSON;
+  }
+
+  cardano_json_parse_context_t ctx = { 0 };
+
+  ctx.input  = json;
+  ctx.length = size;
+  ctx.error  = CARDANO_ERROR_INVALID_JSON;
 
   cardano_json_object_t* root = cardano_parse_value(&ctx);
 
   if (root == NULL)
   {
-    return NULL;
+    return ctx.error;
   }
 
   cardano_skip_whitespace(&ctx);
@@ -66,11 +87,12 @@ cardano_json_object_parse(const char* json, const size_t size)
   if (ctx.offset < ctx.length)
   {
     cardano_json_object_unref(&root);
-
-    return NULL;
+    return CARDANO_ERROR_INVALID_JSON;
   }
 
-  return root;
+  *result = root;
+
+  return CARDANO_SUCCESS;
 }
 
 const char*
@@ -84,7 +106,7 @@ cardano_json_object_to_json_string(
     return NULL;
   }
 
-  if (json_object->json_string != NULL)
+  if ((json_object->json_string != NULL) && (json_object->json_format == format))
   {
     if (length != NULL)
     {
@@ -112,6 +134,12 @@ cardano_json_object_to_json_string(
   }
 
   char* buffer = _cardano_malloc(encoded_size);
+  if (buffer == NULL)
+  {
+    cardano_json_writer_unref(&writer);
+    return NULL;
+  }
+
   CARDANO_UNUSED(memset(buffer, 0, encoded_size));
 
   cardano_error_t result = cardano_json_writer_encode(writer, buffer, encoded_size);
@@ -125,6 +153,8 @@ cardano_json_object_to_json_string(
     return NULL;
   }
 
+  _cardano_free(json_object->json_string);
+  json_object->json_format        = format;
   json_object->json_string        = buffer;
   json_object->json_string_length = encoded_size;
 
@@ -154,7 +184,7 @@ cardano_json_object_has_property(
   const char*                  key,
   const size_t                 size)
 {
-  if ((json_object == NULL) || (key == NULL) || (size == 0U))
+  if ((json_object == NULL) || (key == NULL))
   {
     return false;
   }
@@ -176,7 +206,7 @@ cardano_json_object_has_property(
       continue;
     }
 
-    if (strncmp((const char*)cardano_buffer_get_data(kvp->key), key, key_size) == 0)
+    if (memcmp(cardano_buffer_get_data(kvp->key), key, key_size) == 0)
     {
       return true;
     }
@@ -204,6 +234,11 @@ cardano_json_object_get_key_at(
   size_t*                      key_length)
 {
   if ((json_object == NULL) || (json_object->type != CARDANO_JSON_OBJECT_TYPE_OBJECT))
+  {
+    return NULL;
+  }
+
+  if (index >= cardano_array_get_size(json_object->pairs))
   {
     return NULL;
   }
@@ -260,7 +295,7 @@ cardano_json_object_get(
   const size_t                 size,
   cardano_json_object_t**      value)
 {
-  if ((json_object == NULL) || (key == NULL) || (size == 0U) || (value == NULL))
+  if ((json_object == NULL) || (key == NULL) || (value == NULL))
   {
     return false;
   }
@@ -282,7 +317,7 @@ cardano_json_object_get(
       continue;
     }
 
-    if (strncmp((const char*)cardano_buffer_get_data(kvp->key), key, key_size) == 0)
+    if (memcmp(cardano_buffer_get_data(kvp->key), key, key_size) == 0)
     {
       cardano_json_object_ref(kvp->value);
 
@@ -409,7 +444,22 @@ cardano_json_object_get_uint(
     return CARDANO_ERROR_POINTER_IS_NULL;
   }
 
+  if ((json_object->string != NULL) && (memchr(cardano_buffer_get_data(json_object->string), '\0', cardano_buffer_get_size(json_object->string) - 1U) != NULL))
+  {
+    return CARDANO_ERROR_DECODING;
+  }
+
   if (json_object->type == CARDANO_JSON_OBJECT_TYPE_STRING)
+  {
+    return cardano_safe_string_to_uint64((const char*)cardano_buffer_get_data(json_object->string), cardano_buffer_get_size(json_object->string) - 1U, value);
+  }
+
+  if (json_object->is_negative)
+  {
+    return CARDANO_ERROR_INTEGER_OVERFLOW;
+  }
+
+  if (json_object->string != NULL)
   {
     return cardano_safe_string_to_uint64((const char*)cardano_buffer_get_data(json_object->string), cardano_buffer_get_size(json_object->string) - 1U, value);
   }
@@ -434,7 +484,17 @@ cardano_json_object_get_signed_int(
     return CARDANO_ERROR_POINTER_IS_NULL;
   }
 
+  if ((json_object->string != NULL) && (memchr(cardano_buffer_get_data(json_object->string), '\0', cardano_buffer_get_size(json_object->string) - 1U) != NULL))
+  {
+    return CARDANO_ERROR_DECODING;
+  }
+
   if (json_object->type == CARDANO_JSON_OBJECT_TYPE_STRING)
+  {
+    return cardano_safe_string_to_int64((const char*)cardano_buffer_get_data(json_object->string), cardano_buffer_get_size(json_object->string) - 1U, value);
+  }
+
+  if (json_object->string != NULL)
   {
     return cardano_safe_string_to_int64((const char*)cardano_buffer_get_data(json_object->string), cardano_buffer_get_size(json_object->string) - 1U, value);
   }
@@ -459,7 +519,17 @@ cardano_json_object_get_double(
     return CARDANO_ERROR_POINTER_IS_NULL;
   }
 
+  if ((json_object->string != NULL) && (memchr(cardano_buffer_get_data(json_object->string), '\0', cardano_buffer_get_size(json_object->string) - 1U) != NULL))
+  {
+    return CARDANO_ERROR_DECODING;
+  }
+
   if (json_object->type == CARDANO_JSON_OBJECT_TYPE_STRING)
+  {
+    return cardano_safe_string_to_double((const char*)cardano_buffer_get_data(json_object->string), cardano_buffer_get_size(json_object->string) - 1U, value);
+  }
+
+  if (json_object->string != NULL)
   {
     return cardano_safe_string_to_double((const char*)cardano_buffer_get_data(json_object->string), cardano_buffer_get_size(json_object->string) - 1U, value);
   }

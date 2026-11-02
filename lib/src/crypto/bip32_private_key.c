@@ -354,8 +354,13 @@ cardano_bip32_private_key_derive(
     byte_t          derived_key[96U] = { 0 };
     cardano_error_t error            = _cardano_crypto_derive_private(key_data, (int32_t)indices[i], &derived_key[0], sizeof(derived_key));
 
-    assert(error == CARDANO_SUCCESS);
-    CARDANO_UNUSED(error);
+    if (error != CARDANO_SUCCESS)
+    {
+      *derived_private_key = NULL;
+      cardano_bip32_private_key_unref(&working_key);
+
+      return error;
+    }
 
     cardano_bip32_private_key_t* new_key = NULL;
 

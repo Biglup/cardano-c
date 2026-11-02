@@ -58,13 +58,19 @@ static const size_t  UNICODE_SURROGATE_PAIR_LEN = 12U;                 // cppche
  *
  * \param[in,out] ctx     A pointer to the \ref cardano_json_parse_context_t instance where the error
  *                        message will be stored. This parameter must not be \c NULL.
+ * \param[in]     error The parsing error code; allocation failures remain sticky.
  * \param[in]     message A null-terminated string containing the error message. This parameter
  *                        must not be \c NULL. If the message exceeds the buffer size, it will
  *                        be truncated to fit.
  */
 static void
-set_last_error(cardano_json_parse_context_t* ctx, const char* message)
+set_last_error(cardano_json_parse_context_t* ctx, const cardano_error_t error, const char* message)
 {
+  if (ctx->error != CARDANO_ERROR_MEMORY_ALLOCATION_FAILED)
+  {
+    ctx->error = error;
+  }
+
   cardano_safe_memcpy(ctx->last_error, sizeof(ctx->last_error) - 1U, message, cardano_safe_strlen(message, sizeof(ctx->last_error) - 1U));
 }
 
@@ -89,28 +95,6 @@ cardano_skip_whitespace(cardano_json_parse_context_t* ctx)
 }
 
 bool
-cardano_has_char(const char to_match, const char* begin, const char* end)
-{
-  assert(begin != NULL);
-  assert(end != NULL);
-  assert(begin <= end);
-
-  const char* current = begin;
-
-  while (current < end)
-  {
-    if (*current == to_match)
-    {
-      return true;
-    }
-
-    ++current;
-  }
-
-  return false;
-}
-
-bool
 cardano_handle_utf8_sequence(cardano_json_parse_context_t* ctx, cardano_buffer_t* buf)
 {
   byte_t first_byte = (byte_t)ctx->input[ctx->offset];
@@ -118,7 +102,7 @@ cardano_handle_utf8_sequence(cardano_json_parse_context_t* ctx, cardano_buffer_t
 
   if ((seq_len == 0U) || ((ctx->offset + seq_len) > ctx->length))
   {
-    set_last_error(ctx, "Invalid UTF-8 sequence");
+    set_last_error(ctx, CARDANO_ERROR_INVALID_JSON, "Invalid UTF-8 sequence");
 
     return false;
   }
@@ -127,8 +111,25 @@ cardano_handle_utf8_sequence(cardano_json_parse_context_t* ctx, cardano_buffer_t
   {
     if ((ctx->input[ctx->offset + i] & 0xC0) != 0x80)
     {
-      set_last_error(ctx, "Invalid UTF-8 continuation byte");
+      set_last_error(ctx, CARDANO_ERROR_INVALID_JSON, "Invalid UTF-8 continuation byte");
 
+      return false;
+    }
+  }
+
+  if ((seq_len > 1U) && ((first_byte < 0xc2U) || (first_byte > 0xf4U)))
+  {
+    set_last_error(ctx, CARDANO_ERROR_INVALID_JSON, "Invalid UTF-8 leading byte");
+    return false;
+  }
+
+  if (seq_len >= 3U)
+  {
+    const byte_t second = (byte_t)ctx->input[ctx->offset + 1U];
+
+    if (((first_byte == 0xe0U) && (second < 0xa0U)) || ((first_byte == 0xedU) && (second >= 0xa0U)) || ((first_byte == 0xf0U) && (second < 0x90U)) || ((first_byte == 0xf4U) && (second >= 0x90U)))
+    {
+      set_last_error(ctx, CARDANO_ERROR_INVALID_JSON, "Invalid UTF-8 codepoint");
       return false;
     }
   }
@@ -136,7 +137,7 @@ cardano_handle_utf8_sequence(cardano_json_parse_context_t* ctx, cardano_buffer_t
   cardano_error_t result = cardano_buffer_write(buf, (const byte_t*)&ctx->input[ctx->offset], seq_len);
   if (result != CARDANO_SUCCESS)
   {
-    set_last_error(ctx, cardano_error_to_string(result));
+    set_last_error(ctx, result, cardano_error_to_string(result));
 
     return false;
   }
@@ -151,7 +152,7 @@ cardano_handle_unicode_sequence(cardano_json_parse_context_t* ctx, cardano_buffe
 {
   if ((ctx->offset + 4U) > ctx->length)
   {
-    set_last_error(ctx, "Not enough characters for Unicode escape sequence");
+    set_last_error(ctx, CARDANO_ERROR_INVALID_JSON, "Not enough characters for Unicode escape sequence");
     return false;
   }
 
@@ -159,7 +160,7 @@ cardano_handle_unicode_sequence(cardano_json_parse_context_t* ctx, cardano_buffe
   {
     if (!isxdigit((unsigned char)ctx->input[ctx->offset + i]))
     {
-      set_last_error(ctx, "Invalid character in Unicode escape sequence");
+      set_last_error(ctx, CARDANO_ERROR_INVALID_JSON, "Invalid character in Unicode escape sequence");
       return false;
     }
   }
@@ -168,57 +169,66 @@ cardano_handle_unicode_sequence(cardano_json_parse_context_t* ctx, cardano_buffe
 
   if (high < 0)
   {
-    set_last_error(ctx, "Invalid Unicode escape sequence");
+    set_last_error(ctx, CARDANO_ERROR_INVALID_JSON, "Invalid Unicode escape sequence");
     return false;
   }
 
   size_t consumed = UNICODE_BASIC_ESCAPE_LEN;
 
-  if ((high >= 0xd800) && (high <= 0xdbff) && ((ctx->offset + 10U) <= ctx->length))
+  if ((high >= 0xdc00) && (high <= 0xdfff))
   {
-    if (((char)ctx->input[ctx->offset + 4U] == (char)'\\') && ((char)ctx->input[ctx->offset + 5U] == (char)'u'))
+    set_last_error(ctx, CARDANO_ERROR_INVALID_JSON, "Unpaired low surrogate");
+    return false;
+  }
+
+  if ((high >= 0xd800) && (high <= 0xdbff))
+  {
+    if (((ctx->offset + 10U) > ctx->length) || ((char)ctx->input[ctx->offset + 4U] != (char)'\\') || ((char)ctx->input[ctx->offset + 5U] != (char)'u'))
     {
-      for (size_t i = 6U; i < 10U; ++i)
+      set_last_error(ctx, CARDANO_ERROR_INVALID_JSON, "Missing low surrogate");
+      return false;
+    }
+
+    for (size_t i = 6U; i < 10U; ++i)
+    {
+      if (!isxdigit((unsigned char)ctx->input[ctx->offset + i]))
       {
-        if (!isxdigit((unsigned char)ctx->input[ctx->offset + i]))
-        {
-          set_last_error(ctx, "Invalid character in second Unicode escape sequence");
-          return false;
-        }
-      }
-
-      int32_t low = cardano_parse_unicode_escape(&ctx->input[ctx->offset + 6U]);
-
-      if ((low >= 0xdc00) && (low <= 0xdfff))
-      {
-        uint32_t masked_high = (uint32_t)high & 0x3ffU;
-        uint32_t masked_low  = (uint32_t)low & 0x3ffU;
-        uint32_t codepoint   = 0x10000U + (masked_high << 10U) + masked_low;
-
-        char   utf8_buf[4]   = { 0 };
-        size_t bytes_written = cardano_encode_utf8((int32_t)codepoint, utf8_buf);
-
-        if (bytes_written == 0U)
-        {
-          set_last_error(ctx, "Failed to encode surrogate pair as UTF-8");
-          return false;
-        }
-
-        cardano_error_t result = cardano_buffer_write(buf, (byte_t*)&utf8_buf[0], bytes_written);
-
-        if (result != CARDANO_SUCCESS)
-        {
-          set_last_error(ctx, cardano_error_to_string(result));
-          return false;
-        }
-
-        consumed = UNICODE_SURROGATE_PAIR_LEN;
-      }
-      else
-      {
-        set_last_error(ctx, "Invalid surrogate pair in Unicode escape sequence");
+        set_last_error(ctx, CARDANO_ERROR_INVALID_JSON, "Invalid character in second Unicode escape sequence");
         return false;
       }
+    }
+
+    int32_t low = cardano_parse_unicode_escape(&ctx->input[ctx->offset + 6U]);
+
+    if ((low >= 0xdc00) && (low <= 0xdfff))
+    {
+      uint32_t masked_high = (uint32_t)high & 0x3ffU;
+      uint32_t masked_low  = (uint32_t)low & 0x3ffU;
+      uint32_t codepoint   = 0x10000U + (masked_high << 10U) + masked_low;
+
+      char   utf8_buf[4]   = { 0 };
+      size_t bytes_written = cardano_encode_utf8((int32_t)codepoint, utf8_buf);
+
+      if (bytes_written == 0U)
+      {
+        set_last_error(ctx, CARDANO_ERROR_INVALID_JSON, "Failed to encode surrogate pair as UTF-8");
+        return false;
+      }
+
+      cardano_error_t result = cardano_buffer_write(buf, (byte_t*)&utf8_buf[0], bytes_written);
+
+      if (result != CARDANO_SUCCESS)
+      {
+        set_last_error(ctx, result, cardano_error_to_string(result));
+        return false;
+      }
+
+      consumed = UNICODE_SURROGATE_PAIR_LEN;
+    }
+    else
+    {
+      set_last_error(ctx, CARDANO_ERROR_INVALID_JSON, "Invalid surrogate pair in Unicode escape sequence");
+      return false;
     }
   }
   else
@@ -228,7 +238,7 @@ cardano_handle_unicode_sequence(cardano_json_parse_context_t* ctx, cardano_buffe
 
     if (bytes_written == 0U)
     {
-      set_last_error(ctx, "Failed to encode Unicode character as UTF-8");
+      set_last_error(ctx, CARDANO_ERROR_INVALID_JSON, "Failed to encode Unicode character as UTF-8");
       return false;
     }
 
@@ -236,7 +246,7 @@ cardano_handle_unicode_sequence(cardano_json_parse_context_t* ctx, cardano_buffe
 
     if (result != CARDANO_SUCCESS)
     {
-      set_last_error(ctx, cardano_error_to_string(result));
+      set_last_error(ctx, result, cardano_error_to_string(result));
       return false;
     }
   }
@@ -250,7 +260,7 @@ cardano_handle_escape_sequence(cardano_json_parse_context_t* ctx, cardano_buffer
 {
   if (ctx->offset >= ctx->length)
   {
-    set_last_error(ctx, "Unexpected end of input in escape sequence");
+    set_last_error(ctx, CARDANO_ERROR_INVALID_JSON, "Unexpected end of input in escape sequence");
     return false;
   }
 
@@ -292,13 +302,13 @@ cardano_handle_escape_sequence(cardano_json_parse_context_t* ctx, cardano_buffer
       }
       return true;
     default:
-      set_last_error(ctx, "Invalid escape sequence");
+      set_last_error(ctx, CARDANO_ERROR_INVALID_JSON, "Invalid escape sequence");
       return false;
   }
 
   if (result != CARDANO_SUCCESS)
   {
-    set_last_error(ctx, cardano_error_to_string(result));
+    set_last_error(ctx, result, cardano_error_to_string(result));
     return false;
   }
 
@@ -314,7 +324,7 @@ cardano_parse_string_value(cardano_json_parse_context_t* ctx)
 
   if ((ctx->offset >= ctx->length) || ((char)ctx->input[ctx->offset] != (char)'\"'))
   {
-    set_last_error(ctx, "Invalid JSON string start");
+    set_last_error(ctx, CARDANO_ERROR_INVALID_JSON, "Invalid JSON string start");
 
     return NULL;
   }
@@ -325,10 +335,12 @@ cardano_parse_string_value(cardano_json_parse_context_t* ctx)
 
   if (buf == NULL)
   {
-    set_last_error(ctx, "Memory allocation failed");
+    set_last_error(ctx, CARDANO_ERROR_MEMORY_ALLOCATION_FAILED, "Memory allocation failed");
 
     return NULL;
   }
+
+  bool closed = false;
 
   while (ctx->offset < ctx->length)
   {
@@ -337,7 +349,15 @@ cardano_parse_string_value(cardano_json_parse_context_t* ctx)
     if (c == '\"')
     {
       ++ctx->offset;
+      closed = true;
       break;
+    }
+
+    if ((unsigned char)c < 0x20U)
+    {
+      cardano_buffer_unref(&buf);
+      set_last_error(ctx, CARDANO_ERROR_INVALID_JSON, "Unescaped control character in JSON string");
+      return NULL;
     }
 
     if (c == '\\')
@@ -362,12 +382,19 @@ cardano_parse_string_value(cardano_json_parse_context_t* ctx)
     }
   }
 
+  if (!closed)
+  {
+    cardano_buffer_unref(&buf);
+    set_last_error(ctx, CARDANO_ERROR_INVALID_JSON, "Unterminated JSON string");
+    return NULL;
+  }
+
   cardano_json_object_t* obj = cardano_json_object_new();
 
   if (obj == NULL)
   {
     cardano_buffer_unref(&buf);
-    set_last_error(ctx, "Memory allocation failed");
+    set_last_error(ctx, CARDANO_ERROR_MEMORY_ALLOCATION_FAILED, "Memory allocation failed");
 
     return NULL;
   }
@@ -378,7 +405,7 @@ cardano_parse_string_value(cardano_json_parse_context_t* ctx)
   {
     cardano_buffer_unref(&buf);
     cardano_json_object_unref(&obj);
-    set_last_error(ctx, cardano_error_to_string(result));
+    set_last_error(ctx, result, cardano_error_to_string(result));
 
     return NULL;
   }
@@ -394,113 +421,112 @@ cardano_parse_number_value(cardano_json_parse_context_t* ctx)
 {
   cardano_skip_whitespace(ctx);
 
-  const char* start = &ctx->input[ctx->offset];
-  const char* end   = start;
+  const size_t start = ctx->offset;
+  size_t       end   = start;
 
-  while (
-    (end < &ctx->input[ctx->length]) &&
-    (isdigit((unsigned char)*end) ||
-     (*end == '.') ||
-     (*end == 'e') ||
-     (*end == 'E') ||
-     (*end == '-') ||
-     (*end == '+')))
+  if ((end < ctx->length) && ((char)ctx->input[end] == (char)'-'))
   {
     ++end;
+  }
+
+  if ((end >= ctx->length) || ((char)ctx->input[end] < (char)'0') || ((char)ctx->input[end] > (char)'9'))
+  {
+    set_last_error(ctx, CARDANO_ERROR_INVALID_JSON, "Invalid JSON number");
+    return NULL;
+  }
+
+  if ((char)ctx->input[end] == (char)'0')
+  {
+    ++end;
+  }
+  else
+  {
+    while ((end < ctx->length) && ((char)ctx->input[end] >= (char)'0') && ((char)ctx->input[end] <= (char)'9'))
+    {
+      ++end;
+    }
+  }
+
+  bool is_real = false;
+
+  if ((end < ctx->length) && ((char)ctx->input[end] == (char)'.'))
+  {
+    is_real = true;
+    ++end;
+    const size_t fraction_start = end;
+
+    while ((end < ctx->length) && ((char)ctx->input[end] >= (char)'0') && ((char)ctx->input[end] <= (char)'9'))
+    {
+      ++end;
+    }
+
+    if (end == fraction_start)
+    {
+      set_last_error(ctx, CARDANO_ERROR_INVALID_JSON, "Invalid JSON fraction");
+      return NULL;
+    }
+  }
+
+  if ((end < ctx->length) && (((char)ctx->input[end] == (char)'e') || ((char)ctx->input[end] == (char)'E')))
+  {
+    is_real = true;
+    ++end;
+
+    if ((end < ctx->length) && (((char)ctx->input[end] == (char)'+') || ((char)ctx->input[end] == (char)'-')))
+    {
+      ++end;
+    }
+
+    const size_t exponent_start = end;
+
+    while ((end < ctx->length) && ((char)ctx->input[end] >= (char)'0') && ((char)ctx->input[end] <= (char)'9'))
+    {
+      ++end;
+    }
+
+    if (end == exponent_start)
+    {
+      set_last_error(ctx, CARDANO_ERROR_INVALID_JSON, "Invalid JSON exponent");
+      return NULL;
+    }
+  }
+
+  if ((end < ctx->length) && ((char)ctx->input[end] != (char)',') && ((char)ctx->input[end] != (char)']') && ((char)ctx->input[end] != (char)'}') && ((char)ctx->input[end] != (char)' ') && ((char)ctx->input[end] != (char)'\t') && ((char)ctx->input[end] != (char)'\r') && ((char)ctx->input[end] != (char)'\n'))
+  {
+    set_last_error(ctx, CARDANO_ERROR_INVALID_JSON, "Invalid JSON number delimiter");
+    return NULL;
   }
 
   cardano_json_object_t* obj = cardano_json_object_new();
 
   if (obj == NULL)
   {
-    set_last_error(ctx, "Memory allocation failed");
-
+    set_last_error(ctx, CARDANO_ERROR_MEMORY_ALLOCATION_FAILED, "Memory allocation failed");
     return NULL;
   }
 
-  obj->type         = CARDANO_JSON_OBJECT_TYPE_NUMBER;
-  obj->uint_value   = 0;
-  obj->int_value    = 0;
-  obj->double_value = 0.0;
+  obj->type        = CARDANO_JSON_OBJECT_TYPE_NUMBER;
+  obj->is_negative = (char)ctx->input[start] == (char)'-';
+  obj->is_real     = is_real;
+  obj->string      = cardano_buffer_new_from((const byte_t*)&ctx->input[start], end - start);
 
-  const uintptr_t start_addr  = (uintptr_t)((const void*)start);
-  const uintptr_t end_addr    = (uintptr_t)((const void*)end);
-  const uintptr_t actual_size = (uintptr_t)(end_addr - start_addr);
-
-  const size_t size = ((size_t)actual_size > 64U) ? 64U : (size_t)actual_size;
-
-  char temp[65] = { 0 };
-  cardano_safe_memcpy(temp, 64, start, size);
-  temp[size] = '\0';
-
-  bool is_out_of_range = false;
-  errno                = 0;
-  uint64_t uint_value  = strtoull(temp, NULL, 10);
-
-  if (errno != 0)
-  {
-    is_out_of_range = true;
-  }
-
-  obj->is_negative = (temp[0] == '-');
-  bool is_uint     = (end != start) && !is_out_of_range && !obj->is_negative;
-
-  if (is_uint)
-  {
-    obj->uint_value = uint_value;
-  }
-
-  is_out_of_range   = false;
-  errno             = 0;
-  int64_t int_value = strtoll(temp, NULL, 10);
-
-  if (errno != 0)
-  {
-    is_out_of_range = true;
-  }
-
-  bool is_int = ((end != start) && !is_out_of_range);
-
-  if (is_int)
-  {
-    obj->int_value = int_value;
-  }
-
-  is_out_of_range     = false;
-  errno               = 0;
-  double double_value = strtod(temp, NULL);
-
-  if (errno != 0)
-  {
-    is_out_of_range = true;
-  }
-
-  bool is_double = (end != start) && !is_out_of_range;
-
-  if (is_double)
-  {
-    obj->double_value = double_value;
-  }
-
-  obj->is_real = cardano_has_char('.', start, end) || cardano_has_char('e', start, end) || cardano_has_char('E', start, end);
-
-  if (!is_uint && !is_int && !is_double)
+  if (obj->string == NULL)
   {
     cardano_json_object_unref(&obj);
-    set_last_error(ctx, "Invalid JSON number");
-
+    set_last_error(ctx, CARDANO_ERROR_MEMORY_ALLOCATION_FAILED, "Memory allocation failed");
     return NULL;
   }
 
-  if (end >= start)
+  cardano_error_t result = cardano_buffer_write(obj->string, (const byte_t*)"\0", 1U);
+
+  if (result != CARDANO_SUCCESS)
   {
-    ctx->offset += actual_size;
-  }
-  else
-  {
-    set_last_error(ctx, "Invalid JSON number");
+    cardano_json_object_unref(&obj);
+    set_last_error(ctx, result, cardano_error_to_string(result));
     return NULL;
   }
+
+  ctx->offset = end;
 
   return obj;
 }
@@ -510,7 +536,7 @@ cardano_parse_object_value(cardano_json_parse_context_t* ctx)
 {
   if ((ctx->offset >= ctx->length) || ((char)ctx->input[ctx->offset] != (char)'{'))
   {
-    set_last_error(ctx, "Invalid JSON object start");
+    set_last_error(ctx, CARDANO_ERROR_INVALID_JSON, "Invalid JSON object start");
 
     return NULL;
   }
@@ -518,11 +544,17 @@ cardano_parse_object_value(cardano_json_parse_context_t* ctx)
   ++ctx->offset;
   ++ctx->depth;
 
+  if (ctx->depth >= (size_t)LIB_CARDANO_C_MAX_JSON_DEPTH)
+  {
+    set_last_error(ctx, CARDANO_ERROR_INVALID_JSON, "Maximum object depth exceeded");
+    return NULL;
+  }
+
   cardano_skip_whitespace(ctx);
 
   if (ctx->offset >= ctx->length)
   {
-    set_last_error(ctx, "Invalid JSON object start");
+    set_last_error(ctx, CARDANO_ERROR_INVALID_JSON, "Invalid JSON object start");
 
     return NULL;
   }
@@ -531,7 +563,7 @@ cardano_parse_object_value(cardano_json_parse_context_t* ctx)
 
   if (pairs == NULL)
   {
-    set_last_error(ctx, "Memory allocation failed");
+    set_last_error(ctx, CARDANO_ERROR_MEMORY_ALLOCATION_FAILED, "Memory allocation failed");
 
     return NULL;
   }
@@ -541,13 +573,14 @@ cardano_parse_object_value(cardano_json_parse_context_t* ctx)
   if ((ctx->offset < ctx->length) && ((char)ctx->input[ctx->offset] == (char)'}'))
   {
     ++ctx->offset;
+    --ctx->depth;
 
     cardano_json_object_t* obj = cardano_json_object_new();
 
     if (obj == NULL)
     {
       cardano_array_unref(&pairs);
-      set_last_error(ctx, "Memory allocation failed");
+      set_last_error(ctx, CARDANO_ERROR_MEMORY_ALLOCATION_FAILED, "Memory allocation failed");
 
       return NULL;
     }
@@ -563,26 +596,17 @@ cardano_parse_object_value(cardano_json_parse_context_t* ctx)
   {
     if (ctx->offset >= ctx->length)
     {
-      set_last_error(ctx, "Unexpected end of input");
+      set_last_error(ctx, CARDANO_ERROR_INVALID_JSON, "Unexpected end of input");
       cardano_array_unref(&pairs);
 
       return NULL;
-    }
-
-    if ((char)ctx->input[ctx->offset] == (char)'}')
-    {
-      ++ctx->offset;
-      --ctx->depth;
-
-      end_of_object = true;
-      continue;
     }
 
     cardano_json_object_t* key = cardano_parse_string_value(ctx);
 
     if (!key || (key->type != CARDANO_JSON_OBJECT_TYPE_STRING))
     {
-      set_last_error(ctx, "Invalid JSON object key");
+      set_last_error(ctx, CARDANO_ERROR_INVALID_JSON, "Invalid JSON object key");
       cardano_json_object_unref(&key);
       cardano_array_unref(&pairs);
 
@@ -593,7 +617,7 @@ cardano_parse_object_value(cardano_json_parse_context_t* ctx)
 
     if ((ctx->offset >= ctx->length) || ((char)ctx->input[ctx->offset] != (char)':'))
     {
-      set_last_error(ctx, "Invalid JSON object key-value separator");
+      set_last_error(ctx, CARDANO_ERROR_INVALID_JSON, "Invalid JSON object key-value separator");
       cardano_json_object_unref(&key);
       cardano_array_unref(&pairs);
 
@@ -604,7 +628,7 @@ cardano_parse_object_value(cardano_json_parse_context_t* ctx)
 
     if (ctx->depth >= (size_t)LIB_CARDANO_C_MAX_JSON_DEPTH)
     {
-      set_last_error(ctx, "Maximum object depth exceeded");
+      set_last_error(ctx, CARDANO_ERROR_INVALID_JSON, "Maximum object depth exceeded");
       cardano_json_object_unref(&key);
       cardano_array_unref(&pairs);
 
@@ -616,7 +640,7 @@ cardano_parse_object_value(cardano_json_parse_context_t* ctx)
 
     if (!val)
     {
-      set_last_error(ctx, "Invalid JSON object value");
+      set_last_error(ctx, CARDANO_ERROR_INVALID_JSON, "Invalid JSON object value");
       cardano_json_object_unref(&key);
       cardano_array_unref(&pairs);
 
@@ -631,7 +655,7 @@ cardano_parse_object_value(cardano_json_parse_context_t* ctx)
       cardano_json_object_unref(&val);
       cardano_array_unref(&pairs);
 
-      set_last_error(ctx, "Memory allocation failed");
+      set_last_error(ctx, CARDANO_ERROR_MEMORY_ALLOCATION_FAILED, "Memory allocation failed");
 
       return NULL;
     }
@@ -653,7 +677,7 @@ cardano_parse_object_value(cardano_json_parse_context_t* ctx)
     {
       cardano_array_unref(&pairs);
 
-      set_last_error(ctx, "Memory allocation failed");
+      set_last_error(ctx, CARDANO_ERROR_MEMORY_ALLOCATION_FAILED, "Memory allocation failed");
 
       return NULL;
     }
@@ -677,7 +701,7 @@ cardano_parse_object_value(cardano_json_parse_context_t* ctx)
     }
     else
     {
-      set_last_error(ctx, "Expected ',' or '}'");
+      set_last_error(ctx, CARDANO_ERROR_INVALID_JSON, "Expected ',' or '}'");
       cardano_array_unref(&pairs);
 
       return NULL;
@@ -689,7 +713,7 @@ cardano_parse_object_value(cardano_json_parse_context_t* ctx)
   if (obj == NULL)
   {
     cardano_array_unref(&pairs);
-    set_last_error(ctx, "Memory allocation failed");
+    set_last_error(ctx, CARDANO_ERROR_MEMORY_ALLOCATION_FAILED, "Memory allocation failed");
 
     return NULL;
   }
@@ -707,7 +731,7 @@ cardano_parse_array_value(cardano_json_parse_context_t* ctx)
 
   if ((ctx->offset >= ctx->length) || ((char)ctx->input[ctx->offset] != (char)'['))
   {
-    set_last_error(ctx, "Invalid JSON array start");
+    set_last_error(ctx, CARDANO_ERROR_INVALID_JSON, "Invalid JSON array start");
 
     return NULL;
   }
@@ -717,7 +741,7 @@ cardano_parse_array_value(cardano_json_parse_context_t* ctx)
 
   if (ctx->depth >= (size_t)LIB_CARDANO_C_MAX_JSON_DEPTH)
   {
-    set_last_error(ctx, "Maximum object depth exceeded");
+    set_last_error(ctx, CARDANO_ERROR_INVALID_JSON, "Maximum object depth exceeded");
 
     return NULL;
   }
@@ -726,7 +750,7 @@ cardano_parse_array_value(cardano_json_parse_context_t* ctx)
 
   if (arr == NULL)
   {
-    set_last_error(ctx, "Memory allocation failed");
+    set_last_error(ctx, CARDANO_ERROR_MEMORY_ALLOCATION_FAILED, "Memory allocation failed");
 
     return NULL;
   }
@@ -736,12 +760,13 @@ cardano_parse_array_value(cardano_json_parse_context_t* ctx)
   if ((ctx->offset < ctx->length) && ((char)ctx->input[ctx->offset] == (char)']'))
   {
     ctx->offset++;
+    --ctx->depth;
     cardano_json_object_t* obj = cardano_json_object_new();
 
     if (obj == NULL)
     {
       cardano_array_unref(&arr);
-      set_last_error(ctx, "Memory allocation failed");
+      set_last_error(ctx, CARDANO_ERROR_MEMORY_ALLOCATION_FAILED, "Memory allocation failed");
 
       return NULL;
     }
@@ -757,19 +782,10 @@ cardano_parse_array_value(cardano_json_parse_context_t* ctx)
   {
     if (ctx->offset >= ctx->length)
     {
-      set_last_error(ctx, "Unexpected end of input");
+      set_last_error(ctx, CARDANO_ERROR_INVALID_JSON, "Unexpected end of input");
       cardano_array_unref(&arr);
 
       return NULL;
-    }
-
-    if (((char)ctx->input[ctx->offset] == (char)']'))
-    {
-      ++ctx->offset;
-      --ctx->depth;
-
-      end_of_array = true;
-      continue;
     }
 
     // cppcheck-suppress misra-c2012-17.2; Reason: We need to use recursion to parse nested objects.
@@ -777,7 +793,7 @@ cardano_parse_array_value(cardano_json_parse_context_t* ctx)
 
     if (!val)
     {
-      set_last_error(ctx, "Invalid JSON array value");
+      set_last_error(ctx, CARDANO_ERROR_INVALID_JSON, "Invalid JSON array value");
       cardano_array_unref(&arr);
 
       return NULL;
@@ -792,7 +808,7 @@ cardano_parse_array_value(cardano_json_parse_context_t* ctx)
     {
       cardano_array_unref(&arr);
 
-      set_last_error(ctx, "Memory allocation failed");
+      set_last_error(ctx, CARDANO_ERROR_MEMORY_ALLOCATION_FAILED, "Memory allocation failed");
 
       return NULL;
     }
@@ -816,7 +832,7 @@ cardano_parse_array_value(cardano_json_parse_context_t* ctx)
     }
     else
     {
-      set_last_error(ctx, "Expected ',' or ']'");
+      set_last_error(ctx, CARDANO_ERROR_INVALID_JSON, "Expected ',' or ']'");
       cardano_array_unref(&arr);
 
       return NULL;
@@ -828,7 +844,7 @@ cardano_parse_array_value(cardano_json_parse_context_t* ctx)
   if (obj == NULL)
   {
     cardano_array_unref(&arr);
-    set_last_error(ctx, "Memory allocation failed");
+    set_last_error(ctx, CARDANO_ERROR_MEMORY_ALLOCATION_FAILED, "Memory allocation failed");
 
     return NULL;
   }
@@ -853,7 +869,7 @@ cardano_parse_literal(
 
     if (obj == NULL)
     {
-      set_last_error(ctx, "Memory allocation failed");
+      set_last_error(ctx, CARDANO_ERROR_MEMORY_ALLOCATION_FAILED, "Memory allocation failed");
       return NULL;
     }
 
@@ -877,7 +893,7 @@ cardano_parse_value(cardano_json_parse_context_t* ctx)
 
   if (ctx->offset >= ctx->length)
   {
-    set_last_error(ctx, "Unexpected end of input");
+    set_last_error(ctx, CARDANO_ERROR_INVALID_JSON, "Unexpected end of input");
     return NULL;
   }
 

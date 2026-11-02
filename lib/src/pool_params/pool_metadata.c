@@ -361,8 +361,7 @@ cardano_pool_metadata_set_url(
 
   cardano_safe_memcpy(pool_metadata->url, 129, url, url_size);
 
-  const size_t url_length        = cardano_safe_strlen(pool_metadata->url, 128);
-  pool_metadata->url[url_length] = '\0';
+  pool_metadata->url[url_size] = '\0';
 
   return CARDANO_SUCCESS;
 }

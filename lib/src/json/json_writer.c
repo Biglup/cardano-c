@@ -188,6 +188,33 @@ escape(const int32_t ch)
   return '\0';
 }
 
+/**
+ * \brief Writes one string byte with JSON escaping where required.
+ * \param[in,out] writer Writer receiving the escaped byte.
+ * \param[in] value The byte to write.
+ * \return CARDANO_SUCCESS or a buffer allocation error.
+ */
+static cardano_error_t
+write_escaped_byte(cardano_json_writer_t* writer, const byte_t value)
+{
+  const int32_t escaped = escape(value);
+
+  if (escaped != 0)
+  {
+    const byte_t bytes[2] = { '\\', (byte_t)escaped };
+    return cardano_buffer_write(writer->buffer, bytes, sizeof(bytes));
+  }
+
+  if (value < 0x20U)
+  {
+    const char   digits[] = "0123456789abcdef";
+    const byte_t bytes[6] = { '\\', 'u', '0', '0', (byte_t)digits[value >> 4U], (byte_t)digits[value & 15U] };
+    return cardano_buffer_write(writer->buffer, bytes, sizeof(bytes));
+  }
+
+  return cardano_buffer_write(writer->buffer, &value, 1U);
+}
+
 /* DECLARATIONS **************************************************************/
 
 cardano_json_writer_t*
@@ -247,6 +274,13 @@ cardano_json_writer_write_property_name(
     return;
   }
 
+  if (writer->current_frame[writer->depth].expect_value)
+  {
+    writer->last_error = CARDANO_ERROR_ENCODING;
+    cardano_object_set_last_error(&writer->base, "Previous property has no value.");
+    return;
+  }
+
   cardano_error_t result = CARDANO_SUCCESS;
 
   if (writer->current_frame[writer->depth].item_count > 0U)
@@ -269,21 +303,8 @@ cardano_json_writer_write_property_name(
 
   for (size_t i = 0; i < name_size; ++i)
   {
-    int32_t esc = escape(name[i]);
-
-    if (esc != 0)
-    {
-      result = cardano_buffer_write(writer->buffer, ESCAPE, 1);
-      cardano_json_writer_set_message_if_error(writer, result, "Failed to write escape character before string value.");
-
-      result = cardano_buffer_write(writer->buffer, (const byte_t*)&esc, 1);
-      cardano_json_writer_set_message_if_error(writer, result, "Failed to write escape character value.");
-    }
-    else
-    {
-      result = cardano_buffer_write(writer->buffer, (const byte_t*)&name[i], 1);
-      cardano_json_writer_set_message_if_error(writer, result, "Failed to write string value.");
-    }
+    result = write_escaped_byte(writer, (byte_t)name[i]);
+    cardano_json_writer_set_message_if_error(writer, result, "Failed to write escaped string byte.");
   }
 
   result = cardano_buffer_write(writer->buffer, QUOTES, 1);
@@ -508,7 +529,10 @@ cardano_json_writer_write_start_array(
   cardano_error_t result = cardano_buffer_write(writer->buffer, OPEN_ARRAY, 1);
   cardano_json_writer_set_message_if_error(writer, result, "Failed to write opening array.");
 
-  push_context(writer, CARDANO_JSON_CONTEXT_ARRAY);
+  if (writer->last_error == CARDANO_SUCCESS)
+  {
+    push_context(writer, CARDANO_JSON_CONTEXT_ARRAY);
+  }
 }
 
 void
@@ -542,6 +566,7 @@ cardano_json_writer_write_end_array(cardano_json_writer_t* writer)
   cardano_json_writer_set_message_if_error(writer, result, "Failed to write closing array.");
 
   writer->current_frame[writer->depth].item_count++;
+  writer->current_frame[writer->depth].expect_value = writer->current_frame[writer->depth].context == CARDANO_JSON_CONTEXT_ARRAY;
 }
 
 void
@@ -554,10 +579,12 @@ cardano_json_writer_write_start_object(cardano_json_writer_t* writer)
 
   cardano_json_stack_frame_t* current_context = &writer->current_frame[writer->depth];
 
-  if ((!current_context->expect_value) && (writer->depth > 0U))
+  const bool is_root_first = (current_context->context == CARDANO_JSON_CONTEXT_ROOT) && (current_context->item_count == 0U);
+
+  if (!is_root_first && !current_context->expect_value)
   {
     writer->last_error = CARDANO_ERROR_ENCODING;
-    cardano_object_set_last_error(&writer->base, "Object cannot be written as a property name.");
+    cardano_object_set_last_error(&writer->base, "Unexpected start of object.");
     return;
   }
 
@@ -579,7 +606,10 @@ cardano_json_writer_write_start_object(cardano_json_writer_t* writer)
   cardano_error_t result = cardano_buffer_write(writer->buffer, OPEN_OBJECT, 1);
   cardano_json_writer_set_message_if_error(writer, result, "Failed to write opening object.");
 
-  push_context(writer, CARDANO_JSON_CONTEXT_OBJECT);
+  if (writer->last_error == CARDANO_SUCCESS)
+  {
+    push_context(writer, CARDANO_JSON_CONTEXT_OBJECT);
+  }
 }
 
 void
@@ -594,6 +624,13 @@ cardano_json_writer_write_end_object(cardano_json_writer_t* writer)
   {
     writer->last_error = CARDANO_ERROR_ENCODING;
     cardano_object_set_last_error(&writer->base, "Cannot write end of object: Not in an object context.");
+    return;
+  }
+
+  if (writer->current_frame[writer->depth].expect_value)
+  {
+    writer->last_error = CARDANO_ERROR_ENCODING;
+    cardano_object_set_last_error(&writer->base, "Object property has no value.");
     return;
   }
 
@@ -613,6 +650,7 @@ cardano_json_writer_write_end_object(cardano_json_writer_t* writer)
   cardano_json_writer_set_message_if_error(writer, result, "Failed to write closing object.");
 
   writer->current_frame[writer->depth].item_count++;
+  writer->current_frame[writer->depth].expect_value = writer->current_frame[writer->depth].context == CARDANO_JSON_CONTEXT_ARRAY;
 }
 
 void
@@ -653,7 +691,7 @@ cardano_json_writer_write_raw_value(
     return;
   }
 
-  if (current_context->item_count > 0U)
+  if ((current_context->item_count > 0U) && (current_context->context == CARDANO_JSON_CONTEXT_ARRAY))
   {
     cardano_error_t result = cardano_buffer_write(writer->buffer, COMMA, 1);
     cardano_json_writer_set_message_if_error(writer, result, "Failed to write comma before raw value.");
@@ -705,26 +743,8 @@ cardano_json_writer_write_object(
     return;
   }
 
-  if (current_context->item_count > 0U)
-  {
-    cardano_error_t result = cardano_buffer_write(writer->buffer, COMMA, 1);
-    cardano_json_writer_set_message_if_error(writer, result, "Failed to write comma before object value.");
-  }
-
-  if ((writer->format == CARDANO_JSON_FORMAT_PRETTY) && (current_context->context == CARDANO_JSON_CONTEXT_ARRAY))
-  {
-    cardano_error_t result = cardano_buffer_write(writer->buffer, NEW_LINE, 1);
-    cardano_json_writer_set_message_if_error(writer, result, "Failed to write new line before object value.");
-
-    result = write_indentation(writer);
-    cardano_json_writer_set_message_if_error(writer, result, "Failed to write indentation before object value.");
-  }
-
   cardano_error_t result = cardano_write_json_object(writer, object);
   cardano_json_writer_set_message_if_error(writer, result, "Failed to write object value.");
-
-  current_context->item_count++;
-  current_context->expect_value = current_context->context == CARDANO_JSON_CONTEXT_ARRAY;
 }
 
 void
@@ -942,7 +962,7 @@ cardano_json_writer_write_buffer_as_hex(
 
   if (hex_str == NULL)
   {
-    writer->last_error = CARDANO_ERROR_POINTER_IS_NULL;
+    writer->last_error = CARDANO_ERROR_MEMORY_ALLOCATION_FAILED;
     cardano_object_set_last_error(&writer->base, "Failed to allocate memory for hex string.");
     return;
   }
@@ -1106,21 +1126,8 @@ cardano_json_writer_write_string(
 
   for (size_t i = 0; i < value_size; ++i)
   {
-    int32_t esc = escape(value[i]);
-
-    if (esc != 0)
-    {
-      result = cardano_buffer_write(writer->buffer, ESCAPE, 1);
-      cardano_json_writer_set_message_if_error(writer, result, "Failed to write escape character before string value.");
-
-      result = cardano_buffer_write(writer->buffer, (const byte_t*)&esc, 1);
-      cardano_json_writer_set_message_if_error(writer, result, "Failed to write escape character value.");
-    }
-    else
-    {
-      result = cardano_buffer_write(writer->buffer, (const byte_t*)&value[i], 1);
-      cardano_json_writer_set_message_if_error(writer, result, "Failed to write string value.");
-    }
+    result = write_escaped_byte(writer, (byte_t)value[i]);
+    cardano_json_writer_set_message_if_error(writer, result, "Failed to write escaped string byte.");
   }
 
   result = cardano_buffer_write(writer->buffer, QUOTES, 1);

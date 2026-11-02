@@ -45,7 +45,8 @@ extern "C" {
  * This opaque structure serves as the primary data type for interacting with JSON data in the library.
  * It can represent any valid JSON value, including objects, arrays, strings, numbers, booleans, or null.
  *
- * JSON objects are immutable once created, providing thread safety and consistency in shared contexts.
+ * Parsed values are immutable. Cached string serialization mutates internal state and requires
+ * external synchronization when the same object is accessed concurrently.
  */
 typedef struct cardano_json_object_t cardano_json_object_t;
 
@@ -89,6 +90,21 @@ CARDANO_NODISCARD
 CARDANO_EXPORT cardano_json_object_t* cardano_json_object_parse(const char* json, size_t size);
 
 /**
+ * \brief Parses one complete JSON value and reports syntax or allocation failures.
+ *
+ * Number tokens retain their exact decimal representation. Numeric getters return
+ * an error when conversion cannot represent the value in the requested type.
+ *
+ * \param[in] json Input bytes; need not be null-terminated. Must not be NULL.
+ * \param[in] size Number of input bytes.
+ * \param[out] result Receives one owned reference on success, or NULL on failure. Must not be NULL.
+ * \return CARDANO_SUCCESS, CARDANO_ERROR_POINTER_IS_NULL, CARDANO_ERROR_INVALID_JSON,
+ * or CARDANO_ERROR_MEMORY_ALLOCATION_FAILED.
+ */
+CARDANO_NODISCARD
+CARDANO_EXPORT cardano_error_t cardano_json_object_parse_ex(const char* json, size_t size, cardano_json_object_t** result);
+
+/**
  * \brief Serializes a JSON object into a JSON string.
  *
  * This function takes a JSON object and converts it into its JSON string representation.
@@ -102,7 +118,7 @@ CARDANO_EXPORT cardano_json_object_t* cardano_json_object_parse(const char* json
  *
  * \return A pointer to a null-terminated UTF-8 JSON string representing the serialized object.
  *         This points to an internal buffer and must not be modified or freed by the caller. The
- *         string is valid until the JSON object is released.
+ *         string is valid until the JSON object is released or successfully serialized in another format.
  *
  * \note If the function returns NULL, the value of \p length is undefined.
  *

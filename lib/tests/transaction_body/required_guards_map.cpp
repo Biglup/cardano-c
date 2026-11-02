@@ -50,6 +50,11 @@ static const char* DATUM_ENTRY_CBOR = "a18201581caabbccddeeff0011223344556677889
 static const char* EMPTY_MAP_CBOR   = "a0";
 static const char* DUPLICATE_CBOR   = "a28200581c00112233445566778899aabbccddeeff00112233445566778899aabbf68200581c00112233445566778899aabbccddeeff00112233445566778899aabbf6";
 
+static const char* LOW_KEY_HASH_CREDENTIAL_CBOR    = "8200581c00000000000000000000000000000000000000000000000000000000";
+static const char* HIGH_KEY_HASH_CREDENTIAL_CBOR   = "8200581cffffffffffffffffffffffffffffffffffffffffffffffffffffffff";
+static const char* LOW_SCRIPT_HASH_CREDENTIAL_CBOR = "8201581c00000000000000000000000000000000000000000000000000000000";
+static const char* SORTED_BY_ENCODED_KEY_CBOR      = "a38200581c00000000000000000000000000000000000000000000000000000000f68200581cfffffffffffffffffffffffffffffffffffffffffffffffffffffffff68201581c00000000000000000000000000000000000000000000000000000000d87980";
+
 /**
  * Creates a new default instance of the credential.
  * @return A new instance of the credential.
@@ -461,7 +466,7 @@ TEST(cardano_required_guards_map_to_cbor, canRoundTripDatumEntry)
   free(actual_cbor);
 }
 
-TEST(cardano_required_guards_map_to_cbor, preservesKeyInsertionOrder)
+TEST(cardano_required_guards_map_to_cbor, writesDecodedKeysSortedByCredential)
 {
   // Arrange
   cardano_required_guards_map_t* required_guards_map = new_default_required_guards_map(REVERSED_CBOR);
@@ -470,15 +475,15 @@ TEST(cardano_required_guards_map_to_cbor, preservesKeyInsertionOrder)
   cardano_credential_t* key = nullptr;
   EXPECT_EQ(cardano_required_guards_map_get_key_at(required_guards_map, 0, &key), CARDANO_SUCCESS);
 
-  cardano_credential_type_t type = CARDANO_CREDENTIAL_TYPE_KEY_HASH;
+  cardano_credential_type_t type = CARDANO_CREDENTIAL_TYPE_SCRIPT_HASH;
   EXPECT_EQ(cardano_credential_get_type(key, &type), CARDANO_SUCCESS);
-  EXPECT_EQ(type, CARDANO_CREDENTIAL_TYPE_SCRIPT_HASH);
+  EXPECT_EQ(type, CARDANO_CREDENTIAL_TYPE_KEY_HASH);
 
   // Act
   char* actual_cbor = encode_required_guards_map(required_guards_map);
 
   // Assert
-  EXPECT_STREQ(actual_cbor, REVERSED_CBOR);
+  EXPECT_STREQ(actual_cbor, CBOR);
 
   // Cleanup
   cardano_credential_unref(&key);
@@ -753,6 +758,72 @@ TEST(cardano_required_guards_map_insert, returnsErrorIfKeyIsDuplicated)
   // Cleanup
   cardano_credential_unref(&key);
   cardano_required_guards_map_unref(&required_guards_map);
+}
+
+TEST(cardano_required_guards_map_insert, keepsElementsSortedByCredential)
+{
+  // Arrange
+  cardano_required_guards_map_t* required_guards_map = nullptr;
+  cardano_error_t                error               = cardano_required_guards_map_new(&required_guards_map);
+
+  ASSERT_EQ(error, CARDANO_SUCCESS);
+
+  cardano_credential_t*  key_hash_credential    = new_default_credential(KEY_HASH_CREDENTIAL_CBOR);
+  cardano_credential_t*  script_hash_credential = new_default_credential(SCRIPT_HASH_CREDENTIAL_CBOR);
+  cardano_plutus_data_t* datum                  = new_default_plutus_data(PLUTUS_DATA_CBOR);
+
+  // Act
+  EXPECT_EQ(cardano_required_guards_map_insert(required_guards_map, script_hash_credential, datum), CARDANO_SUCCESS);
+  EXPECT_EQ(cardano_required_guards_map_insert(required_guards_map, key_hash_credential, nullptr), CARDANO_SUCCESS);
+
+  char* actual_cbor = encode_required_guards_map(required_guards_map);
+
+  // Assert
+  cardano_credential_t* first_key = nullptr;
+
+  EXPECT_EQ(cardano_required_guards_map_get_key_at(required_guards_map, 0, &first_key), CARDANO_SUCCESS);
+  EXPECT_TRUE(cardano_credential_equals(first_key, key_hash_credential));
+  EXPECT_STREQ(actual_cbor, CBOR);
+
+  // Cleanup
+  cardano_credential_unref(&first_key);
+  cardano_credential_unref(&key_hash_credential);
+  cardano_credential_unref(&script_hash_credential);
+  cardano_plutus_data_unref(&datum);
+  cardano_required_guards_map_unref(&required_guards_map);
+  free(actual_cbor);
+}
+
+TEST(cardano_required_guards_map_insert, sortsByTheEncodedCredentialTypeBeforeTheHash)
+{
+  // Arrange
+  cardano_required_guards_map_t* required_guards_map = nullptr;
+  cardano_error_t                error               = cardano_required_guards_map_new(&required_guards_map);
+
+  ASSERT_EQ(error, CARDANO_SUCCESS);
+
+  cardano_credential_t*  low_key_hash_credential    = new_default_credential(LOW_KEY_HASH_CREDENTIAL_CBOR);
+  cardano_credential_t*  high_key_hash_credential   = new_default_credential(HIGH_KEY_HASH_CREDENTIAL_CBOR);
+  cardano_credential_t*  low_script_hash_credential = new_default_credential(LOW_SCRIPT_HASH_CREDENTIAL_CBOR);
+  cardano_plutus_data_t* datum                      = new_default_plutus_data(PLUTUS_DATA_CBOR);
+
+  // Act
+  EXPECT_EQ(cardano_required_guards_map_insert(required_guards_map, low_script_hash_credential, datum), CARDANO_SUCCESS);
+  EXPECT_EQ(cardano_required_guards_map_insert(required_guards_map, high_key_hash_credential, nullptr), CARDANO_SUCCESS);
+  EXPECT_EQ(cardano_required_guards_map_insert(required_guards_map, low_key_hash_credential, nullptr), CARDANO_SUCCESS);
+
+  char* actual_cbor = encode_required_guards_map(required_guards_map);
+
+  // Assert
+  EXPECT_STREQ(actual_cbor, SORTED_BY_ENCODED_KEY_CBOR);
+
+  // Cleanup
+  cardano_credential_unref(&low_key_hash_credential);
+  cardano_credential_unref(&high_key_hash_credential);
+  cardano_credential_unref(&low_script_hash_credential);
+  cardano_plutus_data_unref(&datum);
+  cardano_required_guards_map_unref(&required_guards_map);
+  free(actual_cbor);
 }
 
 TEST(cardano_required_guards_map_insert, returnsErrorIfMemoryAllocationFails)

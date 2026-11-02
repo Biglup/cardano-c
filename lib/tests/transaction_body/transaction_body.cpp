@@ -3011,23 +3011,22 @@ TEST(cardano_transaction_body_from_cbor, roundTripsTheDijkstraGoldenBodyByteExac
   EXPECT_EQ(cardano_direct_deposit_map_get_length(direct_deposits), 1);
   EXPECT_EQ(cardano_account_balance_intervals_map_get_length(balance_intervals), 3);
 
-  // The golden vector keys its account balance intervals by reward account.
+  // The golden vector keys its account balance intervals by reward account, and the decoded map keeps them sorted by address bytes.
   cardano_reward_address_t*           first_account  = NULL;
   cardano_account_balance_interval_t* first_interval = NULL;
 
   EXPECT_EQ(cardano_account_balance_intervals_map_get_key_value_at(balance_intervals, 0, &first_account, &first_interval), CARDANO_SUCCESS);
-  EXPECT_STREQ(cardano_reward_address_get_string(first_account), "stake17x5mlmjchz76rg7l9pshxka2evgmt9x9rh87fxj09fh2r3qt8x42p");
+  EXPECT_STREQ(cardano_reward_address_get_string(first_account), "stake1uyq6r5u44wcm4geu20fx3zw5s3phxqwthf2gcraq6295h4crrgwu3");
 
   const uint64_t* first_lower_bound = cardano_account_balance_interval_get_inclusive_lower_bound(first_interval);
   const uint64_t* first_upper_bound = cardano_account_balance_interval_get_exclusive_upper_bound(first_interval);
 
-  EXPECT_NE(first_lower_bound, nullptr);
+  EXPECT_EQ(first_lower_bound, nullptr);
   EXPECT_NE(first_upper_bound, nullptr);
 
-  if ((first_lower_bound != nullptr) && (first_upper_bound != nullptr))
+  if (first_upper_bound != nullptr)
   {
-    EXPECT_EQ(*first_lower_bound, 100);
-    EXPECT_EQ(*first_upper_bound, 5000);
+    EXPECT_EQ(*first_upper_bound, 10000);
   }
 
   // The golden vector declares the required guards inside its sub transaction body.

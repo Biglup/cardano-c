@@ -555,3 +555,81 @@ TEST(cardano_ipv4_get_string_size, returnsTheSizeOfTheIpString)
   // Cleanup
   cardano_ipv4_unref(&ipv4);
 }
+
+TEST(cardano_ipv4_from_string, readsOnlyTheSpecifiedInputBytes)
+{
+  // Arrange
+  const char*  text  = "10.3.2.10";
+  const size_t size  = strlen(text);
+  char*        bytes = (char*)malloc(size);
+  ASSERT_NE(bytes, nullptr);
+  memcpy(bytes, text, size);
+  cardano_ipv4_t* address = nullptr;
+
+  // Act
+  const cardano_error_t result = cardano_ipv4_from_string(bytes, size, &address);
+
+  // Assert
+  EXPECT_EQ(result, CARDANO_SUCCESS);
+  EXPECT_STREQ(cardano_ipv4_get_string(address), text);
+
+  // Cleanup
+  cardano_ipv4_unref(&address);
+  free(bytes);
+}
+
+TEST(cardano_ipv4_from_string, ignoresBytesBeyondTheSpecifiedLength)
+{
+  // Arrange
+  const char*     text    = "10.3.2.10garbage";
+  cardano_ipv4_t* address = nullptr;
+
+  // Act
+  const cardano_error_t result = cardano_ipv4_from_string(text, 9U, &address);
+
+  // Assert
+  EXPECT_EQ(result, CARDANO_SUCCESS);
+  EXPECT_STREQ(cardano_ipv4_get_string(address), "10.3.2.10");
+
+  // Cleanup
+  cardano_ipv4_unref(&address);
+}
+
+TEST(cardano_ipv4_from_string, rejectsNonAddressCharacters)
+{
+  // Arrange
+  const char* invalid[] = { "1.2.3.4x", "+1.2.3.4", " 1.2.3.4", "1.2.3.4 ", "1..3.4", "1.2.3.4.5", "0000.2.3.4", "256.2.3.4" };
+
+  for (const char* text: invalid)
+  {
+    cardano_ipv4_t* address = nullptr;
+
+    // Act
+    const cardano_error_t result = cardano_ipv4_from_string(text, strlen(text), &address);
+
+    // Assert
+    EXPECT_EQ(result, CARDANO_ERROR_INVALID_ARGUMENT) << text;
+    EXPECT_EQ(address, nullptr);
+
+    // Cleanup
+    cardano_ipv4_unref(&address);
+  }
+}
+
+TEST(cardano_ipv4_from_string, rejectsEmbeddedNullCharacters)
+{
+  // Arrange
+  char text[]             = "10.3.2.10";
+  text[3]                 = '\0';
+  cardano_ipv4_t* address = nullptr;
+
+  // Act
+  const cardano_error_t result = cardano_ipv4_from_string(text, sizeof(text) - 1U, &address);
+
+  // Assert
+  EXPECT_EQ(result, CARDANO_ERROR_INVALID_ARGUMENT);
+  EXPECT_EQ(address, nullptr);
+
+  // Cleanup
+  cardano_ipv4_unref(&address);
+}

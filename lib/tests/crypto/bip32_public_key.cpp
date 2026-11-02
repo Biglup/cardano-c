@@ -778,3 +778,25 @@ TEST(cardano_bip32_public_key_to_hash, canComputeTheHash)
   cardano_bip32_public_key_unref(&public_key);
   cardano_blake2b_hash_unref(&hash);
 }
+
+TEST(cardano_bip32_public_key_derive, returnsErrorForInvalidCurvePoint)
+{
+  // Arrange
+  byte_t invalid_bytes[64] = { 0 };
+  memset(invalid_bytes, 2, sizeof(invalid_bytes));
+  cardano_bip32_public_key_t* key = NULL;
+  ASSERT_EQ(cardano_bip32_public_key_from_bytes(invalid_bytes, sizeof(invalid_bytes), &key), CARDANO_SUCCESS);
+  cardano_bip32_public_key_t* derived = NULL;
+  const uint32_t              path[]  = { 0 };
+
+  // Act
+  const cardano_error_t result = cardano_bip32_public_key_derive(key, path, 1, &derived);
+
+  // Assert
+  EXPECT_EQ(result, CARDANO_ERROR_GENERIC);
+  EXPECT_EQ(derived, nullptr);
+  EXPECT_EQ(cardano_bip32_public_key_refcount(key), 1U);
+
+  cardano_bip32_public_key_unref(&derived);
+  cardano_bip32_public_key_unref(&key);
+}

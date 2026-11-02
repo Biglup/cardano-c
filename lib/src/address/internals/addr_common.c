@@ -345,7 +345,7 @@ _cardano_is_valid_stake_address_prefix(const char* address, size_t length)
     ((length >= BECH32_PREFIX_STAKE_TESTNET_LENGTH) && (strncmp(address, BECH32_PREFIX_STAKE_TESTNET, BECH32_PREFIX_STAKE_TESTNET_LENGTH) == 0));
 }
 
-void
+cardano_error_t
 _cardano_to_bech32_addr(
   const byte_t*          data,
   size_t                 data_size,
@@ -361,11 +361,12 @@ _cardano_to_bech32_addr(
   const char* hrp      = _cardano_get_bech32_prefix(type, network_id, &hrp_size);
   size_t      size     = cardano_encoding_bech32_get_encoded_length(hrp, hrp_size, data, data_size);
 
-  assert(size <= address_size);
-  CARDANO_UNUSED(size);
+  if (size > address_size)
+  {
+    return CARDANO_ERROR_INSUFFICIENT_BUFFER_SIZE;
+  }
 
-  cardano_error_t result = cardano_encoding_bech32_encode(hrp, hrp_size, data, data_size, address, address_size);
-  CARDANO_UNUSED(result);
+  return cardano_encoding_bech32_encode(hrp, hrp_size, data, data_size, address, address_size);
 }
 
 void

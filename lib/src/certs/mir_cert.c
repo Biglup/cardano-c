@@ -266,7 +266,12 @@ cardano_mir_cert_from_cbor(cardano_cbor_reader_t* reader, cardano_mir_cert_t** m
       return to_pot_result;
     }
 
-    cardano_error_t create_mir_cert_result = cardano_mir_cert_new_to_other_pot(mir_to_pot_cert, mir_cert);
+    cardano_error_t create_mir_cert_result = cardano_cbor_validate_end_array(validator_name, reader);
+
+    if (create_mir_cert_result == CARDANO_SUCCESS)
+    {
+      create_mir_cert_result = cardano_mir_cert_new_to_other_pot(mir_to_pot_cert, mir_cert);
+    }
 
     cardano_mir_to_pot_cert_unref(&mir_to_pot_cert);
 
@@ -283,7 +288,12 @@ cardano_mir_cert_from_cbor(cardano_cbor_reader_t* reader, cardano_mir_cert_t** m
       return to_stake_creds_result;
     }
 
-    cardano_error_t create_mir_cert_result = cardano_mir_cert_new_to_stake_creds(mir_to_stake_creds_cert, mir_cert);
+    cardano_error_t create_mir_cert_result = cardano_cbor_validate_end_array(validator_name, reader);
+
+    if (create_mir_cert_result == CARDANO_SUCCESS)
+    {
+      create_mir_cert_result = cardano_mir_cert_new_to_stake_creds(mir_to_stake_creds_cert, mir_cert);
+    }
 
     cardano_mir_to_stake_creds_cert_unref(&mir_to_stake_creds_cert);
 

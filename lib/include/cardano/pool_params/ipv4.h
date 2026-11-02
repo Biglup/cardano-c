@@ -91,6 +91,10 @@ cardano_ipv4_new(const byte_t* data, size_t size, cardano_ipv4_t** ipv4);
  * that represents an IPv4 address in dotted-decimal notation (e.g., "192.168.1.1").
  * The function parses the string and converts it into a numerical IP address.
  *
+ * The function reads exactly \p size characters; no null terminator is required.
+ * Signs, whitespace, embedded nulls, and trailing characters within that range are rejected.
+ * Each of the four decimal components contains one to three digits and has a value from 0 to 255.
+ *
  * \param[in] string A pointer to a character array containing the IPv4 address in
  *                   dotted-decimal notation.
  * \param[in] size The length of the string, which should be a valid length for an IPv4

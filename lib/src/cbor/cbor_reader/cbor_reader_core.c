@@ -30,6 +30,7 @@
 #include "../cbor_initial_byte.h"
 #include "cbor_reader_collections.h"
 #include "cbor_reader_core.h"
+#include "cbor_reader_tags.h"
 
 #include <assert.h>
 #include <stdio.h>
@@ -596,15 +597,12 @@ _cbor_reader_skip_next_node(cardano_cbor_reader_t* reader, size_t* depth)
 
   while (state == CARDANO_CBOR_READER_STATE_TAG)
   {
-    cardano_cbor_tag_t    tag    = CARDANO_CBOR_TAG_SELF_DESCRIBE_CBOR;
-    const cardano_error_t result = cardano_cbor_reader_read_tag(reader, &tag);
+    const cardano_error_t result = _cbor_reader_skip_tag(reader);
 
     if (result != CARDANO_SUCCESS)
     {
       return result;
     }
-
-    CARDANO_UNUSED(tag);
 
     cardano_error_t peek_result = peek_state_core(reader, &state);
 
@@ -631,8 +629,8 @@ _cbor_reader_skip_next_node(cardano_cbor_reader_t* reader, size_t* depth)
     break;
     case CARDANO_CBOR_READER_STATE_NEGATIVE_INTEGER:
     {
-      int64_t               value  = 0;
-      const cardano_error_t result = cardano_cbor_reader_read_int(reader, &value);
+      uint64_t              value  = 0U;
+      const cardano_error_t result = cardano_cbor_reader_read_negative_int(reader, &value);
 
       if (result != CARDANO_SUCCESS)
       {

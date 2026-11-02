@@ -26,6 +26,7 @@
 
 #include "../../collections/array.h"
 #include <cardano/buffer.h>
+#include <cardano/json/json_format.h>
 #include <cardano/json/json_object_type.h>
 #include <cardano/object.h>
 #include <cardano/typedefs.h>
@@ -53,7 +54,7 @@ typedef struct cardano_json_object_t
     cardano_json_object_type_t type;               /**< Type of the JSON value. */
     cardano_array_t*           pairs;              /**< Array of key-value pairs for objects. */
     cardano_array_t*           array;              /**< Array of elements for JSON arrays. */
-    cardano_buffer_t*          string;             /**< Buffer holding the UTF-8 string value. */
+    cardano_buffer_t*          string;             /**< Buffer holding a UTF-8 string or validated number token, including its terminator. */
     bool                       is_real;            /**< Indicates if the number is a floating-point value. */
     bool                       is_negative;        /**< Indicates if the number is negative. */
     int64_t                    int_value;          /**< Signed integer value for JSON numbers. */
@@ -61,6 +62,7 @@ typedef struct cardano_json_object_t
     double                     double_value;       /**< Floating-point value for JSON numbers. */
     bool                       bool_value;         /**< Boolean value for JSON booleans. */
     char*                      json_string;        /**< String representation of the JSON value. */
+    cardano_json_format_t      json_format;        /**< Format of the cached serialization. */
     size_t                     json_string_length; /**< Length of the string representation. */
 
 } cardano_json_object_t;

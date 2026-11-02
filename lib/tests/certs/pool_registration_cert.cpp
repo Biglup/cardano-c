@@ -26,6 +26,7 @@
 #include "../json_helpers.h"
 #include "tests/allocators_helpers.h"
 #include <cardano/cbor/cbor_reader.h>
+#include <cardano/certs/certificate.h>
 #include <cardano/certs/pool_registration_cert.h>
 #include <cardano/crypto/blake2b_hash.h>
 
@@ -812,4 +813,47 @@ TEST(cardano_pool_registration_cert_to_cbor, writesElevenElementsWhenBlsKeyIsSet
   cardano_cbor_writer_unref(&writer2);
   free(hex);
   free(hex2);
+}
+
+TEST(cardano_pool_registration_cert_from_cbor, rejectsExtraDeclaredFieldWithoutReturningPartialCertificate)
+{
+  // Arrange
+  const std::string base        = std::string("8b") + std::string(CBOR).substr(2);
+  const std::string encodings[] = { base, base + "00" };
+
+  for (const std::string& encoding: encodings)
+  {
+    cardano_cbor_reader_t*            reader      = cardano_cbor_reader_from_hex(encoding.data(), encoding.size());
+    cardano_pool_registration_cert_t* certificate = nullptr;
+
+    // Act
+    const cardano_error_t result = cardano_pool_registration_cert_from_cbor(reader, &certificate);
+
+    // Assert
+    EXPECT_NE(result, CARDANO_SUCCESS);
+    EXPECT_EQ(certificate, nullptr);
+
+    // Cleanup
+    cardano_pool_registration_cert_unref(&certificate);
+    cardano_cbor_reader_unref(&reader);
+  }
+}
+
+TEST(cardano_pool_registration_cert_from_cbor, releasesPartialCertificateWhenDecodedThroughUnion)
+{
+  // Arrange
+  const std::string      encoding    = std::string("8b") + std::string(CBOR).substr(2) + "00";
+  cardano_cbor_reader_t* reader      = cardano_cbor_reader_from_hex(encoding.data(), encoding.size());
+  cardano_certificate_t* certificate = nullptr;
+
+  // Act
+  const cardano_error_t result = cardano_certificate_from_cbor(reader, &certificate);
+
+  // Assert
+  EXPECT_NE(result, CARDANO_SUCCESS);
+  EXPECT_EQ(certificate, nullptr);
+
+  // Cleanup
+  cardano_certificate_unref(&certificate);
+  cardano_cbor_reader_unref(&reader);
 }

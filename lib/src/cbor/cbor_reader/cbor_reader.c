@@ -449,6 +449,12 @@ cardano_cbor_reader_read_encoded_value(cardano_cbor_reader_t* reader, cardano_bu
 
   *encoded_value = cardano_buffer_slice(reader->buffer, initial_offset, reader->offset);
 
+  if (*encoded_value == NULL)
+  {
+    cardano_cbor_reader_set_last_error(reader, "Failed to allocate encoded value.");
+    return CARDANO_ERROR_MEMORY_ALLOCATION_FAILED;
+  }
+
   return CARDANO_SUCCESS;
 }
 
