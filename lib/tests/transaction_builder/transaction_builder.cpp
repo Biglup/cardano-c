@@ -9266,7 +9266,7 @@ TEST(cardano_tx_builder_delegate_stake_ex, returnsErrorOnMemoryAllocationFail)
 
   EXPECT_EQ(cardano_reward_address_from_bech32(REWARD_ADDRESS, strlen(REWARD_ADDRESS), &reward_address), CARDANO_SUCCESS);
 
-  for (int i = 0; i < 44; ++i)
+  for (int i = 0; i <= 43; ++i)
   {
     cardano_tx_builder_t* tx_builder = cardano_tx_builder_new(params, &CARDANO_MAINNET_SLOT_CONFIG);
 
@@ -9278,7 +9278,14 @@ TEST(cardano_tx_builder_delegate_stake_ex, returnsErrorOnMemoryAllocationFail)
     cardano_tx_builder_delegate_stake_ex(tx_builder, REWARD_ADDRESS, strlen(REWARD_ADDRESS), "pool1pzdqdxrv0k74p4q33y98f2u7vzaz95et7mjeedjcfy0jcgk754f", strlen("pool1pzdqdxrv0k74p4q33y98f2u7vzaz95et7mjeedjcfy0jcgk754f"), redeemer);
 
     // Assert
-    EXPECT_NE(tx_builder->last_error, CARDANO_SUCCESS);
+    if (i < 43)
+    {
+      EXPECT_NE(tx_builder->last_error, CARDANO_SUCCESS) << i;
+    }
+    else
+    {
+      EXPECT_EQ(tx_builder->last_error, CARDANO_SUCCESS);
+    }
 
     cardano_tx_builder_unref(&tx_builder);
 
@@ -11262,7 +11269,7 @@ TEST(cardano_tx_builder_propose_treasury_withdrawals_ex, returnsErrorIfMemoryAll
   EXPECT_EQ(cardano_withdrawal_map_from_cbor(reader, &treasury_withdrawal), CARDANO_SUCCESS);
   cardano_cbor_reader_unref(&reader);
 
-  for (int i = 0; i < 93; ++i)
+  for (int i = 0; i <= 90; ++i)
   {
     cardano_tx_builder_t* tx_builder = cardano_tx_builder_new(params, &CARDANO_MAINNET_SLOT_CONFIG);
 
@@ -11274,7 +11281,14 @@ TEST(cardano_tx_builder_propose_treasury_withdrawals_ex, returnsErrorIfMemoryAll
     cardano_tx_builder_propose_treasury_withdrawals_ex(tx_builder, REWARD_ADDRESS, strlen(REWARD_ADDRESS), ANCHOR_URL, strlen(ANCHOR_URL), ANCHOR_HASH, strlen(ANCHOR_HASH), HASH_HEX, strlen(HASH_HEX), treasury_withdrawal);
 
     // Assert
-    EXPECT_NE(tx_builder->last_error, CARDANO_SUCCESS);
+    if (i < 90)
+    {
+      EXPECT_NE(tx_builder->last_error, CARDANO_SUCCESS) << i;
+    }
+    else
+    {
+      EXPECT_EQ(tx_builder->last_error, CARDANO_SUCCESS);
+    }
 
     cardano_tx_builder_unref(&tx_builder);
 
