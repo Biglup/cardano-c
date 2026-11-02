@@ -649,7 +649,7 @@ TEST(cardano_relays_to_cip116_json, canConvertListOfRelaysToCip116Json)
 
   uint16_t        port = 3000;
   cardano_ipv4_t* ipv4 = NULL;
-  EXPECT_EQ(cardano_ipv4_from_string("127.0.0.1", 10, &ipv4), CARDANO_SUCCESS);
+  EXPECT_EQ(cardano_ipv4_from_string("127.0.0.1", strlen("127.0.0.1"), &ipv4), CARDANO_SUCCESS);
 
   cardano_single_host_addr_relay_t* addr_relay = NULL;
   EXPECT_EQ(cardano_single_host_addr_relay_new(&port, ipv4, NULL, &addr_relay), CARDANO_SUCCESS);
