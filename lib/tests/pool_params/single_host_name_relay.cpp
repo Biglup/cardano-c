@@ -891,3 +891,22 @@ TEST(cardano_single_host_name_relay_from_cbor, acceptsMaximumUnsigned16BitPort)
   cardano_single_host_name_relay_unref(&relay);
   cardano_cbor_reader_unref(&reader);
 }
+
+TEST(cardano_single_host_name_relay_set_dns, replacesShorterBoundedText)
+{
+  // Arrange
+  cardano_single_host_name_relay_t* relay = nullptr;
+  ASSERT_EQ(cardano_single_host_name_relay_new(nullptr, URL, strlen(URL), &relay), CARDANO_SUCCESS);
+  const char dns[] = { 'a', '.', 'b' };
+
+  // Act
+  const cardano_error_t result = cardano_single_host_name_relay_set_dns(dns, sizeof(dns), relay);
+
+  // Assert
+  EXPECT_EQ(result, CARDANO_SUCCESS);
+  EXPECT_EQ(cardano_single_host_name_relay_get_dns_size(relay), sizeof(dns) + 1U);
+  EXPECT_STREQ(cardano_single_host_name_relay_get_dns(relay), "a.b");
+
+  // Cleanup
+  cardano_single_host_name_relay_unref(&relay);
+}

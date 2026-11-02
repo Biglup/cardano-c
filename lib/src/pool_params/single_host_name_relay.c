@@ -423,6 +423,8 @@ cardano_single_host_name_relay_set_dns(
 
   cardano_safe_memcpy((void*)&single_host_name_relay->dns[0], 65, dns, dns_size);
 
+  single_host_name_relay->dns[dns_size] = '\0';
+
   return CARDANO_SUCCESS;
 }
 

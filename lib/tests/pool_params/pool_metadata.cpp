@@ -791,7 +791,7 @@ TEST(cardano_pool_metadata_set_url, setsTheUrl)
   ASSERT_EQ(error, CARDANO_SUCCESS);
 
   // Act
-  error = cardano_pool_metadata_set_url("https://example.com/this-is-a-long-url", 40, pool_metadata);
+  error = cardano_pool_metadata_set_url("https://example.com/this-is-a-long-url", strlen("https://example.com/this-is-a-long-url"), pool_metadata);
 
   // Assert
   EXPECT_EQ(error, CARDANO_SUCCESS);
@@ -1046,4 +1046,31 @@ TEST(cardano_pool_metadata_to_cip116_json, returnsErrorIfWriterIsNull)
   // Cleanup
   cardano_pool_metadata_unref(&metadata);
   cardano_blake2b_hash_unref(&hash);
+}
+
+TEST(cardano_pool_metadata_set_url, replacesShorterBoundedTextAndEmptyUrl)
+{
+  // Arrange
+  cardano_pool_metadata_t* metadata = nullptr;
+  ASSERT_EQ(cardano_pool_metadata_from_hash_hex(URL, strlen(URL), HASH, strlen(HASH), &metadata), CARDANO_SUCCESS);
+  const char url[] = { 'a', 'b', 'c' };
+
+  // Act
+  const cardano_error_t result = cardano_pool_metadata_set_url(url, sizeof(url), metadata);
+
+  // Assert
+  EXPECT_EQ(result, CARDANO_SUCCESS);
+  EXPECT_EQ(cardano_pool_metadata_get_url_size(metadata), sizeof(url));
+  EXPECT_STREQ(cardano_pool_metadata_get_url(metadata), "abc");
+
+  // Act
+  const cardano_error_t empty_result = cardano_pool_metadata_set_url("", 0U, metadata);
+
+  // Assert
+  EXPECT_EQ(empty_result, CARDANO_SUCCESS);
+  EXPECT_EQ(cardano_pool_metadata_get_url_size(metadata), 0U);
+  EXPECT_STREQ(cardano_pool_metadata_get_url(metadata), "");
+
+  // Cleanup
+  cardano_pool_metadata_unref(&metadata);
 }

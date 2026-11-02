@@ -283,6 +283,8 @@ cardano_multi_host_name_relay_set_dns(
 
   cardano_safe_memcpy((void*)&multi_host_name_relay->dns, 65U, dns, dns_size);
 
+  multi_host_name_relay->dns[dns_size] = '\0';
+
   return CARDANO_SUCCESS;
 }
 
