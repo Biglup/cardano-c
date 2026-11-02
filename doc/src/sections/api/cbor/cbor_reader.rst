@@ -127,3 +127,11 @@ when the full CBOR integer range is required.
 ------------
 
 .. doxygenfunction:: cardano_cbor_reader_deep_clone
+
+Semantic tag range
+------------------
+
+``cardano_cbor_reader_read_tag`` and ``cardano_cbor_reader_peek_tag``
+return ``CARDANO_ERROR_INTEGER_OVERFLOW`` for tags greater than ``INT32_MAX``.
+The output and reader position remain unchanged. Skipping a value or extracting
+its encoded bytes supports the full unsigned 64-bit tag range.

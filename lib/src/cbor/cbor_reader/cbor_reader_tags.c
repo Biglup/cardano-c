@@ -41,7 +41,7 @@
  * position in the data stream.
  *
  * \param[in] reader A pointer to the \ref cardano_cbor_reader_t instance representing the CBOR stream to peek into.
- * \param[out] tag A pointer to a `cardano_cbor_tag_t` variable where the peeked tag value will be stored.
+ * \param[out] tag A pointer to a `uint64_t` variable where the peeked tag value will be stored.
  * \param[out] bytes_read A pointer to a `size_t` variable where the number of bytes that the tag occupies in
  * the stream will be stored.
  *
@@ -51,7 +51,7 @@
  * error code will be returned to indicate the failure reason.
  */
 static cardano_error_t
-peek_tag_core(cardano_cbor_reader_t* reader, cardano_cbor_tag_t* tag, size_t* bytes_read)
+peek_tag_core(cardano_cbor_reader_t* reader, uint64_t* tag, size_t* bytes_read)
 {
   if (reader == NULL)
   {
@@ -91,7 +91,7 @@ peek_tag_core(cardano_cbor_reader_t* reader, cardano_cbor_tag_t* tag, size_t* by
     return decode_result;
   }
 
-  *tag        = (cardano_cbor_tag_t)unsigned_int;
+  *tag        = unsigned_int;
   *bytes_read = read;
 
   return CARDANO_SUCCESS;
@@ -102,14 +102,20 @@ peek_tag_core(cardano_cbor_reader_t* reader, cardano_cbor_tag_t* tag, size_t* by
 cardano_error_t
 _cbor_reader_read_tag(cardano_cbor_reader_t* reader, cardano_cbor_tag_t* tag)
 {
-  cardano_cbor_tag_t read_tag  = 0;
-  size_t             bytesRead = 0;
+  uint64_t read_tag  = 0U;
+  size_t   bytesRead = 0;
 
   cardano_error_t result = peek_tag_core(reader, &read_tag, &bytesRead);
 
   if (result != CARDANO_SUCCESS)
   {
     return result;
+  }
+
+  if (read_tag > (uint64_t)INT32_MAX)
+  {
+    cardano_cbor_reader_set_last_error(reader, "Semantic tag out of range.");
+    return CARDANO_ERROR_INTEGER_OVERFLOW;
   }
 
   cardano_error_t advance_result = _cbor_reader_advance_buffer(reader, bytesRead);
@@ -118,7 +124,7 @@ _cbor_reader_read_tag(cardano_cbor_reader_t* reader, cardano_cbor_tag_t* tag)
   CARDANO_UNUSED(advance_result);
 
   reader->is_tag_context = true;
-  *tag                   = read_tag;
+  *tag                   = (cardano_cbor_tag_t)read_tag;
 
   return CARDANO_SUCCESS;
 }
@@ -126,8 +132,8 @@ _cbor_reader_read_tag(cardano_cbor_reader_t* reader, cardano_cbor_tag_t* tag)
 cardano_error_t
 _cbor_reader_peek_tag(cardano_cbor_reader_t* reader, cardano_cbor_tag_t* tag)
 {
-  cardano_cbor_tag_t read_tag  = 0;
-  size_t             bytesRead = 0;
+  uint64_t read_tag  = 0U;
+  size_t   bytesRead = 0;
 
   cardano_error_t result = peek_tag_core(reader, &read_tag, &bytesRead);
 
@@ -136,7 +142,37 @@ _cbor_reader_peek_tag(cardano_cbor_reader_t* reader, cardano_cbor_tag_t* tag)
     return result;
   }
 
-  *tag = read_tag;
+  if (read_tag > (uint64_t)INT32_MAX)
+  {
+    cardano_cbor_reader_set_last_error(reader, "Semantic tag out of range.");
+    return CARDANO_ERROR_INTEGER_OVERFLOW;
+  }
+
+  *tag = (cardano_cbor_tag_t)read_tag;
+
+  return CARDANO_SUCCESS;
+}
+
+cardano_error_t
+_cbor_reader_skip_tag(cardano_cbor_reader_t* reader)
+{
+  uint64_t        tag        = 0U;
+  size_t          bytes_read = 0U;
+  cardano_error_t result     = peek_tag_core(reader, &tag, &bytes_read);
+
+  if (result != CARDANO_SUCCESS)
+  {
+    return result;
+  }
+
+  CARDANO_UNUSED(tag);
+
+  cardano_error_t advance_result = _cbor_reader_advance_buffer(reader, bytes_read);
+
+  assert(advance_result == CARDANO_SUCCESS);
+  CARDANO_UNUSED(advance_result);
+
+  reader->is_tag_context = true;
 
   return CARDANO_SUCCESS;
 }
