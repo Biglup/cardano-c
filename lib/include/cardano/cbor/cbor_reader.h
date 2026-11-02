@@ -476,6 +476,8 @@ CARDANO_EXPORT cardano_error_t cardano_cbor_reader_read_end_array(cardano_cbor_r
  * This function decodes and reads the next CBOR data item from the stream as a signed integer.
  * It handles both positive and negative integers according to CBOR's major types 0 and 1 encoding rules.
  * The decoded integer is stored in the provided `value` parameter.
+ * Values outside the int64_t range return \ref CARDANO_ERROR_INTEGER_OVERFLOW.
+ * On overflow, the output value and reader position remain unchanged.
  *
  * \param[in] reader A pointer to the \ref cardano_cbor_reader_t instance from which the signed integer
  * is to be read.

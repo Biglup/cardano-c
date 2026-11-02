@@ -3597,3 +3597,80 @@ TEST(cardano_cbor_reader_read_textstring, returnsErrorIfSliceAllocationFails)
     cardano_cbor_reader_unref(&reader);
   }
 }
+
+TEST(cardano_cbor_reader_read_int, rejectsOverflowWithoutConsumingInput)
+{
+  // Arrange
+  const char* encodings[] = { "1b8000000000000000", "1bffffffffffffffff", "3b8000000000000000", "3bffffffffffffffff" };
+
+  for (size_t i = 0U; i < (sizeof(encodings) / sizeof(encodings[0])); ++i)
+  {
+    cardano_cbor_reader_t* reader    = cardano_cbor_reader_from_hex(encodings[i], strlen(encodings[i]));
+    int64_t                value     = 42;
+    size_t                 remaining = 0U;
+    EXPECT_EQ(cardano_cbor_reader_get_bytes_remaining(reader, &remaining), CARDANO_SUCCESS);
+
+    // Act
+    const cardano_error_t result = cardano_cbor_reader_read_int(reader, &value);
+
+    // Assert
+    EXPECT_EQ(result, CARDANO_ERROR_INTEGER_OVERFLOW);
+    EXPECT_EQ(value, 42);
+    size_t after = 0U;
+    EXPECT_EQ(cardano_cbor_reader_get_bytes_remaining(reader, &after), CARDANO_SUCCESS);
+    EXPECT_EQ(after, remaining);
+    EXPECT_STREQ(cardano_cbor_reader_get_last_error(reader), "Signed integer out of range.");
+
+    // Cleanup
+    cardano_cbor_reader_unref(&reader);
+  }
+}
+
+TEST(cardano_cbor_reader_read_int, acceptsBothSignedLimits)
+{
+  // Arrange
+  const char*   encodings[] = { "1b7fffffffffffffff", "3b7fffffffffffffff" };
+  const int64_t expected[]  = { INT64_MAX, INT64_MIN };
+
+  for (size_t i = 0U; i < (sizeof(encodings) / sizeof(encodings[0])); ++i)
+  {
+    cardano_cbor_reader_t* reader = cardano_cbor_reader_from_hex(encodings[i], strlen(encodings[i]));
+    int64_t                value  = 0;
+
+    // Act
+    const cardano_error_t result = cardano_cbor_reader_read_int(reader, &value);
+
+    // Assert
+    EXPECT_EQ(result, CARDANO_SUCCESS);
+    EXPECT_EQ(value, expected[i]);
+    size_t remaining = 1U;
+    EXPECT_EQ(cardano_cbor_reader_get_bytes_remaining(reader, &remaining), CARDANO_SUCCESS);
+    EXPECT_EQ(remaining, 0U);
+
+    // Cleanup
+    cardano_cbor_reader_unref(&reader);
+  }
+}
+
+TEST(cardano_cbor_reader_read_encoded_value, preservesFullWidthNegativeIntegers)
+{
+  // Arrange
+  const char*            cbor     = "3bffffffffffffffff";
+  cardano_cbor_reader_t* reader   = cardano_cbor_reader_from_hex(cbor, strlen(cbor));
+  cardano_buffer_t*      encoded  = nullptr;
+  cardano_buffer_t*      expected = cardano_buffer_from_hex(cbor, strlen(cbor));
+
+  // Act
+  const cardano_error_t result = cardano_cbor_reader_read_encoded_value(reader, &encoded);
+
+  // Assert
+  EXPECT_EQ(result, CARDANO_SUCCESS);
+  ASSERT_NE(encoded, nullptr);
+  EXPECT_EQ(cardano_buffer_get_size(encoded), cardano_buffer_get_size(expected));
+  EXPECT_EQ(memcmp(cardano_buffer_get_data(encoded), cardano_buffer_get_data(expected), cardano_buffer_get_size(expected)), 0);
+
+  // Cleanup
+  cardano_buffer_unref(&encoded);
+  cardano_buffer_unref(&expected);
+  cardano_cbor_reader_unref(&reader);
+}

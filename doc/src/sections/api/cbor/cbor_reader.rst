@@ -57,6 +57,11 @@ CBOR Reader
 
 ------------
 
+Signed reads accept values from ``INT64_MIN`` through ``INT64_MAX``. Values
+outside this range return ``CARDANO_ERROR_INTEGER_OVERFLOW`` without consuming
+the item or changing the output. Use the unsigned or negative-argument reader
+when the full CBOR integer range is required.
+
 .. doxygenfunction:: cardano_cbor_reader_read_int
 
 ------------

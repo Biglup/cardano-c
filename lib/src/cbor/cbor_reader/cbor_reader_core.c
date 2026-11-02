@@ -631,8 +631,8 @@ _cbor_reader_skip_next_node(cardano_cbor_reader_t* reader, size_t* depth)
     break;
     case CARDANO_CBOR_READER_STATE_NEGATIVE_INTEGER:
     {
-      int64_t               value  = 0;
-      const cardano_error_t result = cardano_cbor_reader_read_int(reader, &value);
+      uint64_t              value  = 0U;
+      const cardano_error_t result = cardano_cbor_reader_read_negative_int(reader, &value);
 
       if (result != CARDANO_SUCCESS)
       {
