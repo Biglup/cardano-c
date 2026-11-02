@@ -148,7 +148,14 @@ cardano_mir_to_pot_cert_from_cbor(cardano_cbor_reader_t* reader, cardano_mir_to_
     return read_amount;
   }
 
-  return cardano_mir_to_pot_cert_new(pot, amount, mir_to_pot_cert);
+  cardano_error_t result = cardano_cbor_validate_end_array(validator_name, reader);
+
+  if (result == CARDANO_SUCCESS)
+  {
+    result = cardano_mir_to_pot_cert_new(pot, amount, mir_to_pot_cert);
+  }
+
+  return result;
 }
 
 cardano_error_t

@@ -814,3 +814,29 @@ TEST(cardano_mir_cert_to_cip116_json, returnsErrorIfWriterIsNull)
   // Assert
   EXPECT_EQ(result, CARDANO_ERROR_POINTER_IS_NULL);
 }
+
+TEST(cardano_mir_cert_from_cbor, closesArraysBeforeReadingFollowingValue)
+{
+  // Arrange
+  const char* encodings[] = { "82068200182a00", "9f069f00182affff00", "82068200a000", "9f069f00a0ffff00" };
+
+  for (const char* encoding: encodings)
+  {
+    cardano_cbor_reader_t* reader      = cardano_cbor_reader_from_hex(encoding, strlen(encoding));
+    cardano_mir_cert_t*    certificate = nullptr;
+    uint64_t               following   = 1U;
+
+    // Act
+    const cardano_error_t result      = cardano_mir_cert_from_cbor(reader, &certificate);
+    const cardano_error_t read_result = cardano_cbor_reader_read_uint(reader, &following);
+
+    // Assert
+    EXPECT_EQ(result, CARDANO_SUCCESS) << encoding;
+    EXPECT_EQ(read_result, CARDANO_SUCCESS) << encoding;
+    EXPECT_EQ(following, 0U) << encoding;
+
+    // Cleanup
+    cardano_mir_cert_unref(&certificate);
+    cardano_cbor_reader_unref(&reader);
+  }
+}
