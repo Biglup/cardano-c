@@ -205,7 +205,13 @@ cardano_single_host_name_relay_from_cbor(cardano_cbor_reader_t* reader, cardano_
     }
 
     has_port = true;
-    port     = (uint16_t)port64;
+    if (port64 > UINT16_MAX)
+    {
+      cardano_cbor_reader_set_last_error(reader, "Relay port exceeds the unsigned 16-bit range.");
+      return CARDANO_ERROR_DECODING;
+    }
+
+    port = (uint16_t)port64;
   }
 
   cardano_buffer_t* dns = NULL;

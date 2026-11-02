@@ -848,3 +848,46 @@ TEST(cardano_single_host_name_relay_to_cip116_json, returnsErrorIfWriterIsNull)
   // Cleanup
   cardano_single_host_name_relay_unref(&relay);
 }
+
+TEST(cardano_single_host_name_relay_from_cbor, rejectsPortsOutsideTheUnsigned16BitRange)
+{
+  // Arrange
+  const char* invalid[] = { "83011a000100006161", "83011bffffffffffffffff6161" };
+
+  for (const char* cbor: invalid)
+  {
+    cardano_cbor_reader_t*            reader = cardano_cbor_reader_from_hex(cbor, strlen(cbor));
+    cardano_single_host_name_relay_t* relay  = nullptr;
+
+    // Act
+    const cardano_error_t result = cardano_single_host_name_relay_from_cbor(reader, &relay);
+
+    // Assert
+    EXPECT_EQ(result, CARDANO_ERROR_DECODING);
+    EXPECT_EQ(relay, nullptr);
+
+    // Cleanup
+    cardano_single_host_name_relay_unref(&relay);
+    cardano_cbor_reader_unref(&reader);
+  }
+}
+
+TEST(cardano_single_host_name_relay_from_cbor, acceptsMaximumUnsigned16BitPort)
+{
+  // Arrange
+  const char*                       cbor   = "830119ffff6161";
+  cardano_cbor_reader_t*            reader = cardano_cbor_reader_from_hex(cbor, strlen(cbor));
+  cardano_single_host_name_relay_t* relay  = nullptr;
+
+  // Act
+  const cardano_error_t result = cardano_single_host_name_relay_from_cbor(reader, &relay);
+
+  // Assert
+  ASSERT_EQ(result, CARDANO_SUCCESS);
+  ASSERT_NE(cardano_single_host_name_relay_get_port(relay), nullptr);
+  EXPECT_EQ(*cardano_single_host_name_relay_get_port(relay), UINT16_MAX);
+
+  // Cleanup
+  cardano_single_host_name_relay_unref(&relay);
+  cardano_cbor_reader_unref(&reader);
+}

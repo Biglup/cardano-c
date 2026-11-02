@@ -567,3 +567,81 @@ TEST(cardano_ipv6_get_string_size, returnsTheSizeOfTheIpString)
   // Cleanup
   cardano_ipv6_unref(&ipv6);
 }
+
+TEST(cardano_ipv6_from_string, readsOnlyTheSpecifiedInputBytes)
+{
+  // Arrange
+  const char*  text  = "ABCD:0304:0102:0304:0102:0304:0102:0304";
+  const size_t size  = strlen(text);
+  char*        bytes = (char*)malloc(size);
+  ASSERT_NE(bytes, nullptr);
+  memcpy(bytes, text, size);
+  cardano_ipv6_t* address = nullptr;
+
+  // Act
+  const cardano_error_t result = cardano_ipv6_from_string(bytes, size, &address);
+
+  // Assert
+  EXPECT_EQ(result, CARDANO_SUCCESS);
+  EXPECT_STREQ(cardano_ipv6_get_string(address), text);
+
+  // Cleanup
+  cardano_ipv6_unref(&address);
+  free(bytes);
+}
+
+TEST(cardano_ipv6_from_string, ignoresBytesBeyondTheSpecifiedLength)
+{
+  // Arrange
+  const char*     text    = "ABCD:0304:0102:0304:0102:0304:0102:0304garbage";
+  cardano_ipv6_t* address = nullptr;
+
+  // Act
+  const cardano_error_t result = cardano_ipv6_from_string(text, 39U, &address);
+
+  // Assert
+  EXPECT_EQ(result, CARDANO_SUCCESS);
+  EXPECT_STREQ(cardano_ipv6_get_string(address), "ABCD:0304:0102:0304:0102:0304:0102:0304");
+
+  // Cleanup
+  cardano_ipv6_unref(&address);
+}
+
+TEST(cardano_ipv6_from_string, rejectsNonAddressCharacters)
+{
+  // Arrange
+  const char* invalid[] = { "+BCD:0304:0102:0304:0102:0304:0102:0304", " BCD:0304:0102:0304:0102:0304:0102:0304", "ABCD-0304:0102:0304:0102:0304:0102:0304", "ABCD:0304:0102:0304:0102:0304:0102:030x" };
+
+  for (const char* text: invalid)
+  {
+    cardano_ipv6_t* address = nullptr;
+
+    // Act
+    const cardano_error_t result = cardano_ipv6_from_string(text, strlen(text), &address);
+
+    // Assert
+    EXPECT_EQ(result, CARDANO_ERROR_INVALID_ARGUMENT) << text;
+    EXPECT_EQ(address, nullptr);
+
+    // Cleanup
+    cardano_ipv6_unref(&address);
+  }
+}
+
+TEST(cardano_ipv6_from_string, rejectsEmbeddedNullCharacters)
+{
+  // Arrange
+  char text[]             = "ABCD:0304:0102:0304:0102:0304:0102:0304";
+  text[3]                 = '\0';
+  cardano_ipv6_t* address = nullptr;
+
+  // Act
+  const cardano_error_t result = cardano_ipv6_from_string(text, sizeof(text) - 1U, &address);
+
+  // Assert
+  EXPECT_EQ(result, CARDANO_ERROR_INVALID_ARGUMENT);
+  EXPECT_EQ(address, nullptr);
+
+  // Cleanup
+  cardano_ipv6_unref(&address);
+}

@@ -91,6 +91,10 @@ cardano_ipv6_new(const byte_t* data, size_t size, cardano_ipv6_t** ipv6);
  * that represents an IPv6 address in colon-separated hexadecimal notation (e.g., "2001:0db8:85a3:0000:0000:8a2e:0370:7334").
  * The function parses the string and converts it into a numerical IP address.
  *
+ * The function reads exactly \p size characters; no null terminator is required.
+ * Signs, whitespace, embedded nulls, and trailing characters within that range are rejected.
+ * The address must contain eight groups of four hexadecimal digits separated by colons (39 characters).
+ *
  * \note This implementation does not support converting or representing IPv6 addresses in their canonical form.
  *       Addresses are stored and handled as they are provided without normalization to canonical form.
  *

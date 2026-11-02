@@ -99,37 +99,56 @@ ip_to_string(const byte_t* ip_data, const size_t ip_data_size, char* destination
  * Converts a string representing an IPv4 address in dotted decimal format into a 4-byte array.
  *
  * \param ip_string Pointer to the string containing the IPv4 address in dotted decimal format.
+ * \param string_size The number of input characters.
  * \param ip_data Pointer to the array where the bytes of the IPv4 address will be stored.
  * \param ip_data_size The size of the array pointed to by ip_data. Should be at least 4.
  *
  * \return int Returns 0 if the conversion is successful, \ref cardano_error_t if the string format is invalid or ip_data_size is less than 4.
  */
 static cardano_error_t
-ip_from_string(const char* ip_string, byte_t* ip_data, const size_t ip_data_size)
+ip_from_string(const char* ip_string, const size_t string_size, byte_t* ip_data, const size_t ip_data_size)
 {
   assert(ip_string != NULL);
   assert(ip_data != NULL);
   assert(ip_data_size == 4U);
 
-  CARDANO_UNUSED(ip_data_size);
+  size_t   component = 0U;
+  size_t   digits    = 0U;
+  uint32_t value     = 0U;
 
-  int32_t bytes[4] = { 0 };
-  int32_t result   = sscanf(ip_string, "%d.%d.%d.%d", &bytes[0], &bytes[1], &bytes[2], &bytes[3]); // nosemgrep
+  for (size_t i = 0U; i < string_size; ++i)
+  {
+    const char current = ip_string[i];
 
-  if (result != 4)
+    if ((current >= '0') && (current <= '9'))
+    {
+      ++digits;
+      value = (value * 10U) + ((uint32_t)current - (uint32_t)'0');
+
+      if ((digits > 3U) || (value > 255U))
+      {
+        return CARDANO_ERROR_INVALID_ARGUMENT;
+      }
+    }
+    else if ((current == '.') && (digits > 0U) && (component < (ip_data_size - 1U)))
+    {
+      ip_data[component] = (byte_t)value;
+      ++component;
+      digits = 0U;
+      value  = 0U;
+    }
+    else
+    {
+      return CARDANO_ERROR_INVALID_ARGUMENT;
+    }
+  }
+
+  if ((component != (ip_data_size - 1U)) || (digits == 0U))
   {
     return CARDANO_ERROR_INVALID_ARGUMENT;
   }
 
-  for (size_t i = 0U; i < 4U; i++)
-  {
-    if ((bytes[i] < 0) || (bytes[i] > 255))
-    {
-      return CARDANO_ERROR_INVALID_ARGUMENT;
-    }
-
-    ip_data[i] = (byte_t)bytes[i];
-  }
+  ip_data[component] = (byte_t)value;
 
   return CARDANO_SUCCESS;
 }
@@ -200,7 +219,7 @@ cardano_ipv4_from_string(const char* string, const size_t size, cardano_ipv4_t**
   (*ipv4)->base.ref_count     = 1;
   (*ipv4)->base.last_error[0] = '\0';
 
-  cardano_error_t result = ip_from_string(string, (*ipv4)->ip_bytes, 4);
+  cardano_error_t result = ip_from_string(string, size, (*ipv4)->ip_bytes, 4);
 
   if (result != CARDANO_SUCCESS)
   {
