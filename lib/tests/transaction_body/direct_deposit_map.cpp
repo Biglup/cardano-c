@@ -399,7 +399,7 @@ TEST(cardano_direct_deposit_map_to_cbor, canRoundTripSingleAccountVector)
   free(actual_cbor);
 }
 
-TEST(cardano_direct_deposit_map_to_cbor, preservesKeyInsertionOrder)
+TEST(cardano_direct_deposit_map_to_cbor, writesDecodedKeysSortedByAddress)
 {
   // Arrange
   cardano_direct_deposit_map_t* direct_deposit_map = new_default_direct_deposit_map(REVERSED_CBOR);
@@ -407,13 +407,13 @@ TEST(cardano_direct_deposit_map_to_cbor, preservesKeyInsertionOrder)
 
   cardano_reward_address_t* key = nullptr;
   EXPECT_EQ(cardano_direct_deposit_map_get_key_at(direct_deposit_map, 0, &key), CARDANO_SUCCESS);
-  EXPECT_STREQ(cardano_reward_address_get_string(key), ACCOUNT_B_BECH32);
+  EXPECT_STREQ(cardano_reward_address_get_string(key), ACCOUNT_A_BECH32);
 
   // Act
   char* actual_cbor = encode_direct_deposit_map(direct_deposit_map);
 
   // Assert
-  EXPECT_STREQ(actual_cbor, REVERSED_CBOR);
+  EXPECT_STREQ(actual_cbor, CBOR);
 
   // Cleanup
   cardano_reward_address_unref(&key);
@@ -655,6 +655,62 @@ TEST(cardano_direct_deposit_map_insert, returnsErrorIfKeyIsDuplicated)
   // Cleanup
   cardano_reward_address_unref(&key);
   cardano_direct_deposit_map_unref(&direct_deposit_map);
+}
+
+TEST(cardano_direct_deposit_map_insert, keepsElementsSortedByAddress)
+{
+  // Arrange
+  cardano_direct_deposit_map_t* direct_deposit_map = nullptr;
+  cardano_error_t               error              = cardano_direct_deposit_map_new(&direct_deposit_map);
+
+  ASSERT_EQ(error, CARDANO_SUCCESS);
+
+  cardano_reward_address_t* key_a = new_default_reward_address(ACCOUNT_A_BECH32);
+  cardano_reward_address_t* key_b = new_default_reward_address(ACCOUNT_B_BECH32);
+
+  // Act
+  EXPECT_EQ(cardano_direct_deposit_map_insert(direct_deposit_map, key_b, 2000), CARDANO_SUCCESS);
+  EXPECT_EQ(cardano_direct_deposit_map_insert(direct_deposit_map, key_a, 1000), CARDANO_SUCCESS);
+
+  char* actual_cbor = encode_direct_deposit_map(direct_deposit_map);
+
+  // Assert
+  cardano_reward_address_t* first_key = nullptr;
+  uint64_t                  amount    = 0;
+
+  EXPECT_EQ(cardano_direct_deposit_map_get_key_value_at(direct_deposit_map, 0, &first_key, &amount), CARDANO_SUCCESS);
+  EXPECT_STREQ(cardano_reward_address_get_string(first_key), ACCOUNT_A_BECH32);
+  EXPECT_EQ(amount, 1000);
+  EXPECT_STREQ(actual_cbor, CBOR);
+
+  // Cleanup
+  cardano_reward_address_unref(&first_key);
+  cardano_reward_address_unref(&key_a);
+  cardano_reward_address_unref(&key_b);
+  cardano_direct_deposit_map_unref(&direct_deposit_map);
+  free(actual_cbor);
+}
+
+TEST(cardano_direct_deposit_map_insert_ex, keepsElementsSortedByAddress)
+{
+  // Arrange
+  cardano_direct_deposit_map_t* direct_deposit_map = nullptr;
+  cardano_error_t               error              = cardano_direct_deposit_map_new(&direct_deposit_map);
+
+  ASSERT_EQ(error, CARDANO_SUCCESS);
+
+  // Act
+  EXPECT_EQ(cardano_direct_deposit_map_insert_ex(direct_deposit_map, ACCOUNT_B_BECH32, strlen(ACCOUNT_B_BECH32), 2000), CARDANO_SUCCESS);
+  EXPECT_EQ(cardano_direct_deposit_map_insert_ex(direct_deposit_map, ACCOUNT_A_BECH32, strlen(ACCOUNT_A_BECH32), 1000), CARDANO_SUCCESS);
+
+  char* actual_cbor = encode_direct_deposit_map(direct_deposit_map);
+
+  // Assert
+  EXPECT_STREQ(actual_cbor, CBOR);
+
+  // Cleanup
+  cardano_direct_deposit_map_unref(&direct_deposit_map);
+  free(actual_cbor);
 }
 
 TEST(cardano_direct_deposit_map_insert, returnsErrorIfMemoryAllocationFails)

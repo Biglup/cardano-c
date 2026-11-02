@@ -43,7 +43,9 @@ reward_account = bytes
 
 The tests in `lib/tests/transaction_body/account_balance_interval.cpp` and
 `lib/tests/transaction_body/account_balance_intervals_map.cpp` decode every value and
-re-encode it.
+re-encode it. cardano-c writes map entries in canonical CBOR key order, sorted by the
+bytes of their reward accounts, so the map tests expect each map back with the same
+entries in that order.
 
 ## Tools
 
@@ -93,7 +95,7 @@ the CDDL allows. Some interval values are therefore indefinite length arrays (`9
 ... `ff`). cardano-c accepts them and writes the equivalent definite two element
 array, so the round trip test expects those values back with a definite header.
 The Ruby cddl tool only emits definite lengths, so the map files round trip byte for
-byte.
+byte once their entries are sorted by key.
 
 ## Regenerating
 

@@ -151,7 +151,8 @@ cardano_account_balance_intervals_map_from_cbor(cardano_cbor_reader_t* reader, c
  * \brief Serializes an account balance intervals map into CBOR format using a CBOR writer.
  *
  * This function serializes the given \ref cardano_account_balance_intervals_map_t object using a \ref cardano_cbor_writer_t.
- * Each key is written as a bytestring holding the serialized reward address. Entries are written in insertion order.
+ * Each key is written as a bytestring holding the serialized reward address. Entries are written sorted by the bytes of their reward addresses,
+ * the canonical CBOR key order.
  *
  * \param[in] account_balance_intervals_map A constant pointer to the \ref cardano_account_balance_intervals_map_t object that is to be serialized.
  * \param[out] writer A pointer to a \ref cardano_cbor_writer_t where the CBOR serialized data will be written.
@@ -265,7 +266,8 @@ CARDANO_EXPORT cardano_error_t cardano_account_balance_intervals_map_get(
  * \brief Inserts a key-value pair into the account balance intervals map.
  *
  * This function inserts the specified reward address and its interval into the provided account balance intervals map.
- * Entries keep their insertion order when the map is serialized. Inserting a reward address that is already
+ * The map keeps its entries sorted by the bytes of their reward addresses, so they are serialized in canonical
+ * CBOR key order whatever the order of insertion. Inserting a reward address that is already
  * present in the map fails with \ref CARDANO_ERROR_DUPLICATED_KEY.
  *
  * \param[in] account_balance_intervals_map A constant pointer to the \ref cardano_account_balance_intervals_map_t object where
@@ -357,7 +359,7 @@ CARDANO_EXPORT cardano_error_t cardano_account_balance_intervals_map_insert_ex(
  * \brief Retrieves the keys from the account balance intervals map.
  *
  * This function retrieves all the keys from the provided account balance intervals map and returns them as a list.
- * The list preserves the insertion order of the map. The caller is responsible for managing the lifecycle of the
+ * The list follows the order of the map, sorted by reward address bytes. The caller is responsible for managing the lifecycle of the
  * returned list by calling \ref cardano_reward_address_list_unref when it is no longer needed.
  *
  * \param[in] account_balance_intervals_map A pointer to the \ref cardano_account_balance_intervals_map_t object from which

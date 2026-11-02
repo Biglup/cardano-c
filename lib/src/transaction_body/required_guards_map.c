@@ -115,6 +115,33 @@ cardano_required_guards_map_kvp_deallocate(void* object)
   _cardano_free(map);
 }
 
+/**
+ * \brief Compares two cardano_required_guards_map_kvp_t objects based on their credential.
+ *
+ * Credentials are ordered by their type and then by their hash, which is the bytewise order of their
+ * CBOR encoding as a [type, hash] array.
+ *
+ * \param[in] lhs Pointer to the first cardano_object_t object.
+ * \param[in] rhs Pointer to the second cardano_object_t object.
+ * \param[in] context Unused.
+ *
+ * \return A negative value if the credential of lhs is less than the credential of rhs, zero if they are equal,
+ *         and a positive value if the credential of lhs is greater than the credential of rhs.
+ */
+static int32_t
+compare_by_credentials(const cardano_object_t* lhs, const cardano_object_t* rhs, void* context)
+{
+  assert(lhs != NULL);
+  assert(rhs != NULL);
+
+  CARDANO_UNUSED(context);
+
+  const cardano_required_guards_map_kvp_t* lhs_kvp = (const cardano_required_guards_map_kvp_t*)((const void*)lhs);
+  const cardano_required_guards_map_kvp_t* rhs_kvp = (const cardano_required_guards_map_kvp_t*)((const void*)rhs);
+
+  return cardano_credential_compare(lhs_kvp->key, rhs_kvp->key);
+}
+
 /* DEFINITIONS ****************************************************************/
 
 cardano_error_t
@@ -454,6 +481,8 @@ cardano_required_guards_map_insert(
     cardano_required_guards_map_kvp_deallocate(kvp);
     return CARDANO_ERROR_MEMORY_ALLOCATION_FAILED;
   }
+
+  cardano_array_sort(required_guards_map->array, compare_by_credentials, NULL);
 
   return CARDANO_SUCCESS;
 }

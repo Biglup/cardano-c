@@ -146,6 +146,41 @@ reward_address_equals(const cardano_reward_address_t* lhs, const cardano_reward_
   return memcmp(lhs_bytes, rhs_bytes, lhs_size) == 0;
 }
 
+/**
+ * \brief Compares two cardano_direct_deposit_map_kvp_t objects based on their reward_address.
+ *
+ * \param[in] lhs Pointer to the first cardano_object_t object.
+ * \param[in] rhs Pointer to the second cardano_object_t object.
+ * \param[in] context Unused.
+ *
+ * \return A negative value if the address of lhs is less than the address of rhs, zero if they are equal,
+ *         and a positive value if the address of lhs is greater than the address of rhs.
+ */
+static int32_t
+compare_by_bytes(const cardano_object_t* lhs, const cardano_object_t* rhs, void* context)
+{
+  assert(lhs != NULL);
+  assert(rhs != NULL);
+
+  CARDANO_UNUSED(context);
+
+  const cardano_direct_deposit_map_kvp_t* lhs_kvp = (const cardano_direct_deposit_map_kvp_t*)((const void*)lhs);
+  const cardano_direct_deposit_map_kvp_t* rhs_kvp = (const cardano_direct_deposit_map_kvp_t*)((const void*)rhs);
+
+  const size_t lhs_size = cardano_reward_address_get_bytes_size(lhs_kvp->key);
+  const size_t rhs_size = cardano_reward_address_get_bytes_size(rhs_kvp->key);
+
+  if (lhs_size != rhs_size)
+  {
+    return (lhs_size < rhs_size) ? -1 : 1;
+  }
+
+  const uint8_t* lhs_bytes = cardano_reward_address_get_bytes(lhs_kvp->key);
+  const uint8_t* rhs_bytes = cardano_reward_address_get_bytes(rhs_kvp->key);
+
+  return memcmp(lhs_bytes, rhs_bytes, lhs_size);
+}
+
 /* DEFINITIONS ****************************************************************/
 
 cardano_error_t
@@ -464,6 +499,8 @@ cardano_direct_deposit_map_insert(
     cardano_direct_deposit_map_kvp_deallocate(kvp);
     return CARDANO_ERROR_MEMORY_ALLOCATION_FAILED;
   }
+
+  cardano_array_sort(direct_deposit_map->array, compare_by_bytes, NULL);
 
   return CARDANO_SUCCESS;
 }
