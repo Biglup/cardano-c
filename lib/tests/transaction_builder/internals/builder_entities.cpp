@@ -348,8 +348,8 @@ TEST(cardano_builder_add_direct_deposit, accumulatesAmountsOfTheSameRewardAccoun
   EXPECT_EQ(cardano_direct_deposit_map_get_length(deposits), 2U);
   EXPECT_EQ(get_deposit(deposits, reward_address), 1234U);
   EXPECT_EQ(get_deposit(deposits, reward_address2), 50U);
-  EXPECT_TRUE(deposit_key_at_is(deposits, 0U, REWARD_ADDRESS));
-  EXPECT_TRUE(deposit_key_at_is(deposits, 1U, REWARD_ADDRESS2));
+  EXPECT_TRUE(deposit_key_at_is(deposits, 0U, REWARD_ADDRESS2));
+  EXPECT_TRUE(deposit_key_at_is(deposits, 1U, REWARD_ADDRESS));
 
   // Cleanup
   cardano_builder_state_release(&state);
@@ -883,10 +883,10 @@ TEST(cardano_builder_add_account_balance_interval, replacesTheIntervalOfTheSameR
   cardano_account_balance_intervals_map_t* intervals = get_account_balance_intervals(&state);
 
   EXPECT_EQ(cardano_account_balance_intervals_map_get_length(intervals), 2U);
-  EXPECT_TRUE(interval_key_at_is(intervals, 0U, REWARD_ADDRESS));
-  EXPECT_TRUE(interval_key_at_is(intervals, 1U, REWARD_ADDRESS2));
-  EXPECT_EQ(get_interval_at(intervals, 0U), replacement);
-  EXPECT_EQ(get_interval_at(intervals, 1U), second);
+  EXPECT_TRUE(interval_key_at_is(intervals, 0U, REWARD_ADDRESS2));
+  EXPECT_TRUE(interval_key_at_is(intervals, 1U, REWARD_ADDRESS));
+  EXPECT_EQ(get_interval_at(intervals, 0U), second);
+  EXPECT_EQ(get_interval_at(intervals, 1U), replacement);
   EXPECT_EQ(cardano_account_balance_interval_refcount(first), 1U);
 
   // Cleanup
@@ -935,19 +935,19 @@ TEST(cardano_builder_add_account_balance_interval, keepsThePreviousIntervalsWhen
     cardano_account_balance_intervals_map_t* intervals = get_account_balance_intervals(&state);
 
     EXPECT_EQ(cardano_account_balance_intervals_map_get_length(intervals), 2U);
-    EXPECT_EQ(get_interval_at(intervals, 0U), first);
+    EXPECT_EQ(get_interval_at(intervals, 1U), first);
 
     if (result == CARDANO_SUCCESS)
     {
       succeeded = true;
 
-      EXPECT_EQ(get_interval_at(intervals, 1U), replacement);
+      EXPECT_EQ(get_interval_at(intervals, 0U), replacement);
     }
     else
     {
       EXPECT_EQ(result, CARDANO_ERROR_MEMORY_ALLOCATION_FAILED);
       EXPECT_NE(error_message, nullptr);
-      EXPECT_EQ(get_interval_at(intervals, 1U), second);
+      EXPECT_EQ(get_interval_at(intervals, 0U), second);
     }
   }
 
@@ -1223,10 +1223,10 @@ TEST(cardano_builder_add_starting_account_balance_interval, replacesTheIntervalO
   cardano_account_balance_intervals_map_t* intervals = get_starting_account_balance_intervals(&state);
 
   EXPECT_EQ(cardano_account_balance_intervals_map_get_length(intervals), 2U);
-  EXPECT_TRUE(interval_key_at_is(intervals, 0U, REWARD_ADDRESS));
-  EXPECT_TRUE(interval_key_at_is(intervals, 1U, REWARD_ADDRESS2));
-  EXPECT_EQ(get_interval_at(intervals, 0U), replacement);
-  EXPECT_EQ(get_interval_at(intervals, 1U), second);
+  EXPECT_TRUE(interval_key_at_is(intervals, 0U, REWARD_ADDRESS2));
+  EXPECT_TRUE(interval_key_at_is(intervals, 1U, REWARD_ADDRESS));
+  EXPECT_EQ(get_interval_at(intervals, 0U), second);
+  EXPECT_EQ(get_interval_at(intervals, 1U), replacement);
   EXPECT_EQ(cardano_account_balance_interval_refcount(first), 1U);
 
   // Cleanup
@@ -1275,19 +1275,19 @@ TEST(cardano_builder_add_starting_account_balance_interval, keepsThePreviousInte
     cardano_account_balance_intervals_map_t* intervals = get_starting_account_balance_intervals(&state);
 
     EXPECT_EQ(cardano_account_balance_intervals_map_get_length(intervals), 2U);
-    EXPECT_EQ(get_interval_at(intervals, 0U), first);
+    EXPECT_EQ(get_interval_at(intervals, 1U), first);
 
     if (result == CARDANO_SUCCESS)
     {
       succeeded = true;
 
-      EXPECT_EQ(get_interval_at(intervals, 1U), replacement);
+      EXPECT_EQ(get_interval_at(intervals, 0U), replacement);
     }
     else
     {
       EXPECT_EQ(result, CARDANO_ERROR_MEMORY_ALLOCATION_FAILED);
       EXPECT_NE(error_message, nullptr);
-      EXPECT_EQ(get_interval_at(intervals, 1U), second);
+      EXPECT_EQ(get_interval_at(intervals, 0U), second);
     }
   }
 
