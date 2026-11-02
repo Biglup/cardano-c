@@ -1038,3 +1038,28 @@ TEST(cardano_script_n_of_k_set_required, discardsTheCachedCbor)
   // Cleanup
   script_n_of_k_unref_and_free(&script, hex);
 }
+
+TEST(cardano_script_n_of_k_equals, comparesRequiredThreshold)
+{
+  // Arrange
+  cardano_script_n_of_k_t* first  = nullptr;
+  cardano_script_n_of_k_t* second = nullptr;
+  ASSERT_EQ(cardano_script_n_of_k_from_json(AT_LEAST_SCRIPT2, strlen(AT_LEAST_SCRIPT2), &first), CARDANO_SUCCESS);
+  ASSERT_EQ(cardano_script_n_of_k_deep_clone(first, &second), CARDANO_SUCCESS);
+
+  const size_t required = cardano_script_n_of_k_get_required(first);
+  ASSERT_EQ(cardano_script_n_of_k_set_required(second, required + 1U), CARDANO_SUCCESS);
+
+  // Act
+  const bool equal = cardano_script_n_of_k_equals(first, second);
+
+  // Assert
+  EXPECT_FALSE(equal);
+  EXPECT_FALSE(cardano_script_n_of_k_equals(second, first));
+  EXPECT_EQ(cardano_script_n_of_k_set_required(second, required), CARDANO_SUCCESS);
+  EXPECT_TRUE(cardano_script_n_of_k_equals(first, second));
+
+  // Cleanup
+  cardano_script_n_of_k_unref(&first);
+  cardano_script_n_of_k_unref(&second);
+}

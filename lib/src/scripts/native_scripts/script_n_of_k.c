@@ -498,7 +498,7 @@ cardano_script_n_of_k_equals(const cardano_script_n_of_k_t* lhs, const cardano_s
     return false;
   }
 
-  if (lhs->type != rhs->type)
+  if ((lhs->type != rhs->type) || (lhs->required != rhs->required))
   {
     return false;
   }
