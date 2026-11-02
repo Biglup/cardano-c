@@ -183,7 +183,7 @@ cardano_handle_unicode_sequence(cardano_json_parse_context_t* ctx, cardano_buffe
 
   if ((high >= 0xd800) && (high <= 0xdbff))
   {
-    if (((ctx->offset + 10U) > ctx->length) || (ctx->input[ctx->offset + 4U] != '\\') || (ctx->input[ctx->offset + 5U] != 'u'))
+    if (((ctx->offset + 10U) > ctx->length) || ((char)ctx->input[ctx->offset + 4U] != (char)'\\') || ((char)ctx->input[ctx->offset + 5U] != (char)'u'))
     {
       set_last_error(ctx, CARDANO_ERROR_INVALID_JSON, "Missing low surrogate");
       return false;
@@ -424,24 +424,24 @@ cardano_parse_number_value(cardano_json_parse_context_t* ctx)
   const size_t start = ctx->offset;
   size_t       end   = start;
 
-  if ((end < ctx->length) && (ctx->input[end] == '-'))
+  if ((end < ctx->length) && ((char)ctx->input[end] == (char)'-'))
   {
     ++end;
   }
 
-  if ((end >= ctx->length) || (ctx->input[end] < '0') || (ctx->input[end] > '9'))
+  if ((end >= ctx->length) || ((char)ctx->input[end] < (char)'0') || ((char)ctx->input[end] > (char)'9'))
   {
     set_last_error(ctx, CARDANO_ERROR_INVALID_JSON, "Invalid JSON number");
     return NULL;
   }
 
-  if (ctx->input[end] == '0')
+  if ((char)ctx->input[end] == (char)'0')
   {
     ++end;
   }
   else
   {
-    while ((end < ctx->length) && (ctx->input[end] >= '0') && (ctx->input[end] <= '9'))
+    while ((end < ctx->length) && ((char)ctx->input[end] >= (char)'0') && ((char)ctx->input[end] <= (char)'9'))
     {
       ++end;
     }
@@ -449,13 +449,13 @@ cardano_parse_number_value(cardano_json_parse_context_t* ctx)
 
   bool is_real = false;
 
-  if ((end < ctx->length) && (ctx->input[end] == '.'))
+  if ((end < ctx->length) && ((char)ctx->input[end] == (char)'.'))
   {
     is_real = true;
     ++end;
     const size_t fraction_start = end;
 
-    while ((end < ctx->length) && (ctx->input[end] >= '0') && (ctx->input[end] <= '9'))
+    while ((end < ctx->length) && ((char)ctx->input[end] >= (char)'0') && ((char)ctx->input[end] <= (char)'9'))
     {
       ++end;
     }
@@ -467,19 +467,19 @@ cardano_parse_number_value(cardano_json_parse_context_t* ctx)
     }
   }
 
-  if ((end < ctx->length) && ((ctx->input[end] == 'e') || (ctx->input[end] == 'E')))
+  if ((end < ctx->length) && (((char)ctx->input[end] == (char)'e') || ((char)ctx->input[end] == (char)'E')))
   {
     is_real = true;
     ++end;
 
-    if ((end < ctx->length) && ((ctx->input[end] == '+') || (ctx->input[end] == '-')))
+    if ((end < ctx->length) && (((char)ctx->input[end] == (char)'+') || ((char)ctx->input[end] == (char)'-')))
     {
       ++end;
     }
 
     const size_t exponent_start = end;
 
-    while ((end < ctx->length) && (ctx->input[end] >= '0') && (ctx->input[end] <= '9'))
+    while ((end < ctx->length) && ((char)ctx->input[end] >= (char)'0') && ((char)ctx->input[end] <= (char)'9'))
     {
       ++end;
     }
@@ -491,7 +491,7 @@ cardano_parse_number_value(cardano_json_parse_context_t* ctx)
     }
   }
 
-  if ((end < ctx->length) && (ctx->input[end] != ',') && (ctx->input[end] != ']') && (ctx->input[end] != '}') && (ctx->input[end] != ' ') && (ctx->input[end] != '\t') && (ctx->input[end] != '\r') && (ctx->input[end] != '\n'))
+  if ((end < ctx->length) && ((char)ctx->input[end] != (char)',') && ((char)ctx->input[end] != (char)']') && ((char)ctx->input[end] != (char)'}') && ((char)ctx->input[end] != (char)' ') && ((char)ctx->input[end] != (char)'\t') && ((char)ctx->input[end] != (char)'\r') && ((char)ctx->input[end] != (char)'\n'))
   {
     set_last_error(ctx, CARDANO_ERROR_INVALID_JSON, "Invalid JSON number delimiter");
     return NULL;
@@ -506,7 +506,7 @@ cardano_parse_number_value(cardano_json_parse_context_t* ctx)
   }
 
   obj->type        = CARDANO_JSON_OBJECT_TYPE_NUMBER;
-  obj->is_negative = ctx->input[start] == '-';
+  obj->is_negative = (char)ctx->input[start] == (char)'-';
   obj->is_real     = is_real;
   obj->string      = cardano_buffer_new_from((const byte_t*)&ctx->input[start], end - start);
 
