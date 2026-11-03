@@ -38,8 +38,7 @@
 
 /* CONSTANTS *****************************************************************/
 
-static const int64_t SHELLEY_ERA_FRAME_SIZE = 3;
-static const int64_t ALONZO_ERA_FRAME_SIZE  = 4;
+static const int64_t ALONZO_ERA_FRAME_SIZE = 4;
 
 /* ENUMS *********************************************************************/
 
@@ -359,6 +358,8 @@ cardano_transaction_to_cbor(const cardano_transaction_t* transaction, cardano_cb
   {
     return CARDANO_ERROR_POINTER_IS_NULL;
   }
+
+  static const int64_t SHELLEY_ERA_FRAME_SIZE = 3;
 
   transaction_frame_t frame      = transaction->frame;
   int64_t             frame_size = ALONZO_ERA_FRAME_SIZE;
