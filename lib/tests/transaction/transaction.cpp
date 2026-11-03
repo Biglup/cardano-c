@@ -82,6 +82,24 @@ static const char* REQUIRE_GUARD_TX_CBOR = "83a400d90102818258200f3abbc8fc19c2e6
 static const char* JS_SDK_MAX_TX_CBOR = "84b700d90102818258200f3abbc8fc19c2e61bab6059bf8a466e6e754833a08a62a6c56fe0e78f19d9d5000182825839009493315cd92eb5d8c4304e67b7e16ae36d61d34502694657811a2c8e32c728d3861e164cab28cb8f006448139c8f1740ffb8e7aa9e5232dc1a00989680a3005839009493315cd92eb5d8c4304e67b7e16ae36d61d34502694657811a2c8e32c728d3861e164cab28cb8f006448139c8f1740ffb8e7aa9e5232dc011a001e848003d8184a82044746010000220013021a00030d400319271004d901028183028200581c00112233445566778899aabbccddeeff00112233445566778899aabb581cd85087c646951407198c27b1b950fd2e99f28586c000ce39f6e6ef9205a1581de013cf55d175ea848b87deb3e914febd7e028e2bf6534475d52fb9c3d0050758209e2e4ea189a571107fddaa2459ad14241a080c0142c02c89e4070cf71e87825108186409a2581c2a286ad895d091f2b3d168a6091ad2627d30a72761a5bc36eef00740a14014581c659f2917fb63f12b33667463ee575eeac1845bbc736b9c0bbc40ba82a14454534c4138310b58206199186adb51974690d7247d2646097d2c62763b16fb7ed3f9f55d38abc123de0dd90102818258200f3abbc8fc19c2e61bab6059bf8a466e6e754833a08a62a6c56fe0e78f19d9d5010ed90102828200581c00112233445566778899aabbccddeeff00112233445566778899aabb8201581caabbccddeeff00112233445566778899aabbccddeeff0011223344550f0010825839009493315cd92eb5d8c4304e67b7e16ae36d61d34502694657811a2c8e32c728d3861e164cab28cb8f006448139c8f1740ffb8e7aa9e5232dc1a003d0900111a004c4b4012d90102818258200f3abbc8fc19c2e61bab6059bf8a466e6e754833a08a62a6c56fe0e78f19d9d50313a18202581c00112233445566778899aabbccddeeff00112233445566778899aabba1825820ee155ace9c40292074cb6aff8c9ccdd273c81648ff1149ef36bcea6ebb8a3e25008201827368747470733a2f2f6578616d706c652e636f6d5820000000000000000000000000000000000000000000000000000000000000000014d9010281841a000f4240581de1cb0ec2692497b458e46812c8a5bfa2931d1a2d965a99893828ec810f8400825820ee155ace9c40292074cb6aff8c9ccdd273c81648ff1149ef36bcea6ebb8a3e2500a700186412a103831a0003236119032c011821d81e8218590218221a004c4b4018231a000f424018241964001825d81e820302f6827368747470733a2f2f6578616d706c652e636f6d58200000000000000000000000000000000000000000000000000000000000000000151a00989680161903e817d901028283a600d90102818258200f3abbc8fc19c2e61bab6059bf8a466e6e754833a08a62a6c56fe0e78f19d9d5020181825839009493315cd92eb5d8c4304e67b7e16ae36d61d34502694657811a2c8e32c728d3861e164cab28cb8f006448139c8f1740ffb8e7aa9e5232dc1a002dc6c004d901028183078200581c00112233445566778899aabbccddeeff00112233445566778899aabb1a001e848005a1581de013cf55d175ea848b87deb3e914febd7e028e2bf6534475d52fb9c3d00509a1581c2a286ad895d091f2b3d168a6091ad2627d30a72761a5bc36eef00740a1401903e81818a28200581c00112233445566778899aabbccddeeff00112233445566778899aabbf68201581caabbccddeeff00112233445566778899aabbccddeeff001122334455d87980a0f683a200d90102800180a0a10164746573741819a2581de013cf55d175ea848b87deb3e914febd7e028e2bf6534475d52fb9c3d01a001e8480581de1cb0ec2692497b458e46812c8a5bfa2931d1a2d965a99893828ec810f1a000f4240181aa3581de013cf55d175ea848b87deb3e914febd7e028e2bf6534475d52fb9c3d0821901f4f6581de0404b5a4088ae9abcf486a7e7b8f82069e6fcfe1bf226f1851ce72570821864191388581df0aabbccddeeff00112233445566778899aabbccddeeff00112233445582f6192710a800d90102818258206199186adb51974690d7247d2646097d2c62763b767b528816fb7ed3f9f55d395840bdea87fca1b4b4df8a9b8fb4183c0fab2f8261eb6c5e4bc42c800bb9c8918755bdea87fca1b4b4df8a9b8fb4183c0fab2f8261eb6c5e4bc42c800bb9c891875501d901028182068200581c00112233445566778899aabbccddeeff00112233445566778899aabb02d9010281845820deeb8f82f2af5836ebbc1b450b6dbf0b03c93afe5696f10d49e8a8304ebfac01584064676273786767746f6768646a7074657476746b636f6376796669647171676775726a687268716169697370717275656c6876797071786565777072796676775820b6dbf0b03c93afe5696f10d49e8a8304ebfac01deeb8f82f2af5836ebbc1b45041a003d9010281474601000022001004d9010281187b05a282000082d87a9f187bff82190bb8191b5882060082d87a9f187bff821913881907d006d9010281474601000022001107d90102814746010000220012f5d90103a600a11902d17064696a6b737472612d6d6178696d616c01818200581cb5ae663aaea8e500157bdf4baafd6f5ba0ce5759f7cd4101fc132f54028147460100002200100381474601000022001104814746010000220012058247460100002200134747010000222200";
 static const char* JS_SDK_MAX_TX_ID   = "cacbd49d1991967882077a4acd1730a1a0299adc41d13c2b160ed7288d51729a";
 
+// Dijkstra ledger golden transactions (cardano-ledger Binary/Golden.hs) and transactions stored on the
+// Musashi testnet, in the block frame [body, witness_set, auxiliary_data / nil, is_valid].
+static const char* LEDGER_MEMPOOL_NO_FLAG_CBOR        = "83a300d901028001800200a0f6";
+static const char* LEDGER_MEMPOOL_FLAG_TRUE_CBOR      = "84a300d901028001800200a0f5f6";
+static const char* LEDGER_LEGACY_FLAG_FALSE_CBOR      = "84a300d901028001800200a0f4f6";
+static const char* LEDGER_BLOCK_VALID_CBOR            = "84a300d901028001800200a0f6f5";
+static const char* LEDGER_BLOCK_INVALID_CBOR          = "84a300d901028001800200a0f6f4";
+static const char* LEDGER_BLOCK_INDEFINITE_VALID_CBOR = "9fa300d901028001800200a0f6f5ff";
+static const char* LEDGER_TX_ID                       = "3da9a3b38dce0e87ca4a88f3328caac7a970cf9ac40424cde2b675768d11f11b";
+static const char* MUSASHI_PAYMENT_CBOR               = "84a400d901028182582081c0aecb8953ea03e9bbe340ab42a0894b738b77638d436dec64511a8258810e020184a20058390005a3f9c82057b41fc26de3d2ecfa7d34dcafcbe2fec95f5695bc510f844a3464993ab60bec111511a3ae5cae644d144725387fcde7d4cf18011a02faf080a2005839002779c2746c2ab9f2aeb8ed6ce18038a205e65b7a78ede2520b1076e0844a3464993ab60bec111511a3ae5cae644d144725387fcde7d4cf18011a02faf080a200583900feaaa6e10829610542e1b187420f83596838c3eacedc646334030b04844a3464993ab60bec111511a3ae5cae644d144725387fcde7d4cf18011a2abd402ea200583900feaaa6e10829610542e1b187420f83596838c3eacedc646334030b04844a3464993ab60bec111511a3ae5cae644d144725387fcde7d4cf18011a2abd402d021a0002a8b10f00a100d90102818258201215ba34ff75661c5ea49cb6b963b4d6478b5afcdae1e5d0b56de6a7ddcf57bb584089f6bc83474e9334e8ee6f7738dd63df421a7794623ea62b7040ed47409d22d6921e69cfa77ee6d760871d0832a68fece5bab5bb0eaea8c8464cd6cdbb84fd04f6f5";
+static const char* MUSASHI_PAYMENT_TX_ID              = "0422da720f9902c5d5278d201a4c2948f0044de149b34dd08ad070092d74906c";
+static const char* MUSASHI_BATCH_CBOR                 = "84a600d9010281825820bfb7864c96e9c622053b6c8095319488f0db968b2abc4d677282543843f78db4020181a200583900feaaa6e10829610542e1b187420f83596838c3eacedc646334030b04844a3464993ab60bec111511a3ae5cae644d144725387fcde7d4cf18011a1b21b5d9021a0002fa290ed9010281581cfeaaa6e10829610542e1b187420f83596838c3eacedc646334030b040f0017d901028283a300d90102828258200422da720f9902c5d5278d201a4c2948f0044de149b34dd08ad070092d74906c008258208e8e4edf8872317b74dea4481b76f36b7b2e35d93f89a52cbb998fb09b3956f5000181a20058390005a3f9c82057b41fc26de3d2ecfa7d34dcafcbe2fec95f5695bc510f844a3464993ab60bec111511a3ae5cae644d144725387fcde7d4cf1801821a0496ed40a1581c1fd0190f1816f66a28208ce5836f64f54d99bdc2a088fee8e14547eda15063617264616e6f2d632d76342d737562011818a18200581cfeaaa6e10829610542e1b187420f83596838c3eacedc646334030b04f6a100d90102818258207ca169b343fd4557c5612a87de0fac6a4dd701b0deb4de385eeffc23e90417fe58401cde57c960fd383cfc66d2903b8773ebee167adbd08dd12b49773ebb60fc1bf383c32bfe0c85894a7fe25128dd483617aabcc8fc6d468f3605d4e3c8ab9b6005f683a300d90102828258200422da720f9902c5d5278d201a4c2948f0044de149b34dd08ad070092d74906c01825820a562d3b9225ce967198decd4c5130414e4ccfa4c6861ac0c534f3a4c8b9971cd000181a2005839002779c2746c2ab9f2aeb8ed6ce18038a205e65b7a78ede2520b1076e0844a3464993ab60bec111511a3ae5cae644d144725387fcde7d4cf18011a07bfa4801818a18200581cfeaaa6e10829610542e1b187420f83596838c3eacedc646334030b04f6a100d90102818258208f46736e761b2726ff0e3d9f13d8def1290134b700609dee4712ea3d8e1439ac5840b488f4364e98e750cd4d06d84196c2cd58d6ba13dc184b58dad7d7ea4bdd461dc465a1d127f61a6cf8ab05b972f798b9d40fa669e8ffd216af4ff589b20bf30bf6a100d90102818258201215ba34ff75661c5ea49cb6b963b4d6478b5afcdae1e5d0b56de6a7ddcf57bb58405c60011f5e6d391f15520574d6536c01ba56e523d08d3a0dac7321d93d9febcc1bc3d20f12c809219614496b49247d5b77f678057cd10cf6ddfadac993bd7509f6f5";
+static const char* MUSASHI_BATCH_TX_ID                = "53881a46e9313cdb595e4f958135e449a742b020e5075c8f7921b39189c3161e";
+static const char* MUSASHI_GUARDS_CBOR                = "84aa00d9010281825820f1f4e2f68cfa7867b7045e914c210aeb88bb5f8a7eda7f76940cd859fbb8a17a000181a200583900feaaa6e10829610542e1b187420f83596838c3eacedc646334030b04844a3464993ab60bec111511a3ae5cae644d144725387fcde7d4cf18011a2b3ba30d021a0002ed0b0b58201ad263dce83682150732372159ed8782c416f316e27212af26bafeb971918d1d0dd90102818258204cef041f258f35c13653a353b91bdaf9dc54218b074121e5e2ba33081d0cba1f000ed90102818201581c1fd0190f1816f66a28208ce5836f64f54d99bdc2a088fee8e14547ed0f0010a200583900feaaa6e10829610542e1b187420f83596838c3eacedc646334030b04844a3464993ab60bec111511a3ae5cae644d144725387fcde7d4cf18011b000000012514be8c111a0004639117d901028183a400d90102818258203a548070f4343895164188d6d19ecdd454620b823077732baa5b2814c51552ff000181a20058390005a3f9c82057b41fc26de3d2ecfa7d34dcafcbe2fec95f5695bc510f844a3464993ab60bec111511a3ae5cae644d144725387fcde7d4cf1801821a041cdb40a1581c1fd0190f1816f66a28208ce5836f64f54d99bdc2a088fee8e14547eda15063617264616e6f2d632d76342d737562010b58202a375deb192b779f9db33d8c64a59f1ecf0b40cdbdc0791744cdb42ce3b710da0ed90102818201581c1fd0190f1816f66a28208ce5836f64f54d99bdc2a088fee8e14547eda300d90102818258207ca169b343fd4557c5612a87de0fac6a4dd701b0deb4de385eeffc23e90417fe58401b94ae473eddebaa9dcf9c9dfb584405eca4f56b55217e57927a56b10e49ffb35564d8f9b2ba5bac0ce71e0039d9c2797ac61cc983dcc1d9816d342a99f60e0505a182060082182a821902261a0001136e08d901028146450100002499f6a300d90102818258201215ba34ff75661c5ea49cb6b963b4d6478b5afcdae1e5d0b56de6a7ddcf57bb584007273dc207776e33791259c9b406fa6119668d54ce0834d07abb45a72820981337c909c74bb494897c2f16d995c373ab6023dda13c4dfc1d34bdd4a7fa50fc0305a182060082182b821902261a0001136e08d901028146450100002499f6f5";
+static const char* MUSASHI_GUARDS_TX_ID               = "288efcad8eee71115fa4990f4dc12e1bc254ef0db0291f0235abcfcac72edb92";
+static const char* MUSASHI_AUX_CBOR                   = "84a500d9010281825820b65d11ea9c612575b69d1f6c7efeed939f634821f1c31f05e7cc5b0e8dcc6631000182a20058390005a3f9c82057b41fc26de3d2ecfa7d34dcafcbe2fec95f5695bc510f844a3464993ab60bec111511a3ae5cae644d144725387fcde7d4cf18011a001e8480a200583900feaaa6e10829610542e1b187420f83596838c3eacedc646334030b04844a3464993ab60bec111511a3ae5cae644d144725387fcde7d4cf18011a0083edf7021a00029e09075820f2566c6818aa42f9c971b2c543db1f0f13cf2481876289edc7524aa427feb9110f00a100d90102818258201215ba34ff75661c5ea49cb6b963b4d6478b5afcdae1e5d0b56de6a7ddcf57bb584039d47ad5e3ef45a35c93fc3f0ad06027cbe147cb713e794fd086399c663cbe8f7fb16beb58fa4e4f763e3e007dd0e72e7447d214a274578b59914c8c7c314f01d90103a100a11902a2a1636d736781766c61636520626c6f636b20666f726d20766563746f72f5";
+static const char* MUSASHI_AUX_TX_ID                  = "ed395d2dcbce33b53d9838359b1df364bc7d72a31f64478c3af2133ad4fbf5ce";
+
 /* STATIC FUNCTIONS **********************************************************/
 
 /**
@@ -100,6 +118,80 @@ new_default_transaction(const char* cbor)
   cardano_cbor_reader_unref(&reader);
 
   return transaction;
+};
+
+/**
+ * Encodes the transaction as a CBOR hex string.
+ *
+ * @param transaction The transaction to encode.
+ * @return The CBOR hex string.
+ */
+static std::string
+transaction_to_cbor_hex(cardano_transaction_t* transaction)
+{
+  cardano_cbor_writer_t* writer = cardano_cbor_writer_new();
+
+  EXPECT_EQ(cardano_transaction_to_cbor(transaction, writer), CARDANO_SUCCESS);
+
+  size_t hex_size = cardano_cbor_writer_get_hex_size(writer);
+  char*  hex      = (char*)malloc(hex_size);
+
+  EXPECT_EQ(cardano_cbor_writer_encode_hex(writer, hex, hex_size), CARDANO_SUCCESS);
+
+  std::string result(hex);
+
+  free(hex);
+  cardano_cbor_writer_unref(&writer);
+
+  return result;
+};
+
+/**
+ * Gets the id of the transaction as a hex string.
+ *
+ * @param transaction The transaction.
+ * @return The transaction id as a hex string.
+ */
+static std::string
+transaction_id_to_hex(cardano_transaction_t* transaction)
+{
+  cardano_blake2b_hash_t* id = cardano_transaction_get_id(transaction);
+
+  size_t size = cardano_blake2b_hash_get_hex_size(id);
+  char*  hex  = (char*)malloc(size);
+
+  EXPECT_EQ(cardano_blake2b_hash_to_hex(id, hex, size), CARDANO_SUCCESS);
+
+  std::string result(hex);
+
+  free(hex);
+  cardano_blake2b_hash_unref(&id);
+
+  return result;
+};
+
+/**
+ * Decodes a transaction, checks its id and is_valid flag, and checks that it re-encodes to the expected bytes.
+ *
+ * @param cbor The CBOR hex of the transaction.
+ * @param id The expected transaction id.
+ * @param is_valid The expected is_valid flag.
+ * @param expected_cbor The expected CBOR hex of the re-encoded transaction.
+ */
+static void
+expect_transaction_round_trip(const char* cbor, const char* id, const bool is_valid, const char* expected_cbor)
+{
+  cardano_transaction_t* transaction = NULL;
+  cardano_cbor_reader_t* reader      = cardano_cbor_reader_from_hex(cbor, strlen(cbor));
+
+  ASSERT_EQ(cardano_transaction_from_cbor(reader, &transaction), CARDANO_SUCCESS);
+
+  EXPECT_EQ(transaction_id_to_hex(transaction), id);
+  EXPECT_EQ(cardano_transaction_get_is_valid(transaction), is_valid);
+  EXPECT_EQ(transaction_to_cbor_hex(transaction), expected_cbor);
+
+  cardano_transaction_unref(&transaction);
+  cardano_cbor_reader_unref(&reader);
 };
 
 /**
@@ -841,6 +933,302 @@ TEST(cardano_transaction_from_cbor, roundTripsARequireGuardTransactionByteExact)
   cardano_transaction_unref(&transaction);
   cardano_cbor_writer_unref(&writer);
   free(hex);
+}
+
+TEST(cardano_transaction_from_cbor, decodesTheLedgerMempoolFrameWithoutFlag)
+{
+  expect_transaction_round_trip(LEDGER_MEMPOOL_NO_FLAG_CBOR, LEDGER_TX_ID, true, LEDGER_MEMPOOL_NO_FLAG_CBOR);
+}
+
+TEST(cardano_transaction_from_cbor, decodesTheLedgerMempoolFrameWithFlag)
+{
+  expect_transaction_round_trip(LEDGER_MEMPOOL_FLAG_TRUE_CBOR, LEDGER_TX_ID, true, LEDGER_MEMPOOL_FLAG_TRUE_CBOR);
+}
+
+TEST(cardano_transaction_from_cbor, decodesTheLegacyFrameWithFalseFlag)
+{
+  expect_transaction_round_trip(LEDGER_LEGACY_FLAG_FALSE_CBOR, LEDGER_TX_ID, false, LEDGER_LEGACY_FLAG_FALSE_CBOR);
+}
+
+TEST(cardano_transaction_from_cbor, decodesTheLedgerBlockFrame)
+{
+  expect_transaction_round_trip(LEDGER_BLOCK_VALID_CBOR, LEDGER_TX_ID, true, LEDGER_BLOCK_VALID_CBOR);
+}
+
+TEST(cardano_transaction_from_cbor, decodesTheLedgerBlockFrameWithFalseFlag)
+{
+  expect_transaction_round_trip(LEDGER_BLOCK_INVALID_CBOR, LEDGER_TX_ID, false, LEDGER_BLOCK_INVALID_CBOR);
+}
+
+TEST(cardano_transaction_from_cbor, decodesTheIndefiniteLengthLedgerBlockFrame)
+{
+  expect_transaction_round_trip(LEDGER_BLOCK_INDEFINITE_VALID_CBOR, LEDGER_TX_ID, true, LEDGER_BLOCK_VALID_CBOR);
+}
+
+TEST(cardano_transaction_from_cbor, decodesTheIndefiniteLengthMempoolFrames)
+{
+  expect_transaction_round_trip("9fa300d901028001800200a0f6ff", LEDGER_TX_ID, true, LEDGER_MEMPOOL_NO_FLAG_CBOR);
+  expect_transaction_round_trip("9fa300d901028001800200a0f4f6ff", LEDGER_TX_ID, false, LEDGER_LEGACY_FLAG_FALSE_CBOR);
+}
+
+TEST(cardano_transaction_from_cbor, decodesAMusashiPaymentInTheBlockFrame)
+{
+  expect_transaction_round_trip(MUSASHI_PAYMENT_CBOR, MUSASHI_PAYMENT_TX_ID, true, MUSASHI_PAYMENT_CBOR);
+}
+
+TEST(cardano_transaction_from_cbor, decodesAMusashiBatchInTheBlockFrame)
+{
+  expect_transaction_round_trip(MUSASHI_BATCH_CBOR, MUSASHI_BATCH_TX_ID, true, MUSASHI_BATCH_CBOR);
+}
+
+TEST(cardano_transaction_from_cbor, decodesAMusashiGuardedTransactionInTheBlockFrame)
+{
+  expect_transaction_round_trip(MUSASHI_GUARDS_CBOR, MUSASHI_GUARDS_TX_ID, true, MUSASHI_GUARDS_CBOR);
+}
+
+TEST(cardano_transaction_from_cbor, decodesAMusashiTransactionWithAuxiliaryDataInTheBlockFrame)
+{
+  // Arrange
+  expect_transaction_round_trip(MUSASHI_AUX_CBOR, MUSASHI_AUX_TX_ID, true, MUSASHI_AUX_CBOR);
+
+  cardano_transaction_t* transaction = new_default_transaction(MUSASHI_AUX_CBOR);
+  ASSERT_NE(transaction, nullptr);
+
+  // Act
+  cardano_auxiliary_data_t*       auxiliary_data = cardano_transaction_get_auxiliary_data(transaction);
+  cardano_transaction_body_t*     body           = cardano_transaction_get_body(transaction);
+  cardano_transaction_metadata_t* metadata       = cardano_auxiliary_data_get_transaction_metadata(auxiliary_data);
+  cardano_blake2b_hash_t*         aux_hash       = cardano_auxiliary_data_get_hash(auxiliary_data);
+  cardano_blake2b_hash_t*         body_aux_hash  = cardano_transaction_body_get_aux_data_hash(body);
+
+  // Assert
+  ASSERT_NE(auxiliary_data, nullptr);
+  EXPECT_GT(cardano_transaction_metadata_get_length(metadata), 0U);
+  EXPECT_TRUE(cardano_blake2b_hash_equals(aux_hash, body_aux_hash));
+
+  // Cleanup
+  cardano_blake2b_hash_unref(&aux_hash);
+  cardano_blake2b_hash_unref(&body_aux_hash);
+  cardano_transaction_metadata_unref(&metadata);
+  cardano_auxiliary_data_unref(&auxiliary_data);
+  cardano_transaction_body_unref(&body);
+  cardano_transaction_unref(&transaction);
+}
+
+TEST(cardano_transaction_to_cbor, keepsTheBlockFrameWhenTheWitnessSetChanges)
+{
+  // Arrange
+  cardano_transaction_t* transaction = new_default_transaction(LEDGER_BLOCK_INVALID_CBOR);
+  cardano_witness_set_t* witness_set = new_default_witness_set(WITNESS_SET_CBOR);
+
+  EXPECT_EQ(cardano_transaction_set_witness_set(transaction, witness_set), CARDANO_SUCCESS);
+
+  // Act
+  const std::string hex = transaction_to_cbor_hex(transaction);
+
+  // Assert
+  EXPECT_EQ(hex, std::string("84a300d901028001800200") + WITNESS_SET_CBOR + "f6f4");
+
+  // Cleanup
+  cardano_witness_set_unref(&witness_set);
+  cardano_transaction_unref(&transaction);
+}
+
+TEST(cardano_transaction_to_cbor, keepsTheBlockFrameWhenTheAuxiliaryDataChanges)
+{
+  // Arrange
+  cardano_transaction_t*    transaction    = new_default_transaction(LEDGER_BLOCK_VALID_CBOR);
+  cardano_auxiliary_data_t* auxiliary_data = new_default_auxiliary_data(AUXILIARY_DATA_CBOR);
+
+  EXPECT_EQ(cardano_transaction_set_auxiliary_data(transaction, auxiliary_data), CARDANO_SUCCESS);
+  EXPECT_EQ(cardano_transaction_set_is_valid(transaction, false), CARDANO_SUCCESS);
+
+  // Act
+  const std::string hex = transaction_to_cbor_hex(transaction);
+
+  // Assert
+  EXPECT_EQ(hex, std::string("84a300d901028001800200a0") + AUXILIARY_DATA_CBOR + "f4");
+
+  // Cleanup
+  cardano_auxiliary_data_unref(&auxiliary_data);
+  cardano_transaction_unref(&transaction);
+}
+
+TEST(cardano_transaction_to_cbor, keepsTheBlockFrameOfADeepClone)
+{
+  // Arrange
+  cardano_transaction_t* transaction = new_default_transaction(LEDGER_BLOCK_INVALID_CBOR);
+  cardano_transaction_t* clone       = NULL;
+
+  // Act
+  EXPECT_EQ(cardano_transaction_deep_clone(transaction, &clone), CARDANO_SUCCESS);
+
+  // Assert
+  EXPECT_EQ(transaction_to_cbor_hex(clone), LEDGER_BLOCK_INVALID_CBOR);
+
+  // Cleanup
+  cardano_transaction_unref(&clone);
+  cardano_transaction_unref(&transaction);
+}
+
+TEST(cardano_transaction_from_cbor, returnsErrorIfBlockFrameIsMissingIsValid)
+{
+  // Arrange
+  const char*            cbor        = "84a300d901028001800200a0f6";
+  cardano_cbor_reader_t* reader      = cardano_cbor_reader_from_hex(cbor, strlen(cbor));
+  cardano_transaction_t* transaction = NULL;
+
+  // Act
+  cardano_error_t result = cardano_transaction_from_cbor(reader, &transaction);
+
+  // Assert
+  EXPECT_EQ(result, CARDANO_ERROR_DECODING);
+  EXPECT_EQ(transaction, nullptr);
+
+  // Cleanup
+  cardano_cbor_reader_unref(&reader);
+}
+
+TEST(cardano_transaction_from_cbor, returnsErrorIfBlockFrameIsValidIsNotABool)
+{
+  // Arrange
+  const char*            cbor        = "84a300d901028001800200a0f6f6";
+  cardano_cbor_reader_t* reader      = cardano_cbor_reader_from_hex(cbor, strlen(cbor));
+  cardano_transaction_t* transaction = NULL;
+
+  // Act
+  cardano_error_t result = cardano_transaction_from_cbor(reader, &transaction);
+
+  // Assert
+  EXPECT_EQ(result, CARDANO_ERROR_DECODING);
+  EXPECT_EQ(transaction, nullptr);
+
+  // Cleanup
+  cardano_cbor_reader_unref(&reader);
+}
+
+TEST(cardano_transaction_from_cbor, returnsErrorIfIndefiniteLengthBlockFrameIsValidIsNotABool)
+{
+  // Arrange
+  const char*            cbor        = "9fa300d901028001800200a0f6f6ff";
+  cardano_cbor_reader_t* reader      = cardano_cbor_reader_from_hex(cbor, strlen(cbor));
+  cardano_transaction_t* transaction = NULL;
+
+  // Act
+  cardano_error_t result = cardano_transaction_from_cbor(reader, &transaction);
+
+  // Assert
+  EXPECT_EQ(result, CARDANO_ERROR_DECODING);
+  EXPECT_EQ(transaction, nullptr);
+
+  // Cleanup
+  cardano_cbor_reader_unref(&reader);
+}
+
+TEST(cardano_transaction_from_cbor, returnsErrorIfIndefiniteLengthBlockFrameHasExtraElements)
+{
+  // Arrange
+  const char*            cbor        = "9fa300d901028001800200a0f6f5f5ff";
+  cardano_cbor_reader_t* reader      = cardano_cbor_reader_from_hex(cbor, strlen(cbor));
+  cardano_transaction_t* transaction = NULL;
+
+  // Act
+  cardano_error_t result = cardano_transaction_from_cbor(reader, &transaction);
+
+  // Assert
+  EXPECT_EQ(result, CARDANO_ERROR_UNEXPECTED_CBOR_TYPE);
+  EXPECT_EQ(transaction, nullptr);
+
+  // Cleanup
+  cardano_cbor_reader_unref(&reader);
+}
+
+TEST(cardano_transaction_from_cbor, returnsErrorIfAlonzoFrameHasExtraElements)
+{
+  // Arrange
+  const char*            cbor        = "85a300d901028001800200a0f5f6f5";
+  cardano_cbor_reader_t* reader      = cardano_cbor_reader_from_hex(cbor, strlen(cbor));
+  cardano_transaction_t* transaction = NULL;
+
+  // Act
+  cardano_error_t result = cardano_transaction_from_cbor(reader, &transaction);
+
+  // Assert
+  EXPECT_EQ(result, CARDANO_ERROR_UNEXPECTED_CBOR_TYPE);
+  EXPECT_EQ(transaction, nullptr);
+
+  // Cleanup
+  cardano_cbor_reader_unref(&reader);
+}
+
+TEST(cardano_transaction_from_cbor, returnsErrorIfBlockFrameHasExtraElements)
+{
+  // Arrange
+  const char*            cbor        = "85a300d901028001800200a0f6f5f5";
+  cardano_cbor_reader_t* reader      = cardano_cbor_reader_from_hex(cbor, strlen(cbor));
+  cardano_transaction_t* transaction = NULL;
+
+  // Act
+  cardano_error_t result = cardano_transaction_from_cbor(reader, &transaction);
+
+  // Assert
+  EXPECT_EQ(result, CARDANO_ERROR_UNEXPECTED_CBOR_TYPE);
+  EXPECT_EQ(transaction, nullptr);
+
+  // Cleanup
+  cardano_cbor_reader_unref(&reader);
+}
+
+TEST(cardano_transaction_from_cbor, returnsErrorIfFrameHasTwoElements)
+{
+  // Arrange
+  const char*            cbor        = "82a300d901028001800200a0";
+  cardano_cbor_reader_t* reader      = cardano_cbor_reader_from_hex(cbor, strlen(cbor));
+  cardano_transaction_t* transaction = NULL;
+
+  // Act
+  cardano_error_t result = cardano_transaction_from_cbor(reader, &transaction);
+
+  // Assert
+  EXPECT_EQ(result, CARDANO_ERROR_DECODING);
+  EXPECT_EQ(transaction, nullptr);
+
+  // Cleanup
+  cardano_cbor_reader_unref(&reader);
+}
+
+TEST(cardano_transaction_from_cbor, returnsErrorIfBlockFrameMemoryAllocationFails)
+{
+  // Sweep the allocation failure point across the whole call until it succeeds.
+  for (int i = 0; i < 1024; ++i)
+  {
+    // Arrange
+    cardano_cbor_reader_t* reader      = cardano_cbor_reader_from_hex(MUSASHI_AUX_CBOR, strlen(MUSASHI_AUX_CBOR));
+    cardano_transaction_t* transaction = NULL;
+
+    reset_allocators_run_count();
+    set_malloc_limit(i);
+    cardano_set_allocators(fail_malloc_at_limit, realloc, free);
+
+    // Act
+    const cardano_error_t result = cardano_transaction_from_cbor(reader, &transaction);
+
+    reset_allocators_run_count();
+    reset_limited_malloc();
+    cardano_set_allocators(malloc, realloc, free);
+
+    cardano_transaction_unref(&transaction);
+    cardano_cbor_reader_unref(&reader);
+
+    if (result == CARDANO_SUCCESS)
+    {
+      break;
+    }
+
+    // Assert
+    EXPECT_THAT(result, CARDANO_ERROR_MEMORY_ALLOCATION_FAILED);
+    EXPECT_EQ(transaction, nullptr);
+  }
 }
 
 TEST(cardano_transaction_to_cbor, returnsErrorIfCertIsNull)

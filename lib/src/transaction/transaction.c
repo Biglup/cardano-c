@@ -40,6 +40,21 @@
 
 static const int64_t ALONZO_ERA_FRAME_SIZE = 4;
 
+/* ENUMS *********************************************************************/
+
+/**
+ * \brief The layout of the array that frames a transaction.
+ */
+typedef enum
+{
+  /** \brief [body, witness_set, auxiliary_data / null]. */
+  PRV_TRANSACTION_FRAME_SHELLEY = 0,
+  /** \brief [body, witness_set, is_valid, auxiliary_data / null]. */
+  PRV_TRANSACTION_FRAME_ALONZO = 1,
+  /** \brief [body, witness_set, auxiliary_data / null, is_valid], the layout of a transaction in a block. */
+  PRV_TRANSACTION_FRAME_BLOCK = 2
+} transaction_frame_t;
+
 /* STRUCTURES ****************************************************************/
 
 /**
@@ -52,7 +67,7 @@ typedef struct cardano_transaction_t
     cardano_witness_set_t*      witness_set;
     cardano_auxiliary_data_t*   auxiliary_data;
     bool                        is_valid;
-    int64_t                     frame_size;
+    transaction_frame_t         frame;
 } cardano_transaction_t;
 
 /* STATIC FUNCTIONS **********************************************************/
@@ -122,7 +137,7 @@ cardano_transaction_new(
   (*transaction)->witness_set        = witness_set;
   (*transaction)->auxiliary_data     = auxiliary_data;
   (*transaction)->is_valid           = true;
-  (*transaction)->frame_size         = ALONZO_ERA_FRAME_SIZE;
+  (*transaction)->frame              = PRV_TRANSACTION_FRAME_ALONZO;
 
   cardano_transaction_body_ref(body);
   cardano_witness_set_ref(witness_set);
@@ -161,6 +176,7 @@ cardano_transaction_from_cbor(cardano_cbor_reader_t* reader, cardano_transaction
   cardano_witness_set_t*      witness_set    = NULL;
   cardano_auxiliary_data_t*   auxiliary_data = NULL;
   bool                        is_valid       = true;
+  transaction_frame_t         frame          = PRV_TRANSACTION_FRAME_SHELLEY;
 
   cardano_error_t body_result = cardano_transaction_body_from_cbor(reader, &body);
 
@@ -179,20 +195,6 @@ cardano_transaction_from_cbor(cardano_cbor_reader_t* reader, cardano_transaction
     return witness_set_result;
   }
 
-  if (array_size == ALONZO_ERA_FRAME_SIZE)
-  {
-    cardano_error_t read_bool_result = cardano_cbor_reader_read_bool(reader, &is_valid);
-
-    if (read_bool_result != CARDANO_SUCCESS)
-    {
-      cardano_transaction_body_unref(&body);
-      cardano_witness_set_unref(&witness_set);
-      *transaction = NULL;
-
-      return read_bool_result;
-    }
-  }
-
   cardano_cbor_reader_state_t state = CARDANO_CBOR_READER_STATE_UNDEFINED;
 
   cardano_error_t state_result = cardano_cbor_reader_peek_state(reader, &state);
@@ -204,6 +206,33 @@ cardano_transaction_from_cbor(cardano_cbor_reader_t* reader, cardano_transaction
     *transaction = NULL;
 
     return state_result;
+  }
+
+  if (state == CARDANO_CBOR_READER_STATE_BOOLEAN)
+  {
+    cardano_error_t read_bool_result = cardano_cbor_reader_read_bool(reader, &is_valid);
+
+    if (read_bool_result != CARDANO_SUCCESS)
+    {
+      cardano_transaction_body_unref(&body);
+      cardano_witness_set_unref(&witness_set);
+      *transaction = NULL;
+
+      return read_bool_result;
+    }
+
+    frame = PRV_TRANSACTION_FRAME_ALONZO;
+
+    state_result = cardano_cbor_reader_peek_state(reader, &state);
+
+    if (state_result != CARDANO_SUCCESS)
+    {
+      cardano_transaction_body_unref(&body);
+      cardano_witness_set_unref(&witness_set);
+      *transaction = NULL;
+
+      return state_result;
+    }
   }
 
   if (state == CARDANO_CBOR_READER_STATE_NULL)
@@ -230,6 +259,52 @@ cardano_transaction_from_cbor(cardano_cbor_reader_t* reader, cardano_transaction
       *transaction = NULL;
 
       return auxiliary_data_result;
+    }
+  }
+
+  if (frame == PRV_TRANSACTION_FRAME_SHELLEY)
+  {
+    if (array_size == ALONZO_ERA_FRAME_SIZE)
+    {
+      frame = PRV_TRANSACTION_FRAME_BLOCK;
+    }
+    else if (array_size < 0)
+    {
+      state_result = cardano_cbor_reader_peek_state(reader, &state);
+
+      if (state_result != CARDANO_SUCCESS)
+      {
+        cardano_transaction_body_unref(&body);
+        cardano_witness_set_unref(&witness_set);
+        cardano_auxiliary_data_unref(&auxiliary_data);
+        *transaction = NULL;
+
+        return state_result;
+      }
+
+      if (state != CARDANO_CBOR_READER_STATE_END_ARRAY)
+      {
+        frame = PRV_TRANSACTION_FRAME_BLOCK;
+      }
+    }
+    else
+    {
+      frame = PRV_TRANSACTION_FRAME_SHELLEY;
+    }
+  }
+
+  if (frame == PRV_TRANSACTION_FRAME_BLOCK)
+  {
+    cardano_error_t read_bool_result = cardano_cbor_reader_read_bool(reader, &is_valid);
+
+    if (read_bool_result != CARDANO_SUCCESS)
+    {
+      cardano_transaction_body_unref(&body);
+      cardano_witness_set_unref(&witness_set);
+      cardano_auxiliary_data_unref(&auxiliary_data);
+      *transaction = NULL;
+
+      return read_bool_result;
     }
   }
 
@@ -266,12 +341,7 @@ cardano_transaction_from_cbor(cardano_cbor_reader_t* reader, cardano_transaction
     return set_is_valid_result;
   }
 
-  const int64_t DIJKSTRA_ERA_FRAME_SIZE = 3;
-
-  if (array_size == DIJKSTRA_ERA_FRAME_SIZE)
-  {
-    (*transaction)->frame_size = DIJKSTRA_ERA_FRAME_SIZE;
-  }
+  (*transaction)->frame = frame;
 
   return CARDANO_SUCCESS;
 }
@@ -289,11 +359,19 @@ cardano_transaction_to_cbor(const cardano_transaction_t* transaction, cardano_cb
     return CARDANO_ERROR_POINTER_IS_NULL;
   }
 
-  int64_t frame_size = transaction->frame_size;
+  static const int64_t SHELLEY_ERA_FRAME_SIZE = 3;
 
-  if (!transaction->is_valid)
+  transaction_frame_t frame      = transaction->frame;
+  int64_t             frame_size = ALONZO_ERA_FRAME_SIZE;
+
+  if ((frame == PRV_TRANSACTION_FRAME_SHELLEY) && !transaction->is_valid)
   {
-    frame_size = ALONZO_ERA_FRAME_SIZE;
+    frame = PRV_TRANSACTION_FRAME_ALONZO;
+  }
+
+  if (frame == PRV_TRANSACTION_FRAME_SHELLEY)
+  {
+    frame_size = SHELLEY_ERA_FRAME_SIZE;
   }
 
   cardano_error_t write_start_array_result = cardano_cbor_writer_write_start_array(
@@ -319,7 +397,7 @@ cardano_transaction_to_cbor(const cardano_transaction_t* transaction, cardano_cb
     return witness_set_result;
   }
 
-  if (frame_size == ALONZO_ERA_FRAME_SIZE)
+  if (frame == PRV_TRANSACTION_FRAME_ALONZO)
   {
     cardano_error_t write_bool_result = cardano_cbor_writer_write_bool(writer, transaction->is_valid);
 
@@ -345,6 +423,16 @@ cardano_transaction_to_cbor(const cardano_transaction_t* transaction, cardano_cb
     if (auxiliary_data_result != CARDANO_SUCCESS)
     {
       return auxiliary_data_result;
+    }
+  }
+
+  if (frame == PRV_TRANSACTION_FRAME_BLOCK)
+  {
+    cardano_error_t write_bool_result = cardano_cbor_writer_write_bool(writer, transaction->is_valid);
+
+    if (write_bool_result != CARDANO_SUCCESS)
+    {
+      return write_bool_result;
     }
   }
 
@@ -1166,7 +1254,7 @@ cardano_transaction_deep_clone(const cardano_transaction_t* source, cardano_tran
   copy->witness_set        = NULL;
   copy->auxiliary_data     = NULL;
   copy->is_valid           = source->is_valid;
-  copy->frame_size         = source->frame_size;
+  copy->frame              = source->frame;
 
   if (source->body != NULL)
   {
