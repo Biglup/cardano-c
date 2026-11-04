@@ -1,6 +1,8 @@
 Unreleased
 ---------------------
 
+- Erase temporary BIP39-derived key material and normal Ed25519 signing keys after use, including failure paths. Bound serialized software key-handler payload lengths before allocating them, encode handler types independently of host byte order, and clarify the passphrase callback return value.
+
 - Initialize EMIP-003 cryptography and random-improve coin selection before RNG use, enable thread-safe libsodium initialization on native Unix builds, and reject invalid pointers and oversized payloads. Decryption now supports authenticated empty plaintext without relying on zero-size allocations. PBKDF2 rejects zero iterations and derived keys beyond its block counter limit, and avoids counter wraparound on 32-bit platforms.
 
 - **BREAKING (behavioral)**: The signers of a pool registration certificate now include the pool operator next to every pool owner, as the ledger requires. `cardano_transaction_get_unique_signers` returns the operator key hash for such certificates, and the transaction builder and `cardano_balance_transaction` price one more VK witness when the operator is not otherwise a signer, so transactions that register a pool carry a higher fee and that much less change.

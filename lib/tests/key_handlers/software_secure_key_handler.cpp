@@ -519,6 +519,9 @@ TEST(cardano_software_secure_key_handler_serialize, canSerializeBip32SecureKeyHa
 
   EXPECT_EQ(error, CARDANO_SUCCESS);
 
+  ASSERT_GE(cardano_buffer_get_size(buffer), 6U);
+  EXPECT_EQ(cardano_buffer_get_data(buffer)[5], (uint8_t)CARDANO_SECURE_KEY_HANDLER_TYPE_BIP32);
+
   // deserialize it and compare key
   cardano_secure_key_handler_t* deserialized_key_handler = nullptr;
 
@@ -1036,6 +1039,9 @@ TEST(cardano_software_secure_key_handler_serialize, canSerializeEd25519SecureKey
   error = cardano_secure_key_handler_serialize(key_handler, &buffer);
 
   EXPECT_EQ(error, CARDANO_SUCCESS);
+
+  ASSERT_GE(cardano_buffer_get_size(buffer), 6U);
+  EXPECT_EQ(cardano_buffer_get_data(buffer)[5], (uint8_t)CARDANO_SECURE_KEY_HANDLER_TYPE_ED25519);
 
   // deserialize it and compare key
   cardano_secure_key_handler_t* deserialized_key_handler = nullptr;
@@ -1630,6 +1636,39 @@ TEST(cardano_software_secure_key_handler_deserialize, returnErrorIfInvalidEncryp
 
   // Cleanup
   cardano_buffer_unref(&buffer);
+}
+
+TEST(cardano_software_secure_key_handler_deserialize, rejectsTruncatedPayloadBeforeAllocatingIt)
+{
+  // Arrange
+  // Only the input buffer's two allocations may succeed. An attempted payload
+  // allocation would return MEMORY_ALLOCATION_FAILED instead of the bounds error.
+  const uint32_t declared_sizes[] = { 1U, 4U, UINT32_MAX };
+
+  for (const uint32_t declared_size: declared_sizes)
+  {
+    cardano_secure_key_handler_t* key_handler  = nullptr;
+    byte_t                        serialized[] = { 0x0a, 0x0a, 0x0a, 0x0a, 1U, 1U, 0U, 0U, 0U, 0U, 0U, 0U, 0U, 0U };
+    serialized[6]                              = (byte_t)(declared_size >> 24U);
+    serialized[7]                              = (byte_t)(declared_size >> 16U);
+    serialized[8]                              = (byte_t)(declared_size >> 8U);
+    serialized[9]                              = (byte_t)declared_size;
+
+    reset_allocators_run_count();
+    set_malloc_limit(2);
+    cardano_set_allocators(fail_malloc_at_limit, realloc, free);
+
+    // Act
+    const cardano_error_t error = cardano_software_secure_key_handler_deserialize(serialized, sizeof(serialized), &get_passphrase, &key_handler);
+
+    cardano_set_allocators(malloc, realloc, free);
+    reset_allocators_run_count();
+    reset_limited_malloc();
+
+    // Assert
+    EXPECT_EQ(error, CARDANO_ERROR_OUT_OF_BOUNDS_MEMORY_READ);
+    EXPECT_EQ(key_handler, nullptr);
+  }
 }
 
 TEST(cardano_software_secure_key_handler_deserialize, returnErrorIfInvalidChecksum)

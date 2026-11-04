@@ -157,7 +157,13 @@ serialize(
     return CARDANO_ERROR_POINTER_IS_NULL;
   }
 
-  const size_t encrypted_data_size = cardano_buffer_get_size(context->encrypted_data);
+  if ((secure_key_handler_impl->type != CARDANO_SECURE_KEY_HANDLER_TYPE_ED25519) && (secure_key_handler_impl->type != CARDANO_SECURE_KEY_HANDLER_TYPE_BIP32))
+  {
+    return CARDANO_ERROR_ENCODING;
+  }
+
+  const uint8_t type                = (uint8_t)secure_key_handler_impl->type;
+  const size_t  encrypted_data_size = cardano_buffer_get_size(context->encrypted_data);
 
   const size_t total_size = (size_t)4UL // Magic
     + (size_t)1UL                       // Version
@@ -194,7 +200,7 @@ serialize(
     return result;
   }
 
-  result = cardano_buffer_write(buffer, (const byte_t*)&secure_key_handler_impl->type, 1);
+  result = cardano_buffer_write(buffer, &type, sizeof(type));
 
   if (result != CARDANO_SUCCESS)
   {
@@ -1172,11 +1178,11 @@ cardano_software_secure_key_handler_deserialize(
     return result;
   }
 
-  uint32_t                          magic          = 0U;
-  uint8_t                           version        = 0U;
-  cardano_secure_key_handler_type_t type           = CARDANO_SECURE_KEY_HANDLER_TYPE_ED25519;
-  cardano_buffer_t*                 encrypted_data = NULL;
-  uint32_t                          checksum       = 0U;
+  uint32_t          magic          = 0U;
+  uint8_t           version        = 0U;
+  uint8_t           type           = 0U;
+  cardano_buffer_t* encrypted_data = NULL;
+  uint32_t          checksum       = 0U;
 
   result = cardano_buffer_read_uint32_be(data, &magic);
 
@@ -1210,13 +1216,20 @@ cardano_software_secure_key_handler_deserialize(
     return CARDANO_ERROR_DECODING;
   }
 
-  result = cardano_buffer_read(data, (byte_t*)&type, 1U);
+  result = cardano_buffer_read(data, &type, sizeof(type));
 
   if (result != CARDANO_SUCCESS)
   {
     cardano_buffer_unref(&data);
 
     return result;
+  }
+
+  if ((type != (uint8_t)CARDANO_SECURE_KEY_HANDLER_TYPE_ED25519) && (type != (uint8_t)CARDANO_SECURE_KEY_HANDLER_TYPE_BIP32))
+  {
+    cardano_buffer_unref(&data);
+
+    return CARDANO_ERROR_DECODING;
   }
 
   uint32_t encrypted_data_size = 0U;
@@ -1234,6 +1247,15 @@ cardano_software_secure_key_handler_deserialize(
     cardano_buffer_unref(&data);
 
     return CARDANO_ERROR_DECODING;
+  }
+
+  // The header is ten bytes and the checksum is four bytes. Check by subtraction
+  // so that even UINT32_MAX payload lengths cannot overflow on 32-bit platforms.
+  if ((serialized_data_len < 14U) || (encrypted_data_size > (serialized_data_len - 14U)))
+  {
+    cardano_buffer_unref(&data);
+
+    return CARDANO_ERROR_OUT_OF_BOUNDS_MEMORY_READ;
   }
 
   encrypted_data = cardano_buffer_new(encrypted_data_size);
@@ -1297,7 +1319,7 @@ cardano_software_secure_key_handler_deserialize(
     return CARDANO_ERROR_MEMORY_ALLOCATION_FAILED;
   }
 
-  switch (type)
+  switch ((cardano_secure_key_handler_type_t)type)
   {
     case CARDANO_SECURE_KEY_HANDLER_TYPE_ED25519:
     {

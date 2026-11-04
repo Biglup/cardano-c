@@ -852,6 +852,30 @@ TEST(cardano_bip32_private_key_from_bip39_entropy, computesTheRightKeyFromTheEnt
   cardano_bip32_private_key_unref(&expected_key);
 }
 
+TEST(cardano_bip32_private_key_from_bip39_entropy, returnsErrorIfDerivedKeyAllocationFails)
+{
+  for (int i = 0; i < 3; ++i)
+  {
+    // Arrange
+    cardano_bip32_private_key_t* private_key = nullptr;
+
+    reset_allocators_run_count();
+    set_malloc_limit(i);
+    cardano_set_allocators(fail_malloc_at_limit, realloc, free);
+
+    // Act
+    const cardano_error_t error = cardano_bip32_private_key_from_bip39_entropy(BIP39_PASSWORD, BIP39_PASSWORD_SIZE, BIP39_ENTROPY, BIP39_ENTROPY_SIZE, &private_key);
+
+    cardano_set_allocators(malloc, realloc, free);
+    reset_allocators_run_count();
+    reset_limited_malloc();
+
+    // Assert
+    EXPECT_EQ(error, CARDANO_ERROR_MEMORY_ALLOCATION_FAILED);
+    EXPECT_EQ(private_key, nullptr);
+  }
+}
+
 TEST(cardano_bip32_private_key_get_data, returnErrorIfGivenNull)
 {
   // Arrange

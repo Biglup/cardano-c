@@ -587,7 +587,10 @@ compute_signature_with_normal_key(
 
   cardano_ed25519_public_key_unref(&public_key);
 
-  if (crypto_sign_detached(signature_bytes, NULL, message, message_length, sk) == -1)
+  const int sign_result = crypto_sign_detached(signature_bytes, NULL, message, message_length, sk);
+  sodium_memzero(sk, sizeof(sk));
+
+  if (sign_result == -1)
   {
     return CARDANO_ERROR_GENERIC;
   }

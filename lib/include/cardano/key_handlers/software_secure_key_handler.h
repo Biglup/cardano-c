@@ -51,7 +51,9 @@ extern "C" {
  * \param buffer A pointer to the buffer where the passphrase will be written.
  * \param buffer_len The maximum length of the `buffer` to hold the passphrase.
  *
- * \returns `cardano_error_t` indicating success or the type of error encountered while retrieving the passphrase.
+ * \returns The number of passphrase bytes written, excluding any null terminator. Return a nonpositive value on failure.
+ *          The returned length must not exceed `buffer_len`; software key handlers reject empty passphrases and lengths
+ *          greater than their 128-byte passphrase buffer.
  *
  * \note The software key handler ensures that the passphrase is securely erased from memory immediately after it is no
  * longer needed. The memory is wiped using measures that prevent the passphrase from lingering in memory or being retained in
@@ -122,19 +124,18 @@ CARDANO_EXPORT cardano_error_t cardano_software_secure_key_handler_new(
  * is specifically designed for handling Ed25519 keys and does not support hierarchical key derivation (BIP32).
  *
  * The handler encrypts the provided Ed25519 private key with the given passphrase immediately upon creation and
- * securely stores it. All sensitive data (e.g., the private key and passphrase) are wiped from memory after use to
- * ensure that no residual sensitive information remains in memory.
+ * stores the encrypted bytes. The private key and passphrase are borrowed for this call and are not modified.
  *
- * The function takes a reference to the `ed25519_private_key`, meaning the caller must manage the lifecycle of this
- * object. The caller is responsible for releasing their reference by calling `cardano_ed25519_private_key_unref`
- * when it is no longer needed. The `cardano_ed25519_private_key_unref` function safely wipes the memory before
- * releasing it when its reference count reaches 0.
+ * The function does not retain a reference to `ed25519_private_key` or take ownership of it. The caller remains
+ * responsible for its lifecycle and may release it with `cardano_ed25519_private_key_unref` after this call.
+ * The private key's memory is wiped when its reference count reaches 0. The caller is also responsible for
+ * securely erasing the supplied passphrase when it is no longer needed.
  *
  * The `get_passphrase` callback is invoked every time the private key needs to be decrypted for cryptographic
  * operations such as signing. Once decrypted, the key is used for a short period, and it is securely erased from memory
  * after the operation is complete.
  *
- * \param[in] ed25519_private_key A pointer to the `cardano_ed25519_private_key_t` that will be managed by the key handler.
+ * \param[in] ed25519_private_key A borrowed pointer to the private key to encrypt; ownership remains with the caller.
  * \param[in] passphrase A pointer to the passphrase used for encrypting the private key.
  * \param[in] passphrase_len The length of the passphrase in bytes.
  * \param[in] get_passphrase A callback function for retrieving the passphrase when needed to decrypt the private key.
