@@ -46,9 +46,9 @@ extern "C" {
  * \param[in] password_length The length of the password.
  * \param[in] salt A cryptographic salt.
  * \param[in] salt_length The length of the salt.
- * \param[in] iterations The number of iterations specifies how many times the pseudorandom function is applied.
+ * \param[in] iterations The number of iterations specifies how many times the pseudorandom function is applied and must be positive.
  * \param[out] derived_key The buffer where the derived key will be stored.
- * \param[in] derived_key_length The desired length of the derived key.
+ * \param[in] derived_key_length The desired length of the derived key, at most 64 * UINT32_MAX bytes.
  *
  * \return A \ref cardano_error_t indicating the result of the operation: \ref CARDANO_SUCCESS on success,
  *         or an appropriate error code indicating the failure reason. Refer to \ref cardano_error_t documentation

@@ -26,8 +26,14 @@
 #include <cardano/error.h>
 
 #include <cardano/crypto/emip3.h>
+#include <cardano/transaction_builder/coin_selection/random_improve_coin_selector.h>
 
 #include <gmock/gmock.h>
+
+#include <array>
+#include <atomic>
+#include <limits>
+#include <thread>
 
 /* TEST VECTORS **************************************************************/
 
@@ -62,6 +68,47 @@ from_hex_to_buffer(const char* hex, byte_t* buffer, const size_t bufferLength)
 #endif
   }
 }
+
+namespace
+{
+void
+emip3_round_trip_thread(const size_t index, std::atomic<size_t>* ready_count, std::atomic<bool>* start, bool* success)
+{
+  const byte_t             input          = static_cast<byte_t>(index);
+  cardano_buffer_t*        encrypted_data = NULL;
+  cardano_buffer_t*        decrypted_data = NULL;
+  cardano_coin_selector_t* selector       = NULL;
+
+  ready_count->fetch_add(1U);
+  while (!start->load())
+  {
+    std::this_thread::yield();
+  }
+
+  // Let both native RNG entry points compete to initialize libsodium.
+  if (((index % 2U) == 0U) && (cardano_random_improve_coin_selector_new(&selector) != CARDANO_SUCCESS))
+  {
+    return;
+  }
+
+  if (cardano_crypto_emip3_encrypt(&input, 1, NULL, 0, &encrypted_data) == CARDANO_SUCCESS)
+  {
+    if (cardano_crypto_emip3_decrypt(cardano_buffer_get_data(encrypted_data), cardano_buffer_get_size(encrypted_data), NULL, 0, &decrypted_data) == CARDANO_SUCCESS)
+    {
+      *success = (cardano_buffer_get_size(decrypted_data) == 1U) && (cardano_buffer_get_data(decrypted_data)[0] == input);
+    }
+  }
+
+  if ((index % 2U) != 0U)
+  {
+    *success = (cardano_random_improve_coin_selector_new(&selector) == CARDANO_SUCCESS) && *success;
+  }
+
+  cardano_coin_selector_unref(&selector);
+  cardano_buffer_unref(&decrypted_data);
+  cardano_buffer_unref(&encrypted_data);
+}
+} // namespace
 
 /* UNIT TESTS ****************************************************************/
 
@@ -150,13 +197,169 @@ TEST(cardano_crypto_emip3_encrypt, returnsErrorIfOutputIsNull)
 TEST(cardano_crypto_emip3_decrypt, returnsErrorIfDataIsNull)
 {
   cardano_buffer_t* decrypted_data = NULL;
-  cardano_error_t   result         = cardano_crypto_emip3_decrypt(NULL, 0, (const byte_t*)"password", strlen("password"), &decrypted_data);
-  ASSERT_EQ(CARDANO_ERROR_INVALID_ARGUMENT, result);
+  cardano_error_t   result         = cardano_crypto_emip3_decrypt(NULL, 60, (const byte_t*)"password", strlen("password"), &decrypted_data);
+  ASSERT_EQ(CARDANO_ERROR_POINTER_IS_NULL, result);
 }
 
 TEST(cardano_crypto_emip3_decrypt, returnsErrorIfOutputIsNull)
 {
   byte_t          data[1] = { 0 };
-  cardano_error_t result  = cardano_crypto_emip3_decrypt(data, sizeof data, (const byte_t*)"password", strlen("password"), NULL);
-  ASSERT_EQ(CARDANO_ERROR_INVALID_ARGUMENT, result);
+  cardano_error_t result  = cardano_crypto_emip3_decrypt(data, 60, (const byte_t*)"password", strlen("password"), NULL);
+  ASSERT_EQ(CARDANO_ERROR_POINTER_IS_NULL, result);
+}
+
+TEST(cardano_crypto_emip3_encrypt, roundTripsEmptyPlaintext)
+{
+  // Arrange
+  const byte_t      input          = 0;
+  cardano_buffer_t* encrypted_data = NULL;
+  cardano_buffer_t* decrypted_data = NULL;
+
+  // Act
+  ASSERT_EQ(CARDANO_SUCCESS, cardano_crypto_emip3_encrypt(&input, 0, NULL, 0, &encrypted_data));
+  ASSERT_EQ(CARDANO_SUCCESS, cardano_crypto_emip3_decrypt(cardano_buffer_get_data(encrypted_data), cardano_buffer_get_size(encrypted_data), NULL, 0, &decrypted_data));
+
+  // Assert
+  EXPECT_EQ(60U, cardano_buffer_get_size(encrypted_data));
+  EXPECT_EQ(0U, cardano_buffer_get_size(decrypted_data));
+  EXPECT_NE(nullptr, cardano_buffer_get_data(decrypted_data));
+  cardano_buffer_unref(&decrypted_data);
+  cardano_buffer_unref(&encrypted_data);
+}
+
+TEST(cardano_crypto_emip3_encrypt, rejectsInvalidPassphraseAndClearsOutput)
+{
+  // Arrange
+  const byte_t      input  = 0;
+  cardano_buffer_t* output = reinterpret_cast<cardano_buffer_t*>(1);
+
+  // Act
+  const cardano_error_t result = cardano_crypto_emip3_encrypt(&input, 1, NULL, 1, &output);
+
+  // Assert
+  EXPECT_EQ(CARDANO_ERROR_POINTER_IS_NULL, result);
+  EXPECT_EQ(nullptr, output);
+}
+
+TEST(cardano_crypto_emip3_decrypt, rejectsInvalidPassphraseAndClearsOutput)
+{
+  // Arrange
+  const byte_t      input[60] = { 0 };
+  cardano_buffer_t* output    = reinterpret_cast<cardano_buffer_t*>(1);
+
+  // Act
+  const cardano_error_t result = cardano_crypto_emip3_decrypt(input, sizeof(input), NULL, 1, &output);
+
+  // Assert
+  EXPECT_EQ(CARDANO_ERROR_POINTER_IS_NULL, result);
+  EXPECT_EQ(nullptr, output);
+}
+
+TEST(cardano_crypto_emip3_decrypt, rejectsTruncatedEnvelopeAndClearsOutput)
+{
+  // Arrange
+  const byte_t      input[59] = { 0 };
+  cardano_buffer_t* output    = reinterpret_cast<cardano_buffer_t*>(1);
+
+  // Act
+  const cardano_error_t result = cardano_crypto_emip3_decrypt(input, sizeof(input), NULL, 0, &output);
+
+  // Assert
+  EXPECT_EQ(CARDANO_ERROR_INVALID_ARGUMENT, result);
+  EXPECT_EQ(nullptr, output);
+}
+
+TEST(cardano_crypto_emip3_encrypt, rejectsOversizedPayloadBeforeReadingInput)
+{
+  // Arrange
+  const byte_t   input         = 0;
+  const uint64_t counter_limit = 64ULL * ((1ULL << 32U) - 1ULL);
+  const size_t   lengths[]     = { std::numeric_limits<size_t>::max(), static_cast<size_t>(counter_limit + 1ULL) };
+
+  for (const size_t length: lengths)
+  {
+    if (length <= counter_limit && length != std::numeric_limits<size_t>::max())
+    {
+      continue;
+    }
+
+    cardano_buffer_t* output = reinterpret_cast<cardano_buffer_t*>(1);
+
+    // Act
+    const cardano_error_t result = cardano_crypto_emip3_encrypt(&input, length, NULL, 0, &output);
+
+    // Assert
+    EXPECT_EQ(CARDANO_ERROR_INVALID_ARGUMENT, result);
+    EXPECT_EQ(nullptr, output);
+  }
+}
+
+TEST(cardano_crypto_emip3_decrypt, rejectsOversizedPayloadBeforeReadingInput)
+{
+  // Arrange
+  const byte_t   input         = 0;
+  const uint64_t counter_limit = 64ULL * ((1ULL << 32U) - 1ULL);
+  if (std::numeric_limits<size_t>::max() <= counter_limit)
+  {
+    return;
+  }
+  cardano_buffer_t* output = reinterpret_cast<cardano_buffer_t*>(1);
+
+  // Act
+  const cardano_error_t result = cardano_crypto_emip3_decrypt(&input, static_cast<size_t>(counter_limit + 61ULL), NULL, 0, &output);
+
+  // Assert
+  EXPECT_EQ(CARDANO_ERROR_INVALID_ARGUMENT, result);
+  EXPECT_EQ(nullptr, output);
+}
+
+// Run this case with its GoogleTest filter in a fresh process to exercise
+// initialization before any other crypto test has initialized libsodium.
+TEST(cardano_crypto_emip3_encrypt, supportsConcurrentFirstUse)
+{
+  // Arrange
+  constexpr size_t                      thread_count = 8;
+  std::atomic<size_t>                   ready_count  = 0;
+  std::atomic<bool>                     start        = false;
+  std::array<bool, thread_count>        success      = {};
+  std::array<std::thread, thread_count> threads;
+
+  // Act
+  for (size_t i = 0; i < thread_count; ++i)
+  {
+    threads[i] = std::thread(emip3_round_trip_thread, i, &ready_count, &start, &success[i]);
+  }
+  while (ready_count.load() != thread_count)
+  {
+    std::this_thread::yield();
+  }
+  start.store(true);
+  for (std::thread& thread: threads)
+  {
+    thread.join();
+  }
+
+  // Assert
+  for (const bool result: success)
+  {
+    EXPECT_TRUE(result);
+  }
+}
+
+TEST(cardano_crypto_emip3_decrypt, rejectsUnauthenticatedEmptyPlaintextAndClearsOutput)
+{
+  // Arrange
+  const byte_t      input          = 0;
+  cardano_buffer_t* encrypted_data = NULL;
+  ASSERT_EQ(CARDANO_SUCCESS, cardano_crypto_emip3_encrypt(&input, 0, NULL, 0, &encrypted_data));
+  cardano_buffer_get_data(encrypted_data)[44] ^= 1U;
+  cardano_buffer_t* decrypted_data            = reinterpret_cast<cardano_buffer_t*>(1);
+
+  // Act
+  const cardano_error_t result = cardano_crypto_emip3_decrypt(cardano_buffer_get_data(encrypted_data), cardano_buffer_get_size(encrypted_data), NULL, 0, &decrypted_data);
+
+  // Assert
+  EXPECT_EQ(CARDANO_ERROR_GENERIC, result);
+  EXPECT_EQ(nullptr, decrypted_data);
+  cardano_buffer_unref(&encrypted_data);
 }

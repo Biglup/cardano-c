@@ -770,6 +770,18 @@ cardano_random_improve_coin_selector_new_with_seed(
 cardano_error_t
 cardano_random_improve_coin_selector_new(cardano_coin_selector_t** coin_selector)
 {
+  if (coin_selector == NULL)
+  {
+    return CARDANO_ERROR_POINTER_IS_NULL;
+  }
+
+  *coin_selector = NULL;
+
+  if (sodium_init() == -1)
+  {
+    return CARDANO_ERROR_GENERIC;
+  }
+
   uint64_t seed = 0U;
 
   randombytes_buf(&seed, sizeof(seed));

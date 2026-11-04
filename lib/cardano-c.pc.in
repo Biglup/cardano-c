@@ -7,4 +7,5 @@ Name: libcardano-c
 Description: A C library for interacting with the Cardano blockchain.
 Version: @CARDANO_C_VERSION@
 Libs: -L@CMAKE_INSTALL_PREFIX@/@CMAKE_SHARED_LIBRARY_PREFIX@ -lcardano-c
+Libs.private: @SODIUM_THREAD_FLAGS@
 Cflags: -I@CMAKE_INSTALL_PREFIX@/include

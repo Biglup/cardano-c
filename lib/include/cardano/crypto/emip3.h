@@ -64,16 +64,16 @@ extern "C" {
  *      - The 16-byte MAC.
  *      - The encrypted data.
  *
- * \param[in] data The raw data to be encrypted.
- * \param[in] data_length The length of the raw data.
- * \param[in] passphrase The user-provided passphrase used for deriving the encryption key.
+ * \param[in] data The raw data to be encrypted. Must be non-NULL, including when data_length is zero.
+ * \param[in] data_length The length of the raw data. Lengths exceeding the ChaCha20-Poly1305 IETF limit or overflowing the envelope size are rejected.
+ * \param[in] passphrase The user-provided passphrase used for deriving the encryption key. May be NULL when passphrase_length is zero.
  * \param[in] passphrase_length The length of the passphrase.
- * \param[out] encrypted_data A pointer to a buffer where the resulting encrypted byte array will be stored.
+ * \param[out] encrypted_data A pointer to a buffer where the resulting encrypted byte array will be stored. Set to NULL on failure.
  *             The caller is responsible for managing this buffer and securely wiping it after use.
  *
  * \return `cardano_error_t` An error code indicating success or failure.
  *
- * \note The passphrase and sensitive data are securely wiped from memory after encryption is completed.
+ * \note The derived key is securely wiped after use. The caller owns the input data and passphrase and must wipe them after use.
  *
  * \see [EMIP-003](https://github.com/Emurgo/EmIPs/blob/master/specs/emip-003.md) for full specification details.
  *
@@ -135,9 +135,9 @@ CARDANO_EXPORT cardano_error_t cardano_crypto_emip3_encrypt(
  *
  * \param[in] encrypted_data The encrypted data to be decrypted.
  * \param[in] encrypted_data_length The length of the encrypted data.
- * \param[in] passphrase The user-provided passphrase used for deriving the decryption key.
+ * \param[in] passphrase The user-provided passphrase used for deriving the decryption key. May be NULL when passphrase_length is zero.
  * \param[in] passphrase_length The length of the passphrase.
- * \param[out] data A pointer to a buffer where the resulting decrypted byte array will be stored.
+ * \param[out] data A pointer to a buffer where the resulting decrypted byte array will be stored. Set to NULL on failure.
  *             The caller is responsible for managing this buffer and securely wiping it after use.
  *
  * \return `cardano_error_t` An error code indicating success or failure.

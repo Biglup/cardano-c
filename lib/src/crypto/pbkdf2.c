@@ -54,6 +54,11 @@ cardano_crypto_pbkdf2_hmac_sha512(
     return CARDANO_ERROR_INSUFFICIENT_BUFFER_SIZE;
   }
 
+  if ((iterations == 0U) || ((uint64_t)derived_key_length > ((uint64_t)UINT32_MAX * crypto_auth_hmacsha512_BYTES)))
+  {
+    return CARDANO_ERROR_INVALID_ARGUMENT;
+  }
+
   crypto_auth_hmacsha512_state initial_hmac_state   = { 0 };
   crypto_auth_hmacsha512_state loop_hHmac_state     = { 0 };
   byte_t                       iteration_vector[4U] = { 0 };
@@ -63,7 +68,10 @@ cardano_crypto_pbkdf2_hmac_sha512(
   crypto_auth_hmacsha512_init(&initial_hmac_state, password, password_length);
   crypto_auth_hmacsha512_update(&initial_hmac_state, salt, salt_length);
 
-  for (size_t i = 0; (i * crypto_auth_hmacsha512_BYTES) < derived_key_length; ++i)
+  const size_t block_count = (derived_key_length / crypto_auth_hmacsha512_BYTES) +
+    (((derived_key_length % crypto_auth_hmacsha512_BYTES) != 0U) ? 1U : 0U);
+
+  for (size_t i = 0; i < block_count; ++i)
   {
     size_t current_block_length = 0;
 
@@ -76,7 +84,7 @@ cardano_crypto_pbkdf2_hmac_sha512(
 
     cardano_safe_memcpy(block_digest, sizeof(block_digest), temp_digest, sizeof(temp_digest));
 
-    for (size_t j = 2; j <= iterations; ++j)
+    for (uint32_t j = 1U; j < iterations; ++j)
     {
       crypto_auth_hmacsha512_init(&loop_hHmac_state, password, password_length);
       crypto_auth_hmacsha512_update(&loop_hHmac_state, temp_digest, crypto_auth_hmacsha512_BYTES);

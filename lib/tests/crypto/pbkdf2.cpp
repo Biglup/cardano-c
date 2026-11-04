@@ -29,6 +29,8 @@
 
 #include <gmock/gmock.h>
 
+#include <limits>
+
 /* TEST VECTORS **************************************************************/
 
 typedef struct
@@ -167,4 +169,37 @@ TEST(cardano_crypto_pbkdf2_hmac_sha512, returnErrorOnZeroDerivedKeyLength)
 
   // Assert
   EXPECT_EQ(result, CARDANO_ERROR_INSUFFICIENT_BUFFER_SIZE);
+}
+
+TEST(cardano_crypto_pbkdf2_hmac_sha512, rejectsZeroIterationsWithoutWritingOutput)
+{
+  // Arrange
+  const byte_t salt   = 1;
+  byte_t       output = 42;
+
+  // Act
+  const cardano_error_t result = cardano_crypto_pbkdf2_hmac_sha512(NULL, 0, &salt, 1, 0, &output, 1);
+
+  // Assert
+  EXPECT_EQ(CARDANO_ERROR_INVALID_ARGUMENT, result);
+  EXPECT_EQ(42U, output);
+}
+
+TEST(cardano_crypto_pbkdf2_hmac_sha512, rejectsDerivedKeyBeyondBlockCounterLimit)
+{
+  // Arrange
+  const uint64_t maximum_length = 64ULL * UINT32_MAX;
+  if (std::numeric_limits<size_t>::max() <= maximum_length)
+  {
+    return;
+  }
+  const byte_t salt   = 1;
+  byte_t       output = 42;
+
+  // Act
+  const cardano_error_t result = cardano_crypto_pbkdf2_hmac_sha512(NULL, 0, &salt, 1, 1, &output, static_cast<size_t>(maximum_length + 1ULL));
+
+  // Assert
+  EXPECT_EQ(CARDANO_ERROR_INVALID_ARGUMENT, result);
+  EXPECT_EQ(42U, output);
 }
