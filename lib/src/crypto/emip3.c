@@ -48,9 +48,26 @@ cardano_crypto_emip3_encrypt(
   const size_t       passphrase_length,
   cardano_buffer_t** encrypted_data)
 {
-  if ((data == NULL) || ((passphrase_length > 0U) && (passphrase == NULL)) || (encrypted_data == NULL))
+  if (encrypted_data == NULL)
   {
     return CARDANO_ERROR_POINTER_IS_NULL;
+  }
+
+  *encrypted_data = NULL;
+
+  if ((data == NULL) || ((passphrase_length > 0U) && (passphrase == NULL)))
+  {
+    return CARDANO_ERROR_POINTER_IS_NULL;
+  }
+
+  if ((data_length > (SIZE_MAX - SALT_LENGTH - NONCE_LENGTH - TAG_LENGTH)) || (data_length > crypto_aead_chacha20poly1305_ietf_MESSAGEBYTES_MAX))
+  {
+    return CARDANO_ERROR_INVALID_ARGUMENT;
+  }
+
+  if (sodium_init() == -1)
+  {
+    return CARDANO_ERROR_GENERIC;
   }
 
   cardano_error_t result = CARDANO_SUCCESS;
@@ -120,6 +137,18 @@ cardano_crypto_emip3_decrypt(
   const size_t       passphrase_length,
   cardano_buffer_t** data)
 {
+  if (data == NULL)
+  {
+    return CARDANO_ERROR_POINTER_IS_NULL;
+  }
+
+  *data = NULL;
+
+  if ((encrypted_data == NULL) || ((passphrase_length > 0U) && (passphrase == NULL)))
+  {
+    return CARDANO_ERROR_POINTER_IS_NULL;
+  }
+
   if (encrypted_data_length < (SALT_LENGTH + NONCE_LENGTH + TAG_LENGTH))
   {
     return CARDANO_ERROR_INVALID_ARGUMENT;
@@ -127,7 +156,17 @@ cardano_crypto_emip3_decrypt(
 
   const size_t ciphertext_len = encrypted_data_length - (SALT_LENGTH + NONCE_LENGTH + TAG_LENGTH);
 
-  *data = cardano_buffer_new(ciphertext_len);
+  if (ciphertext_len > crypto_aead_chacha20poly1305_ietf_MESSAGEBYTES_MAX)
+  {
+    return CARDANO_ERROR_INVALID_ARGUMENT;
+  }
+
+  if (sodium_init() == -1)
+  {
+    return CARDANO_ERROR_GENERIC;
+  }
+
+  *data = cardano_buffer_new((ciphertext_len == 0U) ? 1U : ciphertext_len);
 
   if (*data == NULL)
   {
@@ -156,6 +195,7 @@ cardano_crypto_emip3_decrypt(
   if (result != CARDANO_SUCCESS)
   {
     cardano_buffer_unref(data);
+    sodium_memzero(key, KEY_LENGTH);
 
     return result;
   }
