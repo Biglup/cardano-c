@@ -206,13 +206,17 @@ cardano_bip32_private_key_from_bip39_entropy(
   if (result != CARDANO_SUCCESS)
   {
     *key = NULL;
+    sodium_memzero(pbkdf2_key, sizeof(pbkdf2_key));
 
     return result;
   }
 
   clamp_scalar(&pbkdf2_key[0]);
 
-  return cardano_bip32_private_key_from_bytes(&pbkdf2_key[0], BIP32_ED25519_PRIVATE_KEY_LENGTH, key);
+  result = cardano_bip32_private_key_from_bytes(&pbkdf2_key[0], BIP32_ED25519_PRIVATE_KEY_LENGTH, key);
+  sodium_memzero(pbkdf2_key, sizeof(pbkdf2_key));
+
+  return result;
 }
 
 cardano_error_t
