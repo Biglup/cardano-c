@@ -1265,6 +1265,39 @@ cardano_sub_tx_builder_add_certificate_with_deferred_redeemer(
 }
 
 void
+cardano_sub_tx_builder_add_proposal(
+  cardano_sub_tx_builder_t*     builder,
+  cardano_proposal_procedure_t* proposal,
+  cardano_plutus_data_t*        redeemer)
+{
+  if ((builder == NULL) || (builder->last_error != CARDANO_SUCCESS))
+  {
+    return;
+  }
+
+  const char*           error_message = NULL;
+  const cardano_error_t result        = cardano_builder_add_proposal(&builder->state, proposal, redeemer, &error_message);
+  track_builder_result(builder, result, error_message);
+}
+
+void
+cardano_sub_tx_builder_add_proposal_with_deferred_redeemer(
+  cardano_sub_tx_builder_t*      builder,
+  cardano_proposal_procedure_t*  proposal,
+  cardano_deferred_redeemer_fn_t callback,
+  void*                          user_context)
+{
+  if ((builder == NULL) || (builder->last_error != CARDANO_SUCCESS))
+  {
+    return;
+  }
+
+  const char*           error_message = NULL;
+  const cardano_error_t result        = cardano_builder_add_proposal_with_deferred_redeemer(&builder->state, proposal, callback, user_context, &error_message);
+  track_builder_result(builder, result, error_message);
+}
+
+void
 cardano_sub_tx_builder_propose_parameter_change(
   cardano_sub_tx_builder_t*        builder,
   cardano_reward_address_t*        reward_address,

@@ -251,6 +251,24 @@ cardano_builder_set_donation(
 }
 
 cardano_error_t
+cardano_builder_set_current_treasury_value(
+  cardano_builder_state_t* state,
+  const uint64_t           current_treasury_value,
+  const char**             error_message)
+{
+  cardano_transaction_body_t* body   = cardano_transaction_get_body(state->transaction);
+  const cardano_error_t       result = cardano_transaction_body_set_treasury_value(body, &current_treasury_value);
+  cardano_transaction_body_unref(&body);
+
+  if (result != CARDANO_SUCCESS)
+  {
+    *error_message = "Failed to set current treasury value.";
+  }
+
+  return result;
+}
+
+cardano_error_t
 cardano_builder_set_utxos(
   cardano_builder_state_t* state,
   cardano_utxo_list_t*     utxos,

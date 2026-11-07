@@ -243,6 +243,14 @@ cardano_builder_set_donation(
   uint64_t                 donation,
   const char**             error_message);
 
+/** \brief Sets the current treasury value, including an explicit zero. */
+
+cardano_error_t
+cardano_builder_set_current_treasury_value(
+  cardano_builder_state_t* state,
+  uint64_t                 current_treasury_value,
+  const char**             error_message);
+
 /**
  * \brief Sets the UTXO set available to the coin selector for input selection.
  *

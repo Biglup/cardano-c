@@ -178,7 +178,210 @@ add_proposing_redeemer(
   return result;
 }
 
+/** \brief Inspects whether a proposal carries a constitution policy hash. */
+static cardano_error_t
+proposal_has_policy(cardano_proposal_procedure_t* proposal, bool* has_policy)
+{
+  cardano_governance_action_type_t type   = CARDANO_GOVERNANCE_ACTION_TYPE_INFO;
+  cardano_error_t                  result = cardano_proposal_procedure_get_action_type(proposal, &type);
+  cardano_blake2b_hash_t*          policy = NULL;
+
+  if ((result == CARDANO_SUCCESS) && (type == CARDANO_GOVERNANCE_ACTION_TYPE_PARAMETER_CHANGE))
+  {
+    cardano_parameter_change_action_t* action = NULL;
+    result                                    = cardano_proposal_procedure_to_parameter_change_action(proposal, &action);
+    policy                                    = cardano_parameter_change_action_get_policy_hash(action);
+    cardano_parameter_change_action_unref(&action);
+  }
+  else if ((result == CARDANO_SUCCESS) && (type == CARDANO_GOVERNANCE_ACTION_TYPE_TREASURY_WITHDRAWALS))
+  {
+    cardano_treasury_withdrawals_action_t* action = NULL;
+    result                                        = cardano_proposal_procedure_to_treasury_withdrawals_action(proposal, &action);
+    policy                                        = cardano_treasury_withdrawals_action_get_policy_hash(action);
+    cardano_treasury_withdrawals_action_unref(&action);
+  }
+
+  *has_policy = policy != NULL;
+  cardano_blake2b_hash_unref(&policy);
+
+  return result;
+}
+
+/** \brief Appends the proposing witness and registers its optional deferred payload. */
+static cardano_error_t
+add_proposal_redeemer(
+  cardano_builder_state_t*       state,
+  uint64_t                       index,
+  cardano_plutus_data_t*         data,
+  cardano_deferred_redeemer_fn_t callback,
+  void*                          user_context,
+  const char**                   error_message)
+{
+  cardano_ex_units_t* ex_units = NULL;
+  cardano_redeemer_t* redeemer = NULL;
+  cardano_error_t     result   = cardano_ex_units_new(0, 0, &ex_units);
+
+  if (result == CARDANO_SUCCESS)
+  {
+    result = cardano_redeemer_new(CARDANO_REDEEMER_TAG_PROPOSING, index, data, ex_units, &redeemer);
+  }
+
+  cardano_ex_units_unref(&ex_units);
+  cardano_witness_set_t*   witnesses = cardano_transaction_get_witness_set(state->transaction);
+  cardano_redeemer_list_t* redeemers = cardano_witness_set_get_redeemers(witnesses);
+
+  if ((result == CARDANO_SUCCESS) && (redeemers == NULL))
+  {
+    result = cardano_redeemer_list_new(&redeemers);
+    if (result == CARDANO_SUCCESS)
+    {
+      result = cardano_witness_set_set_redeemers(witnesses, redeemers);
+    }
+  }
+
+  if (result == CARDANO_SUCCESS)
+  {
+    result = cardano_redeemer_list_add(redeemers, redeemer);
+  }
+
+  if ((result == CARDANO_SUCCESS) && (callback != NULL))
+  {
+    result = cardano_deferred_redeemer_list_add(state->deferred_redeemers, redeemer, callback, user_context);
+  }
+
+  cardano_redeemer_unref(&redeemer);
+  cardano_redeemer_list_unref(&redeemers);
+  cardano_witness_set_unref(&witnesses);
+
+  if (result != CARDANO_SUCCESS)
+  {
+    *error_message = "Failed to add proposing redeemer.";
+  }
+
+  return result;
+}
+
+/**
+ * \brief Adds a proposal and its optional proposing witness to the shared builder state.
+ */
+static cardano_error_t
+add_proposal(
+  cardano_builder_state_t*       state,
+  cardano_proposal_procedure_t*  proposal,
+  cardano_plutus_data_t*         data,
+  cardano_deferred_redeemer_fn_t callback,
+  void*                          user_context,
+  const char**                   error_message)
+{
+  if (proposal == NULL)
+  {
+    *error_message = "Proposal is NULL.";
+
+    return CARDANO_ERROR_POINTER_IS_NULL;
+  }
+
+  if (cardano_proposal_procedure_get_deposit(proposal) != cardano_protocol_parameters_get_governance_action_deposit(state->params))
+  {
+    *error_message = "Proposal deposit does not match the protocol governance action deposit.";
+
+    return CARDANO_ERROR_INVALID_ARGUMENT;
+  }
+
+  bool            has_policy = false;
+  cardano_error_t result     = proposal_has_policy(proposal, &has_policy);
+
+  if (result != CARDANO_SUCCESS)
+  {
+    *error_message = "Failed to inspect proposal action.";
+
+    return result;
+  }
+
+  if (((data != NULL) || (callback != NULL)) && !has_policy)
+  {
+    *error_message = "A proposing redeemer requires a proposal with a policy hash.";
+
+    return CARDANO_ERROR_INVALID_ARGUMENT;
+  }
+
+  uint64_t index = 0U;
+  result         = cardano_transaction_find_proposal_index(state->transaction, proposal, &index);
+
+  if (result != CARDANO_ERROR_ELEMENT_NOT_FOUND)
+  {
+    *error_message = "Proposal is already present or could not be compared.";
+
+    return result == CARDANO_SUCCESS ? CARDANO_ERROR_DUPLICATED_KEY : result;
+  }
+
+  cardano_transaction_body_t*       body      = cardano_transaction_get_body(state->transaction);
+  cardano_proposal_procedure_set_t* proposals = get_proposal_procedure_set(body);
+  cardano_transaction_body_unref(&body);
+
+  if (proposals == NULL)
+  {
+    *error_message = "Failed to create proposal procedures.";
+
+    return CARDANO_ERROR_MEMORY_ALLOCATION_FAILED;
+  }
+
+  index  = cardano_proposal_procedure_set_get_length(proposals);
+  result = cardano_proposal_procedure_set_add(proposals, proposal);
+
+  if (result != CARDANO_SUCCESS)
+  {
+    *error_message = "Failed to add proposal procedure.";
+
+    return result;
+  }
+
+  if (data == NULL)
+  {
+    return CARDANO_SUCCESS;
+  }
+
+  return add_proposal_redeemer(state, index, data, callback, user_context, error_message);
+}
+
 /* IMPLEMENTATION ************************************************************/
+
+cardano_error_t
+cardano_builder_add_proposal(
+  cardano_builder_state_t*      state,
+  cardano_proposal_procedure_t* proposal,
+  cardano_plutus_data_t*        redeemer,
+  const char**                  error_message)
+{
+  return add_proposal(state, proposal, redeemer, NULL, NULL, error_message);
+}
+
+cardano_error_t
+cardano_builder_add_proposal_with_deferred_redeemer(
+  cardano_builder_state_t*       state,
+  cardano_proposal_procedure_t*  proposal,
+  cardano_deferred_redeemer_fn_t callback,
+  void*                          user_context,
+  const char**                   error_message)
+{
+  if (callback == NULL)
+  {
+    *error_message = "Callback is NULL.";
+    return CARDANO_ERROR_POINTER_IS_NULL;
+  }
+
+  cardano_plutus_data_t* placeholder = create_empty_plutus_data();
+
+  if (placeholder == NULL)
+  {
+    *error_message = "Failed to create placeholder redeemer.";
+    return CARDANO_ERROR_MEMORY_ALLOCATION_FAILED;
+  }
+
+  const cardano_error_t result = add_proposal(state, proposal, placeholder, callback, user_context, error_message);
+  cardano_plutus_data_unref(&placeholder);
+
+  return result;
+}
 
 cardano_error_t
 cardano_builder_propose_parameter_change(
