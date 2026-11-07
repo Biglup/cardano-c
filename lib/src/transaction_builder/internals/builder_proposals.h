@@ -45,6 +45,21 @@
 extern "C" {
 #endif /* __cplusplus */
 
+/** \brief Adds a proposal with an optional explicit proposing redeemer. */
+cardano_error_t cardano_builder_add_proposal(
+  cardano_builder_state_t*      state,
+  cardano_proposal_procedure_t* proposal,
+  cardano_plutus_data_t*        redeemer,
+  const char**                  error_message);
+
+/** \brief Adds a proposal with a deferred proposing redeemer. */
+cardano_error_t cardano_builder_add_proposal_with_deferred_redeemer(
+  cardano_builder_state_t*       state,
+  cardano_proposal_procedure_t*  proposal,
+  cardano_deferred_redeemer_fn_t callback,
+  void*                          user_context,
+  const char**                   error_message);
+
 /**
  * \brief Adds a protocol parameter change proposal to the transaction.
  *

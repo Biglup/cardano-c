@@ -883,6 +883,26 @@ CARDANO_EXPORT cardano_error_t cardano_transaction_find_certificate_index(
   uint64_t*              index);
 
 /**
+ * \brief Finds the index of a proposal in the transaction's proposal list.
+ *
+ * Proposals are indexed in the order they appear in the transaction body, which is the index
+ * proposing redeemers and validators use to reference them. Proposals are matched by their
+ * serialized representation, so any proposal object with the same contents matches.
+ *
+ * \param[in]  transaction The transaction to inspect.
+ * \param[in]  proposal The proposal to look for.
+ * \param[out] index       The position of the proposal in the proposal list.
+ *
+ * \return \ref CARDANO_SUCCESS if the proposal was found, \ref CARDANO_ERROR_ELEMENT_NOT_FOUND
+ *         if the transaction does not carry the given proposal, or an appropriate error code.
+ */
+CARDANO_NODISCARD
+CARDANO_EXPORT cardano_error_t cardano_transaction_find_proposal_index(
+  cardano_transaction_t*        transaction,
+  cardano_proposal_procedure_t* proposal,
+  uint64_t*                     index);
+
+/**
  * \brief Finds the index of a voter in the transaction's voting procedures in ledger order.
  *
  * The ledger orders voters by role, constitutional committee members first, then DReps, then

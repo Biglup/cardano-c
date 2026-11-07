@@ -322,3 +322,11 @@ Sub Transaction Builder
 ------------
 
 .. doxygenfunction:: cardano_sub_tx_builder_get_last_error
+
+------------
+
+.. doxygenfunction:: cardano_sub_tx_builder_add_proposal
+
+------------
+
+.. doxygenfunction:: cardano_sub_tx_builder_add_proposal_with_deferred_redeemer
