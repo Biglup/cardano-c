@@ -1119,6 +1119,111 @@ cardano_transaction_find_certificate_index(
   return result;
 }
 
+/**
+ * \brief Serializes a proposal into a freshly allocated buffer.
+ *
+ * \param[in]  proposal The proposal to serialize.
+ * \param[out] buffer      The serialized bytes. The caller takes ownership.
+ *
+ * \return \ref CARDANO_SUCCESS on success, or an appropriate error code.
+ */
+static cardano_error_t
+proposal_to_cbor_buffer(cardano_proposal_procedure_t* proposal, cardano_buffer_t** buffer)
+{
+  cardano_cbor_writer_t* writer = cardano_cbor_writer_new();
+
+  if (writer == NULL)
+  {
+    return CARDANO_ERROR_MEMORY_ALLOCATION_FAILED;
+  }
+
+  cardano_error_t result = cardano_proposal_procedure_to_cbor(proposal, writer);
+
+  if (result == CARDANO_SUCCESS)
+  {
+    result = cardano_cbor_writer_encode_in_buffer(writer, buffer);
+  }
+
+  cardano_cbor_writer_unref(&writer);
+
+  return result;
+}
+
+cardano_error_t
+cardano_transaction_find_proposal_index(
+  cardano_transaction_t*        transaction,
+  cardano_proposal_procedure_t* proposal,
+  uint64_t*                     index)
+{
+  if ((transaction == NULL) || (proposal == NULL) || (index == NULL))
+  {
+    return CARDANO_ERROR_POINTER_IS_NULL;
+  }
+
+  cardano_transaction_body_t* body = cardano_transaction_get_body(transaction);
+  cardano_transaction_body_unref(&body);
+
+  cardano_proposal_procedure_set_t* proposals = cardano_transaction_body_get_proposal_procedures(body);
+  cardano_proposal_procedure_set_unref(&proposals);
+
+  if (proposals == NULL)
+  {
+    return CARDANO_ERROR_ELEMENT_NOT_FOUND;
+  }
+
+  cardano_buffer_t* target_bytes = NULL;
+
+  cardano_error_t result = proposal_to_cbor_buffer(proposal, &target_bytes);
+
+  if (result != CARDANO_SUCCESS)
+  {
+    return result;
+  }
+
+  result = CARDANO_ERROR_ELEMENT_NOT_FOUND;
+
+  const size_t length = cardano_proposal_procedure_set_get_length(proposals);
+
+  for (size_t i = 0U; (i < length) && (result == CARDANO_ERROR_ELEMENT_NOT_FOUND); ++i)
+  {
+    cardano_proposal_procedure_t* entry = NULL;
+
+    const cardano_error_t get_result = cardano_proposal_procedure_set_get(proposals, i, &entry);
+
+    if (get_result != CARDANO_SUCCESS)
+    {
+      result = get_result;
+    }
+    else
+    {
+      cardano_buffer_t* entry_bytes = NULL;
+
+      const cardano_error_t serialize_result = proposal_to_cbor_buffer(entry, &entry_bytes);
+
+      cardano_proposal_procedure_unref(&entry);
+
+      if (serialize_result != CARDANO_SUCCESS)
+      {
+        result = serialize_result;
+      }
+      else
+      {
+        if (cardano_buffer_equals(entry_bytes, target_bytes))
+        {
+          *index = i;
+          result = CARDANO_SUCCESS;
+        }
+
+        cardano_buffer_unref(&entry_bytes);
+      }
+    }
+  }
+
+  cardano_buffer_unref(&target_bytes);
+
+  return result;
+}
+
 cardano_error_t
 cardano_transaction_find_vote_index(
   cardano_transaction_t* transaction,

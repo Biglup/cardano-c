@@ -28,6 +28,7 @@
 #include <cardano/common/drep.h>
 #include <cardano/error.h>
 #include <cardano/proposal_procedures/constitution.h>
+#include <cardano/proposal_procedures/proposal_procedure.h>
 #include <cardano/providers/provider.h>
 #include <cardano/slot_config.h>
 #include <cardano/transaction/sub_transaction.h>
@@ -356,6 +357,18 @@ CARDANO_EXPORT void cardano_tx_builder_set_minimum_fee(cardano_tx_builder_t* bui
  * \endcode
  */
 CARDANO_EXPORT void cardano_tx_builder_set_donation(cardano_tx_builder_t* builder, uint64_t donation);
+
+/**
+ * \brief Sets the current treasury value asserted by the transaction, in lovelace.
+ *
+ * Zero is retained as an explicit value. Errors are deferred until build.
+ *
+ * \param[in,out] builder The transaction builder. NULL is a no-op.
+ * \param[in] current_treasury_value The current treasury amount, in lovelace.
+ */
+CARDANO_EXPORT void cardano_tx_builder_set_current_treasury_value(
+  cardano_tx_builder_t* builder,
+  uint64_t              current_treasury_value);
 
 /**
  * \brief Sets the available UTXOs for coin selection in transaction balancing.
@@ -2239,10 +2252,52 @@ CARDANO_EXPORT void cardano_tx_builder_add_script(
   cardano_script_t*     script);
 
 /**
+ * \brief Adds a complete proposal procedure with an optional proposing redeemer.
+ *
+ * The proposal deposit must match the configured governance action deposit. Proposals retain
+ * insertion order; a proposal with identical serialized contents is rejected as a duplicate.
+ * A non-NULL redeemer requires a parameter change or treasury withdrawal with a policy hash.
+ * NULL adds no redeemer, including for proposals with a policy hash. The builder retains
+ * references to the proposal and redeemer. Errors are deferred until build.
+ *
+ * \param[in,out] builder The builder. NULL is a no-op.
+ * \param[in] proposal The proposal procedure. Must not be NULL.
+ * \param[in] redeemer The proposing payload, or NULL.
+ */
+CARDANO_EXPORT void cardano_tx_builder_add_proposal(
+  cardano_tx_builder_t*         builder,
+  cardano_proposal_procedure_t* proposal,
+  cardano_plutus_data_t*        redeemer);
+
+/**
+ * \brief Adds a proposal whose proposing payload is produced by a deferred callback.
+ *
+ * The same proposal and deposit rules as \ref cardano_tx_builder_add_proposal apply.
+ * The callback follows \ref cardano_deferred_redeemer_fn_t. Use
+ * \ref cardano_transaction_find_proposal_index on the draft transaction to obtain the
+ * proposal's proposing index. For sub transactions this index is local to that body.
+ * The caller must keep user_context valid until build completes.
+ *
+ * \param[in,out] builder The builder. NULL is a no-op.
+ * \param[in] proposal The proposal procedure with a policy hash. Must not be NULL.
+ * \param[in] callback The callback producing the payload. Must not be NULL.
+ * \param[in] user_context An opaque pointer forwarded to the callback. Can be NULL.
+ */
+CARDANO_EXPORT void cardano_tx_builder_add_proposal_with_deferred_redeemer(
+  cardano_tx_builder_t*          builder,
+  cardano_proposal_procedure_t*  proposal,
+  cardano_deferred_redeemer_fn_t callback,
+  void*                          user_context);
+
+/**
  * \brief Proposes a parameter change within a Cardano transaction.
  *
  * This function adds a parameter change proposal to the transaction being built. The proposal specifies
  * updates to protocol parameters, a governance action ID, and other metadata associated with the proposal.
+ *
+ * This convenience function uses Plutus unit (`d87980`) as the proposing redeemer.
+ * Use \ref cardano_tx_builder_add_proposal for a custom redeemer, or
+ * \ref cardano_tx_builder_add_proposal_with_deferred_redeemer to compute it after balancing.
  *
  * \param[in, out] builder A pointer to the \ref cardano_tx_builder_t instance used to build the transaction.
  * \param[in] reward_address A pointer to a \ref cardano_reward_address_t where the deposit will be refunded.
@@ -2296,6 +2351,10 @@ CARDANO_EXPORT void cardano_tx_builder_propose_parameter_change(
  *
  * This function allows the inclusion of a parameter change proposal into the transaction being built, using string representations for key parameters
  * such as reward addresses, metadata, governance action IDs, and policy hashes.
+ *
+ * This convenience function uses Plutus unit (`d87980`) as the proposing redeemer.
+ * Use \ref cardano_tx_builder_add_proposal for a custom redeemer, or
+ * \ref cardano_tx_builder_add_proposal_with_deferred_redeemer to compute it after balancing.
  *
  * \param[in, out] builder A pointer to the \ref cardano_tx_builder_t instance used to build the transaction.
  * \param[in] reward_address A string representation of the reward address where the deposit will be refunded.
@@ -2467,6 +2526,10 @@ CARDANO_EXPORT void cardano_tx_builder_propose_hardfork_ex(
  *
  * This function prepares a proposal to withdraw funds from the treasury.
  *
+ * This convenience function uses Plutus unit (`d87980`) as the proposing redeemer.
+ * Use \ref cardano_tx_builder_add_proposal for a custom redeemer, or
+ * \ref cardano_tx_builder_add_proposal_with_deferred_redeemer to compute it after balancing.
+ *
  * \param[in,out] builder       A pointer to an initialized \ref cardano_tx_builder_t object used to build the transaction.
  * \param[in]     reward_address A pointer to a \ref cardano_reward_address_t object representing the address that will receive the deposit refund.
  * \param[in]     anchor        A pointer to an initialized \ref cardano_anchor_t object containing metadata about the proposal.
@@ -2503,6 +2566,10 @@ CARDANO_EXPORT void cardano_tx_builder_propose_treasury_withdrawals(
  * \brief Proposes treasury withdrawals as a governance action within the Cardano network, using string-based parameters.
  *
  * This function prepares a proposal for withdrawing funds from the treasury.
+ *
+ * This convenience function uses Plutus unit (`d87980`) as the proposing redeemer.
+ * Use \ref cardano_tx_builder_add_proposal for a custom redeemer, or
+ * \ref cardano_tx_builder_add_proposal_with_deferred_redeemer to compute it after balancing.
  *
  * \param[in,out] builder                 A pointer to an initialized \ref cardano_tx_builder_t object used to build the transaction.
  * \param[in]     reward_address          A pointer to the reward address string for receiving the deposit refund. Must be a valid Bech32 address.

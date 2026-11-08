@@ -24,6 +24,8 @@
 /* INCLUDES ******************************************************************/
 
 #include <cardano/error.h>
+#include <cardano/transaction_builder/sub_transaction_builder.h>
+#include <cardano/transaction_builder/transaction_builder.h>
 
 #include "../../../src/transaction_builder/internals/builder_proposals.h"
 
@@ -34,7 +36,9 @@
 #include "../../allocators_helpers.h"
 #include "../src/allocators.h"
 
+#include "../../../src/transaction_builder/internals/builder_config.h"
 #include <gmock/gmock.h>
+#include <string>
 
 /* CONSTANTS *****************************************************************/
 
@@ -849,4 +853,351 @@ TEST(cardano_builder_propose_info, returnsErrorIfMemoryAllocationFails)
   cardano_protocol_parameters_unref(&params);
   cardano_reward_address_unref(&reward_address);
   cardano_anchor_unref(&anchor);
+}
+
+/* Complete proposals and explicit/deferred proposing redeemers. */
+
+static cardano_proposal_procedure_t*
+make_complete_proposal(const char* action)
+{
+  const std::string             cbor     = std::string("8400581de04245236ab8056760efceebbff57e8cab220182be3e36439e520a6454") + action + ANCHOR_CBOR;
+  cardano_cbor_reader_t*        reader   = cardano_cbor_reader_from_hex(cbor.c_str(), cbor.size());
+  cardano_proposal_procedure_t* proposal = NULL;
+  EXPECT_EQ(cardano_proposal_procedure_from_cbor(reader, &proposal), CARDANO_SUCCESS);
+  cardano_cbor_reader_unref(&reader);
+  return proposal;
+}
+
+static const char* COMPLETE_POLICY_ACTION = "8400f6a0581c00000000000000000000000000000000000000000000000000000000";
+
+static cardano_error_t
+proposal_index_redeemer(void* context, cardano_transaction_t* draft, cardano_utxo_list_t*, cardano_plutus_data_t** data)
+{
+  uint64_t              index  = 0U;
+  const cardano_error_t result = cardano_transaction_find_proposal_index(draft, static_cast<cardano_proposal_procedure_t*>(context), &index);
+  return result == CARDANO_SUCCESS ? cardano_plutus_data_new_integer_from_int(index, data) : result;
+}
+
+TEST(cardano_builder_add_proposal, retainsExplicitPayloadAndInsertionIndex)
+{
+  cardano_protocol_parameters_t* params = init_protocol_parameters();
+  cardano_builder_state_t        state  = {};
+  ASSERT_EQ(cardano_builder_state_init(&state, params, &CARDANO_MAINNET_SLOT_CONFIG), CARDANO_SUCCESS);
+  cardano_proposal_procedure_t* info   = make_complete_proposal("8106");
+  cardano_proposal_procedure_t* policy = make_complete_proposal(COMPLETE_POLICY_ACTION);
+  cardano_plutus_data_t*        data   = NULL;
+  ASSERT_EQ(cardano_plutus_data_new_integer_from_int(42, &data), CARDANO_SUCCESS);
+  const char* error         = NULL;
+  uint64_t    missing_index = 99U;
+  EXPECT_EQ(cardano_transaction_find_proposal_index(state.transaction, policy, &missing_index), CARDANO_ERROR_ELEMENT_NOT_FOUND);
+  EXPECT_EQ(missing_index, 99U);
+  EXPECT_EQ(cardano_transaction_find_proposal_index(NULL, policy, &missing_index), CARDANO_ERROR_POINTER_IS_NULL);
+  EXPECT_EQ(cardano_transaction_find_proposal_index(state.transaction, NULL, &missing_index), CARDANO_ERROR_POINTER_IS_NULL);
+  EXPECT_EQ(cardano_transaction_find_proposal_index(state.transaction, policy, NULL), CARDANO_ERROR_POINTER_IS_NULL);
+  EXPECT_EQ(cardano_builder_add_proposal(&state, info, NULL, &error), CARDANO_SUCCESS);
+  EXPECT_EQ(cardano_builder_add_proposal(&state, policy, data, &error), CARDANO_SUCCESS);
+  cardano_redeemer_t* redeemer = NULL;
+  ASSERT_EQ(cardano_redeemer_list_get(get_witness_redeemers(&state), 0, &redeemer), CARDANO_SUCCESS);
+  EXPECT_EQ(cardano_redeemer_get_tag(redeemer), CARDANO_REDEEMER_TAG_PROPOSING);
+  EXPECT_EQ(cardano_redeemer_get_index(redeemer), 1U);
+  cardano_plutus_data_t* actual = cardano_redeemer_get_data(redeemer);
+  EXPECT_TRUE(cardano_plutus_data_equals(actual, data));
+  cardano_plutus_data_unref(&actual);
+  cardano_redeemer_unref(&redeemer);
+  cardano_proposal_procedure_t* equivalent = make_complete_proposal("841800f6a0581c00000000000000000000000000000000000000000000000000000000");
+  uint64_t                      index      = 99U;
+  EXPECT_EQ(cardano_transaction_find_proposal_index(state.transaction, equivalent, &index), CARDANO_SUCCESS);
+  EXPECT_EQ(index, 1U);
+  EXPECT_EQ(cardano_builder_add_proposal(&state, equivalent, data, &error), CARDANO_ERROR_DUPLICATED_KEY);
+  EXPECT_EQ(cardano_proposal_procedure_set_get_length(get_proposal_procedures(&state)), 2U);
+  EXPECT_EQ(cardano_redeemer_list_get_length(get_witness_redeemers(&state)), 1U);
+  cardano_proposal_procedure_t* clone = NULL;
+  ASSERT_EQ(cardano_proposal_procedure_deep_clone(policy, &clone), CARDANO_SUCCESS);
+  EXPECT_EQ(cardano_transaction_find_proposal_index(state.transaction, clone, &index), CARDANO_SUCCESS);
+  EXPECT_EQ(index, 1U);
+  EXPECT_EQ(cardano_builder_add_proposal(&state, clone, data, &error), CARDANO_ERROR_DUPLICATED_KEY);
+  cardano_proposal_procedure_unref(&clone);
+  cardano_proposal_procedure_unref(&equivalent);
+  cardano_proposal_procedure_unref(&info);
+  cardano_proposal_procedure_unref(&policy);
+  cardano_plutus_data_unref(&data);
+  cardano_builder_state_release(&state);
+  cardano_protocol_parameters_unref(&params);
+}
+
+TEST(cardano_builder_add_proposal, validatesPolicyDepositAndNullArgumentsBeforeInsertion)
+{
+  cardano_protocol_parameters_t* params = init_protocol_parameters();
+  cardano_builder_state_t        state  = {};
+  ASSERT_EQ(cardano_builder_state_init(&state, params, &CARDANO_MAINNET_SLOT_CONFIG), CARDANO_SUCCESS);
+  cardano_proposal_procedure_t* proposal = make_complete_proposal("8400f6a0f6");
+  cardano_plutus_data_t*        data     = NULL;
+  ASSERT_EQ(cardano_plutus_data_new_integer_from_int(42, &data), CARDANO_SUCCESS);
+  const char* error = NULL;
+  EXPECT_EQ(cardano_builder_add_proposal(&state, NULL, NULL, &error), CARDANO_ERROR_POINTER_IS_NULL);
+  EXPECT_EQ(cardano_builder_add_proposal(&state, proposal, data, &error), CARDANO_ERROR_INVALID_ARGUMENT);
+  EXPECT_EQ(cardano_builder_add_proposal_with_deferred_redeemer(&state, proposal, NULL, NULL, &error), CARDANO_ERROR_POINTER_IS_NULL);
+  EXPECT_EQ(cardano_builder_add_proposal_with_deferred_redeemer(&state, proposal, proposal_index_redeemer, proposal, &error), CARDANO_ERROR_INVALID_ARGUMENT);
+  EXPECT_EQ(cardano_proposal_procedure_set_deposit(proposal, 10), CARDANO_SUCCESS);
+  EXPECT_EQ(cardano_builder_add_proposal(&state, proposal, NULL, &error), CARDANO_ERROR_INVALID_ARGUMENT);
+  EXPECT_EQ(cardano_proposal_procedure_set_deposit(proposal, 0), CARDANO_SUCCESS);
+  EXPECT_EQ(cardano_builder_add_proposal(&state, proposal, NULL, &error), CARDANO_SUCCESS);
+  EXPECT_EQ(get_witness_redeemers(&state), nullptr);
+  cardano_proposal_procedure_unref(&proposal);
+  proposal = make_complete_proposal("8302a0f6");
+  EXPECT_EQ(cardano_builder_add_proposal(&state, proposal, NULL, &error), CARDANO_SUCCESS);
+  EXPECT_EQ(cardano_proposal_procedure_set_get_length(get_proposal_procedures(&state)), 2U);
+  cardano_proposal_procedure_unref(&proposal);
+  cardano_plutus_data_unref(&data);
+  cardano_builder_state_release(&state);
+  cardano_protocol_parameters_unref(&params);
+}
+
+TEST(cardano_builder_add_proposal, resolvesDeferredPayloadAgainstFinalProposalPosition)
+{
+  cardano_protocol_parameters_t* params = init_protocol_parameters();
+  cardano_builder_state_t        state  = {};
+  ASSERT_EQ(cardano_builder_state_init(&state, params, &CARDANO_MAINNET_SLOT_CONFIG), CARDANO_SUCCESS);
+  cardano_proposal_procedure_t* info   = make_complete_proposal("8106");
+  cardano_proposal_procedure_t* policy = make_complete_proposal(COMPLETE_POLICY_ACTION);
+  const char*                   error  = NULL;
+  EXPECT_EQ(cardano_builder_add_proposal(&state, info, NULL, &error), CARDANO_SUCCESS);
+  EXPECT_EQ(cardano_builder_add_proposal_with_deferred_redeemer(&state, policy, proposal_index_redeemer, policy, &error), CARDANO_SUCCESS);
+  cardano_proposal_procedure_t* treasury = make_complete_proposal("8302a0581c00000000000000000000000000000000000000000000000000000000");
+  EXPECT_EQ(cardano_builder_add_proposal_with_deferred_redeemer(&state, treasury, proposal_index_redeemer, treasury, &error), CARDANO_SUCCESS);
+  EXPECT_EQ(cardano_builder_add_proposal_with_deferred_redeemer(&state, policy, proposal_index_redeemer, policy, &error), CARDANO_ERROR_DUPLICATED_KEY);
+  EXPECT_EQ(cardano_deferred_redeemer_list_get_length(state.deferred_redeemers), 2U);
+  for (size_t i = 0; i < 2; ++i)
+  {
+    EXPECT_EQ(cardano_deferred_redeemer_list_resolve(state.deferred_redeemers, state.transaction, state.pre_selected_inputs), CARDANO_SUCCESS);
+    for (size_t j = 0; j < 2; ++j)
+    {
+      cardano_redeemer_t* redeemer = NULL;
+      ASSERT_EQ(cardano_redeemer_list_get(get_witness_redeemers(&state), j, &redeemer), CARDANO_SUCCESS);
+      cardano_plutus_data_t* actual   = cardano_redeemer_get_data(redeemer);
+      cardano_plutus_data_t* expected = NULL;
+      ASSERT_EQ(cardano_plutus_data_new_integer_from_int(j + 1, &expected), CARDANO_SUCCESS);
+      EXPECT_TRUE(cardano_plutus_data_equals(actual, expected));
+      cardano_plutus_data_unref(&actual);
+      cardano_plutus_data_unref(&expected);
+      cardano_redeemer_unref(&redeemer);
+    }
+  }
+  cardano_proposal_procedure_unref(&info);
+  cardano_proposal_procedure_unref(&policy);
+  cardano_proposal_procedure_unref(&treasury);
+  cardano_builder_state_release(&state);
+  cardano_protocol_parameters_unref(&params);
+}
+
+TEST(cardano_builder_set_current_treasury_value, preservesExplicitZeroAndReplacesValue)
+{
+  cardano_protocol_parameters_t* params = init_protocol_parameters();
+  cardano_builder_state_t        state  = {};
+  ASSERT_EQ(cardano_builder_state_init(&state, params, &CARDANO_MAINNET_SLOT_CONFIG), CARDANO_SUCCESS);
+  const char* error = NULL;
+  EXPECT_EQ(cardano_builder_set_current_treasury_value(&state, UINT64_MAX, &error), CARDANO_SUCCESS);
+  cardano_transaction_body_t* body = cardano_transaction_get_body(state.transaction);
+  ASSERT_NE(cardano_transaction_body_get_treasury_value(body), nullptr);
+  EXPECT_EQ(*cardano_transaction_body_get_treasury_value(body), UINT64_MAX);
+  EXPECT_EQ(cardano_builder_set_current_treasury_value(&state, 0, &error), CARDANO_SUCCESS);
+  ASSERT_NE(cardano_transaction_body_get_treasury_value(body), nullptr);
+  EXPECT_EQ(*cardano_transaction_body_get_treasury_value(body), 0U);
+  cardano_transaction_body_unref(&body);
+  cardano_builder_state_release(&state);
+  cardano_protocol_parameters_unref(&params);
+}
+
+static cardano_error_t
+failing_proposal_redeemer(void* context, cardano_transaction_t* draft, cardano_utxo_list_t*, cardano_plutus_data_t**)
+{
+  uint64_t index = 99U;
+  EXPECT_EQ(cardano_transaction_find_proposal_index(draft, static_cast<cardano_proposal_procedure_t*>(context), &index), CARDANO_SUCCESS);
+  EXPECT_EQ(index, 1U);
+  return CARDANO_ERROR_INVALID_ARGUMENT;
+}
+
+TEST(cardano_sub_tx_builder_add_proposal, deferredCallbackUsesLocalProposalIndexAndPropagatesFailure)
+{
+  cardano_protocol_parameters_t* params  = init_protocol_parameters();
+  cardano_sub_tx_builder_t*      builder = cardano_sub_tx_builder_new(params, &CARDANO_MAINNET_SLOT_CONFIG);
+  cardano_proposal_procedure_t*  info    = make_complete_proposal("8106");
+  cardano_proposal_procedure_t*  policy  = make_complete_proposal(COMPLETE_POLICY_ACTION);
+  cardano_sub_tx_builder_add_proposal(builder, info, NULL);
+  cardano_sub_tx_builder_add_proposal_with_deferred_redeemer(builder, policy, failing_proposal_redeemer, policy);
+  cardano_sub_transaction_t* transaction = NULL;
+  EXPECT_EQ(cardano_sub_tx_builder_build(builder, &transaction), CARDANO_ERROR_INVALID_ARGUMENT);
+  EXPECT_EQ(transaction, nullptr);
+  EXPECT_STREQ(cardano_sub_tx_builder_get_last_error(builder), "Failed to resolve the deferred redeemers of the sub transaction.");
+  cardano_proposal_procedure_unref(&info);
+  cardano_proposal_procedure_unref(&policy);
+  cardano_sub_tx_builder_unref(&builder);
+  cardano_protocol_parameters_unref(&params);
+}
+
+TEST(cardano_tx_builder_add_proposal, preservesFirstDeferredErrorAndAcceptsNullBuilder)
+{
+  cardano_tx_builder_add_proposal(NULL, NULL, NULL);
+  cardano_tx_builder_add_proposal_with_deferred_redeemer(NULL, NULL, NULL, NULL);
+  cardano_tx_builder_set_current_treasury_value(NULL, 0);
+  cardano_sub_tx_builder_add_proposal(NULL, NULL, NULL);
+  cardano_sub_tx_builder_add_proposal_with_deferred_redeemer(NULL, NULL, NULL, NULL);
+  cardano_protocol_parameters_t* params  = init_protocol_parameters();
+  cardano_tx_builder_t*          builder = cardano_tx_builder_new(params, &CARDANO_MAINNET_SLOT_CONFIG);
+  cardano_tx_builder_add_proposal(builder, NULL, NULL);
+  cardano_tx_builder_add_proposal_with_deferred_redeemer(builder, NULL, NULL, NULL);
+  cardano_tx_builder_set_current_treasury_value(builder, 42);
+  cardano_transaction_t* transaction = NULL;
+  EXPECT_EQ(cardano_tx_builder_build(builder, &transaction), CARDANO_ERROR_POINTER_IS_NULL);
+  EXPECT_STREQ(cardano_tx_builder_get_last_error(builder), "Proposal is NULL.");
+  EXPECT_EQ(transaction, nullptr);
+  cardano_tx_builder_unref(&builder);
+  cardano_protocol_parameters_unref(&params);
+}
+
+TEST(cardano_builder_add_proposal, releasesPartialStateWhenDeferredAllocationFails)
+{
+  cardano_protocol_parameters_t* params    = init_protocol_parameters();
+  cardano_proposal_procedure_t*  proposal  = make_complete_proposal(COMPLETE_POLICY_ACTION);
+  cardano_proposal_procedure_t*  info      = make_complete_proposal("8106");
+  bool                           succeeded = false;
+  for (int i = 0; (i < 100) && !succeeded; ++i)
+  {
+    cardano_builder_state_t state = {};
+    ASSERT_EQ(cardano_builder_state_init(&state, params, &CARDANO_MAINNET_SLOT_CONFIG), CARDANO_SUCCESS);
+    const char* seed_error = NULL;
+    ASSERT_EQ(cardano_builder_add_proposal(&state, info, NULL, &seed_error), CARDANO_SUCCESS);
+    reset_allocators_run_count();
+    set_malloc_limit(i);
+    cardano_set_allocators(fail_malloc_at_limit, realloc, free);
+    const char*           error  = NULL;
+    const cardano_error_t result = cardano_builder_add_proposal_with_deferred_redeemer(&state, proposal, proposal_index_redeemer, proposal, &error);
+    cardano_set_allocators(malloc, realloc, free);
+    reset_allocators_run_count();
+    reset_limited_malloc();
+    if (result == CARDANO_SUCCESS)
+    {
+      succeeded = true;
+      EXPECT_EQ(cardano_deferred_redeemer_list_get_length(state.deferred_redeemers), 1U);
+    }
+    else
+    {
+      EXPECT_EQ(result, CARDANO_ERROR_MEMORY_ALLOCATION_FAILED);
+      EXPECT_EQ(cardano_deferred_redeemer_list_get_length(state.deferred_redeemers), 0U);
+    }
+    cardano_builder_state_release(&state);
+  }
+  EXPECT_TRUE(succeeded);
+  cardano_proposal_procedure_unref(&proposal);
+  cardano_proposal_procedure_unref(&info);
+  cardano_protocol_parameters_unref(&params);
+}
+
+TEST(cardano_builder_add_proposal, reportsAllocationFailureOnAnEmptyProposalCollection)
+{
+  // Arrange
+  cardano_protocol_parameters_t* params    = init_protocol_parameters();
+  cardano_proposal_procedure_t*  proposal  = make_complete_proposal(COMPLETE_POLICY_ACTION);
+  bool                           succeeded = false;
+
+  // Act and assert
+  for (int i = 0; i < 100 && !succeeded; ++i)
+  {
+    cardano_builder_state_t state = {};
+    ASSERT_EQ(cardano_builder_state_init(&state, params, &CARDANO_MAINNET_SLOT_CONFIG), CARDANO_SUCCESS);
+    reset_allocators_run_count();
+    set_malloc_limit(i);
+    cardano_set_allocators(fail_malloc_at_limit, realloc, free);
+    const char*           error  = NULL;
+    const cardano_error_t result = cardano_builder_add_proposal_with_deferred_redeemer(&state, proposal, proposal_index_redeemer, proposal, &error);
+    cardano_set_allocators(malloc, realloc, free);
+    reset_allocators_run_count();
+    reset_limited_malloc();
+    if (result == CARDANO_SUCCESS)
+    {
+      succeeded = true;
+    }
+    else
+    {
+      EXPECT_EQ(result, CARDANO_ERROR_MEMORY_ALLOCATION_FAILED);
+      ASSERT_NE(error, nullptr);
+    }
+    cardano_builder_state_release(&state);
+  }
+
+  EXPECT_TRUE(succeeded);
+
+  // Cleanup
+  cardano_proposal_procedure_unref(&proposal);
+  cardano_protocol_parameters_unref(&params);
+}
+
+TEST(cardano_builder_set_current_treasury_value, reportsAMissingTransactionBody)
+{
+  // Arrange
+  cardano_builder_state_t state = {};
+  const char*             error = NULL;
+
+  // Act and assert
+  EXPECT_EQ(cardano_builder_set_current_treasury_value(&state, 1U, &error), CARDANO_ERROR_POINTER_IS_NULL);
+  EXPECT_STREQ(error, "Failed to set current treasury value.");
+}
+
+TEST(cardano_builder_add_proposal, preservesExistingProposalsWhenCollectionGrowthFails)
+{
+  // Arrange
+  cardano_protocol_parameters_t* params = init_protocol_parameters();
+  cardano_builder_state_t        state  = {};
+  ASSERT_EQ(cardano_builder_state_init(&state, params, &CARDANO_MAINNET_SLOT_CONFIG), CARDANO_SUCCESS);
+  const char* error = NULL;
+
+  for (size_t i = 0; i < 127; ++i)
+  {
+    cardano_proposal_procedure_t* proposal = make_complete_proposal("8106");
+    cardano_anchor_t*             anchor   = cardano_proposal_procedure_get_anchor(proposal);
+    const std::string             url      = "https://example.com/" + std::to_string(i);
+    ASSERT_EQ(cardano_anchor_set_url(anchor, url.c_str(), url.size()), CARDANO_SUCCESS);
+    ASSERT_EQ(cardano_builder_add_proposal(&state, proposal, NULL, &error), CARDANO_SUCCESS);
+    cardano_anchor_unref(&anchor);
+    cardano_proposal_procedure_unref(&proposal);
+  }
+
+  cardano_proposal_procedure_t* proposal = make_complete_proposal("8106");
+
+  // Act and assert
+  bool insertion_failed = false;
+  bool succeeded        = false;
+
+  for (int i = 0; i < 512 && !succeeded; ++i)
+  {
+    reset_allocators_run_count();
+    set_realloc_limit(i);
+    cardano_set_allocators(malloc, fail_realloc_at_limit, free);
+    const cardano_error_t result = cardano_builder_add_proposal(&state, proposal, NULL, &error);
+    cardano_set_allocators(malloc, realloc, free);
+    reset_allocators_run_count();
+    reset_limited_realloc();
+
+    if (result == CARDANO_SUCCESS)
+    {
+      succeeded = true;
+      EXPECT_EQ(cardano_proposal_procedure_set_get_length(get_proposal_procedures(&state)), 128U);
+    }
+    else
+    {
+      EXPECT_EQ(result, CARDANO_ERROR_MEMORY_ALLOCATION_FAILED);
+      EXPECT_EQ(cardano_proposal_procedure_set_get_length(get_proposal_procedures(&state)), 127U);
+      insertion_failed = insertion_failed || (strcmp(error, "Failed to add proposal procedure.") == 0);
+    }
+
+    EXPECT_EQ(get_witness_redeemers(&state), nullptr);
+  }
+
+  EXPECT_TRUE(insertion_failed);
+  EXPECT_TRUE(succeeded);
+
+  // Cleanup
+  cardano_proposal_procedure_unref(&proposal);
+  cardano_builder_state_release(&state);
+  cardano_protocol_parameters_unref(&params);
 }

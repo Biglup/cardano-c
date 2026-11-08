@@ -15795,3 +15795,84 @@ TEST(cardano_tx_builder_build, doesntCrashOnMemoryAllocationFailWhenCheckingTheR
   cardano_utxo_list_unref(&utxos);
   cardano_protocol_parameters_unref(&params);
 }
+
+/**
+ * \brief Creates a complete proposal with the configured governance deposit.
+ * \param action The governance action CBOR.
+ * \param deposit The governance deposit.
+ * \return The proposal, which the caller must release.
+ */
+static cardano_proposal_procedure_t*
+new_complete_builder_proposal(const char* action, uint64_t deposit)
+{
+  const std::string             cbor     = std::string("8400581de04245236ab8056760efceebbff57e8cab220182be3e36439e520a6454") + action + ANCHOR_CBOR;
+  cardano_cbor_reader_t*        reader   = cardano_cbor_reader_from_hex(cbor.c_str(), cbor.size());
+  cardano_proposal_procedure_t* proposal = NULL;
+  EXPECT_EQ(cardano_proposal_procedure_from_cbor(reader, &proposal), CARDANO_SUCCESS);
+  EXPECT_EQ(cardano_proposal_procedure_set_deposit(proposal, deposit), CARDANO_SUCCESS);
+  cardano_cbor_reader_unref(&reader);
+  return proposal;
+}
+
+TEST(cardano_tx_builder_add_proposal, explicitAndDeferredArgumentsRetainTheirOwnWitnesses)
+{
+  // Arrange
+  cardano_protocol_parameters_t* params    = init_protocol_parameters();
+  cardano_tx_builder_t*          builder   = cardano_tx_builder_new(params, &CARDANO_MAINNET_SLOT_CONFIG);
+  const uint64_t                 deposit   = cardano_protocol_parameters_get_governance_action_deposit(params);
+  cardano_proposal_procedure_t*  info      = new_complete_builder_proposal("8106", deposit);
+  cardano_proposal_procedure_t*  parameter = new_complete_builder_proposal("8400f6a0581c00000000000000000000000000000000000000000000000000000000", deposit);
+  cardano_proposal_procedure_t*  treasury  = new_complete_builder_proposal("8302a0581c00000000000000000000000000000000000000000000000000000000", deposit);
+  cardano_plutus_data_t*         argument  = NULL;
+  ASSERT_EQ(cardano_plutus_data_new_integer_from_int(42, &argument), CARDANO_SUCCESS);
+
+  // Act
+  cardano_tx_builder_set_current_treasury_value(builder, UINT64_MAX);
+  cardano_tx_builder_add_proposal(builder, info, NULL);
+  cardano_tx_builder_add_proposal(builder, parameter, argument);
+  cardano_tx_builder_add_proposal_with_deferred_redeemer(builder, treasury, fixed_payload_deferred_callback, NULL);
+
+  // Assert
+  EXPECT_EQ(builder->last_error, CARDANO_SUCCESS);
+  EXPECT_EQ(cardano_proposal_procedure_set_get_length(get_proposal_procedures(builder)), 3U);
+  EXPECT_EQ(cardano_deferred_redeemer_list_get_length(builder->state.deferred_redeemers), 1U);
+
+  cardano_transaction_body_t* body = cardano_transaction_get_body(builder->state.transaction);
+  ASSERT_NE(cardano_transaction_body_get_treasury_value(body), nullptr);
+  EXPECT_EQ(*cardano_transaction_body_get_treasury_value(body), UINT64_MAX);
+
+  cardano_tx_builder_set_current_treasury_value(builder, 0U);
+  ASSERT_NE(cardano_transaction_body_get_treasury_value(body), nullptr);
+  EXPECT_EQ(*cardano_transaction_body_get_treasury_value(body), 0U);
+
+  EXPECT_EQ(cardano_deferred_redeemer_list_resolve(builder->state.deferred_redeemers, builder->state.transaction, builder->state.pre_selected_inputs), CARDANO_SUCCESS);
+  cardano_witness_set_t*   witnesses = cardano_transaction_get_witness_set(builder->state.transaction);
+  cardano_redeemer_list_t* redeemers = cardano_witness_set_get_redeemers(witnesses);
+  ASSERT_EQ(cardano_redeemer_list_get_length(redeemers), 2U);
+
+  for (size_t i = 0; i < 2; ++i)
+  {
+    cardano_redeemer_t* redeemer = NULL;
+    ASSERT_EQ(cardano_redeemer_list_get(redeemers, i, &redeemer), CARDANO_SUCCESS);
+    EXPECT_EQ(cardano_redeemer_get_tag(redeemer), CARDANO_REDEEMER_TAG_PROPOSING);
+    EXPECT_EQ(cardano_redeemer_get_index(redeemer), i + 1U);
+    cardano_plutus_data_t* data     = cardano_redeemer_get_data(redeemer);
+    cardano_plutus_data_t* expected = NULL;
+    ASSERT_EQ(cardano_plutus_data_new_integer_from_int(i == 0 ? 42 : 7, &expected), CARDANO_SUCCESS);
+    EXPECT_TRUE(cardano_plutus_data_equals(data, expected));
+    cardano_plutus_data_unref(&data);
+    cardano_plutus_data_unref(&expected);
+    cardano_redeemer_unref(&redeemer);
+  }
+
+  // Cleanup
+  cardano_redeemer_list_unref(&redeemers);
+  cardano_witness_set_unref(&witnesses);
+  cardano_transaction_body_unref(&body);
+  cardano_plutus_data_unref(&argument);
+  cardano_proposal_procedure_unref(&info);
+  cardano_proposal_procedure_unref(&parameter);
+  cardano_proposal_procedure_unref(&treasury);
+  cardano_tx_builder_unref(&builder);
+  cardano_protocol_parameters_unref(&params);
+}

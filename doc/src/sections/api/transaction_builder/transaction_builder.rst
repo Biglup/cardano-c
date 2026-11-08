@@ -366,3 +366,15 @@ Transaction Builder
 ------------
 
 .. doxygenfunction:: cardano_tx_builder_get_last_error
+
+------------
+
+.. doxygenfunction:: cardano_tx_builder_add_proposal
+
+------------
+
+.. doxygenfunction:: cardano_tx_builder_add_proposal_with_deferred_redeemer
+
+------------
+
+.. doxygenfunction:: cardano_tx_builder_set_current_treasury_value

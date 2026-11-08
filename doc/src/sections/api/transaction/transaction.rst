@@ -126,3 +126,7 @@ Transaction
 ------------
 
 .. doxygenfunction:: cardano_transaction_deep_clone
+
+------------
+
+.. doxygenfunction:: cardano_transaction_find_proposal_index
