@@ -2295,6 +2295,10 @@ CARDANO_EXPORT void cardano_tx_builder_add_proposal_with_deferred_redeemer(
  * This function adds a parameter change proposal to the transaction being built. The proposal specifies
  * updates to protocol parameters, a governance action ID, and other metadata associated with the proposal.
  *
+ * This convenience function uses Plutus unit (`d87980`) as the proposing redeemer.
+ * Use \ref cardano_tx_builder_add_proposal for a custom redeemer, or
+ * \ref cardano_tx_builder_add_proposal_with_deferred_redeemer to compute it after balancing.
+ *
  * \param[in, out] builder A pointer to the \ref cardano_tx_builder_t instance used to build the transaction.
  * \param[in] reward_address A pointer to a \ref cardano_reward_address_t where the deposit will be refunded.
  * \param[in] anchor A pointer to a \ref cardano_anchor_t object representing the anchor for the proposal. This parameter must not be NULL.
@@ -2347,6 +2351,10 @@ CARDANO_EXPORT void cardano_tx_builder_propose_parameter_change(
  *
  * This function allows the inclusion of a parameter change proposal into the transaction being built, using string representations for key parameters
  * such as reward addresses, metadata, governance action IDs, and policy hashes.
+ *
+ * This convenience function uses Plutus unit (`d87980`) as the proposing redeemer.
+ * Use \ref cardano_tx_builder_add_proposal for a custom redeemer, or
+ * \ref cardano_tx_builder_add_proposal_with_deferred_redeemer to compute it after balancing.
  *
  * \param[in, out] builder A pointer to the \ref cardano_tx_builder_t instance used to build the transaction.
  * \param[in] reward_address A string representation of the reward address where the deposit will be refunded.
@@ -2518,6 +2526,10 @@ CARDANO_EXPORT void cardano_tx_builder_propose_hardfork_ex(
  *
  * This function prepares a proposal to withdraw funds from the treasury.
  *
+ * This convenience function uses Plutus unit (`d87980`) as the proposing redeemer.
+ * Use \ref cardano_tx_builder_add_proposal for a custom redeemer, or
+ * \ref cardano_tx_builder_add_proposal_with_deferred_redeemer to compute it after balancing.
+ *
  * \param[in,out] builder       A pointer to an initialized \ref cardano_tx_builder_t object used to build the transaction.
  * \param[in]     reward_address A pointer to a \ref cardano_reward_address_t object representing the address that will receive the deposit refund.
  * \param[in]     anchor        A pointer to an initialized \ref cardano_anchor_t object containing metadata about the proposal.
@@ -2554,6 +2566,10 @@ CARDANO_EXPORT void cardano_tx_builder_propose_treasury_withdrawals(
  * \brief Proposes treasury withdrawals as a governance action within the Cardano network, using string-based parameters.
  *
  * This function prepares a proposal for withdrawing funds from the treasury.
+ *
+ * This convenience function uses Plutus unit (`d87980`) as the proposing redeemer.
+ * Use \ref cardano_tx_builder_add_proposal for a custom redeemer, or
+ * \ref cardano_tx_builder_add_proposal_with_deferred_redeemer to compute it after balancing.
  *
  * \param[in,out] builder                 A pointer to an initialized \ref cardano_tx_builder_t object used to build the transaction.
  * \param[in]     reward_address          A pointer to the reward address string for receiving the deposit refund. Must be a valid Bech32 address.

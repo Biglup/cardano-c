@@ -1092,3 +1092,112 @@ TEST(cardano_builder_add_proposal, releasesPartialStateWhenDeferredAllocationFai
   cardano_proposal_procedure_unref(&info);
   cardano_protocol_parameters_unref(&params);
 }
+
+TEST(cardano_builder_add_proposal, reportsAllocationFailureOnAnEmptyProposalCollection)
+{
+  // Arrange
+  cardano_protocol_parameters_t* params    = init_protocol_parameters();
+  cardano_proposal_procedure_t*  proposal  = make_complete_proposal(COMPLETE_POLICY_ACTION);
+  bool                           succeeded = false;
+
+  // Act and assert
+  for (int i = 0; i < 100 && !succeeded; ++i)
+  {
+    cardano_builder_state_t state = {};
+    ASSERT_EQ(cardano_builder_state_init(&state, params, &CARDANO_MAINNET_SLOT_CONFIG), CARDANO_SUCCESS);
+    reset_allocators_run_count();
+    set_malloc_limit(i);
+    cardano_set_allocators(fail_malloc_at_limit, realloc, free);
+    const char*           error  = NULL;
+    const cardano_error_t result = cardano_builder_add_proposal_with_deferred_redeemer(&state, proposal, proposal_index_redeemer, proposal, &error);
+    cardano_set_allocators(malloc, realloc, free);
+    reset_allocators_run_count();
+    reset_limited_malloc();
+    if (result == CARDANO_SUCCESS)
+    {
+      succeeded = true;
+    }
+    else
+    {
+      EXPECT_EQ(result, CARDANO_ERROR_MEMORY_ALLOCATION_FAILED);
+      ASSERT_NE(error, nullptr);
+    }
+    cardano_builder_state_release(&state);
+  }
+
+  EXPECT_TRUE(succeeded);
+
+  // Cleanup
+  cardano_proposal_procedure_unref(&proposal);
+  cardano_protocol_parameters_unref(&params);
+}
+
+TEST(cardano_builder_set_current_treasury_value, reportsAMissingTransactionBody)
+{
+  // Arrange
+  cardano_builder_state_t state = {};
+  const char*             error = NULL;
+
+  // Act and assert
+  EXPECT_EQ(cardano_builder_set_current_treasury_value(&state, 1U, &error), CARDANO_ERROR_POINTER_IS_NULL);
+  EXPECT_STREQ(error, "Failed to set current treasury value.");
+}
+
+TEST(cardano_builder_add_proposal, preservesExistingProposalsWhenCollectionGrowthFails)
+{
+  // Arrange
+  cardano_protocol_parameters_t* params = init_protocol_parameters();
+  cardano_builder_state_t        state  = {};
+  ASSERT_EQ(cardano_builder_state_init(&state, params, &CARDANO_MAINNET_SLOT_CONFIG), CARDANO_SUCCESS);
+  const char* error = NULL;
+
+  for (size_t i = 0; i < 127; ++i)
+  {
+    cardano_proposal_procedure_t* proposal = make_complete_proposal("8106");
+    cardano_anchor_t*             anchor   = cardano_proposal_procedure_get_anchor(proposal);
+    const std::string             url      = "https://example.com/" + std::to_string(i);
+    ASSERT_EQ(cardano_anchor_set_url(anchor, url.c_str(), url.size()), CARDANO_SUCCESS);
+    ASSERT_EQ(cardano_builder_add_proposal(&state, proposal, NULL, &error), CARDANO_SUCCESS);
+    cardano_anchor_unref(&anchor);
+    cardano_proposal_procedure_unref(&proposal);
+  }
+
+  cardano_proposal_procedure_t* proposal = make_complete_proposal("8106");
+
+  // Act and assert
+  bool insertion_failed = false;
+  bool succeeded        = false;
+
+  for (int i = 0; i < 512 && !succeeded; ++i)
+  {
+    reset_allocators_run_count();
+    set_realloc_limit(i);
+    cardano_set_allocators(malloc, fail_realloc_at_limit, free);
+    const cardano_error_t result = cardano_builder_add_proposal(&state, proposal, NULL, &error);
+    cardano_set_allocators(malloc, realloc, free);
+    reset_allocators_run_count();
+    reset_limited_realloc();
+
+    if (result == CARDANO_SUCCESS)
+    {
+      succeeded = true;
+      EXPECT_EQ(cardano_proposal_procedure_set_get_length(get_proposal_procedures(&state)), 128U);
+    }
+    else
+    {
+      EXPECT_EQ(result, CARDANO_ERROR_MEMORY_ALLOCATION_FAILED);
+      EXPECT_EQ(cardano_proposal_procedure_set_get_length(get_proposal_procedures(&state)), 127U);
+      insertion_failed = insertion_failed || (strcmp(error, "Failed to add proposal procedure.") == 0);
+    }
+
+    EXPECT_EQ(get_witness_redeemers(&state), nullptr);
+  }
+
+  EXPECT_TRUE(insertion_failed);
+  EXPECT_TRUE(succeeded);
+
+  // Cleanup
+  cardano_proposal_procedure_unref(&proposal);
+  cardano_builder_state_release(&state);
+  cardano_protocol_parameters_unref(&params);
+}

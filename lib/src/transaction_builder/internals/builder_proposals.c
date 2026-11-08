@@ -200,6 +200,10 @@ proposal_has_policy(cardano_proposal_procedure_t* proposal, bool* has_policy)
     policy                                        = cardano_treasury_withdrawals_action_get_policy_hash(action);
     cardano_treasury_withdrawals_action_unref(&action);
   }
+  else
+  {
+    /* Other proposal actions do not carry a constitution policy hash. */
+  }
 
   *has_policy = policy != NULL;
   cardano_blake2b_hash_unref(&policy);
@@ -311,7 +315,7 @@ add_proposal(
   {
     *error_message = "Proposal is already present or could not be compared.";
 
-    return result == CARDANO_SUCCESS ? CARDANO_ERROR_DUPLICATED_KEY : result;
+    return (result == CARDANO_SUCCESS) ? CARDANO_ERROR_DUPLICATED_KEY : result;
   }
 
   cardano_transaction_body_t*       body      = cardano_transaction_get_body(state->transaction);
