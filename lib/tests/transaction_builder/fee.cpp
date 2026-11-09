@@ -36,6 +36,7 @@
 #include <cardano/transaction_body/sub_transaction_set.h>
 #include <cardano/transaction_body/transaction_output.h>
 #include <gmock/gmock.h>
+#include <mini-gmp.h>
 #include <tests/allocators_helpers.h>
 
 #include <vector>
@@ -686,6 +687,27 @@ create_sized_reference_script_inputs(const size_t size)
   return utxo_list;
 }
 
+/* Test-only owner for the already bundled mini-GMP arithmetic. Importing a
+ * uint64_t word avoids narrowing through unsigned long on Windows LLP64. */
+struct fee_oracle_integer_t
+{
+    mpz_t value;
+
+    explicit fee_oracle_integer_t(const uint64_t initial)
+    {
+      mpz_init(value);
+      mpz_import(value, 1U, 1, sizeof(initial), 0, 0U, &initial);
+    }
+
+    ~fee_oracle_integer_t()
+    {
+      mpz_clear(value);
+    }
+
+    fee_oracle_integer_t(const fee_oracle_integer_t&)            = delete;
+    fee_oracle_integer_t& operator=(const fee_oracle_integer_t&) = delete;
+};
+
 /**
  * \brief Computes the price of a total size of reference scripts with a tiered model of any stride and multiplier, in
  * exact arithmetic over a common denominator: the denominator of the price times the denominator of the multiplier to
@@ -721,29 +743,65 @@ compute_exact_fee_with_tiers(
     remaining -= tier_size;
   }
 
-  unsigned __int128 sum_numerator     = 0U;
-  unsigned __int128 sum_denominator   = denominator;
-  unsigned __int128 rounded_fee       = 0U;
-  unsigned __int128 numerator_power   = 1U;
-  unsigned __int128 denominator_power = 1U;
+  fee_oracle_integer_t sum_numerator(0U);
+  fee_oracle_integer_t sum_denominator(denominator);
+  fee_oracle_integer_t rounded_fee(0U);
+  fee_oracle_integer_t numerator_power(1U);
+  fee_oracle_integer_t denominator_power(1U);
+  fee_oracle_integer_t price_numerator(numerator);
+  fee_oracle_integer_t multiplier_num(multiplier_numerator);
+  fee_oracle_integer_t multiplier_den(multiplier_denominator);
 
+  // This unreduced common-denominator sum is independent of the production
+  // checked uint64 mixed-number/coarsening algorithm in fee.c. Only integer
+  // primitives from the bundled mini-GMP are used; no fee implementation is called.
   for (size_t i = 1U; i < tier_sizes.size(); ++i)
   {
-    sum_denominator *= multiplier_denominator;
+    mpz_mul(sum_denominator.value, sum_denominator.value, multiplier_den.value);
   }
 
   for (size_t k = 0U; k < tier_sizes.size(); ++k)
   {
-    const unsigned __int128 tier_numerator   = (unsigned __int128)tier_sizes[k] * numerator * numerator_power;
-    const unsigned __int128 tier_denominator = (unsigned __int128)denominator * denominator_power;
+    fee_oracle_integer_t tier_numerator(tier_sizes[k]);
+    fee_oracle_integer_t tier_denominator(denominator);
+    fee_oracle_integer_t term(0U);
 
-    rounded_fee       += (tier_numerator + tier_denominator - 1U) / tier_denominator;
-    sum_numerator     += tier_numerator * (sum_denominator / tier_denominator);
-    numerator_power   *= multiplier_numerator;
-    denominator_power *= multiplier_denominator;
+    mpz_mul(tier_numerator.value, tier_numerator.value, price_numerator.value);
+    mpz_mul(tier_numerator.value, tier_numerator.value, numerator_power.value);
+    mpz_mul(tier_denominator.value, tier_denominator.value, denominator_power.value);
+
+    mpz_add(term.value, tier_numerator.value, tier_denominator.value);
+    mpz_sub_ui(term.value, term.value, 1U);
+    mpz_tdiv_q(term.value, term.value, tier_denominator.value);
+    mpz_add(rounded_fee.value, rounded_fee.value, term.value);
+
+    mpz_tdiv_q(term.value, sum_denominator.value, tier_denominator.value);
+    mpz_mul(term.value, tier_numerator.value, term.value);
+    mpz_add(sum_numerator.value, sum_numerator.value, term.value);
+    mpz_mul(numerator_power.value, numerator_power.value, multiplier_num.value);
+    mpz_mul(denominator_power.value, denominator_power.value, multiplier_den.value);
   }
 
-  return (uint64_t)(round_every_tier ? rounded_fee : (sum_numerator / sum_denominator));
+  if (round_every_tier)
+  {
+    mpz_set(sum_numerator.value, rounded_fee.value);
+  }
+  else
+  {
+    mpz_tdiv_q(sum_numerator.value, sum_numerator.value, sum_denominator.value);
+  }
+
+  // All existing oracle vectors have uint64 fees. Reject an oversized oracle
+  // result before exporting into one word instead of silently truncating it.
+  if (mpz_sizeinbase(sum_numerator.value, 2) > 64U)
+  {
+    ADD_FAILURE() << "Exact reference-script fee oracle result exceeds uint64_t";
+    return 0U;
+  }
+
+  uint64_t fee = 0U;
+  mpz_export(&fee, NULL, 1, sizeof(fee), 0, 0U, sum_numerator.value);
+  return fee;
 }
 
 /**
