@@ -4,7 +4,7 @@ on:
 
 jobs:
   build_and_test_windows_msvc_64bit:
-    runs-on: windows-latest
+    runs-on: windows-2022
     name: Build and Test (64-bit)
     steps:
       - name: Setup MSVC environment (64-bit)
@@ -43,7 +43,7 @@ jobs:
           ctest -C Debug --output-on-failure
 
   build_and_test_windows_msvc_32bit:
-    runs-on: windows-latest
+    runs-on: windows-2022
     name: Build and Test (32-bit)
     steps:
       - name: Setup MSVC environment (32-bit)
