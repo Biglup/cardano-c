@@ -30,6 +30,7 @@
 #include "../src/allocators.h"
 
 #include <gmock/gmock.h>
+#include <stdint.h>
 
 /* UNIT TESTS ****************************************************************/
 
@@ -96,6 +97,25 @@ TEST(cardano_bigint_from_string, returnsErrorIfMemoryAllocationFails)
   cardano_set_allocators(malloc, realloc, free);
 }
 
+TEST(cardano_bigint_from_string, releasesOwnerWhenTerminatedCopyAllocationFails)
+{
+  // Arrange
+  cardano_bigint_t* value = NULL;
+  reset_allocators_run_count();
+  cardano_set_allocators(fail_after_one_malloc, realloc, free);
+
+  // Act
+  const cardano_error_t result = cardano_bigint_from_string("123", 3U, 10, &value);
+  cardano_set_allocators(malloc, realloc, free);
+  reset_allocators_run_count();
+
+  // Assert
+  EXPECT_EQ(result, CARDANO_ERROR_MEMORY_ALLOCATION_FAILED);
+  EXPECT_EQ(value, nullptr);
+
+  cardano_bigint_unref(&value);
+}
+
 TEST(cardano_bigint_from_string, canDecodeBigNumbers)
 {
   cardano_bigint_t* bigint = NULL;
@@ -148,6 +168,96 @@ TEST(cardano_bigint_from_string, returnErrorIfInvalidString)
   cardano_bigint_unref(&bigint);
 }
 
+TEST(cardano_bigint_from_string, acceptsAnExactSpanWithoutANullTerminator)
+{
+  // Arrange
+  const char        input[] = { '-', '1', '2', '3' };
+  cardano_bigint_t* bigint  = NULL;
+
+  // Act
+  cardano_error_t result = cardano_bigint_from_string(input, sizeof(input), 10, &bigint);
+
+  // Assert
+  ASSERT_EQ(result, CARDANO_SUCCESS);
+  EXPECT_EQ(cardano_bigint_to_int(bigint), -123);
+
+  // Cleanup
+  cardano_bigint_unref(&bigint);
+}
+
+TEST(cardano_bigint_from_string, ignoresCharactersOutsideTheSuppliedSpan)
+{
+  // Arrange
+  const char        input[] = { '1', '2', '3', 'x' };
+  cardano_bigint_t* bigint  = NULL;
+
+  // Act
+  cardano_error_t result = cardano_bigint_from_string(input, 3, 10, &bigint);
+
+  // Assert
+  ASSERT_EQ(result, CARDANO_SUCCESS);
+  EXPECT_EQ(cardano_bigint_to_int(bigint), 123);
+
+  // Cleanup
+  cardano_bigint_unref(&bigint);
+}
+
+TEST(cardano_bigint_from_string, acceptsNullInclusiveAndOversizedSpans)
+{
+  // Arrange
+  const char   input[] = { '1', '2', '3', '\0', 'x', 'x', 'x', 'x' };
+  const size_t sizes[] = { 4, sizeof(input) };
+
+  for (size_t i = 0; i < sizeof(sizes) / sizeof(sizes[0]); ++i)
+  {
+    cardano_bigint_t* bigint = NULL;
+
+    // Act
+    cardano_error_t result = cardano_bigint_from_string(input, sizes[i], 10, &bigint);
+
+    // Assert
+    ASSERT_EQ(result, CARDANO_SUCCESS);
+    EXPECT_EQ(cardano_bigint_to_int(bigint), 123);
+
+    // Cleanup
+    cardano_bigint_unref(&bigint);
+  }
+}
+
+TEST(cardano_bigint_from_string, stopsAtTheFirstNullWithinTheSuppliedSpan)
+{
+  // Arrange
+  const char        input[] = { '1', '2', '\0', 'x' };
+  cardano_bigint_t* bigint  = NULL;
+
+  // Act
+  cardano_error_t result = cardano_bigint_from_string(input, sizeof(input), 10, &bigint);
+
+  // Assert
+  ASSERT_EQ(result, CARDANO_SUCCESS);
+  EXPECT_EQ(cardano_bigint_to_int(bigint), 12);
+
+  // Cleanup
+  cardano_bigint_unref(&bigint);
+}
+
+TEST(cardano_bigint_from_string, rejectsAnInvalidCharacterWithinAnExactSpan)
+{
+  // Arrange
+  const char        input[] = { '1', '2', 'x' };
+  cardano_bigint_t* bigint  = NULL;
+
+  // Act
+  cardano_error_t result = cardano_bigint_from_string(input, sizeof(input), 10, &bigint);
+
+  // Assert
+  EXPECT_EQ(result, CARDANO_ERROR_CONVERSION_FAILED);
+  EXPECT_EQ(bigint, nullptr);
+
+  // Cleanup
+  cardano_bigint_unref(&bigint);
+}
+
 TEST(cardano_bigint_get_string_size, returnZeroIfPointerIsNull)
 {
   size_t size = cardano_bigint_get_string_size(NULL, 10);
@@ -175,6 +285,25 @@ TEST(cardano_bigint_from_int, canCreateABignumFromInt)
 
   free(buffer);
 
+  cardano_bigint_unref(&bigint);
+}
+
+TEST(cardano_bigint_from_int, preservesTheMinimumSigned64BitValue)
+{
+  // Arrange
+  cardano_bigint_t* bigint     = NULL;
+  char              buffer[21] = { 0 };
+
+  // Act
+  cardano_error_t result = cardano_bigint_from_int(INT64_MIN, &bigint);
+
+  // Assert
+  ASSERT_EQ(result, CARDANO_SUCCESS);
+  EXPECT_EQ(cardano_bigint_to_int(bigint), INT64_MIN);
+  ASSERT_EQ(cardano_bigint_to_string(bigint, buffer, sizeof(buffer), 10), CARDANO_SUCCESS);
+  EXPECT_STREQ(buffer, "-9223372036854775808");
+
+  // Cleanup
   cardano_bigint_unref(&bigint);
 }
 
@@ -353,6 +482,60 @@ TEST(cardano_bigint_to_string, returnsErrorIfPointerIsNull)
   ASSERT_EQ(result, CARDANO_ERROR_POINTER_IS_NULL);
 }
 
+TEST(cardano_bigint_to_bytes, exportsZeroAsOneZeroByteInEitherByteOrder)
+{
+  // Arrange
+  const cardano_byte_order_t orders[] = { CARDANO_BYTE_ORDER_BIG_ENDIAN, CARDANO_BYTE_ORDER_LITTLE_ENDIAN };
+  cardano_bigint_t*          bigint   = NULL;
+
+  ASSERT_EQ(cardano_bigint_from_int(0, &bigint), CARDANO_SUCCESS);
+  ASSERT_EQ(cardano_bigint_get_bytes_size(bigint), 1U);
+
+  for (size_t i = 0; i < sizeof(orders) / sizeof(orders[0]); ++i)
+  {
+    byte_t guarded[] = { 0xa5, 0xff, 0x5a };
+
+    // Act
+    cardano_error_t result = cardano_bigint_to_bytes(bigint, orders[i], &guarded[1], 1);
+
+    // Assert
+    EXPECT_EQ(result, CARDANO_SUCCESS);
+    EXPECT_EQ(guarded[0], 0xa5);
+    EXPECT_EQ(guarded[1], 0);
+    EXPECT_EQ(guarded[2], 0x5a);
+  }
+
+  // Cleanup
+  cardano_bigint_unref(&bigint);
+}
+
+TEST(cardano_bigint_to_bytes, zeroStillRequiresTheExactReportedBufferSize)
+{
+  // Arrange
+  const cardano_byte_order_t orders[] = { CARDANO_BYTE_ORDER_BIG_ENDIAN, CARDANO_BYTE_ORDER_LITTLE_ENDIAN };
+  cardano_bigint_t*          bigint   = NULL;
+
+  ASSERT_EQ(cardano_bigint_from_int(0, &bigint), CARDANO_SUCCESS);
+
+  for (size_t i = 0; i < sizeof(orders) / sizeof(orders[0]); ++i)
+  {
+    byte_t output[] = { 0xa5, 0x5a };
+
+    // Act
+    cardano_error_t short_result = cardano_bigint_to_bytes(bigint, orders[i], output, 0);
+    cardano_error_t long_result  = cardano_bigint_to_bytes(bigint, orders[i], output, sizeof(output));
+
+    // Assert
+    EXPECT_EQ(short_result, CARDANO_ERROR_INSUFFICIENT_BUFFER_SIZE);
+    EXPECT_EQ(long_result, CARDANO_ERROR_INSUFFICIENT_BUFFER_SIZE);
+    EXPECT_EQ(output[0], 0xa5);
+    EXPECT_EQ(output[1], 0x5a);
+  }
+
+  // Cleanup
+  cardano_bigint_unref(&bigint);
+}
+
 TEST(cardano_bigint_to_bytes, returnsErrorIfBuffIsToSmall)
 {
   cardano_bigint_t* bigint = NULL;
@@ -493,6 +676,48 @@ TEST(cardano_bigint_to_int, keepsTheLow64BitsOfANegativeValueThatDoesNotFit)
   ASSERT_EQ(value, -7);
 
   cardano_bigint_unref(&bigint);
+}
+
+TEST(cardano_bigint_to_int, interpretsTheLow64BitsAsTwosComplementAcrossBothSigns)
+{
+  // Arrange
+  const struct
+  {
+      const char* decimal;
+      int64_t     expected;
+  } cases[] = {
+    { "9223372036854775807", INT64_MAX },
+    { "9223372036854775808", INT64_MIN },
+    { "18446744073709551615", -1 },
+    { "18446744073709551616", 0 },
+    { "18446744073709551617", 1 },
+    { "27670116110564327424", INT64_MIN },
+    { "36893488147419103231", -1 },
+    { "-9223372036854775808", INT64_MIN },
+    { "-9223372036854775809", INT64_MAX },
+    { "-18446744073709551615", 1 },
+    { "-18446744073709551616", 0 },
+    { "-18446744073709551617", -1 },
+    { "-27670116110564327424", INT64_MIN },
+    { "-36893488147419103231", 1 },
+  };
+
+  for (size_t i = 0; i < sizeof(cases) / sizeof(cases[0]); ++i)
+  {
+    cardano_bigint_t* bigint = NULL;
+
+    SCOPED_TRACE(cases[i].decimal);
+    ASSERT_EQ(cardano_bigint_from_string(cases[i].decimal, strlen(cases[i].decimal), 10, &bigint), CARDANO_SUCCESS);
+
+    // Act
+    int64_t value = cardano_bigint_to_int(bigint);
+
+    // Assert
+    EXPECT_EQ(value, cases[i].expected);
+
+    // Cleanup
+    cardano_bigint_unref(&bigint);
+  }
 }
 
 TEST(cardano_bigint_to_unsigned_int, returnZeroIfPointerIsNull)
@@ -2459,6 +2684,85 @@ TEST(cardano_bigint_pow, canRaiseANumberToAPower)
 
   cardano_bigint_unref(&base);
   cardano_bigint_unref(&res);
+}
+
+TEST(cardano_bigint_pow, usesEveryBitOfTheUnsigned64BitExponent)
+{
+  // Arrange
+  const int64_t  bases[]     = { 0, 1, -1 };
+  const uint64_t exponents[] = { 0, 1, 2, (UINT64_C(1) << 32U) - 1U, UINT64_C(1) << 32U, (UINT64_C(1) << 32U) + 1U, UINT64_MAX - 1U, UINT64_MAX };
+
+  for (size_t i = 0; i < sizeof(bases) / sizeof(bases[0]); ++i)
+  {
+    for (size_t j = 0; j < sizeof(exponents) / sizeof(exponents[0]); ++j)
+    {
+      cardano_bigint_t* base     = NULL;
+      cardano_bigint_t* result   = NULL;
+      const int64_t     expected = exponents[j] == 0 ? 1 : (bases[i] == 0 ? 0 : (bases[i] < 0 && (exponents[j] & 1U) != 0 ? -1 : 1));
+
+      SCOPED_TRACE(exponents[j]);
+      SCOPED_TRACE(bases[i]);
+      ASSERT_EQ(cardano_bigint_from_int(bases[i], &base), CARDANO_SUCCESS);
+      ASSERT_EQ(cardano_bigint_from_int(17, &result), CARDANO_SUCCESS);
+
+      // Act
+      cardano_bigint_pow(base, exponents[j], result);
+
+      // Assert
+      EXPECT_EQ(cardano_bigint_to_int(result), expected);
+      EXPECT_EQ(cardano_bigint_to_int(base), bases[i]);
+
+      // Cleanup
+      cardano_bigint_unref(&result);
+      cardano_bigint_unref(&base);
+    }
+  }
+}
+
+TEST(cardano_bigint_pow, permitsTheResultToAliasTheBaseForFullWidthExponents)
+{
+  // Arrange
+  const int64_t  bases[]     = { 0, 1, -1 };
+  const uint64_t exponents[] = { 0, 1, 2, UINT64_C(1) << 32U, (UINT64_C(1) << 32U) + 1U, UINT64_MAX - 1U, UINT64_MAX };
+
+  for (size_t i = 0; i < sizeof(bases) / sizeof(bases[0]); ++i)
+  {
+    for (size_t j = 0; j < sizeof(exponents) / sizeof(exponents[0]); ++j)
+    {
+      cardano_bigint_t* base     = NULL;
+      const int64_t     expected = exponents[j] == 0 ? 1 : (bases[i] == 0 ? 0 : (bases[i] < 0 && (exponents[j] & 1U) != 0 ? -1 : 1));
+
+      SCOPED_TRACE(exponents[j]);
+      SCOPED_TRACE(bases[i]);
+      ASSERT_EQ(cardano_bigint_from_int(bases[i], &base), CARDANO_SUCCESS);
+
+      // Act
+      cardano_bigint_pow(base, exponents[j], base);
+
+      // Assert
+      EXPECT_EQ(cardano_bigint_to_int(base), expected);
+
+      // Cleanup
+      cardano_bigint_unref(&base);
+    }
+  }
+}
+
+TEST(cardano_bigint_pow, preservesTheBaseWhenAnOrdinaryMultiBitPowerAliasesIt)
+{
+  // Arrange
+  cardano_bigint_t* base = NULL;
+
+  ASSERT_EQ(cardano_bigint_from_int(-2, &base), CARDANO_SUCCESS);
+
+  // Act
+  cardano_bigint_pow(base, 31, base);
+
+  // Assert
+  EXPECT_EQ(cardano_bigint_to_int(base), -INT64_C(2147483648));
+
+  // Cleanup
+  cardano_bigint_unref(&base);
 }
 
 TEST(cardano_bigint_pow, hasNoEffectIfAPointerIsNull)
