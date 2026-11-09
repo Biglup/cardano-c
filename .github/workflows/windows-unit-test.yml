@@ -26,6 +26,7 @@ jobs:
           cmake -G "Visual Studio 17 2022" -A x64 \
             -DCMAKE_MSVC_RUNTIME_LIBRARY="MultiThreaded$<$<CONFIG:Debug>:Debug>DLL" \
             -Dgtest_force_shared_crt=ON \
+            -DCMAKE_POLICY_VERSION_MINIMUM=3.5 \
             -DCMAKE_INSTALL_PREFIX="C:/googletest"
           cmake --build . --config Debug
           cmake --install . --config Debug
@@ -64,6 +65,7 @@ jobs:
           cmake -G "Visual Studio 17 2022" -A Win32 \
             -DCMAKE_MSVC_RUNTIME_LIBRARY="MultiThreaded$<$<CONFIG:Debug>:Debug>DLL" \
             -Dgtest_force_shared_crt=ON \
+            -DCMAKE_POLICY_VERSION_MINIMUM=3.5 \
             -DCMAKE_INSTALL_PREFIX="C:/googletest"
           cmake --build . --config Debug
           cmake --install . --config Debug
