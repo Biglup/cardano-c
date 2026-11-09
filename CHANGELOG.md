@@ -2,6 +2,8 @@ Unreleased
 ---------------------
 
 - Make the exact reference-script fee test oracle portable to MSVC without changing fee calculations or test vectors.
+- Mark public slot-configuration constants for Windows DLL import/export, keeping DLL definitions scoped to shared-library targets.
+- Fail on HTTP errors and retry transient failures when downloading MinGW and its test dependency.
 
 - Honor bounded bigint string input, including non-null-terminated spans; export zero as one zero byte in either byte order; handle signed 64-bit conversion boundaries without overflow; and preserve the full 64-bit power exponent on Windows and other platforms. Signed integer exports now explicitly use modulo-2^64 two's-complement semantics. Bigint error accessors also handle null objects without undefined member access.
 

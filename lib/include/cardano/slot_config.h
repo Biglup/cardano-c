@@ -67,17 +67,17 @@ typedef struct cardano_slot_config_t
 /**
  * \brief Predefined slot configuration for the Cardano Mainnet.
  */
-extern const cardano_slot_config_t CARDANO_MAINNET_SLOT_CONFIG;
+CARDANO_EXPORT_DATA const cardano_slot_config_t CARDANO_MAINNET_SLOT_CONFIG;
 
 /**
  * \brief Predefined slot configuration for the Cardano Preview network.
  */
-extern const cardano_slot_config_t CARDANO_PREVIEW_SLOT_CONFIG;
+CARDANO_EXPORT_DATA const cardano_slot_config_t CARDANO_PREVIEW_SLOT_CONFIG;
 
 /**
  * \brief Predefined slot configuration for the Cardano Preprod network.
  */
-extern const cardano_slot_config_t CARDANO_PREPROD_SLOT_CONFIG;
+CARDANO_EXPORT_DATA const cardano_slot_config_t CARDANO_PREPROD_SLOT_CONFIG;
 
 #ifdef __cplusplus
 }
