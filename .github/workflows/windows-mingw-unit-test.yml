@@ -30,7 +30,7 @@ jobs:
 
           # Download the archive
           echo "Downloading MinGW..."
-          curl --fail --retry 3 --retry-delay 5 --connect-timeout 30 --max-time 120 -L -o "$RUNNER_TEMP/$MingwFile" "$MingwUrl"
+          curl -L -o "$RUNNER_TEMP/$MingwFile" "$MingwUrl"
 
           # Extract the archive
           echo "Extracting MinGW..."
@@ -58,7 +58,7 @@ jobs:
         run: |
           mkdir -p gtest-build
           cd gtest-build
-          curl --fail --retry 3 --retry-delay 5 --connect-timeout 30 --max-time 120 -L -o googletest-release-1.11.0.zip https://github.com/google/googletest/archive/refs/tags/release-1.11.0.zip
+          curl -L -o googletest-release-1.11.0.zip https://github.com/google/googletest/archive/refs/tags/release-1.11.0.zip
           unzip googletest-release-1.11.0.zip
           cd googletest-release-1.11.0
           cmake -G "MinGW Makefiles" \

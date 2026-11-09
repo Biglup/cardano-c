@@ -38,21 +38,6 @@ extern "C" {
 #define CARDANO_EXPORT extern
 #endif
 #endif
-
-/* Unlike functions exported through a generated .def file, DLL data needs an
- * explicit import declaration in consumers. Static builds use plain extern. */
-#ifndef CARDANO_EXPORT_DATA
-#if defined(_MSC_VER) && defined(CARDANO_C_DLL)
-#if defined(CARDANO_C_BUILDING_DLL)
-#define CARDANO_EXPORT_DATA __declspec(dllexport) extern
-#else
-#define CARDANO_EXPORT_DATA __declspec(dllimport) extern
-#endif
-#else
-#define CARDANO_EXPORT_DATA extern
-#endif
-#endif
-
 #ifdef __GNUC__
 #define CARDANO_NODISCARD __attribute__((warn_unused_result))
 #elif defined(_MSC_VER)
