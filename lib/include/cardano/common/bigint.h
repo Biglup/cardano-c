@@ -78,7 +78,8 @@ cardano_bigint_clone(const cardano_bigint_t* bigint, cardano_bigint_t** clone);
  * This function initializes a \ref cardano_bigint_t object from the given string.
  *
  * \param[in] string A pointer to the string containing the representation of the bigint.
- * \param[in] size The size of the string.
+ * \param[in] size The maximum number of bytes to read. Parsing stops at the first null
+ * character within this span, if present. A span without a null terminator is also accepted.
  * \param[in] base The base of the string representation (e.g., 10 for decimal, 16 for hexadecimal).
  * \param[out] bigint A pointer to a pointer that will be set to the address of the newly created \ref cardano_bigint_t object.
  *
@@ -221,7 +222,7 @@ cardano_bigint_from_unsigned_int(uint64_t value, cardano_bigint_t** bigint);
  * \code{.c}
  * byte_t bytes[] = { 0x01, 0x02, 0x03 };
  * cardano_bigint_t* bigint = NULL;
- * cardano_byte_order_t byte_order = CARDANO_ENDIANNESS_LITTLE;
+ * cardano_byte_order_t byte_order = CARDANO_BYTE_ORDER_LITTLE_ENDIAN;
  *
  * cardano_error_t result = cardano_bigint_from_bytes(bytes, sizeof(bytes), byte_order, &bigint);
  *
@@ -289,8 +290,9 @@ cardano_bigint_to_string(
  *
  * \param[in] bigint A constant pointer to the \ref cardano_bigint_t object.
  *
- * \return The integer value of the bigint. If the bigint is too large to fit in an int64_t, the value is
- *         undefined; only the low 64 bits of the magnitude are read.
+ * \return The integer value, reduced modulo 2^64 and interpreted as a signed 64-bit
+ * two's-complement value. Returns zero if \p bigint is NULL. Values in the int64_t
+ * range, including INT64_MIN, are returned exactly.
  *
  * Usage Example:
  * \code{.c}
@@ -358,7 +360,8 @@ CARDANO_EXPORT size_t cardano_bigint_get_bytes_size(const cardano_bigint_t* bigi
 /**
  * \brief Converts a bigint to its byte array representation.
  *
- * This function converts a \ref cardano_bigint_t object to a byte array.
+ * This function exports the absolute magnitude as an unsigned byte array. Zero is
+ * encoded as one zero byte in either byte order.
  *
  * \param[in] bigint A constant pointer to the \ref cardano_bigint_t object.
  * \param[in] byte_order The byte order for the byte array (big-endian or little-endian).
@@ -375,7 +378,7 @@ CARDANO_EXPORT size_t cardano_bigint_get_bytes_size(const cardano_bigint_t* bigi
  * size_t byte_size = cardano_bigint_get_bytes_size(bigint);
  * byte_t* buffer = (byte_t*)malloc(byte_size);
  *
- * cardano_error_t result = cardano_bigint_to_bytes(bigint, CARDANO_ENDIANNESS_LITTLE, buffer, byte_size);
+ * cardano_error_t result = cardano_bigint_to_bytes(bigint, CARDANO_BYTE_ORDER_LITTLE_ENDIAN, buffer, byte_size);
  *
  * if (result == CARDANO_SUCCESS)
  * {
@@ -1771,49 +1774,31 @@ CARDANO_EXPORT
 void cardano_bigint_decrement(cardano_bigint_t* n);
 
 /**
- * \brief Raises a bigint to the power of another bigint.
- *
- * This function computes the power of a \ref cardano_bigint_t object raised to another \ref cardano_bigint_t object.
+ * \brief Raises a bigint to a nonnegative integer power.
  *
  * \param[in] base A constant pointer to the base.
- * \param[in] exponent A constant pointer to the exponent.
- * \param[out] result A pointer to the bigint object where the result will be stored.
+ * \param[in] exponent The exponent, using the full uint64_t range on every platform.
+ * \param[out] result An initialized bigint that receives the power. May be the same
+ * object as \p base.
  *
- * \remark If any of the pointers (\p base, \p exponent, or \p result) is NULL, the operation has no effect.
+ * \remark An exponent of zero yields one, including when the base is zero. If
+ * \p base or \p result is NULL, the operation has no effect. The result must fit
+ * in available memory; large powers can require substantial memory and time.
  *
  * Usage Example:
  * \code{.c}
- * // Initialize the base bigint from a binary string
- * const char* base_str = "10"; // Binary: 10 (2 in decimal)
  * cardano_bigint_t* base = NULL;
- * cardano_error_t result = cardano_bigint_from_string(base_str, strlen(base_str), 2, &base);
+ * cardano_bigint_t* power = NULL;
  *
- * // Initialize the exponent bigint from a binary string
- * const char* exponent_str = "11"; // Binary: 11 (3 in decimal)
- * cardano_bigint_t* exponent = NULL;
- * result = cardano_bigint_from_string(exponent_str, strlen(exponent_str), 2, &exponent);
- *
- * if (result == CARDANO_SUCCESS)
+ * if ((cardano_bigint_from_int(2, &base) == CARDANO_SUCCESS) &&
+ *     (cardano_bigint_from_int(0, &power) == CARDANO_SUCCESS))
  * {
- *   cardano_bigint_t* result_bigint = cardano_bigint_new();
- *
- *   cardano_bigint_pow(base, exponent, result_bigint);
- *
- *   // Convert the result to a string for display
- *   size_t size = cardano_bigint_get_string_size(result_bigint, 2);
- *   char* buffer = (char*)malloc(size);
- *   cardano_bigint_to_string(result_bigint, buffer, size, 2);
- *
- *   printf("Result: %s\n", buffer); // Should print: 1000 (Binary: 1000 is 8 in decimal)
- *
- *   // Clean up
- *   free(buffer);
- *   cardano_bigint_unref(&result_bigint);
+ *   cardano_bigint_pow(base, 3, power);
+ *   int64_t value = cardano_bigint_to_int(power); // 8
  * }
  *
- * // Clean up
+ * cardano_bigint_unref(&power);
  * cardano_bigint_unref(&base);
- * cardano_bigint_unref(&exponent);
  * \endcode
  */
 CARDANO_EXPORT

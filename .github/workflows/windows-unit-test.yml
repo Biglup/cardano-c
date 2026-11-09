@@ -4,7 +4,7 @@ on:
 
 jobs:
   build_and_test_windows_msvc_64bit:
-    runs-on: windows-latest
+    runs-on: windows-2022
     name: Build and Test (64-bit)
     steps:
       - name: Setup MSVC environment (64-bit)
@@ -26,6 +26,7 @@ jobs:
           cmake -G "Visual Studio 17 2022" -A x64 \
             -DCMAKE_MSVC_RUNTIME_LIBRARY="MultiThreaded$<$<CONFIG:Debug>:Debug>DLL" \
             -Dgtest_force_shared_crt=ON \
+            -DCMAKE_POLICY_VERSION_MINIMUM=3.5 \
             -DCMAKE_INSTALL_PREFIX="C:/googletest"
           cmake --build . --config Debug
           cmake --install . --config Debug
@@ -42,7 +43,7 @@ jobs:
           ctest -C Debug --output-on-failure
 
   build_and_test_windows_msvc_32bit:
-    runs-on: windows-latest
+    runs-on: windows-2022
     name: Build and Test (32-bit)
     steps:
       - name: Setup MSVC environment (32-bit)
@@ -64,6 +65,7 @@ jobs:
           cmake -G "Visual Studio 17 2022" -A Win32 \
             -DCMAKE_MSVC_RUNTIME_LIBRARY="MultiThreaded$<$<CONFIG:Debug>:Debug>DLL" \
             -Dgtest_force_shared_crt=ON \
+            -DCMAKE_POLICY_VERSION_MINIMUM=3.5 \
             -DCMAKE_INSTALL_PREFIX="C:/googletest"
           cmake --build . --config Debug
           cmake --install . --config Debug

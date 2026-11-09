@@ -65,6 +65,7 @@ jobs:
             -DCMAKE_C_COMPILER=${{ matrix.arch.arch }}-w64-mingw32-gcc \
             -DCMAKE_CXX_COMPILER=${{ matrix.arch.arch }}-w64-mingw32-g++ \
             -DCMAKE_BUILD_TYPE=Debug \
+            -DCMAKE_POLICY_VERSION_MINIMUM=3.5 \
             -DCMAKE_INSTALL_PREFIX="C:/googletest"
           cmake --build . --config Debug
           cmake --install . --config Debug

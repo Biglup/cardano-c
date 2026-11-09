@@ -1,6 +1,8 @@
 Unreleased
 ---------------------
 
+- Honor bounded bigint string input, including non-null-terminated spans; export zero as one zero byte in either byte order; handle signed 64-bit conversion boundaries without overflow; and preserve the full 64-bit power exponent on Windows and other platforms. Signed integer exports now explicitly use modulo-2^64 two's-complement semantics. Bigint error accessors also handle null objects without undefined member access.
+
 - Erase temporary BIP39-derived key material and normal Ed25519 signing keys after use, including failure paths. Bound serialized software key-handler payload lengths before allocating them, encode handler types independently of host byte order, and clarify the passphrase callback return value.
 
 - Initialize EMIP-003 cryptography and random-improve coin selection before RNG use, enable thread-safe libsodium initialization on native Unix builds, and reject invalid pointers and oversized payloads. Decryption now supports authenticated empty plaintext without relying on zero-size allocations. PBKDF2 rejects zero iterations and derived keys beyond its block counter limit, and avoids counter wraparound on 32-bit platforms.
