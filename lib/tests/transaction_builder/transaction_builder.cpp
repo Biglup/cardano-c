@@ -24,6 +24,8 @@
 /* INCLUDES ******************************************************************/
 
 #include <cardano/error.h>
+#include <cardano/pool_params/pool_owners.h>
+#include <cardano/pool_params/pool_params.h>
 
 #include <cardano/plutus_data/constr_plutus_data.h>
 #include <cardano/plutus_data/plutus_list.h>
@@ -15889,4 +15891,54 @@ TEST(cardano_tx_builder_set_pool_state, rejectsInvalidStateAndRetainsThePrevious
   EXPECT_EQ(builder->state.pool_state_size, 0U);
   cardano_tx_builder_unref(&builder);
   cardano_protocol_parameters_unref(&params);
+}
+
+TEST(cardano_tx_builder_set_pool_state, preservesTheSnapshotAcrossAllocationFailuresAndClearsIt)
+{
+  const char*            cbor   = "581cd85087c646951407198c27b1b950fd2e99f28586c000ce39f6e6ef9258208dd154228946bd12967c12bedb1cb6038b78f8b84a1760b1a788fa72a4af3db01927101903e8d81e820105581de1cb0ec2692497b458e46812c8a5bfa2931d1a2d965a99893828ec810fd9010281581ccb0ec2692497b458e46812c8a5bfa2931d1a2d965a99893828ec810f8383011913886b6578616d706c652e636f6d8400191770447f000001f682026b6578616d706c652e636f6d827368747470733a2f2f6578616d706c652e636f6d58200f3abbc8fc19c2e61bab6059bf8a466e6e754833a08a62a6c56fe0e78f19d9d5";
+  cardano_cbor_reader_t* reader = cardano_cbor_reader_from_hex(cbor, strlen(cbor));
+  cardano_pool_params_t* first  = nullptr;
+  ASSERT_EQ(cardano_pool_params_from_cbor(reader, &first), CARDANO_SUCCESS);
+  cardano_cbor_reader_unref(&reader);
+  cardano_pool_params_t* second = nullptr;
+  ASSERT_EQ(cardano_pool_params_deep_clone(first, &second), CARDANO_SUCCESS);
+  cardano_pool_owners_t*  owners = nullptr;
+  cardano_blake2b_hash_t* owner  = nullptr;
+  ASSERT_EQ(cardano_pool_params_get_owners(first, &owners), CARDANO_SUCCESS);
+  ASSERT_EQ(cardano_pool_owners_get(owners, 0U, &owner), CARDANO_SUCCESS);
+  ASSERT_EQ(cardano_pool_params_set_operator_key_hash(second, owner), CARDANO_SUCCESS);
+  cardano_pool_params_t*         replacement[] = { first, second };
+  cardano_protocol_parameters_t* params        = init_protocol_parameters();
+  cardano_tx_builder_t*          builder       = cardano_tx_builder_new(params, &CARDANO_MAINNET_SLOT_CONFIG);
+  ASSERT_NE(builder, nullptr);
+  ASSERT_EQ(cardano_tx_builder_set_pool_state(builder, replacement, 1U), CARDANO_SUCCESS);
+  cardano_pool_params_t** previous = builder->state.pool_state;
+  EXPECT_EQ(cardano_tx_builder_set_pool_state(builder, replacement, SIZE_MAX), CARDANO_ERROR_MEMORY_ALLOCATION_FAILED);
+  bool succeeded = false;
+  for (int limit = 0; (limit < 300) && !succeeded; ++limit)
+  {
+    reset_allocators_run_count();
+    set_malloc_limit(limit);
+    cardano_set_allocators(fail_malloc_at_limit, realloc, free);
+    const cardano_error_t result = cardano_tx_builder_set_pool_state(builder, replacement, 2U);
+    cardano_set_allocators(malloc, realloc, free);
+    succeeded = result == CARDANO_SUCCESS;
+    if (!succeeded)
+    {
+      EXPECT_EQ(result, CARDANO_ERROR_MEMORY_ALLOCATION_FAILED);
+      EXPECT_EQ(builder->state.pool_state, previous);
+      EXPECT_EQ(builder->state.pool_state_size, 1U);
+    }
+  }
+  EXPECT_TRUE(succeeded);
+  EXPECT_EQ(builder->state.pool_state_size, 2U);
+  EXPECT_EQ(cardano_tx_builder_set_pool_state(builder, nullptr, 0U), CARDANO_SUCCESS);
+  EXPECT_EQ(builder->state.pool_state_size, 0U);
+  EXPECT_EQ(builder->state.pool_state, nullptr);
+  cardano_tx_builder_unref(&builder);
+  cardano_protocol_parameters_unref(&params);
+  cardano_blake2b_hash_unref(&owner);
+  cardano_pool_owners_unref(&owners);
+  cardano_pool_params_unref(&second);
+  cardano_pool_params_unref(&first);
 }
