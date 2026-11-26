@@ -1,6 +1,9 @@
 Unreleased
 ---------------------
 
+V2.0.0-rc.7
+---------------------
+
 - Synchronize transaction support with cardano-ledger `74fce164907908fae47b23598894f067375a74c4`. From protocol version 12, native evaluation and builder script discovery include reference scripts in newly created top-level outputs, sub-transaction outputs and collateral return (CIP-172). These scripts also participate in language views, missing-redeemer checks and legacy-mode balancing. Earlier protocol versions keep their existing script sources.
 - **BREAKING (JSON)**: Add per-byte names for protocol parameter 55 (`ref_inputs_cost_per_multi_asset_byte`) and its update JSON property, matching upstream's multi-asset byte overhead semantics. The old per-policy C accessors remain compatibility aliases. CBOR key 55 is unchanged, and reference-input fees remain inactive as in the pinned ledger.
 - Add `cardano_tx_builder_set_pool_state`, `cardano_balance_transaction_with_pool_state` and `cardano_transaction_get_unique_signers_with_pool_state` for the Dijkstra pool-owner witness exemption. Callers supply the latest registered parameters, preferring pending parameters over active ones. BLS-only updates and unchanged re-registrations then omit owner witnesses from the estimate while retaining the operator and any owners required for other purposes. Unknown pools retain the conservative estimate, pre-Dijkstra behavior is unchanged, and pool deposit accounting is unchanged. The builder keeps an owned snapshot. `cardano_pool_params_requires_owner_witnesses` exposes the comparison, ignoring owner order and equivalent rational representations.

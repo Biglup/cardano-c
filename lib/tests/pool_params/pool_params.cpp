@@ -2457,3 +2457,34 @@ TEST(cardano_pool_params_requires_owner_witnesses, propagatesAllocationFailuresW
   EXPECT_TRUE(succeeded);
   cardano_pool_params_unref(&params);
 }
+
+TEST(cardano_pool_params_requires_owner_witnesses, requiresOwnersWhenOwnerSetsOrMarginsChange)
+{
+  cardano_cbor_reader_t* reader   = cardano_cbor_reader_from_hex(CBOR, strlen(CBOR));
+  cardano_pool_params_t* original = nullptr;
+  ASSERT_EQ(cardano_pool_params_from_cbor(reader, &original), CARDANO_SUCCESS);
+  cardano_cbor_reader_unref(&reader);
+  cardano_pool_params_t* changed = nullptr;
+  ASSERT_EQ(cardano_pool_params_deep_clone(original, &changed), CARDANO_SUCCESS);
+  cardano_pool_owners_t* empty = nullptr;
+  ASSERT_EQ(cardano_pool_owners_new(&empty), CARDANO_SUCCESS);
+  ASSERT_EQ(cardano_pool_params_set_owners(changed, empty), CARDANO_SUCCESS);
+  bool required = false;
+  EXPECT_EQ(cardano_pool_params_requires_owner_witnesses(changed, original, &required), CARDANO_SUCCESS);
+  EXPECT_TRUE(required);
+  EXPECT_EQ(cardano_pool_params_requires_owner_witnesses(original, changed, &required), CARDANO_SUCCESS);
+  EXPECT_TRUE(required);
+  cardano_pool_owners_t* owners = nullptr;
+  ASSERT_EQ(cardano_pool_params_get_owners(original, &owners), CARDANO_SUCCESS);
+  ASSERT_EQ(cardano_pool_params_set_owners(changed, owners), CARDANO_SUCCESS);
+  cardano_unit_interval_t* margin = nullptr;
+  ASSERT_EQ(cardano_unit_interval_new(2U, 5U, &margin), CARDANO_SUCCESS);
+  ASSERT_EQ(cardano_pool_params_set_margin(changed, margin), CARDANO_SUCCESS);
+  EXPECT_EQ(cardano_pool_params_requires_owner_witnesses(changed, original, &required), CARDANO_SUCCESS);
+  EXPECT_TRUE(required);
+  cardano_unit_interval_unref(&margin);
+  cardano_pool_owners_unref(&owners);
+  cardano_pool_owners_unref(&empty);
+  cardano_pool_params_unref(&changed);
+  cardano_pool_params_unref(&original);
+}

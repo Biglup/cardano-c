@@ -26,7 +26,7 @@ Ready to learn? Get the latest documentation at [cardano-c.readthedocs.io](https
 | Channel | Version | Intended use |
 | :------ | :------ | :----------- |
 | Stable | [v1.2.1](https://github.com/Biglup/cardano-c/releases/tag/v1.2.1) | The stable 1.2 series for Conway applications. |
-| Release candidate | [v2.0.0-rc.6](https://github.com/Biglup/cardano-c/releases/tag/v2.0.0-rc.6) | Integration testing of the native Plutus evaluator and Conway/Dijkstra transaction support. |
+| Release candidate | [v2.0.0-rc.7](https://github.com/Biglup/cardano-c/releases/tag/v2.0.0-rc.7) | Integration testing of the native Plutus evaluator and Conway/Dijkstra transaction support. |
 
 Version 2.0 adds native Plutus evaluation and support for Dijkstra transactions. Dijkstra support is experimental until the hardfork rules are finalized. The 1.2 series remains the stable release for Conway.
 
@@ -54,7 +54,7 @@ Here is a list with all the languages/bindings available.
 
 | Library | Stable | Release candidate | Language | License |
 | :-- | :-- | :-- | :-- | :-- |
-| [libcardano-c](https://github.com/Biglup/cardano-c) | [1.2.1](https://github.com/Biglup/cardano-c/releases/tag/v1.2.1) | [2.0.0-rc.6](https://github.com/Biglup/cardano-c/releases/tag/v2.0.0-rc.6) | C | Apache 2.0 |
+| [libcardano-c](https://github.com/Biglup/cardano-c) | [1.2.1](https://github.com/Biglup/cardano-c/releases/tag/v1.2.1) | [2.0.0-rc.7](https://github.com/Biglup/cardano-c/releases/tag/v2.0.0-rc.7) | C | Apache 2.0 |
 | [Cometa.js](https://github.com/Biglup/cometa.js) | [1.2.0](https://www.npmjs.com/package/@biglup/cometa/v/1.2.0) | [2.0.0-rc.3](https://www.npmjs.com/package/@biglup/cometa/v/2.0.0-rc.3) | JavaScript / TypeScript | Apache 2.0 |
 | [Cometa.py](https://github.com/Biglup/cometa.py) | [1.2.1.post6](https://pypi.org/project/biglup-cometa/1.2.1.post6/) | [2.0.0rc3](https://pypi.org/project/biglup-cometa/2.0.0rc3/) | Python | Apache 2.0 |
 | [Cometa.cpp](https://github.com/Biglup/cometa.cpp) | - | [2.0.0-rc.1](https://github.com/Biglup/cometa.cpp/releases/tag/v2.0.0-rc.1) | C++ | Apache 2.0 |
