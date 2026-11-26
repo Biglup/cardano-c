@@ -21,6 +21,9 @@
 
 /* INCLUDES ******************************************************************/
 
+extern "C" {
+#include "transaction_builder/balancing/internals/scripts_needed.h"
+}
 #include "../../src/uplc/ast/uplc_program.h"
 #include "../../src/uplc/ast/uplc_term.h"
 #include <cardano/address/address.h>
@@ -3715,4 +3718,134 @@ TEST(cardano_tx_evaluator_native, doesNotRunANativeReferenceScript)
   cardano_utxo_list_unref(&utxos);
   cardano_script_unref(&script);
   cardano_cbor_reader_unref(&reader);
+}
+
+TEST(cardano_tx_evaluator_native_v4, discoversScriptsInEveryCreatedOutputSourceOnlyFromDijkstra)
+{
+  for (int source = 0; source < 3; ++source)
+  {
+    SCOPED_TRACE(source);
+    cardano_plutus_v4_script_t* script  = build_v4_script(V4_RETURNS_UNIT);
+    cardano_script_t*           wrapped = nullptr;
+    ASSERT_EQ(cardano_script_new_plutus_v4(script, &wrapped), CARDANO_SUCCESS);
+    cardano_utxo_list_t*   utxos     = nullptr;
+    cardano_transaction_t* tx        = build_v4_spend_tx(script, false, &utxos);
+    cardano_witness_set_t* witnesses = cardano_transaction_get_witness_set(tx);
+    ASSERT_EQ(cardano_witness_set_set_plutus_v4_scripts(witnesses, nullptr), CARDANO_SUCCESS);
+    cardano_transaction_body_t*        body    = cardano_transaction_get_body(tx);
+    cardano_transaction_output_list_t* outputs = key_outputs(0x30U);
+    cardano_transaction_output_t*      output  = nullptr;
+    ASSERT_EQ(cardano_transaction_output_list_get(outputs, 0U, &output), CARDANO_SUCCESS);
+    ASSERT_EQ(cardano_transaction_output_set_script_ref(output, wrapped), CARDANO_SUCCESS);
+
+    if (source == 0)
+    {
+      ASSERT_EQ(cardano_transaction_body_set_outputs(body, outputs), CARDANO_SUCCESS);
+    }
+    else if (source == 1)
+    {
+      ASSERT_EQ(cardano_transaction_body_set_collateral_return(body, output), CARDANO_SUCCESS);
+    }
+    else
+    {
+      cardano_witness_set_t* empty = nullptr;
+      ASSERT_EQ(cardano_witness_set_new(&empty), CARDANO_SUCCESS);
+      cardano_sub_transaction_t*      sub      = build_sub_tx(0x30U, {}, empty);
+      cardano_sub_transaction_body_t* sub_body = cardano_sub_transaction_get_body(sub);
+      ASSERT_EQ(cardano_sub_transaction_body_set_outputs(sub_body, outputs), CARDANO_SUCCESS);
+      cardano_sub_transaction_set_t* subs = nullptr;
+      ASSERT_EQ(cardano_sub_transaction_set_new(&subs), CARDANO_SUCCESS);
+      ASSERT_EQ(cardano_sub_transaction_set_add(subs, sub), CARDANO_SUCCESS);
+      ASSERT_EQ(cardano_transaction_body_set_sub_transactions(body, subs), CARDANO_SUCCESS);
+      cardano_sub_transaction_set_unref(&subs);
+      cardano_sub_transaction_body_unref(&sub_body);
+      cardano_sub_transaction_unref(&sub);
+      cardano_witness_set_unref(&empty);
+      cardano_address_t* address = key_address(0x30U);
+      add_utxo(utxos, 0x30U, address);
+      cardano_address_unref(&address);
+    }
+
+    cardano_redeemer_list_t* evaluated = nullptr;
+    EXPECT_EQ(evaluate_level(tx, utxos, nullptr, &evaluated), CARDANO_SUCCESS);
+    expect_single_evaluated(evaluated, CARDANO_REDEEMER_TAG_SPEND, 0U, kV4ReturnsUnitCpu, kV4ReturnsUnitMem);
+    cardano_redeemer_list_unref(&evaluated);
+    EXPECT_EQ(evaluate_level(tx, utxos, nullptr, &evaluated, nullptr, 11U), CARDANO_ERROR_ELEMENT_NOT_FOUND);
+    cardano_redeemer_list_unref(&evaluated);
+
+    cardano_blake2b_hash_t*     hash   = cardano_script_get_hash(wrapped);
+    cardano_blake2b_hash_set_t* needed = nullptr;
+    ASSERT_EQ(cardano_blake2b_hash_set_new(&needed), CARDANO_SUCCESS);
+    ASSERT_EQ(cardano_blake2b_hash_set_add(needed, hash), CARDANO_SUCCESS);
+    bool v1 = false, v2 = false, v3 = false, v4 = false, missing = false;
+    EXPECT_EQ(_cardano_get_plutus_languages_used(tx, true, needed, nullptr, utxos, nullptr, nullptr, &v1, &v2, &v3, &v4, &missing), CARDANO_SUCCESS);
+    EXPECT_TRUE(v4);
+    EXPECT_FALSE(missing);
+    EXPECT_EQ(_cardano_get_plutus_languages_used(tx, false, needed, nullptr, utxos, nullptr, nullptr, &v1, &v2, &v3, &v4, &missing), CARDANO_SUCCESS);
+    EXPECT_FALSE(v4);
+    EXPECT_TRUE(missing);
+
+    cardano_blake2b_hash_set_t* provided = nullptr;
+    ASSERT_EQ(_cardano_get_plutus_scripts_provided(tx, true, needed, nullptr, utxos, nullptr, nullptr, &provided), CARDANO_SUCCESS);
+    EXPECT_EQ(cardano_blake2b_hash_set_get_length(provided), 1U);
+    cardano_redeemer_tag_t           tag          = CARDANO_REDEEMER_TAG_MINT;
+    uint64_t                         index        = 99U;
+    cardano_blake2b_hash_t*          missing_hash = nullptr;
+    cardano_transaction_input_set_t* inputs       = cardano_transaction_body_get_inputs(body);
+    EXPECT_EQ(_cardano_find_missing_redeemer(body, inputs, utxos, provided, nullptr, &tag, &index, &missing_hash), CARDANO_SUCCESS);
+    EXPECT_EQ(tag, CARDANO_REDEEMER_TAG_SPEND);
+    EXPECT_EQ(index, 0U);
+    EXPECT_TRUE(cardano_blake2b_hash_equals(hash, missing_hash));
+    cardano_transaction_input_set_unref(&inputs);
+    cardano_blake2b_hash_unref(&missing_hash);
+    cardano_blake2b_hash_set_unref(&provided);
+    cardano_blake2b_hash_set_unref(&needed);
+    cardano_blake2b_hash_unref(&hash);
+    cardano_transaction_output_unref(&output);
+    cardano_transaction_output_list_unref(&outputs);
+    cardano_transaction_body_unref(&body);
+    cardano_witness_set_unref(&witnesses);
+    cardano_transaction_unref(&tx);
+    cardano_utxo_list_unref(&utxos);
+    cardano_script_unref(&wrapped);
+    cardano_plutus_v4_script_unref(&script);
+  }
+}
+
+TEST(cardano_tx_evaluator_native_v4, subTransactionCanUseAReferenceScriptCreatedByTheTopLevel)
+{
+  cardano_plutus_v4_script_t* script        = build_v4_script(V4_RETURNS_UNIT);
+  cardano_credential_t*       guard         = v4_credential(script);
+  cardano_witness_set_t*      sub_witnesses = v4_witness_set(nullptr, true, CARDANO_REDEEMER_TAG_GUARDING, 0U);
+  cardano_sub_transaction_t*  sub           = build_sub_tx(0x20U, { guard }, sub_witnesses);
+  cardano_witness_set_t*      witnesses     = nullptr;
+  ASSERT_EQ(cardano_witness_set_new(&witnesses), CARDANO_SUCCESS);
+  cardano_transaction_t*             tx      = build_top_tx(0x10U, {}, witnesses, { sub });
+  cardano_transaction_body_t*        body    = cardano_transaction_get_body(tx);
+  cardano_transaction_output_list_t* outputs = cardano_transaction_body_get_outputs(body);
+  cardano_transaction_output_t*      output  = nullptr;
+  ASSERT_EQ(cardano_transaction_output_list_get(outputs, 0U, &output), CARDANO_SUCCESS);
+  cardano_script_t* wrapped = nullptr;
+  ASSERT_EQ(cardano_script_new_plutus_v4(script, &wrapped), CARDANO_SUCCESS);
+  ASSERT_EQ(cardano_transaction_output_set_script_ref(output, wrapped), CARDANO_SUCCESS);
+  cardano_utxo_list_t* utxos = nullptr;
+  ASSERT_EQ(cardano_utxo_list_new(&utxos), CARDANO_SUCCESS);
+  add_key_utxo(utxos, 0x10U);
+  add_key_utxo(utxos, 0x20U);
+  cardano_redeemer_list_t* evaluated = nullptr;
+  const uint64_t           sub_index = 0U;
+  EXPECT_EQ(evaluate_level(tx, utxos, &sub_index, &evaluated), CARDANO_SUCCESS);
+  expect_single_evaluated(evaluated, CARDANO_REDEEMER_TAG_GUARDING, 0U, kV4ReturnsUnitCpu, kV4ReturnsUnitMem);
+  cardano_redeemer_list_unref(&evaluated);
+  cardano_utxo_list_unref(&utxos);
+  cardano_script_unref(&wrapped);
+  cardano_transaction_output_unref(&output);
+  cardano_transaction_output_list_unref(&outputs);
+  cardano_transaction_body_unref(&body);
+  cardano_transaction_unref(&tx);
+  cardano_witness_set_unref(&witnesses);
+  cardano_sub_transaction_unref(&sub);
+  cardano_witness_set_unref(&sub_witnesses);
+  cardano_credential_unref(&guard);
+  cardano_plutus_v4_script_unref(&script);
 }

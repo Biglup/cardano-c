@@ -1169,6 +1169,22 @@ CARDANO_EXPORT const char* cardano_pool_params_get_last_error(
 CARDANO_EXPORT cardano_error_t
 cardano_pool_params_deep_clone(const cardano_pool_params_t* source, cardano_pool_params_t** clone);
 
+/**
+ * \brief Applies the Dijkstra pool-owner witness exemption, ignoring only the BLS key.
+ * \param[in] proposed The proposed pool parameters.
+ * \param[in] latest The latest registered parameters: pending parameters when present, otherwise active
+ * parameters. NULL means new or unknown pool and conservatively requires owners. Must describe the same
+ * pool to qualify for the exemption. Unchanged registrations and unretirement also qualify.
+ * \param[out] required Whether owners must witness the registration. The operator is always required.
+ * \return Success, a null argument error, or a comparison/allocation error.
+ * \note Only use the exemption from protocol version 12. Owner order and equivalent rational margins
+ * do not affect equality. This function neither verifies chain state nor changes either parameter object.
+ */
+CARDANO_EXPORT cardano_error_t cardano_pool_params_requires_owner_witnesses(
+  const cardano_pool_params_t* proposed,
+  const cardano_pool_params_t* latest,
+  bool*                        required);
+
 #ifdef __cplusplus
 }
 #endif /* __cplusplus */

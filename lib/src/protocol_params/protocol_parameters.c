@@ -93,7 +93,7 @@ typedef struct cardano_protocol_parameters_t
     bool                              has_peras_bootstrap_round;
     uint64_t                          peras_bootstrap_round;
     cardano_unit_interval_t*          peras_quorum_threshold_safety_margin;
-    uint64_t                          ref_inputs_cost_per_multi_asset_policy;
+    uint64_t                          ref_inputs_cost_per_multi_asset_byte;
     uint64_t                          ref_inputs_cost_per_datum_byte;
 } cardano_protocol_parameters_t;
 
@@ -436,7 +436,7 @@ cardano_protocol_parameters_new(cardano_protocol_parameters_t** protocol_paramet
   (*protocol_parameters)->has_peras_bootstrap_round              = false;
   (*protocol_parameters)->peras_bootstrap_round                  = 0;
   (*protocol_parameters)->peras_quorum_threshold_safety_margin   = cardano_get_zero_interval();
-  (*protocol_parameters)->ref_inputs_cost_per_multi_asset_policy = 0;
+  (*protocol_parameters)->ref_inputs_cost_per_multi_asset_byte   = 0;
   (*protocol_parameters)->ref_inputs_cost_per_datum_byte         = 0;
 
   if (((*protocol_parameters)->pool_pledge_influence == NULL) || ((*protocol_parameters)->expansion_rate == NULL) || ((*protocol_parameters)->treasury_growth_rate == NULL) || ((*protocol_parameters)->d == NULL) || ((*protocol_parameters)->extra_entropy == NULL) || ((*protocol_parameters)->protocol_version == NULL) || ((*protocol_parameters)->cost_models == NULL) || ((*protocol_parameters)->execution_costs == NULL) || ((*protocol_parameters)->max_tx_ex_units == NULL) || ((*protocol_parameters)->max_block_ex_units == NULL) || ((*protocol_parameters)->pool_voting_thresholds == NULL) || ((*protocol_parameters)->drep_voting_thresholds == NULL) || ((*protocol_parameters)->ref_script_cost_per_byte == NULL) || ((*protocol_parameters)->min_pool_margin == NULL) || ((*protocol_parameters)->leios_quorum_stake_threshold == NULL) || ((*protocol_parameters)->max_endorser_block_execution_units == NULL) || ((*protocol_parameters)->peras_quorum_threshold_safety_margin == NULL))
@@ -1118,7 +1118,7 @@ cardano_protocol_parameters_get_peras_quorum_threshold_safety_margin(
 }
 
 uint64_t
-cardano_protocol_parameters_get_ref_inputs_cost_per_multi_asset_policy(
+cardano_protocol_parameters_get_ref_inputs_cost_per_multi_asset_byte(
   const cardano_protocol_parameters_t* protocol_parameters)
 {
   if (protocol_parameters == NULL)
@@ -1126,7 +1126,7 @@ cardano_protocol_parameters_get_ref_inputs_cost_per_multi_asset_policy(
     return 0;
   }
 
-  return protocol_parameters->ref_inputs_cost_per_multi_asset_policy;
+  return protocol_parameters->ref_inputs_cost_per_multi_asset_byte;
 }
 
 uint64_t
@@ -2046,16 +2046,16 @@ cardano_protocol_parameters_set_peras_quorum_threshold_safety_margin(
 }
 
 cardano_error_t
-cardano_protocol_parameters_set_ref_inputs_cost_per_multi_asset_policy(
+cardano_protocol_parameters_set_ref_inputs_cost_per_multi_asset_byte(
   cardano_protocol_parameters_t* protocol_parameters,
-  uint64_t                       ref_inputs_cost_per_multi_asset_policy)
+  uint64_t                       ref_inputs_cost_per_multi_asset_byte)
 {
   if (protocol_parameters == NULL)
   {
     return CARDANO_ERROR_POINTER_IS_NULL;
   }
 
-  protocol_parameters->ref_inputs_cost_per_multi_asset_policy = ref_inputs_cost_per_multi_asset_policy;
+  protocol_parameters->ref_inputs_cost_per_multi_asset_byte = ref_inputs_cost_per_multi_asset_byte;
   return CARDANO_SUCCESS;
 }
 
@@ -2205,7 +2205,7 @@ cardano_protocol_parameters_deep_clone(const cardano_protocol_parameters_t* sour
   copy->has_peras_bootstrap_round              = source->has_peras_bootstrap_round;
   copy->peras_bootstrap_round                  = source->peras_bootstrap_round;
   copy->peras_quorum_threshold_safety_margin   = NULL;
-  copy->ref_inputs_cost_per_multi_asset_policy = source->ref_inputs_cost_per_multi_asset_policy;
+  copy->ref_inputs_cost_per_multi_asset_byte   = source->ref_inputs_cost_per_multi_asset_byte;
   copy->ref_inputs_cost_per_datum_byte         = source->ref_inputs_cost_per_datum_byte;
 
   if (source->pool_pledge_influence != NULL)
@@ -2431,4 +2431,19 @@ cardano_protocol_parameters_deep_clone(const cardano_protocol_parameters_t* sour
   *clone = copy;
 
   return CARDANO_SUCCESS;
+}
+
+uint64_t
+cardano_protocol_parameters_get_ref_inputs_cost_per_multi_asset_policy(
+  const cardano_protocol_parameters_t* protocol_parameters)
+{
+  return cardano_protocol_parameters_get_ref_inputs_cost_per_multi_asset_byte(protocol_parameters);
+}
+
+cardano_error_t
+cardano_protocol_parameters_set_ref_inputs_cost_per_multi_asset_policy(
+  cardano_protocol_parameters_t* protocol_parameters,
+  uint64_t                       ref_inputs_cost_per_multi_asset_policy)
+{
+  return cardano_protocol_parameters_set_ref_inputs_cost_per_multi_asset_byte(protocol_parameters, ref_inputs_cost_per_multi_asset_policy);
 }

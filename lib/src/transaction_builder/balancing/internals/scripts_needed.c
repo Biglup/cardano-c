@@ -22,6 +22,7 @@
 /* INCLUDES ******************************************************************/
 
 #include "scripts_needed.h"
+#include "../../internals/created_output_scripts.h"
 #include "unique_signers.h"
 
 #include <cardano/address/base_address.h>
@@ -1260,10 +1261,12 @@ record_sub_transaction_scripts(cardano_transaction_t* tx, script_lookup_t* looku
  *                    which the caller must release with \ref cardano_blake2b_hash_set_unref, and their languages.
  *
  * \return \ref CARDANO_SUCCESS if the provided scripts were inspected, or an appropriate error code.
+ * \param[in] include_created_scripts Enables CIP-172 script sources for Dijkstra.
  */
 static cardano_error_t
 lookup_provided_scripts(
   cardano_transaction_t*      tx,
+  const bool                  include_created_scripts,
   cardano_blake2b_hash_set_t* needed_scripts,
   cardano_utxo_list_t*        reference_inputs,
   cardano_utxo_list_t*        pre_selected_utxo,
@@ -1316,6 +1319,39 @@ lookup_provided_scripts(
   if (result == CARDANO_SUCCESS)
   {
     result = record_reference_scripts(sub_transaction_utxos, lookup);
+  }
+
+  if ((result == CARDANO_SUCCESS) && include_created_scripts)
+  {
+    for (size_t i = 0U; (result == CARDANO_SUCCESS) && (i < cardano_blake2b_hash_set_get_length(needed_scripts)); ++i)
+    {
+      cardano_blake2b_hash_t* hash   = NULL;
+      cardano_script_t*       script = NULL;
+      result                         = cardano_blake2b_hash_set_get(needed_scripts, i, &hash);
+      if (result == CARDANO_SUCCESS)
+      {
+        result = cardano_builder_find_created_script(tx, hash, &script);
+        if (result == CARDANO_ERROR_ELEMENT_NOT_FOUND)
+        {
+          result = CARDANO_SUCCESS;
+        }
+        else if (result == CARDANO_SUCCESS)
+        {
+          cardano_script_language_t language = CARDANO_SCRIPT_LANGUAGE_NATIVE;
+          result                             = cardano_script_get_language(script, &language);
+          if (result == CARDANO_SUCCESS)
+          {
+            result = record_provided_script(lookup, hash, language);
+          }
+        }
+        else
+        {
+          /* Preserve the lookup error for the caller. */
+        }
+      }
+      cardano_script_unref(&script);
+      cardano_blake2b_hash_unref(&hash);
+    }
   }
 
   if (result != CARDANO_SUCCESS)
@@ -1427,6 +1463,7 @@ _cardano_get_sub_transaction_script_hashes_needed(
 cardano_error_t
 _cardano_get_plutus_languages_used(
   cardano_transaction_t*      tx,
+  const bool                  include_created_scripts,
   cardano_blake2b_hash_set_t* needed_scripts,
   cardano_utxo_list_t*        reference_inputs,
   cardano_utxo_list_t*        pre_selected_utxo,
@@ -1445,7 +1482,7 @@ _cardano_get_plutus_languages_used(
 
   script_lookup_t lookup = { NULL, NULL, NULL, { false, false, false, false } };
 
-  cardano_error_t result = lookup_provided_scripts(tx, needed_scripts, reference_inputs, pre_selected_utxo, selection, sub_transaction_utxos, &lookup);
+  cardano_error_t result = lookup_provided_scripts(tx, include_created_scripts, needed_scripts, reference_inputs, pre_selected_utxo, selection, sub_transaction_utxos, &lookup);
 
   if (result != CARDANO_SUCCESS)
   {
@@ -1490,6 +1527,7 @@ _cardano_get_plutus_languages_used(
 cardano_error_t
 _cardano_get_plutus_scripts_provided(
   cardano_transaction_t*       tx,
+  const bool                   include_created_scripts,
   cardano_blake2b_hash_set_t*  script_hashes,
   cardano_utxo_list_t*         reference_inputs,
   cardano_utxo_list_t*         pre_selected_utxo,
@@ -1504,7 +1542,7 @@ _cardano_get_plutus_scripts_provided(
 
   script_lookup_t lookup = { NULL, NULL, NULL, { false, false, false, false } };
 
-  const cardano_error_t result = lookup_provided_scripts(tx, script_hashes, reference_inputs, pre_selected_utxo, selection, sub_transaction_utxos, &lookup);
+  const cardano_error_t result = lookup_provided_scripts(tx, include_created_scripts, script_hashes, reference_inputs, pre_selected_utxo, selection, sub_transaction_utxos, &lookup);
 
   if (result != CARDANO_SUCCESS)
   {

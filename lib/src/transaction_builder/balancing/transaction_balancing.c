@@ -1220,6 +1220,7 @@ is_legacy_mode_transaction(
 
   result = _cardano_get_plutus_languages_used(
     tx,
+    true,
     needed_scripts,
     reference_inputs,
     pre_selected_utxo,
@@ -1490,7 +1491,7 @@ get_top_level_allowed_datum_hashes(
 
   cardano_blake2b_hash_set_t* plutus_scripts = NULL;
 
-  result = _cardano_get_plutus_scripts_provided(tx, needed_scripts, reference_inputs, pre_selected_utxo, selection, sub_transaction_utxos, &plutus_scripts);
+  result = _cardano_get_plutus_scripts_provided(tx, true, needed_scripts, reference_inputs, pre_selected_utxo, selection, sub_transaction_utxos, &plutus_scripts);
 
   cardano_blake2b_hash_set_unref(&needed_scripts);
 
@@ -2729,7 +2730,9 @@ balance_transaction(
   cardano_utxo_list_t*              available_collateral_utxo,
   cardano_address_t*                collateral_change_address,
   cardano_tx_evaluator_t*           evaluator,
-  cardano_deferred_redeemer_list_t* deferred_redeemers)
+  cardano_deferred_redeemer_list_t* deferred_redeemers,
+  cardano_pool_params_t* const*     pool_state,
+  const size_t                      pool_state_size)
 {
   cardano_error_t result      = CARDANO_SUCCESS;
   bool            is_balanced = false;
@@ -3177,7 +3180,9 @@ balance_transaction(
 
     cardano_blake2b_hash_set_t* unique_signers = NULL;
 
-    result = _cardano_get_unique_signers(unbalanced_tx, resolved_inputs, &unique_signers);
+    cardano_protocol_version_t* version = cardano_protocol_parameters_get_protocol_version(protocol_params);
+    result                              = cardano_transaction_get_unique_signers_with_pool_state(unbalanced_tx, resolved_inputs, cardano_protocol_version_get_major(version), pool_state, pool_state_size, &unique_signers);
+    cardano_protocol_version_unref(&version);
 
     if (result != CARDANO_SUCCESS)
     {
@@ -3371,7 +3376,7 @@ balance_transaction(
 /* IMPLEMENTATION ************************************************************/
 
 cardano_error_t
-cardano_balance_transaction(
+cardano_balance_transaction_with_pool_state(
   cardano_transaction_t*            unbalanced_tx,
   const size_t                      foreign_signature_count,
   cardano_protocol_parameters_t*    protocol_params,
@@ -3384,8 +3389,16 @@ cardano_balance_transaction(
   cardano_utxo_list_t*              available_collateral_utxo,
   cardano_address_t*                collateral_change_address,
   cardano_tx_evaluator_t*           evaluator,
-  cardano_deferred_redeemer_list_t* deferred_redeemers)
+  cardano_deferred_redeemer_list_t* deferred_redeemers,
+  cardano_pool_params_t* const*     pool_state,
+  const size_t                      pool_state_size)
 {
+  const cardano_error_t validation = _cardano_validate_pool_state(pool_state, pool_state_size);
+  if (validation != CARDANO_SUCCESS)
+  {
+    return validation;
+  }
+
   cardano_transaction_body_t* body = cardano_transaction_get_body(unbalanced_tx);
   cardano_transaction_body_unref(&body);
 
@@ -3583,7 +3596,9 @@ cardano_balance_transaction(
     collateral_utxo,
     collateral_change_address,
     evaluator,
-    deferred_redeemers);
+    deferred_redeemers,
+    pool_state,
+    pool_state_size);
 
   cardano_utxo_list_unref(&sub_transaction_spent_utxos);
   cardano_value_unref(&sub_transactions_imbalance);
@@ -3900,4 +3915,23 @@ cardano_compute_transaction_batch_imbalance(
   *imbalance = total;
 
   return CARDANO_SUCCESS;
+}
+
+cardano_error_t
+cardano_balance_transaction(
+  cardano_transaction_t*            unbalanced_tx,
+  const size_t                      foreign_signature_count,
+  cardano_protocol_parameters_t*    protocol_params,
+  cardano_utxo_list_t*              reference_inputs,
+  cardano_utxo_list_t*              pre_selected_utxo,
+  cardano_input_to_redeemer_map_t*  input_to_redeemer_map,
+  cardano_utxo_list_t*              available_utxo,
+  cardano_coin_selector_t*          coin_selector,
+  cardano_address_t*                change_address,
+  cardano_utxo_list_t*              available_collateral_utxo,
+  cardano_address_t*                collateral_change_address,
+  cardano_tx_evaluator_t*           evaluator,
+  cardano_deferred_redeemer_list_t* deferred_redeemers)
+{
+  return cardano_balance_transaction_with_pool_state(unbalanced_tx, foreign_signature_count, protocol_params, reference_inputs, pre_selected_utxo, input_to_redeemer_map, available_utxo, coin_selector, change_address, available_collateral_utxo, collateral_change_address, evaluator, deferred_redeemers, NULL, 0U);
 }

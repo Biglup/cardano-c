@@ -2390,3 +2390,70 @@ TEST(cardano_pool_params_to_cip116_json, canConvertToCip116JsonWithBlsKey)
   cardano_cbor_reader_unref(&key_reader);
   free(json_str);
 }
+
+TEST(cardano_pool_params_requires_owner_witnesses, exemptsOnlyUnchangedOrBlsOnlyRegistrations)
+{
+  cardano_pool_params_t* latest   = nullptr;
+  cardano_pool_params_t* proposed = nullptr;
+  cardano_cbor_reader_t* reader   = cardano_cbor_reader_from_hex(CBOR, strlen(CBOR));
+  ASSERT_EQ(cardano_pool_params_from_cbor(reader, &latest), CARDANO_SUCCESS);
+  cardano_cbor_reader_unref(&reader);
+  reader = cardano_cbor_reader_from_hex(CBOR_WITH_BLS_KEY, strlen(CBOR_WITH_BLS_KEY));
+  ASSERT_EQ(cardano_pool_params_from_cbor(reader, &proposed), CARDANO_SUCCESS);
+  cardano_cbor_reader_unref(&reader);
+
+  bool required = true;
+  EXPECT_EQ(cardano_pool_params_requires_owner_witnesses(proposed, nullptr, &required), CARDANO_SUCCESS);
+  EXPECT_TRUE(required);
+  EXPECT_EQ(cardano_pool_params_requires_owner_witnesses(proposed, latest, &required), CARDANO_SUCCESS);
+  EXPECT_FALSE(required);
+  EXPECT_EQ(cardano_pool_params_requires_owner_witnesses(latest, proposed, &required), CARDANO_SUCCESS);
+  EXPECT_FALSE(required);
+  EXPECT_EQ(cardano_pool_params_requires_owner_witnesses(latest, latest, &required), CARDANO_SUCCESS);
+  EXPECT_FALSE(required);
+
+  cardano_unit_interval_t* margin = nullptr;
+  ASSERT_EQ(cardano_unit_interval_new(2U, 10U, &margin), CARDANO_SUCCESS);
+  ASSERT_EQ(cardano_pool_params_set_margin(proposed, margin), CARDANO_SUCCESS);
+  EXPECT_EQ(cardano_pool_params_requires_owner_witnesses(proposed, latest, &required), CARDANO_SUCCESS);
+  EXPECT_FALSE(required);
+  cardano_unit_interval_unref(&margin);
+
+  ASSERT_EQ(cardano_pool_params_set_cost(proposed, 1001U), CARDANO_SUCCESS);
+  EXPECT_EQ(cardano_pool_params_requires_owner_witnesses(proposed, latest, &required), CARDANO_SUCCESS);
+  EXPECT_TRUE(required);
+  EXPECT_EQ(cardano_pool_params_requires_owner_witnesses(nullptr, latest, &required), CARDANO_ERROR_POINTER_IS_NULL);
+  EXPECT_EQ(cardano_pool_params_requires_owner_witnesses(proposed, latest, nullptr), CARDANO_ERROR_POINTER_IS_NULL);
+  cardano_pool_params_unref(&proposed);
+  cardano_pool_params_unref(&latest);
+}
+
+TEST(cardano_pool_params_requires_owner_witnesses, propagatesAllocationFailuresWithoutChangingTheParameters)
+{
+  cardano_cbor_reader_t* reader = cardano_cbor_reader_from_hex(CBOR, strlen(CBOR));
+  cardano_pool_params_t* params = nullptr;
+  ASSERT_EQ(cardano_pool_params_from_cbor(reader, &params), CARDANO_SUCCESS);
+  cardano_cbor_reader_unref(&reader);
+  bool succeeded = false;
+  for (int limit = 0; (limit < 100) && !succeeded; ++limit)
+  {
+    bool required = false;
+    reset_allocators_run_count();
+    set_malloc_limit(limit);
+    cardano_set_allocators(fail_malloc_at_limit, realloc, free);
+    const cardano_error_t result = cardano_pool_params_requires_owner_witnesses(params, params, &required);
+    cardano_set_allocators(malloc, realloc, free);
+    succeeded = result == CARDANO_SUCCESS;
+    if (succeeded)
+    {
+      EXPECT_FALSE(required);
+    }
+    else
+    {
+      EXPECT_NE(result, CARDANO_SUCCESS);
+      EXPECT_TRUE(required);
+    }
+  }
+  EXPECT_TRUE(succeeded);
+  cardano_pool_params_unref(&params);
+}

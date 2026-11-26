@@ -40,6 +40,7 @@
 #include "./internals/builder_votes.h"
 #include "./internals/builder_withdrawals.h"
 #include "./internals/builder_witnesses.h"
+#include "balancing/internals/unique_signers.h"
 
 #include <assert.h>
 
@@ -1906,4 +1907,59 @@ cardano_tx_builder_vote_with_deferred_redeemer(
   const cardano_error_t result = cardano_builder_vote_with_deferred_redeemer(&builder->state, voter, action_id, vote, callback, user_context, &error_message);
 
   track_builder_result(builder, result, error_message);
+}
+
+cardano_error_t
+cardano_tx_builder_set_pool_state(cardano_tx_builder_t* builder, cardano_pool_params_t* const* pool_state, const size_t pool_state_size)
+{
+  if ((builder == NULL) || ((pool_state == NULL) && (pool_state_size != 0U)))
+  {
+    return CARDANO_ERROR_POINTER_IS_NULL;
+  }
+  if (pool_state_size > (SIZE_MAX / sizeof(cardano_pool_params_t*)))
+  {
+    return CARDANO_ERROR_MEMORY_ALLOCATION_FAILED;
+  }
+  const cardano_error_t validation = _cardano_validate_pool_state(pool_state, pool_state_size);
+  if (validation != CARDANO_SUCCESS)
+  {
+    return validation;
+  }
+  cardano_pool_params_t** snapshot = NULL;
+  if (pool_state_size != 0U)
+  {
+    snapshot = _cardano_malloc(pool_state_size * sizeof(cardano_pool_params_t*));
+    if (snapshot == NULL)
+    {
+      return CARDANO_ERROR_MEMORY_ALLOCATION_FAILED;
+    }
+  }
+  size_t          copied = 0U;
+  cardano_error_t result = CARDANO_SUCCESS;
+  for (size_t i = 0U; (i < pool_state_size) && (result == CARDANO_SUCCESS); ++i)
+  {
+    snapshot[i] = NULL;
+    result      = cardano_pool_params_deep_clone(pool_state[i], &snapshot[i]);
+    if (result == CARDANO_SUCCESS)
+    {
+      ++copied;
+    }
+  }
+  if (result != CARDANO_SUCCESS)
+  {
+    for (size_t i = 0U; i < copied; ++i)
+    {
+      cardano_pool_params_unref(&snapshot[i]);
+    }
+    _cardano_free(snapshot);
+    return result;
+  }
+  for (size_t i = 0U; i < builder->state.pool_state_size; ++i)
+  {
+    cardano_pool_params_unref(&builder->state.pool_state[i]);
+  }
+  _cardano_free(builder->state.pool_state);
+  builder->state.pool_state      = snapshot;
+  builder->state.pool_state_size = pool_state_size;
+  return CARDANO_SUCCESS;
 }

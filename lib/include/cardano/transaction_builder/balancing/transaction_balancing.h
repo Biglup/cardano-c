@@ -412,6 +412,46 @@ cardano_compute_transaction_batch_imbalance(
   cardano_protocol_parameters_t* protocol_params,
   cardano_value_t**              imbalance);
 
+/**
+ * \brief Balances a transaction using known pool state for Dijkstra witness fees.
+ *
+ * All arguments and behavior are as in \ref cardano_balance_transaction, with the additional
+ * pool_state and pool_state_size arguments described in \ref cardano_transaction_get_unique_signers_with_pool_state.
+ * Unknown pools retain the conservative owner witness estimate. Pool deposits are unchanged.
+ * \return Success or the corresponding balancing, state-validation or allocation error.
+ * \param[in] unbalanced_tx The transaction to balance.
+ * \param[in] foreign_signature_count Additional signatures to price.
+ * \param[in] protocol_params Protocol parameters including the era version.
+ * \param[in] reference_inputs Resolved reference inputs.
+ * \param[in] pre_selected_utxo Preselected spend inputs.
+ * \param[in] input_to_redeemer_map Spend redeemers by input.
+ * \param[in] available_utxo Available spend inputs.
+ * \param[in] coin_selector Coin selector.
+ * \param[in] change_address Change address.
+ * \param[in] available_collateral_utxo Available collateral inputs.
+ * \param[in] collateral_change_address Collateral return address.
+ * \param[in] evaluator Script evaluator.
+ * \param[in] deferred_redeemers Deferred redeemer callbacks.
+ * \param[in] pool_state Known latest registered pool parameters, pending preferred over active.
+ * \param[in] pool_state_size Number of distinct pool entries.
+ */
+CARDANO_EXPORT cardano_error_t cardano_balance_transaction_with_pool_state(
+  cardano_transaction_t*            unbalanced_tx,
+  size_t                            foreign_signature_count,
+  cardano_protocol_parameters_t*    protocol_params,
+  cardano_utxo_list_t*              reference_inputs,
+  cardano_utxo_list_t*              pre_selected_utxo,
+  cardano_input_to_redeemer_map_t*  input_to_redeemer_map,
+  cardano_utxo_list_t*              available_utxo,
+  cardano_coin_selector_t*          coin_selector,
+  cardano_address_t*                change_address,
+  cardano_utxo_list_t*              available_collateral_utxo,
+  cardano_address_t*                collateral_change_address,
+  cardano_tx_evaluator_t*           evaluator,
+  cardano_deferred_redeemer_list_t* deferred_redeemers,
+  cardano_pool_params_t* const*     pool_state,
+  size_t                            pool_state_size);
+
 #ifdef __cplusplus
 }
 #endif /* __cplusplus */

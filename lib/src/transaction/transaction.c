@@ -1398,3 +1398,20 @@ cardano_transaction_deep_clone(const cardano_transaction_t* source, cardano_tran
 
   return CARDANO_SUCCESS;
 }
+
+cardano_error_t
+cardano_transaction_get_unique_signers_with_pool_state(
+  cardano_transaction_t*        tx,
+  cardano_utxo_list_t*          resolved_inputs,
+  const uint64_t                protocol_major,
+  cardano_pool_params_t* const* pool_state,
+  const size_t                  pool_state_size,
+  cardano_blake2b_hash_set_t**  unique_signers)
+{
+  const cardano_error_t result = _cardano_validate_pool_state(pool_state, pool_state_size);
+  if (result != CARDANO_SUCCESS)
+  {
+    return result;
+  }
+  return _cardano_get_unique_signers_with_pool_state(tx, resolved_inputs, unique_signers, pool_state, (protocol_major >= 12U) ? pool_state_size : 0U);
+}

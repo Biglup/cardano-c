@@ -338,7 +338,7 @@ set_peras_params(cardano_protocol_param_update_t* u, cardano_unit_interval_t* he
   ASSERT_EQ(cardano_protocol_param_update_set_peras_cert_boost(u, &cert_boost), CARDANO_SUCCESS);
   ASSERT_EQ(cardano_protocol_param_update_set_peras_target_committee_size(u, &target_committee_size), CARDANO_SUCCESS);
   ASSERT_EQ(cardano_protocol_param_update_set_peras_quorum_threshold_safety_margin(u, margin), CARDANO_SUCCESS);
-  ASSERT_EQ(cardano_protocol_param_update_set_ref_inputs_cost_per_multi_asset_policy(u, &cost_per_policy), CARDANO_SUCCESS);
+  ASSERT_EQ(cardano_protocol_param_update_set_ref_inputs_cost_per_multi_asset_byte(u, &cost_per_policy), CARDANO_SUCCESS);
   ASSERT_EQ(cardano_protocol_param_update_set_ref_inputs_cost_per_datum_byte(u, &cost_per_datum_byte), CARDANO_SUCCESS);
 }
 

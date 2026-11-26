@@ -165,10 +165,12 @@ _cardano_get_sub_transaction_script_hashes_needed(
  * \return \ref cardano_error_t indicating the outcome of the operation. Returns \ref CARDANO_SUCCESS if the provided scripts
  *         were inspected, or an appropriate error code indicating the failure reason, such as \ref CARDANO_ERROR_POINTER_IS_NULL
  *         if a required parameter is NULL.
+ * \param[in] include_created_scripts Enables CIP-172 reference scripts from created outputs (PV12+).
  */
 cardano_error_t
 _cardano_get_plutus_languages_used(
   cardano_transaction_t*      tx,
+  bool                        include_created_scripts,
   cardano_blake2b_hash_set_t* needed_scripts,
   cardano_utxo_list_t*        reference_inputs,
   cardano_utxo_list_t*        pre_selected_utxo,
@@ -207,10 +209,12 @@ _cardano_get_plutus_languages_used(
  * \return \ref cardano_error_t indicating the outcome of the operation. Returns \ref CARDANO_SUCCESS if the provided scripts
  *         were inspected, or an appropriate error code indicating the failure reason, such as \ref CARDANO_ERROR_POINTER_IS_NULL
  *         if a required parameter is NULL.
+ * \param[in] include_created_scripts Enables CIP-172 reference scripts from created outputs (PV12+).
  */
 cardano_error_t
 _cardano_get_plutus_scripts_provided(
   cardano_transaction_t*       tx,
+  bool                         include_created_scripts,
   cardano_blake2b_hash_set_t*  script_hashes,
   cardano_utxo_list_t*         reference_inputs,
   cardano_utxo_list_t*         pre_selected_utxo,

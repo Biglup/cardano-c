@@ -103,7 +103,7 @@ typedef struct cardano_protocol_param_update_t
     bool                              has_peras_bootstrap_round;
     uint64_t*                         peras_bootstrap_round;
     cardano_unit_interval_t*          peras_quorum_threshold_safety_margin;
-    uint64_t*                         ref_inputs_cost_per_multi_asset_policy;
+    uint64_t*                         ref_inputs_cost_per_multi_asset_byte;
     uint64_t*                         ref_inputs_cost_per_datum_byte;
 } cardano_protocol_param_update_t;
 
@@ -1247,10 +1247,10 @@ cardano_protocol_param_update_to_plutus_data(
     cardano_plutus_data_unref(&v);
   }
 
-  if ((result == CARDANO_SUCCESS) && (u->ref_inputs_cost_per_multi_asset_policy != NULL))
+  if ((result == CARDANO_SUCCESS) && (u->ref_inputs_cost_per_multi_asset_byte != NULL))
   {
     cardano_plutus_data_t* v = NULL;
-    result                   = pp_encode_uint(*u->ref_inputs_cost_per_multi_asset_policy, &v);
+    result                   = pp_encode_uint(*u->ref_inputs_cost_per_multi_asset_byte, &v);
     if (result == CARDANO_SUCCESS)
     {
       result = pp_map_push(map, 55U, v);
@@ -1379,7 +1379,7 @@ cardano_protocol_param_update_deallocate(void* object)
   _cardano_free(data->peras_target_committee_size);
   _cardano_free(data->peras_bootstrap_round);
   cardano_unit_interval_unref(&data->peras_quorum_threshold_safety_margin);
-  _cardano_free(data->ref_inputs_cost_per_multi_asset_policy);
+  _cardano_free(data->ref_inputs_cost_per_multi_asset_byte);
   _cardano_free(data->ref_inputs_cost_per_datum_byte);
 
   _cardano_free(object);
@@ -1669,7 +1669,7 @@ get_map_size(const cardano_protocol_param_update_t* update)
     ++map_size;
   }
 
-  if (update->ref_inputs_cost_per_multi_asset_policy != NULL)
+  if (update->ref_inputs_cost_per_multi_asset_byte != NULL)
   {
     ++map_size;
   }
@@ -1811,7 +1811,7 @@ get_field_ptr(cardano_protocol_param_update_t* update, size_t key)
     case 54:
       return (void*)&update->peras_quorum_threshold_safety_margin;
     case 55:
-      return (void*)&update->ref_inputs_cost_per_multi_asset_policy;
+      return (void*)&update->ref_inputs_cost_per_multi_asset_byte;
     case 56:
       return (void*)&update->ref_inputs_cost_per_datum_byte;
 
@@ -3060,7 +3060,7 @@ cardano_protocol_param_update_new(cardano_protocol_param_update_t** protocol_par
   (*protocol_param_update)->has_peras_bootstrap_round              = false;
   (*protocol_param_update)->peras_bootstrap_round                  = NULL;
   (*protocol_param_update)->peras_quorum_threshold_safety_margin   = NULL;
-  (*protocol_param_update)->ref_inputs_cost_per_multi_asset_policy = NULL;
+  (*protocol_param_update)->ref_inputs_cost_per_multi_asset_byte   = NULL;
   (*protocol_param_update)->ref_inputs_cost_per_datum_byte         = NULL;
 
   return CARDANO_SUCCESS;
@@ -3536,7 +3536,7 @@ cardano_protocol_param_update_to_cbor(const cardano_protocol_param_update_t* pro
     return result;
   }
 
-  result = write_uint_if_present(writer, 55U, protocol_param_update->ref_inputs_cost_per_multi_asset_policy);
+  result = write_uint_if_present(writer, 55U, protocol_param_update->ref_inputs_cost_per_multi_asset_byte);
 
   if (result != CARDANO_SUCCESS)
   {
@@ -4000,10 +4000,10 @@ cardano_protocol_param_update_to_cip116_json(
     }
   }
 
-  if (update->ref_inputs_cost_per_multi_asset_policy != NULL)
+  if (update->ref_inputs_cost_per_multi_asset_byte != NULL)
   {
-    cardano_json_writer_write_property_name(writer, "ref_inputs_cost_per_multi_asset_policy", 38);
-    cardano_json_writer_write_uint_as_string(writer, *update->ref_inputs_cost_per_multi_asset_policy);
+    cardano_json_writer_write_property_name(writer, "ref_inputs_cost_per_multi_asset_byte", 36);
+    cardano_json_writer_write_uint_as_string(writer, *update->ref_inputs_cost_per_multi_asset_byte);
   }
 
   if (update->ref_inputs_cost_per_datum_byte != NULL)
@@ -5158,21 +5158,21 @@ cardano_protocol_param_update_get_peras_quorum_threshold_safety_margin(
 }
 
 cardano_error_t
-cardano_protocol_param_update_get_ref_inputs_cost_per_multi_asset_policy(
+cardano_protocol_param_update_get_ref_inputs_cost_per_multi_asset_byte(
   const cardano_protocol_param_update_t* protocol_param_update,
-  uint64_t*                              ref_inputs_cost_per_multi_asset_policy)
+  uint64_t*                              ref_inputs_cost_per_multi_asset_byte)
 {
-  if ((protocol_param_update == NULL) || (ref_inputs_cost_per_multi_asset_policy == NULL))
+  if ((protocol_param_update == NULL) || (ref_inputs_cost_per_multi_asset_byte == NULL))
   {
     return CARDANO_ERROR_POINTER_IS_NULL;
   }
 
-  if (protocol_param_update->ref_inputs_cost_per_multi_asset_policy == NULL)
+  if (protocol_param_update->ref_inputs_cost_per_multi_asset_byte == NULL)
   {
     return CARDANO_ERROR_ELEMENT_NOT_FOUND;
   }
 
-  *ref_inputs_cost_per_multi_asset_policy = *protocol_param_update->ref_inputs_cost_per_multi_asset_policy;
+  *ref_inputs_cost_per_multi_asset_byte = *protocol_param_update->ref_inputs_cost_per_multi_asset_byte;
 
   return CARDANO_SUCCESS;
 }
@@ -7098,35 +7098,35 @@ cardano_protocol_param_update_set_peras_quorum_threshold_safety_margin(
 }
 
 cardano_error_t
-cardano_protocol_param_update_set_ref_inputs_cost_per_multi_asset_policy(
+cardano_protocol_param_update_set_ref_inputs_cost_per_multi_asset_byte(
   cardano_protocol_param_update_t* protocol_param_update,
-  const uint64_t*                  ref_inputs_cost_per_multi_asset_policy)
+  const uint64_t*                  ref_inputs_cost_per_multi_asset_byte)
 {
   if (protocol_param_update == NULL)
   {
     return CARDANO_ERROR_POINTER_IS_NULL;
   }
 
-  if (protocol_param_update->ref_inputs_cost_per_multi_asset_policy != NULL)
+  if (protocol_param_update->ref_inputs_cost_per_multi_asset_byte != NULL)
   {
-    _cardano_free(protocol_param_update->ref_inputs_cost_per_multi_asset_policy);
+    _cardano_free(protocol_param_update->ref_inputs_cost_per_multi_asset_byte);
   }
 
-  if (ref_inputs_cost_per_multi_asset_policy == NULL)
+  if (ref_inputs_cost_per_multi_asset_byte == NULL)
   {
-    protocol_param_update->ref_inputs_cost_per_multi_asset_policy = NULL;
+    protocol_param_update->ref_inputs_cost_per_multi_asset_byte = NULL;
 
     return CARDANO_SUCCESS;
   }
 
-  protocol_param_update->ref_inputs_cost_per_multi_asset_policy = _cardano_malloc(sizeof(uint64_t));
+  protocol_param_update->ref_inputs_cost_per_multi_asset_byte = _cardano_malloc(sizeof(uint64_t));
 
-  if (protocol_param_update->ref_inputs_cost_per_multi_asset_policy == NULL)
+  if (protocol_param_update->ref_inputs_cost_per_multi_asset_byte == NULL)
   {
     return CARDANO_ERROR_MEMORY_ALLOCATION_FAILED;
   }
 
-  *protocol_param_update->ref_inputs_cost_per_multi_asset_policy = *ref_inputs_cost_per_multi_asset_policy;
+  *protocol_param_update->ref_inputs_cost_per_multi_asset_byte = *ref_inputs_cost_per_multi_asset_byte;
 
   return CARDANO_SUCCESS;
 }
@@ -7298,7 +7298,7 @@ cardano_protocol_param_update_deep_clone(const cardano_protocol_param_update_t* 
   copy->has_peras_bootstrap_round              = source->has_peras_bootstrap_round;
   copy->peras_bootstrap_round                  = NULL;
   copy->peras_quorum_threshold_safety_margin   = NULL;
-  copy->ref_inputs_cost_per_multi_asset_policy = NULL;
+  copy->ref_inputs_cost_per_multi_asset_byte   = NULL;
   copy->ref_inputs_cost_per_datum_byte         = NULL;
 
   if (source->min_fee_a != NULL)
@@ -8031,19 +8031,19 @@ cardano_protocol_param_update_deep_clone(const cardano_protocol_param_update_t* 
     }
   }
 
-  if (source->ref_inputs_cost_per_multi_asset_policy != NULL)
+  if (source->ref_inputs_cost_per_multi_asset_byte != NULL)
   {
     const size_t size = sizeof(uint64_t);
 
-    copy->ref_inputs_cost_per_multi_asset_policy = _cardano_malloc((size > 0U) ? size : 1U);
+    copy->ref_inputs_cost_per_multi_asset_byte = _cardano_malloc((size > 0U) ? size : 1U);
 
-    if (copy->ref_inputs_cost_per_multi_asset_policy == NULL)
+    if (copy->ref_inputs_cost_per_multi_asset_byte == NULL)
     {
       copy->base.deallocator(copy);
       return CARDANO_ERROR_MEMORY_ALLOCATION_FAILED;
     }
 
-    CARDANO_UNUSED(memcpy(copy->ref_inputs_cost_per_multi_asset_policy, source->ref_inputs_cost_per_multi_asset_policy, size));
+    CARDANO_UNUSED(memcpy(copy->ref_inputs_cost_per_multi_asset_byte, source->ref_inputs_cost_per_multi_asset_byte, size));
   }
 
   if (source->ref_inputs_cost_per_datum_byte != NULL)
@@ -8064,4 +8064,20 @@ cardano_protocol_param_update_deep_clone(const cardano_protocol_param_update_t* 
   *clone = copy;
 
   return CARDANO_SUCCESS;
+}
+
+cardano_error_t
+cardano_protocol_param_update_get_ref_inputs_cost_per_multi_asset_policy(
+  const cardano_protocol_param_update_t* protocol_param_update,
+  uint64_t*                              ref_inputs_cost_per_multi_asset_policy)
+{
+  return cardano_protocol_param_update_get_ref_inputs_cost_per_multi_asset_byte(protocol_param_update, ref_inputs_cost_per_multi_asset_policy);
+}
+
+cardano_error_t
+cardano_protocol_param_update_set_ref_inputs_cost_per_multi_asset_policy(
+  cardano_protocol_param_update_t* protocol_param_update,
+  const uint64_t*                  ref_inputs_cost_per_multi_asset_policy)
+{
+  return cardano_protocol_param_update_set_ref_inputs_cost_per_multi_asset_byte(protocol_param_update, ref_inputs_cost_per_multi_asset_policy);
 }

@@ -8104,7 +8104,7 @@ TEST(cardano_protocol_param_update_to_cbor, encodesPerasParamsSetThroughTheApiIn
 
   // Act
   EXPECT_EQ(cardano_protocol_param_update_set_ref_inputs_cost_per_datum_byte(protocol_param_update, &cost_per_datum_byte), CARDANO_SUCCESS);
-  EXPECT_EQ(cardano_protocol_param_update_set_ref_inputs_cost_per_multi_asset_policy(protocol_param_update, &cost_per_policy), CARDANO_SUCCESS);
+  EXPECT_EQ(cardano_protocol_param_update_set_ref_inputs_cost_per_multi_asset_byte(protocol_param_update, &cost_per_policy), CARDANO_SUCCESS);
   EXPECT_EQ(cardano_protocol_param_update_set_peras_quorum_threshold_safety_margin(protocol_param_update, peras_quorum_threshold_safety_margin), CARDANO_SUCCESS);
   EXPECT_EQ(cardano_protocol_param_update_set_peras_bootstrap_round(protocol_param_update, &bootstrap_round), CARDANO_SUCCESS);
   EXPECT_EQ(cardano_protocol_param_update_set_peras_target_committee_size(protocol_param_update, &target_committee_size), CARDANO_SUCCESS);
@@ -8537,8 +8537,8 @@ TEST(cardano_protocol_param_update_get_, returnsElementNotFoundIfMissingPerasFie
   EXPECT_EQ(cardano_protocol_param_update_get_peras_cert_boost(protocol_param_update, &peras_cert_boost), CARDANO_ERROR_ELEMENT_NOT_FOUND);
   uint64_t peras_target_committee_size = 0;
   EXPECT_EQ(cardano_protocol_param_update_get_peras_target_committee_size(protocol_param_update, &peras_target_committee_size), CARDANO_ERROR_ELEMENT_NOT_FOUND);
-  uint64_t ref_inputs_cost_per_multi_asset_policy = 0;
-  EXPECT_EQ(cardano_protocol_param_update_get_ref_inputs_cost_per_multi_asset_policy(protocol_param_update, &ref_inputs_cost_per_multi_asset_policy), CARDANO_ERROR_ELEMENT_NOT_FOUND);
+  uint64_t ref_inputs_cost_per_multi_asset_byte = 0;
+  EXPECT_EQ(cardano_protocol_param_update_get_ref_inputs_cost_per_multi_asset_byte(protocol_param_update, &ref_inputs_cost_per_multi_asset_byte), CARDANO_ERROR_ELEMENT_NOT_FOUND);
   uint64_t ref_inputs_cost_per_datum_byte = 0;
   EXPECT_EQ(cardano_protocol_param_update_get_ref_inputs_cost_per_datum_byte(protocol_param_update, &ref_inputs_cost_per_datum_byte), CARDANO_ERROR_ELEMENT_NOT_FOUND);
   cardano_unit_interval_t* peras_healing_factor = NULL;
@@ -9274,7 +9274,7 @@ TEST(cardano_protocol_param_update_set_peras_target_committee_size, returnsError
   cardano_set_allocators(malloc, realloc, free);
 }
 
-TEST(cardano_protocol_param_update_get_ref_inputs_cost_per_multi_asset_policy, returnsTheRefInputsCostPerMultiAssetPolicy)
+TEST(cardano_protocol_param_update_get_ref_inputs_cost_per_multi_asset_byte, returnsTheRefInputsCostPerMultiAssetPolicy)
 {
   // Arrange
   cardano_protocol_param_update_t* protocol_param_update = nullptr;
@@ -9282,38 +9282,38 @@ TEST(cardano_protocol_param_update_get_ref_inputs_cost_per_multi_asset_policy, r
   EXPECT_EQ(cardano_protocol_param_update_from_cbor(reader, &protocol_param_update), CARDANO_SUCCESS);
 
   // Act
-  uint64_t ref_inputs_cost_per_multi_asset_policy = 0;
+  uint64_t ref_inputs_cost_per_multi_asset_byte = 0;
 
-  EXPECT_EQ(cardano_protocol_param_update_get_ref_inputs_cost_per_multi_asset_policy(protocol_param_update, &ref_inputs_cost_per_multi_asset_policy), CARDANO_SUCCESS);
+  EXPECT_EQ(cardano_protocol_param_update_get_ref_inputs_cost_per_multi_asset_byte(protocol_param_update, &ref_inputs_cost_per_multi_asset_byte), CARDANO_SUCCESS);
 
   // Assert
-  EXPECT_EQ(ref_inputs_cost_per_multi_asset_policy, 1000U);
+  EXPECT_EQ(ref_inputs_cost_per_multi_asset_byte, 1000U);
 
   // Cleanup
   cardano_protocol_param_update_unref(&protocol_param_update);
   cardano_cbor_reader_unref(&reader);
 }
 
-TEST(cardano_protocol_param_update_get_ref_inputs_cost_per_multi_asset_policy, returnsErrorIfProtocolParamUpdateIsNull)
+TEST(cardano_protocol_param_update_get_ref_inputs_cost_per_multi_asset_byte, returnsErrorIfProtocolParamUpdateIsNull)
 {
   // Arrange
-  uint64_t ref_inputs_cost_per_multi_asset_policy = 0;
+  uint64_t ref_inputs_cost_per_multi_asset_byte = 0;
 
   // Act
-  cardano_error_t error = cardano_protocol_param_update_get_ref_inputs_cost_per_multi_asset_policy(nullptr, &ref_inputs_cost_per_multi_asset_policy);
+  cardano_error_t error = cardano_protocol_param_update_get_ref_inputs_cost_per_multi_asset_byte(nullptr, &ref_inputs_cost_per_multi_asset_byte);
 
   // Assert
   EXPECT_EQ(error, CARDANO_ERROR_POINTER_IS_NULL);
 }
 
-TEST(cardano_protocol_param_update_get_ref_inputs_cost_per_multi_asset_policy, returnsErrorIfRefInputsCostPerMultiAssetPolicyIsNull)
+TEST(cardano_protocol_param_update_get_ref_inputs_cost_per_multi_asset_byte, returnsErrorIfRefInputsCostPerMultiAssetPolicyIsNull)
 {
   // Arrange
   cardano_protocol_param_update_t* protocol_param_update = nullptr;
   EXPECT_EQ(cardano_protocol_param_update_new(&protocol_param_update), CARDANO_SUCCESS);
 
   // Act
-  cardano_error_t error = cardano_protocol_param_update_get_ref_inputs_cost_per_multi_asset_policy(protocol_param_update, nullptr);
+  cardano_error_t error = cardano_protocol_param_update_get_ref_inputs_cost_per_multi_asset_byte(protocol_param_update, nullptr);
 
   // Assert
   EXPECT_EQ(error, CARDANO_ERROR_POINTER_IS_NULL);
@@ -9322,65 +9322,65 @@ TEST(cardano_protocol_param_update_get_ref_inputs_cost_per_multi_asset_policy, r
   cardano_protocol_param_update_unref(&protocol_param_update);
 }
 
-TEST(cardano_protocol_param_update_set_ref_inputs_cost_per_multi_asset_policy, setsRefInputsCostPerMultiAssetPolicy)
+TEST(cardano_protocol_param_update_set_ref_inputs_cost_per_multi_asset_byte, setsRefInputsCostPerMultiAssetPolicy)
 {
   // Arrange
   cardano_protocol_param_update_t* protocol_param_update = nullptr;
   cardano_error_t                  error                 = cardano_protocol_param_update_new(&protocol_param_update);
   EXPECT_EQ(error, CARDANO_SUCCESS);
 
-  uint64_t ref_inputs_cost_per_multi_asset_policy = 1000;
+  uint64_t ref_inputs_cost_per_multi_asset_byte = 1000;
   // Act
-  EXPECT_EQ(cardano_protocol_param_update_set_ref_inputs_cost_per_multi_asset_policy(protocol_param_update, &ref_inputs_cost_per_multi_asset_policy), CARDANO_SUCCESS);
-  EXPECT_EQ(cardano_protocol_param_update_set_ref_inputs_cost_per_multi_asset_policy(protocol_param_update, &ref_inputs_cost_per_multi_asset_policy), CARDANO_SUCCESS);
+  EXPECT_EQ(cardano_protocol_param_update_set_ref_inputs_cost_per_multi_asset_byte(protocol_param_update, &ref_inputs_cost_per_multi_asset_byte), CARDANO_SUCCESS);
+  EXPECT_EQ(cardano_protocol_param_update_set_ref_inputs_cost_per_multi_asset_byte(protocol_param_update, &ref_inputs_cost_per_multi_asset_byte), CARDANO_SUCCESS);
 
   // Assert
-  ref_inputs_cost_per_multi_asset_policy = 0;
-  EXPECT_EQ(cardano_protocol_param_update_get_ref_inputs_cost_per_multi_asset_policy(protocol_param_update, &ref_inputs_cost_per_multi_asset_policy), CARDANO_SUCCESS);
-  EXPECT_EQ(ref_inputs_cost_per_multi_asset_policy, 1000);
+  ref_inputs_cost_per_multi_asset_byte = 0;
+  EXPECT_EQ(cardano_protocol_param_update_get_ref_inputs_cost_per_multi_asset_byte(protocol_param_update, &ref_inputs_cost_per_multi_asset_byte), CARDANO_SUCCESS);
+  EXPECT_EQ(ref_inputs_cost_per_multi_asset_byte, 1000);
 
   // Cleanup
   cardano_protocol_param_update_unref(&protocol_param_update);
 }
 
-TEST(cardano_protocol_param_update_set_ref_inputs_cost_per_multi_asset_policy, returnsErrorIfProtocolParamUpdateIsNull)
+TEST(cardano_protocol_param_update_set_ref_inputs_cost_per_multi_asset_byte, returnsErrorIfProtocolParamUpdateIsNull)
 {
   // Arrange
-  uint64_t ref_inputs_cost_per_multi_asset_policy = 1;
+  uint64_t ref_inputs_cost_per_multi_asset_byte = 1;
 
   // Act
-  cardano_error_t error = cardano_protocol_param_update_set_ref_inputs_cost_per_multi_asset_policy(nullptr, &ref_inputs_cost_per_multi_asset_policy);
+  cardano_error_t error = cardano_protocol_param_update_set_ref_inputs_cost_per_multi_asset_byte(nullptr, &ref_inputs_cost_per_multi_asset_byte);
 
   // Assert
   EXPECT_EQ(error, CARDANO_ERROR_POINTER_IS_NULL);
 }
 
-TEST(cardano_protocol_param_update_set_ref_inputs_cost_per_multi_asset_policy, canUnsetParameterByPassingNull)
+TEST(cardano_protocol_param_update_set_ref_inputs_cost_per_multi_asset_byte, canUnsetParameterByPassingNull)
 {
   // Arrange
-  cardano_protocol_param_update_t* protocol_param_update                  = nullptr;
-  uint64_t                         ref_inputs_cost_per_multi_asset_policy = 1;
+  cardano_protocol_param_update_t* protocol_param_update                = nullptr;
+  uint64_t                         ref_inputs_cost_per_multi_asset_byte = 1;
 
   cardano_error_t error = cardano_protocol_param_update_new(&protocol_param_update);
   EXPECT_EQ(error, CARDANO_SUCCESS);
 
   // Act
-  EXPECT_EQ(cardano_protocol_param_update_set_ref_inputs_cost_per_multi_asset_policy(protocol_param_update, &ref_inputs_cost_per_multi_asset_policy), CARDANO_SUCCESS);
-  EXPECT_EQ(cardano_protocol_param_update_set_ref_inputs_cost_per_multi_asset_policy(protocol_param_update, nullptr), CARDANO_SUCCESS);
+  EXPECT_EQ(cardano_protocol_param_update_set_ref_inputs_cost_per_multi_asset_byte(protocol_param_update, &ref_inputs_cost_per_multi_asset_byte), CARDANO_SUCCESS);
+  EXPECT_EQ(cardano_protocol_param_update_set_ref_inputs_cost_per_multi_asset_byte(protocol_param_update, nullptr), CARDANO_SUCCESS);
 
   // Assert
-  ref_inputs_cost_per_multi_asset_policy = 0;
-  EXPECT_EQ(cardano_protocol_param_update_get_ref_inputs_cost_per_multi_asset_policy(protocol_param_update, &ref_inputs_cost_per_multi_asset_policy), CARDANO_ERROR_ELEMENT_NOT_FOUND);
+  ref_inputs_cost_per_multi_asset_byte = 0;
+  EXPECT_EQ(cardano_protocol_param_update_get_ref_inputs_cost_per_multi_asset_byte(protocol_param_update, &ref_inputs_cost_per_multi_asset_byte), CARDANO_ERROR_ELEMENT_NOT_FOUND);
 
   // Cleanup
   cardano_protocol_param_update_unref(&protocol_param_update);
 }
 
-TEST(cardano_protocol_param_update_set_ref_inputs_cost_per_multi_asset_policy, returnsErrorIfMemoryAllocationFails)
+TEST(cardano_protocol_param_update_set_ref_inputs_cost_per_multi_asset_byte, returnsErrorIfMemoryAllocationFails)
 {
   // Arrange
-  cardano_protocol_param_update_t* protocol_param_update                  = nullptr;
-  uint64_t                         ref_inputs_cost_per_multi_asset_policy = 1;
+  cardano_protocol_param_update_t* protocol_param_update                = nullptr;
+  uint64_t                         ref_inputs_cost_per_multi_asset_byte = 1;
 
   cardano_error_t error = cardano_protocol_param_update_new(&protocol_param_update);
 
@@ -9390,7 +9390,7 @@ TEST(cardano_protocol_param_update_set_ref_inputs_cost_per_multi_asset_policy, r
   cardano_set_allocators(fail_right_away_malloc, realloc, free);
 
   // Act
-  error = cardano_protocol_param_update_set_ref_inputs_cost_per_multi_asset_policy(protocol_param_update, &ref_inputs_cost_per_multi_asset_policy);
+  error = cardano_protocol_param_update_set_ref_inputs_cost_per_multi_asset_byte(protocol_param_update, &ref_inputs_cost_per_multi_asset_byte);
 
   // Assert
   EXPECT_EQ(error, CARDANO_ERROR_MEMORY_ALLOCATION_FAILED);
@@ -9625,7 +9625,7 @@ TEST(cardano_protocol_param_update_to_cip116_json, canConvertPerasParamsToCip116
 
   // Assert
   EXPECT_EQ(error, CARDANO_SUCCESS);
-  EXPECT_STREQ(json_str, R"({"peras_min_candidate_block_age":"30","peras_healing_factor":{"numerator":"5","denominator":"2"},"peras_cert_boost":"15","peras_target_committee_size":"600","peras_bootstrap_round":"7","peras_quorum_threshold_safety_margin":{"numerator":"1","denominator":"10"},"ref_inputs_cost_per_multi_asset_policy":"1000","ref_inputs_cost_per_datum_byte":"44"})");
+  EXPECT_STREQ(json_str, R"({"peras_min_candidate_block_age":"30","peras_healing_factor":{"numerator":"5","denominator":"2"},"peras_cert_boost":"15","peras_target_committee_size":"600","peras_bootstrap_round":"7","peras_quorum_threshold_safety_margin":{"numerator":"1","denominator":"10"},"ref_inputs_cost_per_multi_asset_byte":"1000","ref_inputs_cost_per_datum_byte":"44"})");
 
   // Cleanup
   cardano_json_writer_unref(&json);
@@ -10364,5 +10364,18 @@ TEST(cardano_protocol_param_update_to_plutus_data, encodesCostModelsOfUnknownLan
 
   cardano_plutus_data_unref(&cost_models);
   cardano_plutus_data_unref(&pd);
+  cardano_protocol_param_update_unref(&update);
+}
+
+TEST(cardano_protocol_param_update_ref_input_cost, preservesTheLegacyApiAndOptionalPresence)
+{
+  cardano_protocol_param_update_t* update = nullptr;
+  ASSERT_EQ(cardano_protocol_param_update_new(&update), CARDANO_SUCCESS);
+  uint64_t value = 123U;
+  EXPECT_EQ(cardano_protocol_param_update_set_ref_inputs_cost_per_multi_asset_policy(update, &value), CARDANO_SUCCESS);
+  EXPECT_EQ(cardano_protocol_param_update_get_ref_inputs_cost_per_multi_asset_byte(update, &value), CARDANO_SUCCESS);
+  EXPECT_EQ(value, 123U);
+  EXPECT_EQ(cardano_protocol_param_update_set_ref_inputs_cost_per_multi_asset_byte(update, nullptr), CARDANO_SUCCESS);
+  EXPECT_EQ(cardano_protocol_param_update_get_ref_inputs_cost_per_multi_asset_policy(update, &value), CARDANO_ERROR_ELEMENT_NOT_FOUND);
   cardano_protocol_param_update_unref(&update);
 }

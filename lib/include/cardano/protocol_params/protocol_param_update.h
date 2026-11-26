@@ -2801,40 +2801,40 @@ CARDANO_EXPORT cardano_error_t cardano_protocol_param_update_get_peras_quorum_th
   cardano_unit_interval_t**        peras_quorum_threshold_safety_margin);
 
 /**
- * \brief Retrieves the reference inputs cost per multi-asset policy from the protocol parameter update.
+ * \brief Retrieves the reference inputs cost per multi-asset byte from the protocol parameter update.
  *
- * This function returns the fee, in lovelace, charged for every multi-asset policy present in the values of the outputs a transaction references through its reference inputs. On the wire this parameter is a coin amount (an unsigned integer).
+ * This function returns the fee, in lovelace, charged for every multi-asset byte present in the values of the outputs a transaction references through its reference inputs. On the wire this parameter is a coin amount (an unsigned integer).
  *
  * \param[in]  protocol_param_update Pointer to the protocol parameter update object.
- * \param[out] ref_inputs_cost_per_multi_asset_policy Pointer to where the reference inputs cost per multi-asset policy will be stored.
+ * \param[out] ref_inputs_cost_per_multi_asset_byte Pointer to where the reference inputs cost per multi-asset byte will be stored.
  *             If the parameter is not set, the function will return \ref CARDANO_ERROR_ELEMENT_NOT_FOUND.
  *
  * \return \ref cardano_error_t indicating the outcome of the operation. Returns \ref CARDANO_SUCCESS
- *         if the reference inputs cost per multi-asset policy was successfully retrieved, or \ref CARDANO_ERROR_ELEMENT_NOT_FOUND
+ *         if the reference inputs cost per multi-asset byte was successfully retrieved, or \ref CARDANO_ERROR_ELEMENT_NOT_FOUND
  *         if the parameter is not set in the update. Other appropriate error codes may indicate different
  *         failure reasons.
  *
  * Usage Example:
  * \code{.c}
  * cardano_protocol_param_update_t* protocol_param_update = NULL;
- * uint64_t ref_inputs_cost_per_multi_asset_policy = 0;
+ * uint64_t ref_inputs_cost_per_multi_asset_byte = 0;
  *
  * // Assume protocol_param_update is initialized properly
  *
- * cardano_error_t result = cardano_protocol_param_update_get_ref_inputs_cost_per_multi_asset_policy(protocol_param_update, &ref_inputs_cost_per_multi_asset_policy);
+ * cardano_error_t result = cardano_protocol_param_update_get_ref_inputs_cost_per_multi_asset_byte(protocol_param_update, &ref_inputs_cost_per_multi_asset_byte);
  *
  * if (result == CARDANO_SUCCESS)
  * {
- *   printf("Reference inputs cost per multi-asset policy retrieved successfully: %lu.\n", ref_inputs_cost_per_multi_asset_policy);
+ *   printf("Reference inputs cost per multi-asset byte retrieved successfully: %lu.\n", ref_inputs_cost_per_multi_asset_byte);
  * }
  * else if (result == CARDANO_ERROR_ELEMENT_NOT_FOUND)
  * {
- *   printf("Reference inputs cost per multi-asset policy is not proposed for change.\n");
+ *   printf("Reference inputs cost per multi-asset byte is not proposed for change.\n");
  * }
  * else
  * {
  *   // Handle error
- *   printf("Failed to get reference inputs cost per multi-asset policy: %d\n", result);
+ *   printf("Failed to get reference inputs cost per multi-asset byte: %d\n", result);
  * }
  *
  * // Clean up
@@ -2842,9 +2842,9 @@ CARDANO_EXPORT cardano_error_t cardano_protocol_param_update_get_peras_quorum_th
  * \endcode
  */
 CARDANO_NODISCARD
-CARDANO_EXPORT cardano_error_t cardano_protocol_param_update_get_ref_inputs_cost_per_multi_asset_policy(
+CARDANO_EXPORT cardano_error_t cardano_protocol_param_update_get_ref_inputs_cost_per_multi_asset_byte(
   const cardano_protocol_param_update_t* protocol_param_update,
-  uint64_t*                              ref_inputs_cost_per_multi_asset_policy);
+  uint64_t*                              ref_inputs_cost_per_multi_asset_byte);
 
 /**
  * \brief Retrieves the reference inputs cost per datum byte from the protocol parameter update.
@@ -5289,35 +5289,35 @@ CARDANO_EXPORT cardano_error_t cardano_protocol_param_update_set_peras_quorum_th
   cardano_unit_interval_t*         peras_quorum_threshold_safety_margin);
 
 /**
- * \brief Sets the reference inputs cost per multi-asset policy in the protocol parameter update.
+ * \brief Sets the reference inputs cost per multi-asset byte in the protocol parameter update.
  *
- * This function sets the fee, in lovelace, charged for every multi-asset policy present in the values of the outputs a transaction references through its reference inputs. If NULL is passed for ref_inputs_cost_per_multi_asset_policy, it indicates that the update should not
+ * This function sets the fee, in lovelace, charged for every multi-asset byte present in the values of the outputs a transaction references through its reference inputs. If NULL is passed for ref_inputs_cost_per_multi_asset_byte, it indicates that the update should not
  * propose a change for this parameter. On the wire this parameter is a coin amount (an unsigned integer).
  *
  * \param[in,out] protocol_param_update Pointer to the protocol parameter update object.
- * \param[in]     ref_inputs_cost_per_multi_asset_policy Pointer to the reference inputs cost per multi-asset policy.
+ * \param[in]     ref_inputs_cost_per_multi_asset_byte Pointer to the reference inputs cost per multi-asset byte.
  *                If NULL, it indicates no change is being proposed for this field.
  *
  * \return \ref cardano_error_t indicating the outcome of the operation. Returns \ref CARDANO_SUCCESS
- *         if the reference inputs cost per multi-asset policy was successfully set, or an appropriate error code indicating the failure reason.
+ *         if the reference inputs cost per multi-asset byte was successfully set, or an appropriate error code indicating the failure reason.
  *
  * Usage Example:
  * \code{.c}
  * cardano_protocol_param_update_t* protocol_param_update = NULL;
- * uint64_t ref_inputs_cost_per_multi_asset_policy = 1000; // 1000 lovelace per policy
+ * uint64_t ref_inputs_cost_per_multi_asset_byte = 1000; // 1000 lovelace per multi-asset byte
  *
  * // Assume protocol_param_update is initialized properly
  *
- * cardano_error_t result = cardano_protocol_param_update_set_ref_inputs_cost_per_multi_asset_policy(protocol_param_update, &ref_inputs_cost_per_multi_asset_policy);
+ * cardano_error_t result = cardano_protocol_param_update_set_ref_inputs_cost_per_multi_asset_byte(protocol_param_update, &ref_inputs_cost_per_multi_asset_byte);
  *
  * if (result == CARDANO_SUCCESS)
  * {
- *   printf("Reference inputs cost per multi-asset policy set successfully.\n");
+ *   printf("Reference inputs cost per multi-asset byte set successfully.\n");
  * }
  * else
  * {
  *   // Handle error
- *   printf("Failed to set reference inputs cost per multi-asset policy.\n");
+ *   printf("Failed to set reference inputs cost per multi-asset byte.\n");
  * }
  *
  * // Clean up
@@ -5325,9 +5325,9 @@ CARDANO_EXPORT cardano_error_t cardano_protocol_param_update_set_peras_quorum_th
  * \endcode
  */
 CARDANO_NODISCARD
-CARDANO_EXPORT cardano_error_t cardano_protocol_param_update_set_ref_inputs_cost_per_multi_asset_policy(
+CARDANO_EXPORT cardano_error_t cardano_protocol_param_update_set_ref_inputs_cost_per_multi_asset_byte(
   cardano_protocol_param_update_t* protocol_param_update,
-  const uint64_t*                  ref_inputs_cost_per_multi_asset_policy);
+  const uint64_t*                  ref_inputs_cost_per_multi_asset_byte);
 
 /**
  * \brief Sets the reference inputs cost per datum byte in the protocol parameter update.
@@ -5516,6 +5516,22 @@ CARDANO_EXPORT const char* cardano_protocol_param_update_get_last_error(
  */
 CARDANO_EXPORT cardano_error_t
 cardano_protocol_param_update_deep_clone(const cardano_protocol_param_update_t* source, cardano_protocol_param_update_t** clone);
+
+/**
+ * \brief Compatibility alias for \ref cardano_protocol_param_update_get_ref_inputs_cost_per_multi_asset_byte.
+ * \deprecated Use the per-byte name; parameter 55 measures multi-asset byte overhead.
+ */
+CARDANO_EXPORT cardano_error_t cardano_protocol_param_update_get_ref_inputs_cost_per_multi_asset_policy(
+  const cardano_protocol_param_update_t* protocol_param_update,
+  uint64_t*                              ref_inputs_cost_per_multi_asset_policy);
+
+/**
+ * \brief Compatibility alias for \ref cardano_protocol_param_update_set_ref_inputs_cost_per_multi_asset_byte.
+ * \deprecated Use the per-byte name; parameter 55 measures multi-asset byte overhead.
+ */
+CARDANO_EXPORT cardano_error_t cardano_protocol_param_update_set_ref_inputs_cost_per_multi_asset_policy(
+  cardano_protocol_param_update_t* protocol_param_update,
+  const uint64_t*                  ref_inputs_cost_per_multi_asset_policy);
 
 #ifdef __cplusplus
 }

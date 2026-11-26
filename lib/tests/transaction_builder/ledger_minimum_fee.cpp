@@ -26,6 +26,7 @@
 #include <cardano/address/address.h>
 #include <cardano/cbor/cbor_reader.h>
 #include <cardano/cbor/cbor_writer.h>
+#include <cardano/certs/pool_registration_cert.h>
 #include <cardano/common/datum.h>
 #include <cardano/common/ex_units.h>
 #include <cardano/common/protocol_version.h>
@@ -35,6 +36,8 @@
 #include <cardano/crypto/ed25519_signature.h>
 #include <cardano/error.h>
 #include <cardano/plutus_data/plutus_data.h>
+#include <cardano/pool_params/pool_owners.h>
+#include <cardano/pool_params/pool_params.h>
 #include <cardano/protocol_params/cost_model.h>
 #include <cardano/protocol_params/costmdls.h>
 #include <cardano/protocol_params/protocol_parameters.h>
@@ -1340,4 +1343,59 @@ TEST(cardano_ledger_minimum_fee, reportsTheShortfallWhenTheCollateralUtxosCanNot
   cardano_utxo_list_unref(&collateral_utxos);
   cardano_tx_builder_unref(&builder);
   cardano_protocol_parameters_unref(&params);
+}
+
+TEST(cardano_ledger_minimum_fee, pricesPoolOwnerExemptionFromAnOwnedDijkstraStateSnapshot)
+{
+  const char* registration_cbor = "8a03581cd85087c646951407198c27b1b950fd2e99f28586c000ce39f6e6ef9258208dd154228946bd12967c12bedb1cb6038b78f8b84a1760b1a788fa72a4af3db01927101903e8d81e820105581de1cb0ec2692497b458e46812c8a5bfa2931d1a2d965a99893828ec810fd9010281581ccb0ec2692497b458e46812c8a5bfa2931d1a2d965a99893828ec810f8383011913886b6578616d706c652e636f6d8400191770447f000001f682026b6578616d706c652e636f6d827368747470733a2f2f6578616d706c652e636f6d58200f3abbc8fc19c2e61bab6059bf8a466e6e754833a08a62a6c56fe0e78f19d9d5";
+  uint64_t    fees[2]           = { 0U, 0U };
+  for (size_t known = 0U; known < 2U; ++known)
+  {
+    cardano_protocol_parameters_t* params  = new_protocol_parameters();
+    cardano_protocol_version_t*    version = nullptr;
+    ASSERT_EQ(cardano_protocol_version_new(12U, 0U, &version), CARDANO_SUCCESS);
+    ASSERT_EQ(cardano_protocol_parameters_set_protocol_version(params, version), CARDANO_SUCCESS);
+    ASSERT_EQ(cardano_protocol_parameters_set_pool_deposit(params, 0U), CARDANO_SUCCESS);
+    cardano_cbor_reader_t* reader      = cardano_cbor_reader_from_hex(registration_cbor, strlen(registration_cbor));
+    cardano_certificate_t* certificate = nullptr;
+    ASSERT_EQ(cardano_certificate_from_cbor(reader, &certificate), CARDANO_SUCCESS);
+    cardano_pool_registration_cert_t* registration = nullptr;
+    ASSERT_EQ(cardano_certificate_to_pool_registration(certificate, &registration), CARDANO_SUCCESS);
+    cardano_pool_params_t* latest = nullptr;
+    ASSERT_EQ(cardano_pool_registration_cert_get_params(registration, &latest), CARDANO_SUCCESS);
+    cardano_pool_params_t* snapshot = nullptr;
+    ASSERT_EQ(cardano_pool_params_deep_clone(latest, &snapshot), CARDANO_SUCCESS);
+
+    cardano_utxo_list_t* wallet = new_utxo_list();
+    add_utxo(wallet, 0x02U, new_output(WALLET_ADDRESS, 20000000U));
+    cardano_tx_builder_t* builder = new_builder(params, wallet, 0U, 0U);
+    if (known != 0U)
+    {
+      cardano_pool_params_t* pools[] = { snapshot };
+      ASSERT_EQ(cardano_tx_builder_set_pool_state(builder, pools, 1U), CARDANO_SUCCESS);
+      // A later caller mutation must not change the builder's pool state snapshot.
+      ASSERT_EQ(cardano_pool_params_set_cost(snapshot, 9999U), CARDANO_SUCCESS);
+    }
+    cardano_tx_builder_add_certificate(builder, certificate, nullptr);
+    cardano_transaction_output_t* payment = new_output(PAYEE_ADDRESS, 5000000U);
+    cardano_tx_builder_add_output(builder, payment);
+    cardano_transaction_t* tx = build(builder);
+    ASSERT_NE(tx, nullptr);
+    cardano_transaction_body_t* body = cardano_transaction_get_body(tx);
+    fees[known]                      = cardano_transaction_body_get_fee(body);
+    expect_ledger_minimum_fee(tx, known == 0U ? 3U : 2U, 0U, 0U, 0U, 0U, fees[known]);
+
+    cardano_transaction_body_unref(&body);
+    cardano_transaction_unref(&tx);
+    cardano_transaction_output_unref(&payment);
+    cardano_utxo_list_unref(&wallet);
+    cardano_pool_params_unref(&snapshot);
+    cardano_pool_params_unref(&latest);
+    cardano_pool_registration_cert_unref(&registration);
+    cardano_certificate_unref(&certificate);
+    cardano_cbor_reader_unref(&reader);
+    cardano_protocol_version_unref(&version);
+    cardano_protocol_parameters_unref(&params);
+  }
+  EXPECT_GT(fees[0], fees[1]);
 }

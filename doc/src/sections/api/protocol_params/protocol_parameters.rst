@@ -225,7 +225,7 @@ Protocol Parameters
 
 ------------
 
-.. doxygenfunction:: cardano_protocol_parameters_get_ref_inputs_cost_per_multi_asset_policy
+.. doxygenfunction:: cardano_protocol_parameters_get_ref_inputs_cost_per_multi_asset_byte
 
 ------------
 
@@ -449,7 +449,7 @@ Protocol Parameters
 
 ------------
 
-.. doxygenfunction:: cardano_protocol_parameters_set_ref_inputs_cost_per_multi_asset_policy
+.. doxygenfunction:: cardano_protocol_parameters_set_ref_inputs_cost_per_multi_asset_byte
 
 ------------
 
@@ -478,3 +478,14 @@ Protocol Parameters
 ------------
 
 .. doxygenfunction:: cardano_protocol_parameters_deep_clone
+
+The legacy per-policy accessors below are compatibility aliases for the per-byte
+parameter (CBOR key 55). No reference-input fee is charged by the pinned ledger yet.
+
+------------
+
+.. doxygenfunction:: cardano_protocol_parameters_get_ref_inputs_cost_per_multi_asset_policy
+
+------------
+
+.. doxygenfunction:: cardano_protocol_parameters_set_ref_inputs_cost_per_multi_asset_policy

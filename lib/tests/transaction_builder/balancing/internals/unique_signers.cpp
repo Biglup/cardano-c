@@ -24,6 +24,9 @@
 /* INCLUDES ******************************************************************/
 
 #include "../../../allocators_helpers.h"
+#include <cardano/certs/pool_registration_cert.h>
+#include <cardano/pool_params/pool_owners.h>
+#include <cardano/pool_params/pool_params.h>
 
 extern "C" {
 #include "../../../../src/transaction_builder/balancing/internals/unique_signers.h"
@@ -1427,5 +1430,54 @@ TEST(_cardano_get_bootstrap_signers, returnsErrorIfMemoryAllocationFails)
   reset_limited_malloc();
   cardano_set_allocators(malloc, realloc, free);
   cardano_utxo_list_unref(&resolved_inputs);
+  cardano_transaction_unref(&tx);
+}
+
+TEST(cardano_transaction_get_unique_signers_with_pool_state, exemptsOwnersOnlyAtDijkstraAndRetainsOtherPurposes)
+{
+  cardano_transaction_t*            tx           = new_default_transaction(BALANCED_TX_CBOR);
+  cardano_transaction_body_t*       body         = cardano_transaction_get_body(tx);
+  cardano_certificate_t*            certificate  = new_default_certificate(CBOR_POOL_REGISTRATION);
+  cardano_pool_registration_cert_t* registration = nullptr;
+  ASSERT_EQ(cardano_certificate_to_pool_registration(certificate, &registration), CARDANO_SUCCESS);
+  cardano_pool_params_t* latest = nullptr;
+  ASSERT_EQ(cardano_pool_registration_cert_get_params(registration, &latest), CARDANO_SUCCESS);
+  cardano_pool_params_t*      pools[]         = { latest };
+  cardano_pool_params_t*      duplicates[]    = { latest, latest };
+  cardano_blake2b_hash_set_t* invalid_signers = nullptr;
+  EXPECT_EQ(cardano_transaction_get_unique_signers_with_pool_state(tx, nullptr, 12U, duplicates, 2U, &invalid_signers), CARDANO_ERROR_DUPLICATED_KEY);
+  EXPECT_EQ(invalid_signers, nullptr);
+
+  cardano_certificate_set_t* certificates = nullptr;
+  ASSERT_EQ(cardano_certificate_set_new(&certificates), CARDANO_SUCCESS);
+  ASSERT_EQ(cardano_certificate_set_add(certificates, certificate), CARDANO_SUCCESS);
+  ASSERT_EQ(cardano_transaction_body_set_certificates(body, certificates), CARDANO_SUCCESS);
+  cardano_blake2b_hash_set_t* baseline = nullptr;
+  cardano_blake2b_hash_set_t* exempt   = nullptr;
+  ASSERT_EQ(cardano_transaction_get_unique_signers_with_pool_state(tx, nullptr, 11U, pools, 1U, &baseline), CARDANO_SUCCESS);
+  ASSERT_EQ(cardano_transaction_get_unique_signers_with_pool_state(tx, nullptr, 12U, pools, 1U, &exempt), CARDANO_SUCCESS);
+  EXPECT_EQ(cardano_blake2b_hash_set_get_length(baseline), cardano_blake2b_hash_set_get_length(exempt) + 1U);
+
+  cardano_pool_owners_t*  owners = nullptr;
+  cardano_blake2b_hash_t* owner  = nullptr;
+  ASSERT_EQ(cardano_pool_params_get_owners(latest, &owners), CARDANO_SUCCESS);
+  ASSERT_EQ(cardano_pool_owners_get(owners, 0U, &owner), CARDANO_SUCCESS);
+  cardano_blake2b_hash_set_t* required = nullptr;
+  ASSERT_EQ(cardano_blake2b_hash_set_new(&required), CARDANO_SUCCESS);
+  ASSERT_EQ(cardano_blake2b_hash_set_add(required, owner), CARDANO_SUCCESS);
+  ASSERT_EQ(cardano_transaction_body_set_required_signers(body, required), CARDANO_SUCCESS);
+  cardano_blake2b_hash_set_unref(&exempt);
+  ASSERT_EQ(cardano_transaction_get_unique_signers_with_pool_state(tx, nullptr, 12U, pools, 1U, &exempt), CARDANO_SUCCESS);
+  EXPECT_TRUE(_cardano_blake2b_hash_set_has(exempt, owner));
+  cardano_blake2b_hash_set_unref(&baseline);
+  cardano_blake2b_hash_set_unref(&exempt);
+  cardano_blake2b_hash_set_unref(&required);
+  cardano_blake2b_hash_unref(&owner);
+  cardano_pool_owners_unref(&owners);
+  cardano_certificate_set_unref(&certificates);
+  cardano_pool_params_unref(&latest);
+  cardano_pool_registration_cert_unref(&registration);
+  cardano_certificate_unref(&certificate);
+  cardano_transaction_body_unref(&body);
   cardano_transaction_unref(&tx);
 }

@@ -1567,7 +1567,9 @@ CARDANO_EXPORT void cardano_tx_builder_add_starting_account_balance_interval_ex(
  * withdrawals proposal it guards as the guardrails script or lists it among its guards. Its language is taken from
  * whatever source provides it, pooled over the whole batch: the witness sets of the transaction and of its sub
  * transactions, and the reference scripts of the reference inputs and of the inputs of the transaction, including the
- * inputs chosen by coin selection, and of the inputs and reference inputs of its sub transactions. A reference input
+ * inputs chosen by coin selection, and of the inputs and reference inputs of its sub transactions. From protocol
+ * version 12, reference scripts in newly created outputs at either level and in collateral return are also provided.
+ * A reference input
  * of a sub transaction that neither the resolved UTXOs given to `cardano_tx_builder_add_sub_transaction` nor the
  * available UTXOs, reference inputs or inputs of the transaction resolve is not seen. A script that is only present
  * and that the transaction does not need does not trigger this rule.
@@ -2182,7 +2184,8 @@ CARDANO_EXPORT void cardano_tx_builder_vote_with_deferred_redeemer(
  * \endcode
  *
  * A pool registration certificate needs the signatures of the pool operator and of every pool owner, and a pool
- * retirement certificate the signature of the pool operator; the fee covers their witnesses. When balancing, a pool
+ * retirement certificate the signature of the pool operator; the fee covers their witnesses. From Dijkstra,
+ * \ref cardano_tx_builder_set_pool_state enables the owner exemption for unchanged or BLS-only updates. When balancing, a pool
  * registration is charged the pool deposit unless the same pool is registered earlier in the same transaction or batch,
  * in which case it only updates the pool parameters, and a pool retirement reclaims nothing, as the ledger returns the
  * pool deposit at the epoch boundary where the pool retires. The builder does not know which pools are already
@@ -2973,7 +2976,8 @@ CARDANO_EXPORT void cardano_tx_builder_propose_info_ex(
  * carrying a proposal it guards as the guardrails script or listing it among the guards. The scripts are looked up
  * among the ones provided to the whole batch: the scripts added with \ref cardano_tx_builder_add_script, the scripts
  * of the witness sets of the sub transactions and the reference scripts of the reference inputs, the spent inputs and
- * the UTXOs the sub transactions spend or reference. A purpose without its redeemer makes this function return
+ * the UTXOs the sub transactions spend or reference. From protocol version 12, this includes reference scripts in
+ * newly created outputs at both levels and in collateral return. A purpose without its redeemer makes this function return
  * \ref CARDANO_ERROR_MISSING_REDEEMER, and the last error names the purpose, its redeemer index and the script hash.
  * The script purposes of every sub transaction of the batch are checked the same way: the purposes of the body of the
  * sub transaction, whose spend indices count its own sorted inputs, must have a redeemer in its own witness set
@@ -3146,6 +3150,20 @@ CARDANO_EXPORT void cardano_tx_builder_set_last_error(
 CARDANO_NODISCARD
 CARDANO_EXPORT const char* cardano_tx_builder_get_last_error(
   const cardano_tx_builder_t* transaction_builder);
+
+/**
+ * \brief Sets known latest pool parameters for Dijkstra witness fee estimation.
+ * \param[in] builder The transaction builder.
+ * \param[in] pool_state Latest registered parameters, pending preferred over active, one entry per pool.
+ * See \ref cardano_transaction_get_unique_signers_with_pool_state for state requirements.
+ * \param[in] pool_state_size Number of entries. NULL with zero clears the snapshot.
+ * \return Success, a null argument error, or an allocation/clone error. On failure the old snapshot remains.
+ * \note Takes deep copies. This changes witness estimates only; it does not change pool deposit accounting.
+ */
+CARDANO_EXPORT cardano_error_t cardano_tx_builder_set_pool_state(
+  cardano_tx_builder_t*         builder,
+  cardano_pool_params_t* const* pool_state,
+  size_t                        pool_state_size);
 
 #ifdef __cplusplus
 }

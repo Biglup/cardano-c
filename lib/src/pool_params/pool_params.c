@@ -1223,3 +1223,147 @@ cardano_pool_params_deep_clone(const cardano_pool_params_t* source, cardano_pool
 
   return CARDANO_SUCCESS;
 }
+
+/**
+ * \brief Computes the greatest common divisor for normalized margin comparison.
+ * \param[in] a First integer.
+ * \param[in] b Second integer.
+ * \return Their greatest common divisor.
+ */
+static uint64_t
+margin_gcd(const uint64_t a, const uint64_t b)
+{
+  uint64_t x = a;
+  uint64_t y = b;
+  while (y != 0U)
+  {
+    const uint64_t remainder = x % y;
+    x                        = y;
+    y                        = remainder;
+  }
+  return x;
+}
+
+/**
+ * \brief Tests owner set inclusion, ignoring insertion order and duplicates.
+ * \param[in] a The first owner set.
+ * \param[in] b The second owner set.
+ * \param[out] included Whether every owner in a belongs to b.
+ * \return Success or a collection access error.
+ */
+static cardano_error_t
+owners_included(const cardano_pool_owners_t* a, const cardano_pool_owners_t* b, bool* included)
+{
+  *included = true;
+  for (size_t i = 0U; i < cardano_pool_owners_get_length(a); ++i)
+  {
+    cardano_blake2b_hash_t* owner  = NULL;
+    cardano_error_t         result = cardano_pool_owners_get(a, i, &owner);
+    bool                    found  = false;
+    for (size_t j = 0U; (result == CARDANO_SUCCESS) && !found && (j < cardano_pool_owners_get_length(b)); ++j)
+    {
+      cardano_blake2b_hash_t* other = NULL;
+      result                        = cardano_pool_owners_get(b, j, &other);
+      found                         = cardano_blake2b_hash_equals(owner, other);
+      cardano_blake2b_hash_unref(&other);
+    }
+    cardano_blake2b_hash_unref(&owner);
+    if (result != CARDANO_SUCCESS)
+    {
+      return result;
+    }
+    if (!found)
+    {
+      *included = false;
+      break;
+    }
+  }
+  return CARDANO_SUCCESS;
+}
+
+cardano_error_t
+cardano_pool_params_requires_owner_witnesses(
+  const cardano_pool_params_t* proposed,
+  const cardano_pool_params_t* latest,
+  bool*                        required)
+{
+  if ((proposed == NULL) || (required == NULL))
+  {
+    return CARDANO_ERROR_POINTER_IS_NULL;
+  }
+  *required = true;
+  if (latest == NULL)
+  {
+    return CARDANO_SUCCESS;
+  }
+
+  const uint64_t an = cardano_unit_interval_get_numerator(proposed->margin);
+  const uint64_t ad = cardano_unit_interval_get_denominator(proposed->margin);
+  const uint64_t bn = cardano_unit_interval_get_numerator(latest->margin);
+  const uint64_t bd = cardano_unit_interval_get_denominator(latest->margin);
+  const uint64_t ag = margin_gcd(an, ad);
+  const uint64_t bg = margin_gcd(bn, bd);
+  if ((ad == 0U) || (bd == 0U))
+  {
+    return CARDANO_ERROR_INVALID_ARGUMENT;
+  }
+  if (((an / ag) != (bn / bg)) || ((ad / ag) != (bd / bg)))
+  {
+    return CARDANO_SUCCESS;
+  }
+
+  bool            included = false;
+  cardano_error_t result   = owners_included(proposed->owners, latest->owners, &included);
+  if ((result != CARDANO_SUCCESS) || !included)
+  {
+    return result;
+  }
+  result = owners_included(latest->owners, proposed->owners, &included);
+  if ((result != CARDANO_SUCCESS) || !included)
+  {
+    return result;
+  }
+
+  /* Pool parameters and their children encode from their fields, without a CBOR cache.
+   * Normalize the two semantic sets/rationals already compared, and omit both BLS keys.
+   * The borrowed copies are never mutated or released as reference-counted objects. */
+  cardano_pool_params_t a   = *proposed;
+  cardano_pool_params_t b   = *latest;
+  a.bls_key                 = NULL;
+  b.bls_key                 = NULL;
+  a.owners                  = b.owners;
+  a.margin                  = b.margin;
+  cardano_cbor_writer_t* aw = cardano_cbor_writer_new();
+  cardano_cbor_writer_t* bw = cardano_cbor_writer_new();
+  cardano_buffer_t*      ab = NULL;
+  cardano_buffer_t*      bb = NULL;
+  if ((aw == NULL) || (bw == NULL))
+  {
+    result = CARDANO_ERROR_MEMORY_ALLOCATION_FAILED;
+  }
+  if (result == CARDANO_SUCCESS)
+  {
+    result = cardano_pool_params_to_cbor(&a, aw);
+  }
+  if (result == CARDANO_SUCCESS)
+  {
+    result = cardano_pool_params_to_cbor(&b, bw);
+  }
+  if (result == CARDANO_SUCCESS)
+  {
+    result = cardano_cbor_writer_encode_in_buffer(aw, &ab);
+  }
+  if (result == CARDANO_SUCCESS)
+  {
+    result = cardano_cbor_writer_encode_in_buffer(bw, &bb);
+  }
+  if (result == CARDANO_SUCCESS)
+  {
+    *required = !cardano_buffer_equals(ab, bb);
+  }
+  cardano_buffer_unref(&ab);
+  cardano_buffer_unref(&bb);
+  cardano_cbor_writer_unref(&aw);
+  cardano_cbor_writer_unref(&bw);
+  return result;
+}
