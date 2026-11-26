@@ -378,3 +378,7 @@ Transaction Builder
 ------------
 
 .. doxygenfunction:: cardano_tx_builder_set_current_treasury_value
+
+------------
+
+.. doxygenfunction:: cardano_tx_builder_set_pool_state

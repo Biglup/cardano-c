@@ -130,3 +130,7 @@ Transaction
 ------------
 
 .. doxygenfunction:: cardano_transaction_find_proposal_index
+
+------------
+
+.. doxygenfunction:: cardano_transaction_get_unique_signers_with_pool_state

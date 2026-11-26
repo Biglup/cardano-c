@@ -32,6 +32,7 @@
 #include <cardano/certs/certificate.h>
 #include <cardano/error.h>
 #include <cardano/export.h>
+#include <cardano/pool_params/pool_params.h>
 #include <cardano/transaction_body/transaction_body.h>
 #include <cardano/typedefs.h>
 #include <cardano/voting_procedures/voter.h>
@@ -1093,6 +1094,27 @@ CARDANO_EXPORT const char* cardano_transaction_get_last_error(
  */
 CARDANO_EXPORT cardano_error_t
 cardano_transaction_deep_clone(const cardano_transaction_t* source, cardano_transaction_t** clone);
+
+/**
+ * \brief Gets unique signers with the Dijkstra pool-owner witness exemption.
+ * \param[in] tx The transaction.
+ * \param[in] resolved_inputs Resolved spend and collateral inputs.
+ * \param[in] protocol_major The protocol major version; the exemption applies from 12.
+ * \param[in] pool_state Latest registered parameters for each known pool, using pending parameters
+ * when present, otherwise active parameters. Use at most one entry per pool. Unknown pools conservatively
+ * require owners. State must match the ledger state used to validate this transaction level.
+ * \param[in] pool_state_size Number of entries; pool_state may be NULL only when zero.
+ * \param[out] unique_signers The owned set of signers. Owners required by other purposes are retained.
+ * \return Success, a null argument error, or an allocation/access error.
+ * \note This affects witnesses only, not pool deposit accounting. The caller supplies trusted chain state.
+ */
+CARDANO_EXPORT cardano_error_t cardano_transaction_get_unique_signers_with_pool_state(
+  cardano_transaction_t*        tx,
+  cardano_utxo_list_t*          resolved_inputs,
+  uint64_t                      protocol_major,
+  cardano_pool_params_t* const* pool_state,
+  size_t                        pool_state_size,
+  cardano_blake2b_hash_set_t**  unique_signers);
 
 #ifdef __cplusplus
 }

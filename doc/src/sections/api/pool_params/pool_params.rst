@@ -126,3 +126,7 @@ Pool Parameters
 ------------
 
 .. doxygenfunction:: cardano_pool_params_deep_clone
+
+------------
+
+.. doxygenfunction:: cardano_pool_params_requires_owner_witnesses

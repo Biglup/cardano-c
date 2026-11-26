@@ -59,6 +59,12 @@ typedef struct cardano_builder_state_t
     /** \brief The protocol parameters used for fee, deposit and size computations. */
     cardano_protocol_parameters_t* params;
 
+    /** \brief Owned snapshots of latest registered pool parameters for witness estimation. */
+    cardano_pool_params_t** pool_state;
+
+    /** \brief Number of entries in pool_state. */
+    size_t pool_state_size;
+
     /** \brief The slot timing configuration used to convert between Unix time and slots. */
     cardano_slot_config_t slot_config;
 

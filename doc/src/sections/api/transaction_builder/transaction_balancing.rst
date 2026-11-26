@@ -18,3 +18,7 @@ Transaction Balancing
 ------------
 
 .. doxygenfunction:: cardano_compute_transaction_batch_imbalance
+
+------------
+
+.. doxygenfunction:: cardano_balance_transaction_with_pool_state

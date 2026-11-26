@@ -24,6 +24,7 @@
 #include "../../uplc/ast/uplc_term.h"
 #include "../../uplc/cost/uplc_selected_cost_model.h"
 #include "../../uplc/machine/uplc_machine.h"
+#include "../internals/created_output_scripts.h"
 #include <cardano/address/address.h>
 #include <cardano/address/address_type.h>
 #include <cardano/address/base_address.h>
@@ -624,7 +625,8 @@ find_reference_script(
  *
  * Like the ledger, the scripts a Dijkstra transaction provides are the union of
  * the witness scripts of the top-level transaction and of every sub-transaction,
- * and the reference scripts of the resolved outputs; a redeemer at any level can
+ * and the reference scripts of resolved inputs and, from protocol version 12, created outputs
+ * including collateral return (CIP-172); a redeemer at any level can
  * run any of them. The caller owns \p out_bytes and releases it with
  * \ref cardano_buffer_unref.
  *
@@ -634,6 +636,7 @@ find_reference_script(
 static cardano_error_t
 find_script_by_hash(
   cardano_transaction_t*        tx,
+  const uint64_t                protocol_major,
   cardano_utxo_list_t*          resolved_inputs,
   const cardano_blake2b_hash_t* script_hash,
   cardano_buffer_t**            out_bytes,
@@ -663,6 +666,17 @@ find_script_by_hash(
   if (result == CARDANO_ERROR_ELEMENT_NOT_FOUND)
   {
     result = find_reference_script(resolved_inputs, script_hash, out_bytes, out_version);
+  }
+
+  if ((result == CARDANO_ERROR_ELEMENT_NOT_FOUND) && (protocol_major >= PRV_DIJKSTRA_PROTOCOL_MAJOR))
+  {
+    cardano_script_t* created_script = NULL;
+    result                           = cardano_builder_find_created_script(tx, script_hash, &created_script);
+    if (result == CARDANO_SUCCESS)
+    {
+      result = reference_script_bytes(created_script, out_bytes, out_version);
+    }
+    cardano_script_unref(&created_script);
   }
 
   cardano_sub_transaction_set_unref(&subs);
@@ -1827,6 +1841,7 @@ release_resolved_script(resolved_script_t* script)
  * script runs.
  *
  * \param[in] tx The top-level transaction.
+ * \param[in] protocol_major The protocol major version controlling CIP-172 availability.
  * \param[in] sub_tx_index The position of the redeemer's sub-transaction, or NULL
  *            for the top level.
  * \param[in] level The transaction level of the redeemer.
@@ -1842,6 +1857,7 @@ release_resolved_script(resolved_script_t* script)
 static cardano_error_t
 resolve_script(
   cardano_transaction_t* tx,
+  const uint64_t         protocol_major,
   const uint64_t*        sub_tx_index,
   tx_level_t*            level,
   cardano_utxo_list_t*   resolved_inputs,
@@ -1859,7 +1875,7 @@ resolve_script(
 
   if (result == CARDANO_SUCCESS)
   {
-    result = find_script_by_hash(tx, resolved_inputs, script_hash, &script->script_bytes, &script->version);
+    result = find_script_by_hash(tx, protocol_major, resolved_inputs, script_hash, &script->script_bytes, &script->version);
   }
 
   if (result == CARDANO_SUCCESS)
@@ -1905,7 +1921,7 @@ check_redeemer(
   resolved_script_t             script;
   cardano_uplc_arena_t*         arena   = NULL;
   const cardano_uplc_program_t* program = NULL;
-  cardano_error_t               result  = resolve_script(tx, sub_tx_index, level, resolved_inputs, redeemer, &script);
+  cardano_error_t               result  = resolve_script(tx, ctx->protocol_major, sub_tx_index, level, resolved_inputs, redeemer, &script);
 
   *out_outcome = PRV_REDEEMER_SUCCEEDED;
 
@@ -1971,7 +1987,7 @@ eval_redeemer(
   *out_redeemer = NULL;
   *out_outcome  = PRV_REDEEMER_SUCCEEDED;
 
-  result = resolve_script(tx, sub_tx_index, level, resolved_inputs, redeemer, &script);
+  result = resolve_script(tx, ctx->protocol_major, sub_tx_index, level, resolved_inputs, redeemer, &script);
 
   if (result == CARDANO_SUCCESS)
   {

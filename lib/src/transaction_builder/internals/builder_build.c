@@ -58,6 +58,20 @@
 /* STATIC DECLARATIONS *******************************************************/
 
 /**
+ * \brief Reports whether CIP-172 script sources are enabled by the protocol parameters.
+ * \param[in] state The builder state.
+ * \return True for Dijkstra and later.
+ */
+static bool
+uses_created_output_scripts(cardano_builder_state_t* state)
+{
+  cardano_protocol_version_t* version = cardano_protocol_parameters_get_protocol_version(state->params);
+  const bool                  enabled = cardano_protocol_version_get_major(version) >= 12U;
+  cardano_protocol_version_unref(&version);
+  return enabled;
+}
+
+/**
  * \brief Retrieves the cost model for a specified Plutus language version.
  *
  * This function searches for the cost model matching the specified Plutus language version within a
@@ -801,6 +815,7 @@ get_plutus_languages_used(
 
     result = _cardano_get_plutus_languages_used(
       tx,
+      uses_created_output_scripts(state),
       needed_scripts,
       state->reference_inputs,
       spent_utxos,
@@ -1078,7 +1093,7 @@ check_sub_transaction_redeemers(
 
   if (result == CARDANO_SUCCESS)
   {
-    result = _cardano_get_plutus_scripts_provided(tx, needed_scripts, state->reference_inputs, spent_utxos, NULL, sub_transaction_utxos, &plutus_scripts);
+    result = _cardano_get_plutus_scripts_provided(tx, uses_created_output_scripts(state), needed_scripts, state->reference_inputs, spent_utxos, NULL, sub_transaction_utxos, &plutus_scripts);
   }
 
   if (result == CARDANO_SUCCESS)
@@ -1271,7 +1286,7 @@ cardano_builder_check_redeemers(
 
   if (result == CARDANO_SUCCESS)
   {
-    result = _cardano_get_plutus_scripts_provided(tx, needed_scripts, state->reference_inputs, spent_utxos, NULL, sub_transaction_utxos, &plutus_scripts);
+    result = _cardano_get_plutus_scripts_provided(tx, uses_created_output_scripts(state), needed_scripts, state->reference_inputs, spent_utxos, NULL, sub_transaction_utxos, &plutus_scripts);
   }
 
   if (result == CARDANO_SUCCESS)
@@ -1406,7 +1421,7 @@ cardano_builder_build(
     return result;
   }
 
-  result = cardano_balance_transaction(
+  result = cardano_balance_transaction_with_pool_state(
     tx,
     state->additional_signature_count,
     state->params,
@@ -1419,7 +1434,9 @@ cardano_builder_build(
     state->collateral_utxos,
     state->collateral_address,
     state->tx_evaluator,
-    state->deferred_redeemers);
+    state->deferred_redeemers,
+    state->pool_state,
+    state->pool_state_size);
 
   cardano_utxo_list_unref(&balancing_utxos);
 

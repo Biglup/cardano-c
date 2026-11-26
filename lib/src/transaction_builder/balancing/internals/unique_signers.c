@@ -617,10 +617,20 @@ _process_credential(
   return CARDANO_SUCCESS;
 }
 
-cardano_error_t
-_process_pool_registration(
-  cardano_blake2b_hash_set_t* unique_signers,
-  cardano_certificate_t*      certificate)
+/**
+ * \brief Adds the operator and, unless exempt in the supplied pool state, the pool owners.
+ * \param[in,out] unique_signers The signer set to extend.
+ * \param[in] certificate The certificate or certificate set.
+ * \param[in] pool_state Known latest registered pool parameters.
+ * \param[in] pool_state_size Number of entries; zero before Dijkstra.
+ * \return Success or an allocation/access error.
+ */
+static cardano_error_t
+process_pool_registration_with_state(
+  cardano_blake2b_hash_set_t*   unique_signers,
+  cardano_certificate_t*        certificate,
+  cardano_pool_params_t* const* pool_state,
+  const size_t                  pool_state_size)
 {
   cardano_error_t                   result;
   cardano_pool_registration_cert_t* registration = NULL;
@@ -665,6 +675,32 @@ _process_pool_registration(
     cardano_pool_params_unref(&params);
     cardano_pool_registration_cert_unref(&registration);
 
+    return result;
+  }
+
+  bool owners_required = true;
+  for (size_t i = 0U; (result == CARDANO_SUCCESS) && (i < pool_state_size); ++i)
+  {
+    cardano_blake2b_hash_t* known_operator    = NULL;
+    cardano_blake2b_hash_t* proposed_operator = NULL;
+    result                                    = cardano_pool_params_get_operator_key_hash(pool_state[i], &known_operator);
+    if (result == CARDANO_SUCCESS)
+    {
+      result = cardano_pool_params_get_operator_key_hash(params, &proposed_operator);
+    }
+    const bool matches = cardano_blake2b_hash_equals(known_operator, proposed_operator);
+    cardano_blake2b_hash_unref(&known_operator);
+    cardano_blake2b_hash_unref(&proposed_operator);
+    if ((result == CARDANO_SUCCESS) && matches)
+    {
+      result = cardano_pool_params_requires_owner_witnesses(params, pool_state[i], &owners_required);
+      break;
+    }
+  }
+  if ((result != CARDANO_SUCCESS) || !owners_required)
+  {
+    cardano_pool_params_unref(&params);
+    cardano_pool_registration_cert_unref(&registration);
     return result;
   }
 
@@ -1039,10 +1075,20 @@ _process_certificate_with_credential(
   return result;
 }
 
-cardano_error_t
-_cardano_add_certificates_pub_key_hashes(
-  cardano_blake2b_hash_set_t* unique_signers,
-  cardano_certificate_set_t*  certificates)
+/**
+ * \brief Collects certificate signers using the Dijkstra pool-owner exemption.
+ * \param[in,out] unique_signers The signer set to extend.
+ * \param[in] certificates The certificate or certificate set.
+ * \param[in] pool_state Known latest registered pool parameters.
+ * \param[in] pool_state_size Number of entries; zero before Dijkstra.
+ * \return Success or an allocation/access error.
+ */
+static cardano_error_t
+add_certificates_with_pool_state(
+  cardano_blake2b_hash_set_t*   unique_signers,
+  cardano_certificate_set_t*    certificates,
+  cardano_pool_params_t* const* pool_state,
+  const size_t                  pool_state_size)
 {
   if (unique_signers == NULL)
   {
@@ -1110,7 +1156,7 @@ _cardano_add_certificates_pub_key_hashes(
       }
       case CARDANO_CERT_TYPE_POOL_REGISTRATION:
       {
-        result = _process_pool_registration(unique_signers, certificate);
+        result = process_pool_registration_with_state(unique_signers, certificate, pool_state, pool_state_size);
 
         if (result != CARDANO_SUCCESS)
         {
@@ -1257,10 +1303,12 @@ _cardano_voting_procedures_pub_key_hashes(
 }
 
 cardano_error_t
-_cardano_get_unique_signers(
-  cardano_transaction_t*       tx,
-  cardano_utxo_list_t*         resolved_inputs,
-  cardano_blake2b_hash_set_t** unique_signers)
+_cardano_get_unique_signers_with_pool_state(
+  cardano_transaction_t*        tx,
+  cardano_utxo_list_t*          resolved_inputs,
+  cardano_blake2b_hash_set_t**  unique_signers,
+  cardano_pool_params_t* const* pool_state,
+  const size_t                  pool_state_size)
 {
   if ((tx == NULL) || (unique_signers == NULL))
   {
@@ -1339,7 +1387,7 @@ _cardano_get_unique_signers(
   cardano_certificate_set_t* certificates = cardano_transaction_body_get_certificates(body);
   cardano_certificate_set_unref(&certificates);
 
-  result = _cardano_add_certificates_pub_key_hashes(*unique_signers, certificates);
+  result = add_certificates_with_pool_state(*unique_signers, certificates, pool_state, pool_state_size);
 
   if (result != CARDANO_SUCCESS)
   {
@@ -1416,4 +1464,59 @@ _cardano_get_bootstrap_signers(
   }
 
   return result;
+}
+
+cardano_error_t
+_process_pool_registration(
+  cardano_blake2b_hash_set_t* unique_signers,
+  cardano_certificate_t*      certificate)
+{
+  return process_pool_registration_with_state(unique_signers, certificate, NULL, 0U);
+}
+
+cardano_error_t
+_cardano_add_certificates_pub_key_hashes(
+  cardano_blake2b_hash_set_t* unique_signers,
+  cardano_certificate_set_t*  certificates)
+{
+  return add_certificates_with_pool_state(unique_signers, certificates, NULL, 0U);
+}
+
+cardano_error_t
+_cardano_get_unique_signers(
+  cardano_transaction_t*       tx,
+  cardano_utxo_list_t*         resolved_inputs,
+  cardano_blake2b_hash_set_t** unique_signers)
+{
+  return _cardano_get_unique_signers_with_pool_state(tx, resolved_inputs, unique_signers, NULL, 0U);
+}
+
+cardano_error_t
+_cardano_validate_pool_state(cardano_pool_params_t* const* pool_state, const size_t pool_state_size)
+{
+  if ((pool_state == NULL) && (pool_state_size != 0U))
+  {
+    return CARDANO_ERROR_POINTER_IS_NULL;
+  }
+  for (size_t i = 0U; i < pool_state_size; ++i)
+  {
+    cardano_blake2b_hash_t* hash   = NULL;
+    cardano_error_t         result = cardano_pool_params_get_operator_key_hash(pool_state[i], &hash);
+    for (size_t j = 0U; (result == CARDANO_SUCCESS) && (j < i); ++j)
+    {
+      cardano_blake2b_hash_t* other = NULL;
+      result                        = cardano_pool_params_get_operator_key_hash(pool_state[j], &other);
+      if ((result == CARDANO_SUCCESS) && cardano_blake2b_hash_equals(hash, other))
+      {
+        result = CARDANO_ERROR_DUPLICATED_KEY;
+      }
+      cardano_blake2b_hash_unref(&other);
+    }
+    cardano_blake2b_hash_unref(&hash);
+    if (result != CARDANO_SUCCESS)
+    {
+      return result;
+    }
+  }
+  return CARDANO_SUCCESS;
 }

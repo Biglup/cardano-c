@@ -22,6 +22,7 @@
 /* INCLUDES ******************************************************************/
 
 #include "builder_state.h"
+#include "../../allocators.h"
 
 #include <cardano/transaction_body/transaction_body.h>
 #include <cardano/transaction_body/transaction_input_set.h>
@@ -117,6 +118,8 @@ cardano_builder_state_init(
   }
 
   state->transaction                      = NULL;
+  state->pool_state                       = NULL;
+  state->pool_state_size                  = 0U;
   state->params                           = NULL;
   state->slot_config                      = *slot_config;
   state->coin_selector                    = NULL;
@@ -242,6 +245,13 @@ cardano_builder_state_release(cardano_builder_state_t* state)
   }
 
   cardano_transaction_unref(&state->transaction);
+  for (size_t i = 0U; i < state->pool_state_size; ++i)
+  {
+    cardano_pool_params_unref(&state->pool_state[i]);
+  }
+  _cardano_free(state->pool_state);
+  state->pool_state      = NULL;
+  state->pool_state_size = 0U;
   cardano_protocol_parameters_unref(&state->params);
   cardano_coin_selector_unref(&state->coin_selector);
   cardano_tx_evaluator_unref(&state->tx_evaluator);

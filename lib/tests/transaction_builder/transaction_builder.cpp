@@ -15876,3 +15876,17 @@ TEST(cardano_tx_builder_add_proposal, explicitAndDeferredArgumentsRetainTheirOwn
   cardano_tx_builder_unref(&builder);
   cardano_protocol_parameters_unref(&params);
 }
+
+TEST(cardano_tx_builder_set_pool_state, rejectsInvalidStateAndRetainsThePreviousSnapshot)
+{
+  cardano_protocol_parameters_t* params  = init_protocol_parameters();
+  cardano_tx_builder_t*          builder = cardano_tx_builder_new(params, &CARDANO_MAINNET_SLOT_CONFIG);
+  EXPECT_EQ(cardano_tx_builder_set_pool_state(nullptr, nullptr, 0U), CARDANO_ERROR_POINTER_IS_NULL);
+  EXPECT_EQ(cardano_tx_builder_set_pool_state(builder, nullptr, 1U), CARDANO_ERROR_POINTER_IS_NULL);
+  cardano_pool_params_t* invalid[] = { nullptr };
+  EXPECT_EQ(cardano_tx_builder_set_pool_state(builder, invalid, 1U), CARDANO_ERROR_POINTER_IS_NULL);
+  EXPECT_EQ(cardano_tx_builder_set_pool_state(builder, nullptr, 0U), CARDANO_SUCCESS);
+  EXPECT_EQ(builder->state.pool_state_size, 0U);
+  cardano_tx_builder_unref(&builder);
+  cardano_protocol_parameters_unref(&params);
+}

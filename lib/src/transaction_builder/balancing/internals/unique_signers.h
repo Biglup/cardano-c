@@ -27,6 +27,7 @@
 #include <cardano/buffer.h>
 #include <cardano/common/utxo_list.h>
 #include <cardano/error.h>
+#include <cardano/pool_params/pool_params.h>
 #include <cardano/transaction/transaction.h>
 #include <cardano/typedefs.h>
 
@@ -438,5 +439,29 @@ _cardano_get_bootstrap_signers(
   cardano_transaction_t* tx,
   cardano_utxo_list_t*   resolved_inputs,
   cardano_utxo_list_t**  bootstrap_signers);
+
+/**
+ * \brief Gets signers using known latest pool parameters for the Dijkstra owner exemption.
+ * \param[in] tx The transaction.
+ * \param[in] resolved_inputs Resolved spend/collateral inputs.
+ * \param[out] unique_signers The resulting owned signer set.
+ * \param[in] pool_state Latest registered pool parameters, pending preferred over active.
+ * \param[in] pool_state_size Number of pool parameters; use zero before Dijkstra.
+ * \return Success or an allocation/access error.
+ */
+cardano_error_t _cardano_get_unique_signers_with_pool_state(
+  cardano_transaction_t*        tx,
+  cardano_utxo_list_t*          resolved_inputs,
+  cardano_blake2b_hash_set_t**  unique_signers,
+  cardano_pool_params_t* const* pool_state,
+  size_t                        pool_state_size);
+
+/**
+ * \brief Validates a pool-state snapshot, rejecting null entries and duplicate pool IDs.
+ * \param[in] pool_state The latest parameters of each known pool.
+ * \param[in] pool_state_size The number of entries.
+ * \return Success, a null argument error, or CARDANO_ERROR_DUPLICATED_KEY.
+ */
+cardano_error_t _cardano_validate_pool_state(cardano_pool_params_t* const* pool_state, size_t pool_state_size);
 
 #endif // BIGLUP_LABS_INCLUDE_CARDANO_SIGNERS_COUNT_H
